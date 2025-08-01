@@ -1,0 +1,35 @@
+.matrixContainer {
+    width: 100%;
+}
+
+.matrixContainer table {
+    width: 100%;
+    border-collapse: collapse;
+    text-align: center;
+
+}
+
+.matrixContainer th, .matrixContainer td {
+    padding: 0.5rem;
+    min-width: 40px;
+}
+
+.matrixContainer th {
+    font-weight: 600;
+    color: var(--viz-text-color);
+}
+
+.matrixContainer tbody tr:nth-child(odd) {
+    background-color: #f8f9fa;
+}
+
+.selected {
+    background-color: #e9d5ff !important;
+    transition: var(--transition);
+
+}
+
+.selected th {
+    color: var(--color-primary);
+    transition: var(--transition);
+}

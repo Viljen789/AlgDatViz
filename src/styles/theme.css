@@ -1,0 +1,78 @@
+
+:root {
+    --color-primary: #7b42f6;
+    --color-secondary: #5c67f2;
+    --color-tertiary: #e040fb;
+    --color-background: #f4f7f9;
+    --color-surface: #ffffff;
+    --color-text-primary: #1e1e2f;
+    --color-text-on-node: #ffffff;
+    --color-border: #dce1e6;
+    --color-slight-grey: #f8f9fa;
+    --color-light-grey: #e9ecef;
+    --color-medium-grey: rgba(206, 212, 218, 0.5);
+    --color-dark-grey: #adb5bd;
+    --color-light-blue: #e9d5ff;
+    --color-lighter-blue: rgba(233, 213, 255, 0.4);
+    --color-dark-blue: #212529;
+    --color-text-secondary: #6c757d;
+
+
+    --viz-node-fill: #e9ecef;
+    --viz-node-stroke: #adb5bd;
+    --viz-edge-color: #ced4da;
+    --viz-text-color: #212529;
+
+    --viz-hover-color: var(--color-primary);
+    --viz-selection-color: #e9d5ff;
+
+    --color-error: #ff4d4d;
+    --color-success: #4caf50;
+    --color-warning: #ff9800;
+    --color-info: #2196f3;
+
+
+    --dark-color-primary: #9d73f8;
+    --dark-color-secondary: #5ea1ef;
+    --dark-color-tertiary: #ea6ffc;
+    --dark-color-background: #1a1a2e;
+    --dark-color-surface: #2a2a40;
+    --dark-color-text-primary: #f0f0f8;
+    --dark-color-text-secondary: #a0a0b8;
+    --dark-color-border: #3a3a5e;
+
+
+    --font-family-sans: 'Inter', sans-serif;
+    --font-family-mono: 'Roboto Mono', monospace;
+    --font-size-base: 16px;
+    --font-size-sm: 14px;
+    --font-size-lg: 18px;
+
+
+    --border-radius-sm: 4px;
+    --border-radius-md: 8px;
+    --border-radius-lg: 12px;
+    --spacing-xs: 4px;
+    --spacing-sm: 8px;
+    --spacing-md: 16px;
+    --spacing-lg: 24px;
+    --spacing-xl: 32px;
+
+    --shadow-color: rgba(0, 0, 0, 0.1);
+    --transition: 0.2s ease-in-out;
+    --switch-width: 20px;
+    --switch-height: 10px;
+}
+
+
+body.dark-theme {
+    --color-primary: var(--dark-color-primary);
+    --color-secondary: var(--dark-color-secondary);
+    --color-tertiary: var(--dark-color-tertiary);
+    --color-background: var(--dark-color-background);
+    --color-surface: var(--dark-color-surface);
+    --color-text-primary: var(--dark-color-text-primary);
+    --color-text-secondary: var(--dark-color-text-secondary);
+    --color-border: var(--dark-color-border);
+    --shadow-color: rgba(0, 0, 0, 0.25);
+}
