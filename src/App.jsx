@@ -1,13 +1,36 @@
-import GraphDashboard from './components/Graph/GraphDashboard';
-import './styles/globals.css';
+import {useState} from 'react';
+import {BrowserRouter, Route, Routes, useLocation} from 'react-router-dom';
+import {AnimatePresence} from 'framer-motion';
+import Sidebar from './common/Sidebar/Sidebar.jsx';
+import GraphPage from './pages/GraphPage';
+import SortingPage from './pages/SortingPage';
+import styles from './App.module.css';
+
+const AppLayout = () => {
+	const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+	const location = useLocation();
+
+	return (<div className={styles.appContainer}>
+		<Sidebar
+			isCollapsed={isSidebarCollapsed}
+			onToggle={() => setIsSidebarCollapsed(prev => !prev)}
+		/>
+		<main className={styles.mainContent}>
+			<AnimatePresence mode="wait">
+				<Routes location={location} key={location.pathname}>
+					<Route path="/graph" element={<GraphPage/>}/>
+					<Route path="/sorting" element={<SortingPage/>}/>
+					<Route path="/" element={<GraphPage/>}/>
+				</Routes>
+			</AnimatePresence>
+		</main>
+	</div>);
+};
 
 function App() {
-  return (
-    <div className="App">
-      <h1>Test</h1>
-      <GraphDashboard />
-    </div>
-  );
+	return (<BrowserRouter>
+		<AppLayout/>
+	</BrowserRouter>);
 }
 
 export default App;

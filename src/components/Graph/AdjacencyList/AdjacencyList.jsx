@@ -1,5 +1,6 @@
-import {useState, useMemo, useEffect} from "react";
+import {useEffect, useMemo, useState} from "react";
 import styles from "./AdjacencyList.module.css";
+import {AddNodeButton, DeleteNodeButton} from "../../../common/NodeButtons.jsx";
 
 const AdjacencyList = ({graph, isWeighted, onUpdate, selectedNodeId, onAddNode, onDeleteNode}) => {
 	const [inputValues, setInputValues] = useState(new Map());
@@ -74,15 +75,15 @@ const AdjacencyList = ({graph, isWeighted, onUpdate, selectedNodeId, onAddNode, 
 							className={`${styles.neighborsInput} ${errorMap.get(node.id) ? styles.inputInvalid : ''}`}
 							placeholder={isWeighted ? "B:5, C:2" : "B, C"}
 						/>
-						<button className={styles.deleteButton} onClick={() => onDeleteNode(node.id)}
-						        title={`Delete node ${node.id}`}>×
-						</button>
+						<DeleteNodeButton
+							onClick={() => onDeleteNode(node.id)}
+							title="Delete node"
+							className={styles.deleteButton}
+						/>
 					</div>
 				))}
 			<div className={`${styles.row} ${styles.addRow}`}>
-				<button onClick={onAddNode} className={styles.addButton} title="Add node">
-					<span className={styles.plusIcon}>+</span>
-				</button>
+				<AddNodeButton onClick={onAddNode} title="Add node"/>
 			</div>
 		</div>
 	);

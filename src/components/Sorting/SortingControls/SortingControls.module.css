@@ -1,0 +1,86 @@
+.controlsContainer {
+    width: 100%;
+    padding: 1rem;
+    background-color: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--border-radius);
+    display: flex;
+    flex-wrap: wrap; /* Allows controls to wrap on smaller screens */
+    align-items: center;
+    justify-content: space-between;
+    gap: 1.5rem;
+}
+
+.controlGroup {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.controlGroup label {
+    font-weight: 500;
+    color: var(--color-text-secondary);
+}
+
+/* Base button style, you can use your global .button class or this */
+.controlButton {
+    padding: 0.5rem 1.25rem;
+    font-size: 1rem;
+    font-weight: 600;
+    color: white;
+    background-color: var(--color-primary);
+    border: none;
+    border-radius: var(--border-radius);
+    cursor: pointer;
+    transition: background-color 0.2s, transform 0.2s;
+}
+
+.controlButton:hover {
+    background-color: var(--color-secondary);
+    transform: translateY(-2px);
+}
+
+.controlButton:disabled {
+    background-color: var(--color-border);
+    cursor: not-allowed;
+    transform: none;
+}
+
+/* Style for sliders */
+.slider {
+    -webkit-appearance: none;
+    width: 150px;
+    height: 8px;
+    background: var(--color-border);
+    outline: none;
+    border-radius: 4px;
+    transition: opacity 0.2s;
+}
+
+.slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 20px;
+    height: 20px;
+    background: var(--color-primary);
+    cursor: pointer;
+    border-radius: 50%;
+}
+
+.slider::-moz-range-thumb {
+    width: 20px;
+    height: 20px;
+    background: var(--color-primary);
+    cursor: pointer;
+    border-radius: 50%;
+}
+
+/* Style for select dropdown */
+.select {
+    padding: 0.5rem;
+    border: 1px solid var(--color-border);
+    border-radius: var(--border-radius);
+    background-color: var(--color-surface);
+    font-size: 1rem;
+    color: var(--color-text-primary);
+}

@@ -1,0 +1,111 @@
+.controlsContainer {
+    width: 100%;
+    padding: 1rem;
+    background-color: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--border-radius-md);
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1.5rem;
+}
+
+.controlGroup {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.controlGroup label {
+    font-weight: 500;
+    color: var(--color-text-secondary);
+}
+
+
+.controlButton {
+    padding: 0.5rem 1.25rem;
+    font-size: 1rem;
+    font-weight: 600;
+    color: white;
+    background-color: var(--color-primary);
+    border: none;
+    border-radius: var(--border-radius-md);
+    cursor: pointer;
+    transition: background-color 0.2s, transform 0.2s;
+}
+
+.controlButton:hover {
+    background-color: var(--color-secondary);
+    transform: translateY(-2px);
+}
+
+.controlButton:disabled {
+    background-color: var(--color-border);
+    cursor: not-allowed;
+    transform: none;
+}
+
+
+.slider {
+    -webkit-appearance: none;
+    width: 150px;
+    height: 8px;
+    background: var(--color-border);
+    outline: none;
+    border-radius: 4px;
+    transition: opacity 0.2s;
+}
+
+.slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 20px;
+    height: 20px;
+    background: var(--color-primary);
+    cursor: pointer;
+    border-radius: 50%;
+}
+
+.slider::-moz-range-thumb {
+    width: 20px;
+    height: 20px;
+    background: var(--color-primary);
+    cursor: pointer;
+    border-radius: 50%;
+}
+
+.select {
+    padding: 0.5rem;
+    border: 1px solid var(--color-border);
+    border-radius: var(--border-radius-md);
+    background-color: var(--color-surface);
+    font-size: 1rem;
+    color: var(--color-text-primary);
+}
+
+.visualizerContainer {
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    height: 400px;
+    width: 100%;
+    background-color: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--border-radius-lg);
+    padding: 1rem;
+    box-sizing: border-box;
+}
+
+.arrayBar {
+    width: 8px;
+    margin: 0 1px;
+    transition: height 0.1s ease-in-out, background-color 0.1s ease-in-out;
+}
+
+@media (max-width: 768px) {
+    .arrayBar {
+        width: 4px;
+        margin: 0 0.5px;
+    }
+}

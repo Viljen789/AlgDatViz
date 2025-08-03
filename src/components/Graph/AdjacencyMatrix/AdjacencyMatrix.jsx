@@ -1,5 +1,6 @@
 import {useMemo, useState} from "react";
 import styles from "./AdjacencyMatrix.module.css";
+import {AddNodeButton, DeleteNodeButton} from "../../../common/NodeButtons.jsx";
 
 const AdjacencyMatrix = ({
 	                         graph,
@@ -89,12 +90,8 @@ const AdjacencyMatrix = ({
 								</td>
 							))}
 							<td className={styles.actionCell}>
-								<button
-									onClick={() => onDeleteNode(graph.nodes[i].id)}
-									className={styles.deleteButton}
-									title={`Delete node ${graph.nodes[i].label}`}>
-									×
-								</button>
+								<DeleteNodeButton className={styles.deleteButton} onClick={() => onDeleteNode(graph.nodes[i].id)}
+								                  title={`Delete node ${graph.nodes[i].id}`}/>
 							</td>
 						</tr>
 					))}
@@ -102,9 +99,7 @@ const AdjacencyMatrix = ({
 					<tfoot>
 					<tr>
 						<td colSpan={graph.nodes.length + 2}>
-							<button onClick={onAddNode} className={styles.addButton} title="Add node">
-	        <span className={styles.plusIcon}>+</span>
-	      </button>
+							<AddNodeButton onClick={onAddNode} title="Add node"/>
 						</td>
 					</tr>
 					</tfoot>

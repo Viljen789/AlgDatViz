@@ -1,9 +1,8 @@
 import {useEffect, useState} from "react";
-import Graph from "./GraphVisualizer/GraphVisualizer";
+import GraphVisualizer from "./GraphVisualizer/GraphVisualizer";
 import AdjacencyMatrix from "./AdjacencyMatrix/AdjacencyMatrix";
 import AdjacencyList from "./AdjacencyList/AdjacencyList";
 import styles from "./GraphDashboard.module.css"
-import GraphVisualizer from "./GraphVisualizer/GraphVisualizer";
 import ToggleSwitch from "../../common/ToggleSwitch.jsx";
 import {parseAndUpdateGraph} from "../../utils/graphUtils.js";
 
@@ -101,7 +100,6 @@ const GraphDashboard = () => {
 			window.removeEventListener("keydown", handleKeyDown);
 		};
 	}, [graph.nodes, selectedNodeId]);
-	;
 
 
 	useEffect(() => {
