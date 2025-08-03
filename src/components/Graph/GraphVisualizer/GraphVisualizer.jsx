@@ -8,7 +8,8 @@ const GraphVisualizer = ({
 	                         selectedNodeId,
 	                         onNodeClick,
 	                         isDirected,
-	                         isWeighted
+	                         isWeighted,
+	                         selectedCell
                          }) => {
 	const networkRef = useRef(null);
 	const networkInstance = useRef(null);
@@ -92,6 +93,10 @@ const GraphVisualizer = ({
 
 			const isConnectedToSelected = selectedNodeId != null &&
 				(edge.from === selectedNodeId || edge.to === selectedNodeId);
+			const isSelectedEdge = selectedCell &&
+				((edge.from === selectedCell.fromNodeId && edge.to === selectedCell.toNodeId) ||
+					(!isDirected && edge.from === selectedCell.toNodeId && edge.to === selectedCell.fromNodeId));
+
 
 			return {
 				id: `${edge.from}-${edge.to}`,
@@ -100,14 +105,34 @@ const GraphVisualizer = ({
 				label: isWeighted ? String(edge.weight) : '',
 				arrows: {to: {enabled: isDirected, type: 'arrow', scaleFactor: 1}},
 				smooth: smoothConfig,
+
+				width: isSelectedEdge ? 4 : (isConnectedToSelected ? 3 : 2),
 				color: {
-					color: isConnectedToSelected ? theme.primary : theme.edge,
-					highlight: isConnectedToSelected ? theme.primary : theme.edge,
-					hover: isConnectedToSelected ? theme.primary : theme.edge,
-				},
-				width: isConnectedToSelected ? 3 : 2,
+					color: isSelectedEdge ? theme.primary : (isConnectedToSelected ? theme.primary : theme.edge),
+					highlight: isSelectedEdge ? theme.primary : (isConnectedToSelected ? theme.primary : theme.edge),
+					hover: isSelectedEdge ? theme.primary : (isConnectedToSelected ? theme.primary : theme.edge),
+				}
 			};
 		});
+		if (selectedCell) {
+			const {fromNodeId, toNodeId} = selectedCell;
+			const edgeExists = graph.edges.some(e =>
+			    (e.from === fromNodeId && e.to === toNodeId) ||
+			    (!isDirected && e.from === toNodeId && e.to === fromNodeId)
+			);
+
+			if (!edgeExists) {
+				edges.push({
+					id: `temp-${fromNodeId}-${toNodeId}`,
+					from: fromNodeId,
+					to: toNodeId,
+					dashes: [5, 5],
+					color: {color: theme.edge, opacity: 0.6},
+					width: 2,
+					arrows: {to: {enabled: isDirected, type: 'arrow', scaleFactor: 1}}
+				});
+			}
+		}
 
 		const data = {nodes, edges};
 
@@ -146,7 +171,7 @@ const GraphVisualizer = ({
 		});
 
 		return () => networkInstance.current?.destroy();
-	}, [graph, selectedNodeId, onNodeClick, isDirected, isWeighted]);
+	}, [graph, selectedNodeId, onNodeClick, isDirected, isWeighted, selectedCell]);
 
 	return <div ref={networkRef} className={styles.graphContainer}/>;
 };

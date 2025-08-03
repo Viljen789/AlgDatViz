@@ -1,35 +1,211 @@
+
 .matrixContainer {
     width: 100%;
+    display: flex;
+    flex-direction: column;
+
+}
+
+
+.tableWrapper {
+    justify-content: center;
+    width: 100%;
+    overflow-x: auto;
+    position: relative;
+    display: inline-block;
 }
 
 .matrixContainer table {
     width: 100%;
+    margin: 0 auto;
     border-collapse: collapse;
-    text-align: center;
+}
+
+
+.cornerCell {
+    width: 40px;
+    min-width: 40px;
+}
+
+.nodeHeader {
+    width: 40px;
+    min-width: 40px;
+    padding: 0 !important;
+    text-align: center !important;
+}
+
+
+.matrixContainer th:not(.cornerCell):not(.nodeHeader),
+.matrixContainer td {
 
 }
 
-.matrixContainer th, .matrixContainer td {
-    padding: 0.5rem;
-    min-width: 40px;
+
+.nodeHeader, .cornerCell {
+    margin-left: 0;
 }
 
 .matrixContainer th {
     font-weight: 600;
     color: var(--viz-text-color);
+    height: 45px;
+    vertical-align: middle;
+}
+
+.matrixContainer td {
+    padding: 0;
+    width: 45px;
+    min-width: 45px;
+    height: 45px;
+}
+
+.matrixContainer tbody tr {
+    border-bottom: 1px solid var(--color-border);
 }
 
 .matrixContainer tbody tr:nth-child(odd) {
     background-color: #f8f9fa;
 }
 
-.selected {
-    background-color: #e9d5ff !important;
-    transition: var(--transition);
 
+.selectedRow > *, .selectedCol {
+    background-color: rgba(233, 213, 255, 0.4);
 }
 
-.selected th {
+.selectedRow > th {
     color: var(--color-primary);
-    transition: var(--transition);
+}
+
+.cellSelected {
+    background-color: rgba(123, 66, 246, 0.1);
+    box-shadow: inset 0 0 0 2px var(--color-primary);
+}
+
+
+.cellInput {
+    width: 100%;
+    height: 100%;
+    border: none;
+    background-color: transparent;
+    text-align: center;
+    font-family: var(--font-family-mono);
+    font-size: 1rem;
+    color: var(--viz-text-color);
+    outline: none;
+    transition: background-color 0.2s;
+}
+
+.cellInput::-webkit-outer-spin-button,
+.cellInput::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+.cellInput[type=number] {
+    -moz-appearance: textfield;
+}
+
+.cellInput:focus {
+    background-color: #e9d5ff;
+}
+
+.cellInput:disabled {
+    background-color: #f8f9fa;
+    color: #ced4da;
+    cursor: not-allowed;
+}
+
+.actionHeader,
+.actionCell {
+    width: 40px;
+    text-align: center;
+    vertical-align: middle;
+    padding: 0;
+}
+
+
+.deleteButton {
+    background: transparent;
+    border: none;
+    font-size: 1.2rem;
+    color: var(--color-error);
+    cursor: pointer;
+    padding: 0;
+}
+
+
+.addNodeContainer {
+    width: 100%;
+    margin-top: 1rem;
+    position: relative;
+    height: 45px;
+}
+
+.addButton {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.75rem;
+    border: none;
+    cursor: pointer;
+    background-color: transparent;
+    color: var(--color-text-secondary);
+    border-radius: var(--border-radius-md);
+    transition: background-color 0.2s, color 0.2s;
+}
+
+
+.addButton:hover {
+    color: var(--color-primary);
+    background-color: var(--color-light-grey);
+}
+
+.plusIcon {
+    font-size: 1.5rem;
+    line-height: 1;
+}
+
+
+.labelContainer {
+    position: relative;
+    cursor: pointer;
+    width: 100%;
+    text-align: center;
+}
+
+.nodeLabel {
+    display: inline-block;
+    transition: opacity 0.2s;
+}
+
+.deleteButton {
+    background: none;
+    border: none;
+    color: var(--color-border);
+    cursor: pointer;
+    font-size: 1.5rem;
+    line-height: 1;
+    padding: 0 0.25rem;
+    border-radius: 50%;
+    opacity: 0;
+    transition: opacity 0.2s, color 0.2s;
+}
+
+
+.matrixContainer tbody tr:hover .deleteButton {
+    opacity: 1;
+}
+
+
+.deleteButton:hover {
+    color: var(--color-error);
+}
+
+.labelContainer:hover .nodeLabel {
+    opacity: 0;
+}
+
+.labelContainer:hover .deleteSymbol {
+    opacity: 1;
 }
