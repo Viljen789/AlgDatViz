@@ -7,30 +7,49 @@ import SortingPage from './pages/SortingPage';
 import styles from './App.module.css';
 
 const AppLayout = () => {
-	const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+	const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(true);
 	const location = useLocation();
 
-	return (<div className={styles.appContainer}>
-		<Sidebar
-			isCollapsed={isSidebarCollapsed}
-			onToggle={() => setIsSidebarCollapsed(prev => !prev)}
-		/>
-		<main className={styles.mainContent}>
-			<AnimatePresence mode="wait">
-				<Routes location={location} key={location.pathname}>
-					<Route path="/graph" element={<GraphPage/>}/>
-					<Route path="/sorting" element={<SortingPage/>}/>
-					<Route path="/" element={<GraphPage/>}/>
-				</Routes>
-			</AnimatePresence>
-		</main>
-	</div>);
+	return (
+		<div className={styles.appContainer}>
+			<Sidebar
+				isCollapsed={isSidebarCollapsed}
+				onToggle={() => setIsSidebarCollapsed(prev => !prev)}
+			/>
+			<main className={styles.mainContent}>
+				<AnimatePresence mode="wait">
+					<Routes location={location} key={location.pathname}>
+						<Route
+							path="/graph"
+							element={
+								<GraphPage key={location.pathname}/>
+							}
+						/>
+						<Route
+							path="/sorting"
+							element={
+								<SortingPage key={location.pathname}/>
+							}
+						/>
+						<Route
+							path="/"
+							element={
+								<GraphPage key={location.pathname}/>
+							}
+						/>
+					</Routes>
+				</AnimatePresence>
+			</main>
+		</div>
+	);
 };
 
 function App() {
-	return (<BrowserRouter>
-		<AppLayout/>
-	</BrowserRouter>);
+	return (
+		<BrowserRouter>
+			<AppLayout/>
+		</BrowserRouter>
+	);
 }
 
 export default App;

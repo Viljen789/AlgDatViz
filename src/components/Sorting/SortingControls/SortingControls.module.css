@@ -1,14 +1,15 @@
 .controlsContainer {
     width: 100%;
-    padding: 1rem;
+    padding: 1rem 1.5rem;
     background-color: var(--color-surface);
     border: 1px solid var(--color-border);
-    border-radius: var(--border-radius);
+    border-radius: var(--border-radius-lg);
     display: flex;
-    flex-wrap: wrap; /* Allows controls to wrap on smaller screens */
+    flex-wrap: wrap;
     align-items: center;
     justify-content: space-between;
     gap: 1.5rem;
+
 }
 
 .controlGroup {
@@ -22,7 +23,6 @@
     color: var(--color-text-secondary);
 }
 
-/* Base button style, you can use your global .button class or this */
 .controlButton {
     padding: 0.5rem 1.25rem;
     font-size: 1rem;
@@ -30,7 +30,7 @@
     color: white;
     background-color: var(--color-primary);
     border: none;
-    border-radius: var(--border-radius);
+    border-radius: var(--border-radius-sm);
     cursor: pointer;
     transition: background-color 0.2s, transform 0.2s;
 }
@@ -46,7 +46,11 @@
     transform: none;
 }
 
-/* Style for sliders */
+/*.controlButton:focus {
+    outline: none;
+    box-shadow: 0 0 0 2px var(--color-primary);
+}*/
+
 .slider {
     -webkit-appearance: none;
     width: 150px;
@@ -79,8 +83,88 @@
 .select {
     padding: 0.5rem;
     border: 1px solid var(--color-border);
-    border-radius: var(--border-radius);
+    border-radius: var(--border-radius-md);
     background-color: var(--color-surface);
     font-size: 1rem;
     color: var(--color-text-primary);
+}
+
+.speedControls {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.speedButton {
+    width: 30px;
+    height: 30px;
+    font-size: 1.2rem;
+    font-weight: bold;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid var(--color-border);
+    border-radius: var(--border-radius-sm);
+    background-color: var(--color-surface);
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.speedButton:hover:not(:disabled) {
+    background-color: var(--color-primary);
+    color: white;
+}
+
+.viewModeButton {
+    background-color: var(--color-surface);
+    border: 1px solid var(--color-border);
+    padding: 0.5rem 1rem;
+    border-radius: var(--border-radius-md);
+    font-weight: 500;
+}
+
+.viewModeButton:hover:not(:disabled) {
+    background-color: var(--color-primary);
+    color: white;
+}
+
+.startButton {
+    background-color: var(--color-primary);
+    color: white;
+    padding: 0.5rem 1.5rem;
+    font-weight: 600;
+}
+
+.startButton:hover:not(:disabled) {
+    background-color: var(--color-secondary);
+    transform: translateY(-2px);
+}
+
+/* ... all your existing styles ... */
+
+.optionButton {
+    padding: 0.5rem 0.75rem;
+    border: 1px solid var(--color-border);
+    border-radius: var(--border-radius-sm);
+    background-color: var(--color-surface);
+    color: var(--color-text-primary);
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.optionButton:hover {
+    border-color: var(--color-primary);
+    background-color: #f0f2ff; /* Light purple */
+}
+
+.activeOption {
+    background-color: var(--color-primary);
+    border-color: var(--color-primary);
+    color: white;
+}
+
+.activeOption:hover {
+    background-color: var(--color-primary);
+    color: white;
 }

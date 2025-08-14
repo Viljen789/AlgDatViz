@@ -1,4 +1,6 @@
+// src/components/Sorting/SortingControls/SortingControls.jsx
 import styles from './SortingControls.module.css';
+import DropdownControl from "../../../common/DropdownControl/DropdownControl.jsx";
 
 const SortingControls = ({
 	                         generateArray,
@@ -9,65 +11,98 @@ const SortingControls = ({
 	                         setSortingAlgorithm,
 	                         sortingAlgorithm,
 	                         startSort,
-	                         isSorting
+	                         isSorting,
+	                         isPaused,
+	                         viewMode,
+	                         toggleViewMode,
+	                         animationSpeedMultiplier,
+	                         setAnimationSpeedMultiplier
                          }) => {
+	const algorithms = [
+		{value: 'bubbleSort', label: 'Bubble Sort'},
+		{value: 'quickSort', label: 'Quick Sort'},
+		{value: 'mergeSort', label: 'Merge Sort'},
+		{value: 'heapSort', label: 'Heap Sort'},
+		{value: 'insertionSort', label: 'Insertion Sort'},
+		{value: 'selectionSort', label: 'Selection Sort'}
+	];
+	const sizeOptions = [10, 20, 50, 100];
+	const speedOptions = [0.5, 1, 2, 5, 10];
+
 	return (
 		<div className={styles.controlsContainer}>
 			<div className={styles.controlGroup}>
 				<button
 					className={styles.controlButton}
 					onClick={generateArray}
-					disabled={isSorting}
+					disabled={isSorting && !isPaused}
 				>
 					Generate New Array
 				</button>
 			</div>
 
+
 			<div className={styles.controlGroup}>
-				<label htmlFor="size">Array Size</label>
-				<input
-					type="range"
-					id="size"
-					min="5"
-					max="100"
-					value={arraySize}
-					onChange={(e) => setArraySize(parseInt(e.target.value))}
-					className={styles.slider}
-					disabled={isSorting}
-				/>
+				<DropdownControl label="Array Size" value={arraySize}>
+					{sizeOptions.map(size => (
+						<button
+							key={size}
+							className={`${styles.optionButton} ${arraySize === size ? styles.activeOption : ''}`}
+							onClick={() => setArraySize(size)}
+						>
+							{size}
+						</button>
+					))}
+				</DropdownControl>
+				<div className={styles.controlGroup}>
+					<DropdownControl label="Speed" value={`${animationSpeedMultiplier}x`}>
+						{speedOptions.map(speed => (
+							<button
+								key={speed}
+								className={`${styles.optionButton} ${animationSpeedMultiplier === speed ? styles.activeOption : ''}`}
+								onClick={() => setAnimationSpeedMultiplier(speed)}
+							>
+								{speed}x
+							</button>
+						))}
+					</DropdownControl>
+				</div>
 			</div>
 
 			<div className={styles.controlGroup}>
-				<label htmlFor="speed">Speed</label>
-				<input
-					type="range"
-					id="speed"
-					min="10"
-					max="200"
-					value={animationSpeed}
-					onChange={(e) => setAnimationSpeed(parseInt(e.target.value))}
-					className={styles.slider}
-					disabled={isSorting}
-				/>
-			</div>
-
-			<div className={styles.controlGroup}>
+				<label htmlFor="algorithm">Algorithm:</label>
 				<select
-					className={styles.select}
+					id="algorithm"
 					value={sortingAlgorithm}
 					onChange={(e) => setSortingAlgorithm(e.target.value)}
-					disabled={isSorting}
+					className={styles.select}
+					disabled={isSorting && !isPaused}
 				>
-					<option value="bubbleSort">Bubble Sort</option>
-					<option value="mergeSort">Merge Sort</option>
-					<option value="quickSort">Quick Sort</option>
+					{algorithms.map(algo => (
+						<option key={algo.value} value={algo.value}>
+							{algo.label}
+						</option>
+					))}
 				</select>
+			</div>
+
+			<div className={styles.controlGroup}>
 				<button
-					className={styles.controlButton}
-					onClick={startSort}
-					disabled={isSorting}
+					className={`${styles.controlButton} ${styles.viewModeButton}`}
+					onClick={toggleViewMode}
+					disabled={isSorting && !isPaused}
 				>
-					{isSorting ? 'Sorting...' : 'Sort!'}
+					View: {viewMode === 'bars' ? 'Bars' : 'Boxes'}
+				</button>
+			</div>
+
+			<div className={styles.controlGroup}>
+				<button
+					className={`${styles.controlButton} ${styles.startButton}`}
+					onClick={startSort}
+					disabled={isSorting && !isPaused}
+				>
+					Sort!
 				</button>
 			</div>
 		</div>

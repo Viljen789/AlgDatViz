@@ -2,232 +2,251 @@ import styles from './SortingDashboard.module.css';
 import SortingControls from './SortingControls/SortingControls';
 import ArrayVisualizer from './ArrayVisualizer/ArrayVisualizer';
 import {useEffect, useState} from 'react';
+import {
+	getBubbleSortAnimations,
+	getHeapSortAnimations,
+	getInsertionSortAnimations,
+	getMergeSortAnimations,
+	getQuickSortAnimations,
+	getSelectionSortAnimations,
+} from '../../utils/sortingAlgorithms.js';
+import PseudoCodeViewer from "./PseudoCode/PseudoCodeViewer.jsx";
+import PlaybackControls from './SortingControls/PlaybackControls';
 
 const SortingDashboard = () => {
+	// Array state
 	const [array, setArray] = useState([]);
 	const [arraySize, setArraySize] = useState(50);
+
+	// Animation controls
 	const [animationSpeed, setAnimationSpeed] = useState(50);
 	const [sortingAlgorithm, setSortingAlgorithm] = useState('bubbleSort');
 	const [isSorting, setIsSorting] = useState(false);
+	const [isPaused, setIsPaused] = useState(true);
+
+	// Visualization state
 	const [comparingIndices, setComparingIndices] = useState([]);
 	const [swappingIndices, setSwappingIndices] = useState([]);
 	const [sortedIndices, setSortedIndices] = useState([]);
+	const [activeLine, setActiveLine] = useState(null);
+	const [viewMode, setViewMode] = useState('bars');
 
+	// Animation state
+	const [currentStep, setCurrentStep] = useState(0);
+	const [animations, setAnimations] = useState([]);
+	const [arrayHistory, setArrayHistory] = useState([]);
+	const [animationSpeedMultiplier, setAnimationSpeedMultiplier] = useState(1);
+
+	// Generate a new random array
 	const generateArray = () => {
 		const newArray = [];
 		for (let i = 0; i < arraySize; i++) {
-			newArray.push(Math.floor(Math.random() * 300) + 10);
+			// Create array with IDs for box view
+			newArray.push({
+				id: `item-${i}`, value: Math.floor(Math.random() * 250) + 10
+			});
 		}
 		setArray(newArray);
 		setComparingIndices([]);
 		setSwappingIndices([]);
 		setSortedIndices([]);
+		setIsSorting(false);
+		setCurrentStep(0);
+		setAnimations([]);
+		setArrayHistory([]);
+		setActiveLine(null);
 	};
 
+	// Initialize array when size changes
 	useEffect(() => {
 		generateArray();
 	}, [arraySize]);
 
-	const getAnimationDelay = () => {
-		return 210 - animationSpeed;
-	};
 
-	const bubbleSort = async () => {
-		const animations = [];
-		const arrayCopy = [...array];
-		const n = arrayCopy.length;
-
-		for (let i = 0; i < n; i++) {
-			for (let j = 0; j < n - i - 1; j++) {
-				animations.push({type: 'compare', indices: [j, j + 1]});
-
-				if (arrayCopy[j] > arrayCopy[j + 1]) {
-					animations.push({type: 'swap', indices: [j, j + 1]});
-					[arrayCopy[j], arrayCopy[j + 1]] = [arrayCopy[j + 1], arrayCopy[j]];
-				}
-			}
-			animations.push({type: 'sorted', index: n - i - 1});
-		}
-
-		await playAnimations(animations);
-	};
-
-	const quickSort = async () => {
-		const animations = [];
-		const arrayCopy = [...array];
-
-		const partition = (arr, low, high) => {
-			const pivot = arr[high];
-			let i = low - 1;
-
-			for (let j = low; j < high; j++) {
-				animations.push({type: 'compare', indices: [j, high]});
-
-				if (arr[j] < pivot) {
-					i++;
-					animations.push({type: 'swap', indices: [i, j]});
-					[arr[i], arr[j]] = [arr[j], arr[i]];
-				}
-			}
-
-			animations.push({type: 'swap', indices: [i + 1, high]});
-			[arr[i + 1], arr[high]] = [arr[high], arr[i + 1]];
-
-			return i + 1;
-		};
-
-		const quickSortHelper = (arr, low, high) => {
-			if (low < high) {
-				const pivotIndex = partition(arr, low, high);
-
-				animations.push({type: 'sorted', index: pivotIndex});
-
-				quickSortHelper(arr, low, pivotIndex - 1);
-				quickSortHelper(arr, pivotIndex + 1, high);
-			} else if (low === high) {
-				animations.push({type: 'sorted', index: low});
-			}
-		};
-
-		quickSortHelper(arrayCopy, 0, arrayCopy.length - 1);
-		await playAnimations(animations);
-	};
-
-	const mergeSort = async () => {
-		const animations = [];
-		const arrayCopy = [...array];
-		const tempArray = [...arrayCopy];
-
-		const mergeSortHelper = (arr, temp, left, right) => {
-			if (left >= right) return;
-
-			const mid = Math.floor((left + right) / 2);
-			mergeSortHelper(arr, temp, left, mid);
-			mergeSortHelper(arr, temp, mid + 1, right);
-			merge(arr, temp, left, mid, right);
-		};
-
-		const merge = (arr, temp, left, mid, right) => {
-			for (let i = left; i <= right; i++) {
-				temp[i] = arr[i];
-			}
-
-			let i = left;
-			let j = mid + 1;
-			let k = left;
-
-			while (i <= mid && j <= right) {
-				animations.push({type: 'compare', indices: [i, j]});
-
-				if (temp[i] <= temp[j]) {
-					animations.push({type: 'overwrite', indices: [k], value: temp[i]});
-					arr[k++] = temp[i++];
-				} else {
-					animations.push({type: 'overwrite', indices: [k], value: temp[j]});
-					arr[k++] = temp[j++];
-				}
-			}
-
-			while (i <= mid) {
-				animations.push({type: 'overwrite', indices: [k], value: temp[i]});
-				arr[k++] = temp[i++];
-			}
-
-			while (j <= right) {
-				animations.push({type: 'overwrite', indices: [k], value: temp[j]});
-				arr[k++] = temp[j++];
-			}
-
-			for (let i = left; i <= right; i++) {
-				animations.push({type: 'sorted', index: i});
-			}
-		};
-
-		mergeSortHelper(arrayCopy, tempArray, 0, arrayCopy.length - 1);
-		await playAnimations(animations);
-	};
-
-	const playAnimations = async (animations) => {
-		setIsSorting(true);
-		setSortedIndices([]);
-
-		const sortedIndicesSet = new Set();
-
-		for (let i = 0; i < animations.length; i++) {
-			const {type, indices, value} = animations[i];
-
-			if (type === 'compare') {
-				setComparingIndices(indices);
-				setSwappingIndices([]);
-			} else if (type === 'swap') {
-				setComparingIndices([]);
-				setSwappingIndices(indices);
-				setArray(prevArray => {
-					const newArray = [...prevArray];
-					[newArray[indices[0]], newArray[indices[1]]] = [newArray[indices[1]], newArray[indices[0]]];
-					return newArray;
-				});
-			} else if (type === 'overwrite') {
-				setComparingIndices([]);
-				setSwappingIndices(indices);
-				setArray(prevArray => {
-					const newArray = [...prevArray];
-					newArray[indices[0]] = value;
-					return newArray;
-				});
-			} else if (type === 'sorted') {
-				sortedIndicesSet.add(indices.index);
-				setSortedIndices([...sortedIndicesSet]);
-			}
-
-			await new Promise(resolve => setTimeout(resolve, getAnimationDelay()));
-		}
-
-		setSortedIndices(Array.from({length: array.length}, (_, i) => i));
-		setComparingIndices([]);
-		setSwappingIndices([]);
-		setIsSorting(false);
-	};
-
+	// Prepare animations but don't play them yet
 	const startSort = () => {
 		if (isSorting) return;
 
+		// Extract values for algorithms that expect plain arrays
+		const arrayValues = array.map(item => item.value);
+
+		let animationSteps = [];
 		switch (sortingAlgorithm) {
 			case 'bubbleSort':
-				bubbleSort();
+				animationSteps = getBubbleSortAnimations(arrayValues);
 				break;
 			case 'quickSort':
-				quickSort();
+				animationSteps = getQuickSortAnimations(arrayValues);
 				break;
 			case 'mergeSort':
-				mergeSort();
+				animationSteps = getMergeSortAnimations(arrayValues);
+				break;
+			case 'heapSort':
+				animationSteps = getHeapSortAnimations(arrayValues);
+				break;
+			case 'insertionSort':
+				animationSteps = getInsertionSortAnimations(arrayValues);
+				break;
+			case 'selectionSort':
+				animationSteps = getSelectionSortAnimations(arrayValues);
 				break;
 			default:
-				bubbleSort();
+				animationSteps = getBubbleSortAnimations(arrayValues);
 		}
+
+		// Pre-compute array states for each step to enable stepping backward
+		const history = computeArrayHistory(arrayValues, animationSteps);
+
+		setAnimations(animationSteps);
+		setArrayHistory(history);
+		setIsSorting(true);
+		setCurrentStep(0);
+		setIsPaused(false);
 	};
 
-	return (
-		<div className={styles.dashboardContainer}>
-			<SortingControls
-				generateArray={generateArray}
-				setArraySize={setArraySize}
-				arraySize={arraySize}
-				setAnimationSpeed={setAnimationSpeed}
-				animationSpeed={animationSpeed}
-				setSortingAlgorithm={setSortingAlgorithm}
-				sortingAlgorithm={sortingAlgorithm}
-				startSort={startSort}
-				isSorting={isSorting}
-			/>
+	// Compute all array states for each animation step
+	const computeArrayHistory = (initialArray, animations) => {
+		const history = [initialArray.map((value, index) => ({id: array[index].id, value}))];
+		let currentArray = [...initialArray];
+
+		for (const anim of animations) {
+			const {type, indices, value, index} = anim;
+			const newArray = [...currentArray];
+
+			if (type === 'swap') {
+				[newArray[indices[0]], newArray[indices[1]]] = [newArray[indices[1]], newArray[indices[0]]];
+			} else if (type === 'overwrite') {
+				newArray[index] = value;
+			}
+
+			currentArray = newArray;
+			// Store array with IDs for box view
+			history.push(currentArray.map((value, index) => ({id: array[index].id, value})));
+		}
+
+		return history;
+	};
+
+	// Playback controls
+	const onPlayPause = () => {
+		if (!isSorting || currentStep >= animations.length) return;
+		setIsPaused(prev => !prev);
+	};
+
+	const onStepForward = () => {
+		if (!isSorting || currentStep >= animations.length - 1) return;
+		setIsPaused(true);
+		setCurrentStep(prev => prev + 1);
+	};
+
+	const onStepBack = () => {
+		if (!isSorting || currentStep <= 0) return;
+		setIsPaused(true);
+		setCurrentStep(prev => prev - 1);
+	};
+
+	// Apply animation step effects
+	useEffect(() => {
+		if (!isSorting || animations.length === 0) return;
+
+		// Get the current animation step
+		const stepData = animations[currentStep];
+		if (!stepData) return;
+
+		// Update visualization state based on step type
+		const {type, indices, line, index} = stepData;
+
+		// Update the current array state from pre-computed history
+		if (arrayHistory[currentStep]) {
+			setArray(arrayHistory[currentStep]);
+		}
+
+		// Update the visualization highlights
+		if (line) setActiveLine(line);
+
+		// Update the highlighting indices
+		if (type === 'compare') {
+			setComparingIndices(indices);
+			setSwappingIndices([]);
+		} else if (type === 'swap' || type === 'overwrite') {
+			setComparingIndices([]);
+			setSwappingIndices(indices || [index]);
+		} else if (type === 'sorted') {
+			const newSortedIndices = new Set(sortedIndices);
+			newSortedIndices.add(index);
+			setSortedIndices(Array.from(newSortedIndices));
+		}
+
+		// Check if sorting is complete
+		if (currentStep === animations.length - 1) {
+			setSortedIndices(Array.from({length: array.length}, (_, i) => i));
+			setComparingIndices([]);
+			setSwappingIndices([]);
+			setIsPaused(true);
+		}
+	}, [currentStep, isSorting, animations, arrayHistory]);
+
+	// Auto-play effect
+	const getAnimationDelay = () => {
+		const baseDelay = 200;
+		return baseDelay / animationSpeed;
+	}
+	useEffect(() => {
+		if (isPaused || !isSorting || currentStep >= animations.length - 1) {
+			return;
+		}
+
+		const timer = setTimeout(() => {
+			setCurrentStep(prev => prev + 1);
+		}, getAnimationDelay());
+
+		return () => clearTimeout(timer);
+	}, [isPaused, isSorting, currentStep, animations, animationSpeed]);
+
+	// Toggle view mode between bars and boxes
+	const toggleViewMode = () => {
+		setViewMode(prev => prev === 'bars' ? 'boxes' : 'bars');
+	};
+
+
+	return (<div className={styles.dashboardContainer}>
+		<SortingControls
+			generateArray={generateArray}
+			setArraySize={setArraySize}
+			arraySize={arraySize}
+			setAnimationSpeed={setAnimationSpeed}
+			animationSpeed={animationSpeed}
+			setSortingAlgorithm={setSortingAlgorithm}
+			sortingAlgorithm={sortingAlgorithm}
+			startSort={startSort}
+			isSorting={isSorting}
+			viewMode={viewMode}
+			toggleViewMode={toggleViewMode}
+			animationSpeedMultiplier={animationSpeedMultiplier}
+			setAnimationSpeedMultiplier={setAnimationSpeedMultiplier}
+		/>
+
+		<div className={styles.visualizationArea}>
 			<ArrayVisualizer
+				viewMode={viewMode}
 				array={array}
 				comparingIndices={comparingIndices}
 				swappingIndices={swappingIndices}
 				sortedIndices={sortedIndices}
 			/>
+
+			<div className={styles.controlsArea}>
+				<PlaybackControls
+					onPlayPause={onPlayPause}
+					onStepBack={onStepBack}
+					onStepForward={onStepForward}
+					isSorting={isSorting}
+					isPaused={isPaused}
+				/>
+				<PseudoCodeViewer algorithm={sortingAlgorithm} activeLine={activeLine}/>
+			</div>
 		</div>
-	);
+	</div>);
 };
 
 export default SortingDashboard;

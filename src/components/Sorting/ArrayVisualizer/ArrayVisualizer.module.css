@@ -85,11 +85,12 @@
 }
 
 .visualizerContainer {
+    flex-grow: 1; /* This is the key property */
+    width: 0; /* Let flex-grow control the width */
+    height: 100%; /* Make sure it fills the vertical space */
     display: flex;
     align-items: flex-end;
     justify-content: center;
-    height: 400px;
-    width: 100%;
     background-color: var(--color-surface);
     border: 1px solid var(--color-border);
     border-radius: var(--border-radius-lg);
@@ -108,4 +109,37 @@
         width: 4px;
         margin: 0 0.5px;
     }
+}
+
+.boxContainer {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+}
+
+.numberBox {
+    padding: 1rem;
+    font-size: 1.2rem;
+    font-weight: 600;
+    border: 2px solid var(--viz-edge-color);
+    border-radius: var(--border-radius-md);
+    background-color: var(--color-surface);
+    color: var(--viz-text-color);
+    min-width: 40px;
+    text-align: center;
+    transition: background-color 0.2s, border-color 0.2s;
+}
+
+.comparingBox {
+    border-color: var(--color-secondary);
+    background-color: #e0e7ff; /* A light blue */
+}
+
+.sortedBox {
+    border-color: var(--color-primary);
+    background-color: var(--color-primary);
+    color: white;
 }

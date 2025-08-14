@@ -1,0 +1,51 @@
+/* src/components/Sorting/SortingControls/PlaybackControls.module.css */
+.playbackContainer {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 1rem;
+    margin: 1rem 0;
+}
+
+.controlButton {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 48px;
+    height: 48px;
+    border: 2px solid var(--color-border);
+    border-radius: 50%;
+    background-color: var(--color-surface);
+    color: var(--color-text-secondary);
+    cursor: pointer;
+    transition: all 0.2s ease-in-out;
+}
+
+.controlButton:hover:not(:disabled) {
+    border-color: var(--color-primary);
+    color: var(--color-primary);
+    transform: scale(1.05);
+}
+
+.controlButton:disabled {
+    color: var(--color-border);
+    cursor: not-allowed;
+}
+
+.playPauseButton {
+    width: 60px;
+    height: 60px;
+    border-color: var(--color-primary);
+    color: var(--color-primary);
+    background-color: #f4f7f9;
+}
+
+.playPauseButton:hover:not(:disabled) {
+    background-color: var(--color-primary);
+    color: white;
+}
+
+.icon {
+    font-size: 1.5rem;
+    line-height: 1;
+}
