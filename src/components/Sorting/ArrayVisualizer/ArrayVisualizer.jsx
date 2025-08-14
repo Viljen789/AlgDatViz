@@ -1,31 +1,43 @@
+import BarView from './BarView';
+import BoxView from './BoxView';
+import PlaybackControls from '../SortingControls/PlaybackControls';
 import styles from './ArrayVisualizer.module.css';
 
-const ArrayVisualizer = ({array, comparingIndices, swappingIndices, sortedIndices}) => {
-	return (
-		<div className={styles.visualizerContainer}>
-			{array.map((value, index) => {
-				const isComparing = comparingIndices.includes(index);
-				const isSwapping = swappingIndices.includes(index);
-				const isSorted = sortedIndices.includes(index);
+const ArrayVisualizer = ({
+  viewMode,
+  array,
+  isSorting,
+  isPaused,
+  onPlayPause,
+  onStepBack,
+  onStepForward,
+  ...animationProps
+}) => {
+  return (
+    <div className={styles.visualizerWrapper}>
+      <div className={styles.visualizerContainer}>
+        <div className={styles.visualizerContent}>
+          {viewMode === 'bars' ? (
+            <BarView array={array} {...animationProps} />
+          ) : (
+            <BoxView array={array} {...animationProps} />
+          )}
+        </div>
 
-				const barColor = isSorted ? 'var(--color-primary)'
-					: isSwapping ? 'var(--color-tertiary)'
-						: isComparing ? 'var(--color-secondary)'
-							: 'var(--viz-edge-color)';
-
-				return (
-					<div
-						key={index}
-						className={styles.arrayBar}
-						style={{
-							height: `${value}px`,
-							backgroundColor: barColor,
-						}}
-					>
-					</div>
-				);
-			})}
-		</div>
-	);
+        {isSorting && (
+          <div className={styles.overlayControls}>
+            <PlaybackControls
+              onPlayPause={onPlayPause}
+              onStepBack={onStepBack}
+              onStepForward={onStepForward}
+              isSorting={isSorting}
+              isPaused={isPaused}
+            />
+          </div>
+        )}
+      </div>
+    </div>
+  );
 };
+
 export default ArrayVisualizer;

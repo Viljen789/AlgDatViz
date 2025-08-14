@@ -1,77 +1,108 @@
 import styles from './SortingControls.module.css';
+import HoverDropdown from '../../../common/HoverDropdown.jsx';
 
 const SortingControls = ({
-	                         generateArray,
-	                         setArraySize,
-	                         arraySize,
-	                         setAnimationSpeed,
-	                         animationSpeed,
-	                         setSortingAlgorithm,
-	                         sortingAlgorithm,
-	                         startSort,
-	                         isSorting
-                         }) => {
-	return (
-		<div className={styles.controlsContainer}>
-			<div className={styles.controlGroup}>
-				<button
-					className={styles.controlButton}
-					onClick={generateArray}
-					disabled={isSorting}
-				>
-					Generate New Array
-				</button>
-			</div>
+  generateArray,
+  setArraySize,
+  arraySize,
+  setAnimationSpeed,
+  animationSpeed,
+  setSortingAlgorithm,
+  sortingAlgorithm,
+  startSort,
+  isSorting,
+  viewMode,
+  toggleViewMode
+}) => {
 
-			<div className={styles.controlGroup}>
-				<label htmlFor="size">Array Size</label>
-				<input
-					type="range"
-					id="size"
-					min="5"
-					max="100"
-					value={arraySize}
-					onChange={(e) => setArraySize(parseInt(e.target.value))}
-					className={styles.slider}
-					disabled={isSorting}
-				/>
-			</div>
+  const algorithms = [
+    {value: "bubbleSort", label: "Bubble Sort"},
+    {value: "quickSort", label: "Quick Sort"},
+    {value: "mergeSort", label: "Merge Sort"},
+    {value: "heapSort", label: "Heap Sort"},
+    {value: "insertionSort", label: "Insertion Sort"},
+    {value: "selectionSort", label: "Selection Sort"},
+    {value: "countingSort", label: "Counting Sort"},
+    {value: "radixSort", label: "Radix Sort"},
+    {value: "bucketSort", label: "Bucket Sort"}
+  ];
 
-			<div className={styles.controlGroup}>
-				<label htmlFor="speed">Speed</label>
-				<input
-					type="range"
-					id="speed"
-					min="10"
-					max="200"
-					value={animationSpeed}
-					onChange={(e) => setAnimationSpeed(parseInt(e.target.value))}
-					className={styles.slider}
-					disabled={isSorting}
-				/>
-			</div>
+  const sizeOptions = [
+    {value: 10, label: "10 elements"},
+    {value: 20, label: "20 elements"},
+    {value: 50, label: "50 elements"},
+    {value: 100, label: "100 elements"}
+  ];
 
-			<div className={styles.controlGroup}>
-				<select
-					className={styles.select}
-					value={sortingAlgorithm}
-					onChange={(e) => setSortingAlgorithm(e.target.value)}
-					disabled={isSorting}
-				>
-					<option value="bubbleSort">Bubble Sort</option>
-					<option value="mergeSort">Merge Sort</option>
-					<option value="quickSort">Quick Sort</option>
-				</select>
-				<button
-					className={styles.controlButton}
-					onClick={startSort}
-					disabled={isSorting}
-				>
-					{isSorting ? 'Sorting...' : 'Sort!'}
-				</button>
-			</div>
-		</div>
-	);
+  const speedOptions = [
+    {value: 50, label: "0.5x"},
+    {value: 100, label: "1x"},
+    {value: 150, label: "1.5x"},
+    {value: 200, label: "2x"}
+  ];
+
+  return (
+    <div className={styles.controlsContainer}>
+      <div className={styles.controlGroup}>
+        <HoverDropdown
+          label="Algorithm"
+          options={algorithms}
+          value={sortingAlgorithm}
+          onChange={setSortingAlgorithm}
+          disabled={isSorting}
+        />
+      </div>
+
+      <div className={styles.controlGroup}>
+        <HoverDropdown
+          label="Size"
+          options={sizeOptions}
+          value={arraySize}
+          onChange={setArraySize}
+          disabled={isSorting}
+        />
+      </div>
+
+      <div className={styles.controlGroup}>
+        <HoverDropdown
+          label="Speed"
+          options={speedOptions}
+          value={animationSpeed}
+          onChange={setAnimationSpeed}
+          disabled={isSorting}
+        />
+      </div>
+
+      <div className={styles.controlGroup}>
+        <button
+          className={styles.controlButton}
+          onClick={generateArray}
+          disabled={isSorting}
+        >
+          Generate Array
+        </button>
+      </div>
+
+      <div className={styles.controlGroup}>
+        <button
+          className={styles.viewModeButton}
+          onClick={toggleViewMode}
+          disabled={isSorting}
+        >
+          {viewMode === 'bars' ? 'Box View' : 'Bar View'}
+        </button>
+      </div>
+
+      <div className={styles.controlGroup}>
+        <button
+          className={`${styles.controlButton} ${styles.startButton}`}
+          onClick={startSort}
+        >
+          {isSorting ? 'Stop Sorting' : 'Start Sorting'}
+        </button>
+      </div>
+    </div>
+  );
 };
 
 export default SortingControls;

@@ -1,86 +1,127 @@
 .controlsContainer {
-    width: 100%;
-    padding: 1rem;
-    background-color: var(--color-surface);
-    border: 1px solid var(--color-border);
-    border-radius: var(--border-radius);
-    display: flex;
-    flex-wrap: wrap; /* Allows controls to wrap on smaller screens */
-    align-items: center;
-    justify-content: space-between;
-    gap: 1.5rem;
+  width: 100%;
+  padding: 1.5rem;
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--border-radius-lg);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1.5rem;
+  margin-bottom: 0;
 }
 
 .controlGroup {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
 }
 
 .controlGroup label {
-    font-weight: 500;
-    color: var(--color-text-secondary);
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  white-space: nowrap;
+  font-size: 0.9rem;
 }
 
-/* Base button style, you can use your global .button class or this */
+.select {
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--border-radius-md);
+  background-color: var(--color-surface);
+  font-size: 0.9rem;
+  color: var(--color-text-primary);
+  cursor: pointer;
+  transition: border-color 0.2s;
+  min-width: 120px;
+}
+
+.select:focus {
+  outline: none;
+  border-color: var(--color-primary);
+}
+
+.select:disabled {
+  background-color: #f8f9fa;
+  color: var(--color-text-secondary);
+  cursor: not-allowed;
+}
+
 .controlButton {
-    padding: 0.5rem 1.25rem;
-    font-size: 1rem;
-    font-weight: 600;
-    color: white;
-    background-color: var(--color-primary);
-    border: none;
-    border-radius: var(--border-radius);
-    cursor: pointer;
-    transition: background-color 0.2s, transform 0.2s;
+  padding: 0.625rem 1.25rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--border-radius-md);
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+  white-space: nowrap;
 }
 
-.controlButton:hover {
-    background-color: var(--color-secondary);
-    transform: translateY(-2px);
+.controlButton:hover:not(:disabled) {
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+  transform: translateY(-1px);
 }
 
 .controlButton:disabled {
-    background-color: var(--color-border);
-    cursor: not-allowed;
-    transform: none;
+  color: var(--color-border);
+  cursor: not-allowed;
+  transform: none;
 }
 
-/* Style for sliders */
-.slider {
-    -webkit-appearance: none;
-    width: 150px;
-    height: 8px;
-    background: var(--color-border);
-    outline: none;
-    border-radius: 4px;
-    transition: opacity 0.2s;
+.viewModeButton {
+  padding: 0.625rem 1rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--border-radius-md);
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
 }
 
-.slider::-webkit-slider-thumb {
-    -webkit-appearance: none;
-    appearance: none;
-    width: 20px;
-    height: 20px;
-    background: var(--color-primary);
-    cursor: pointer;
-    border-radius: 50%;
+.viewModeButton:hover:not(:disabled) {
+  border-color: var(--color-primary);
+  background-color: var(--color-primary);
+  color: white;
 }
 
-.slider::-moz-range-thumb {
-    width: 20px;
-    height: 20px;
-    background: var(--color-primary);
-    cursor: pointer;
-    border-radius: 50%;
+.viewModeButton:disabled {
+  color: var(--color-border);
+  cursor: not-allowed;
 }
 
-/* Style for select dropdown */
-.select {
-    padding: 0.5rem;
-    border: 1px solid var(--color-border);
-    border-radius: var(--border-radius);
-    background-color: var(--color-surface);
-    font-size: 1rem;
-    color: var(--color-text-primary);
+.startButton {
+  background-color: var(--color-primary);
+  color: white;
+  border-color: var(--color-primary);
+  font-weight: 600;
+}
+
+.startButton:hover:not(:disabled) {
+  background-color: var(--color-secondary);
+  border-color: var(--color-secondary);
+  transform: translateY(-2px);
+}
+
+@media (max-width: 768px) {
+  .controlsContainer {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 1rem;
+  }
+
+  .controlGroup {
+    justify-content: space-between;
+    width: 100%;
+  }
+
+  .select {
+    min-width: 100px;
+  }
 }

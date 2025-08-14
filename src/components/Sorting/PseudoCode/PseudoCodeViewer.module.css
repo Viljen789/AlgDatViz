@@ -1,0 +1,110 @@
+/* PseudoCodeViewer.module.css */
+
+.pseudoCodeContainer {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    background-color: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--border-radius-lg);
+    font-family: var(--font-family-mono);
+    overflow: hidden;
+}
+
+.header {
+    padding: var(--spacing-sm) var(--spacing-md);
+    border-bottom: 1px solid var(--color-border);
+    background-color: var(--color-slight-grey);
+    flex-shrink: 0;
+}
+
+.header h3 {
+    margin: 0;
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--color-text-primary);
+    text-transform: capitalize;
+}
+
+/* CHANGED: This is now a flex container to center the wrapper */
+.codeContent {
+    flex-grow: 1;
+    display: flex;
+    justify-content: center; /* Horizontally centers the flex item (our wrapper) */
+}
+
+/* NEW: Styles for the new wrapper div */
+.codeBlockWrapper {
+    display: inline-block; /* Makes the block only as wide as its content */
+    min-width: 100%; /* Ensures it fills the space if content is narrow */
+    padding: var(--spacing-sm) 0; /* Vertical padding for the block */
+    text-align: left; /* Resets text-align for its children */
+}
+
+.codeLine {
+    display: flex;
+    align-items: flex-start;
+    padding: var(--spacing-xs) var(--spacing-sm);
+    margin-right: var(--spacing-sm); /* Add margin to the right for spacing */
+    border-radius: var(--border-radius-md);
+    transition: background-color 0.2s ease-in-out;
+    border-left: 3px solid transparent;
+}
+
+.codeLine:hover {
+    background-color: var(--color-slight-grey);
+}
+
+.activeLine {
+    background-color: var(--color-lighter-blue);
+    border-left-color: var(--color-primary);
+    font-weight: 600;
+}
+
+.lineNumber {
+    color: var(--color-text-secondary);
+    min-width: 2rem;
+    text-align: right;
+    font-size: 0.8rem;
+    padding-right: var(--spacing-md);
+    user-select: none;
+    opacity: 0.8;
+}
+
+.activeLine .lineNumber {
+    color: var(--color-primary);
+    opacity: 1;
+}
+
+.lineText {
+    white-space: pre; /* Prevents wrapping and preserves all whitespace */
+    color: var(--color-text-primary);
+    font-family: inherit;
+    font-size: 0.9rem;
+    line-height: 1.5;
+    margin: 0;
+    padding: 0;
+}
+
+.activeLine .lineText {
+    color: var(--color-dark-blue);
+}
+
+/* Scrollbar styling for consistency */
+.codeContent::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+.codeContent::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.codeContent::-webkit-scrollbar-thumb {
+    background: var(--color-light-grey);
+    border-radius: 4px;
+}
+
+.codeContent::-webkit-scrollbar-thumb:hover {
+    background: var(--color-medium-grey);
+}
