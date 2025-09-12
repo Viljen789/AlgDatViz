@@ -1,6 +1,6 @@
 import {useEffect, useMemo, useState} from "react";
 import styles from "./AdjacencyList.module.css";
-import {AddNodeButton, DeleteNodeButton} from "../../../common/NodeButtons.jsx";
+import {AddNodeButton, DeleteNodeButton} from "../../../common/NodeButtons/NodeButtons.jsx";
 
 const AdjacencyList = ({graph, isWeighted, onUpdate, selectedNodeId, onAddNode, onDeleteNode}) => {
 	const [inputValues, setInputValues] = useState(new Map());

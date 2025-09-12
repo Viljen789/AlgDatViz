@@ -1,170 +1,202 @@
 .visualizerWrapper {
-  flex-grow: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 400px;
-  padding: 1rem;
-  /* ADDED: Allows this container to shrink properly */
-  min-width: 0;
+    flex-grow: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 400px;
+    /* ADDED: Allows this container to shrink properly */
+    min-width: 0;
 }
 
 .visualizerContainer {
-  position: relative;
-  width: 100%; /* Ensure it fills the wrapper */
-  height: 100%; /* Ensure it fills the wrapper */
-  background-color: var(--color-surface);
-  border: 1px solid var(--color-border);
-  border-radius: var(--border-radius-lg);
-  padding: 2rem;
-  box-sizing: border-box;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 1rem;
+    position: relative;
+    width: 100%;
+    height: 100%;
+    background-color: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--border-radius-lg);
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
 }
 
-/* ... rest of the file is unchanged ... */
 
 .visualizerContent {
-  display: flex;
-  align-items: center;
-  justify-content: center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .overlayControls {
-  position: absolute;
-  bottom: 1rem;
-  left: 50%;
-  transform: translateX(-50%);
-  background-color: rgba(255, 255, 255, 0.95);
-  backdrop-filter: blur(10px);
-  border-radius: var(--border-radius-lg);
-  padding: 0.5rem;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+    position: absolute;
+    bottom: 1rem;
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    border-radius: var(--border-radius-lg);
+    padding: 0.5rem;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
 }
 
 .barContainer {
-  display: flex;
-  align-items: flex-end;
-  justify-content: center;
-  gap: 2px;
-  height: 300px;
-  padding: 0 1rem;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    gap: 2px;
+    height: 300px;
+    padding: 0 1rem;
 }
 
 .arrayBar {
-  transition: all 0.3s ease-in-out;
-  border-radius: 2px 2px 0 0;
-  cursor: pointer;
-  position: relative;
-  min-width: 3px;
+    transition: all 0.3s ease-in-out;
+    border-radius: 2px 2px 0 0;
+    cursor: pointer;
+    position: relative;
+    min-width: 3px;
 }
 
 .arrayBar::after {
-  content: '';
-  position: absolute;
-  top: -2px;
-  left: -2px;
-  right: -2px;
-  bottom: -2px;
-  border: 2px solid transparent;
-  border-radius: 4px 4px 2px 2px;
-  transition: border-color 0.3s ease-in-out;
-  pointer-events: none;
+    content: "";
+    position: absolute;
+    top: -2px;
+    left: -2px;
+    right: -2px;
+    bottom: -2px;
+    border: 2px solid transparent;
+    border-radius: 4px 4px 2px 2px;
+    transition: border-color 0.3s ease-in-out;
+    pointer-events: none;
 }
 
 .arrayBar.highlighting::after {
-  border-color: #ffc107;
-  animation: pulse 0.6s ease-in-out;
+    border-color: #ffc107;
+    animation: pulse 0.6s ease-in-out;
 }
 
 @keyframes pulse {
-  0%, 100% { transform: scale(1); }
-  50% { transform: scale(1.1); }
+    0%, 100% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.1);
+    }
 }
 
 .arrayBar:hover {
-  opacity: 0.8;
-  transform: scaleY(1.02);
+    opacity: 0.8;
+    transform: scaleY(1.02);
 }
 
 /* Dynamic bar width based on array size */
-.barContainer[data-size="10"] .arrayBar { width: 24px; }
-.barContainer[data-size="20"] .arrayBar { width: 18px; }
-.barContainer[data-size="50"] .arrayBar { width: 12px; }
-.barContainer[data-size="100"] .arrayBar { width: 8px; }
+.barContainer[data-size="10"] .arrayBar {
+    width: 24px;
+}
+
+.barContainer[data-size="20"] .arrayBar {
+    width: 18px;
+}
+
+.barContainer[data-size="50"] .arrayBar {
+    width: 12px;
+}
+
+.barContainer[data-size="100"] .arrayBar {
+    width: 8px;
+}
 
 @media (max-width: 768px) {
-  .barContainer[data-size="10"] .arrayBar { width: 20px; }
-  .barContainer[data-size="20"] .arrayBar { width: 14px; }
-  .barContainer[data-size="50"] .arrayBar { width: 8px; }
-  .barContainer[data-size="100"] .arrayBar { width: 6px; }
+    .barContainer[data-size="10"] .arrayBar {
+        width: 20px;
+    }
+
+    .barContainer[data-size="20"] .arrayBar {
+        width: 14px;
+    }
+
+    .barContainer[data-size="50"] .arrayBar {
+        width: 8px;
+    }
+
+    .barContainer[data-size="100"] .arrayBar {
+        width: 6px;
+    }
 }
 
 .boxContainer {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.75rem;
-  align-items: center;
-  justify-content: center;
-  max-width: 100%;
-  padding: 1rem;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    align-items: center;
+    justify-content: center;
+    max-width: 100%;
+    padding: 1rem;
 }
 
 .numberBox {
-  padding: 0.75rem 1rem;
-  font-size: 1.1rem;
-  font-weight: 600;
-  border: 2px solid var(--viz-edge-color);
-  border-radius: var(--border-radius-md);
-  background-color: var(--color-surface);
-  color: var(--viz-text-color);
-  min-width: 50px;
-  text-align: center;
-  transition: all 0.3s ease-in-out;
-  cursor: pointer;
-  position: relative;
+    padding: 0.75rem 1rem;
+    font-size: 1.1rem;
+    font-weight: 600;
+    border: 2px solid var(--viz-edge-color);
+    border-radius: var(--border-radius-md);
+    background-color: var(--color-surface);
+    color: var(--viz-text-color);
+    min-width: 50px;
+    text-align: center;
+    transition: all 0.3s ease-in-out;
+    cursor: pointer;
+    position: relative;
 }
 
 .numberBox:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 }
 
 .numberBox.highlighting {
-  border-color: #ffc107;
-  box-shadow: 0 0 10px rgba(255, 193, 7, 0.3);
-  animation: boxPulse 0.6s ease-in-out;
+    border-color: #ffc107;
+    box-shadow: 0 0 10px rgba(255, 193, 7, 0.3);
+    animation: boxPulse 0.6s ease-in-out;
 }
 
 @keyframes boxPulse {
-  0%, 100% { transform: scale(1); }
-  50% { transform: scale(1.05); }
+    0%, 100% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.05);
+    }
 }
 
 .comparingBox {
-  border-color: var(--color-secondary);
-  background-color: #e0e7ff;
-  transform: scale(1.05);
+    border-color: var(--color-secondary);
+    background-color: #e0e7ff;
+    transform: scale(1.05);
 }
 
 .sortedBox {
-  border-color: var(--color-primary);
-  background-color: var(--color-primary);
-  color: white;
+    border-color: var(--color-primary);
+    background-color: var(--color-primary);
+    color: white;
 }
 
 .swappingBox {
-  border-color: #dc3545;
-  background-color: #f8d7da;
-  animation: shake 0.5s ease-in-out;
+    border-color: #dc3545;
+    background-color: #f8d7da;
+    animation: shake 0.5s ease-in-out;
 }
 
 @keyframes shake {
-  0%, 100% { transform: translateX(0); }
-  25% { transform: translateX(-2px); }
-  75% { transform: translateX(2px); }
+    0%, 100% {
+        transform: translateX(0);
+    }
+    25% {
+        transform: translateX(-2px);
+    }
+    75% {
+        transform: translateX(2px);
+    }
 }

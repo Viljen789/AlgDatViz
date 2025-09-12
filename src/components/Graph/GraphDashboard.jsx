@@ -3,7 +3,7 @@ import GraphVisualizer from "./GraphVisualizer/GraphVisualizer";
 import AdjacencyMatrix from "./AdjacencyMatrix/AdjacencyMatrix";
 import AdjacencyList from "./AdjacencyList/AdjacencyList";
 import styles from "./GraphDashboard.module.css"
-import ToggleSwitch from "../../common/ToggleSwitch.jsx";
+import ToggleSwitch from "../../common/ToggleSwitch/ToggleSwitch.jsx";
 import {parseAndUpdateGraph} from "../../utils/graphUtils.js";
 
 const GraphDashboard = () => {

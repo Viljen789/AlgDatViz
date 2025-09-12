@@ -1,5 +1,5 @@
 import React from "react";
-import SortingDashboard from "../components/Sorting/SortingDashboard.jsx";
+import SortingDashboard from "../components/Sorting/SortingDashboard/SortingDashboard.jsx";
 
 const SortingPage = () => {
 	return (

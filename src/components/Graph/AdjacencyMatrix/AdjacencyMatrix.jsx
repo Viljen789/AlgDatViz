@@ -1,6 +1,6 @@
 import {useMemo, useState} from "react";
 import styles from "./AdjacencyMatrix.module.css";
-import {AddNodeButton, DeleteNodeButton} from "../../../common/NodeButtons.jsx";
+import {AddNodeButton, DeleteNodeButton} from "../../../common/NodeButtons/NodeButtons.jsx";
 
 const AdjacencyMatrix = ({
 	                         graph,

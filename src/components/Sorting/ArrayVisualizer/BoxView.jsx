@@ -1,16 +1,15 @@
 import {LayoutGroup, motion} from 'framer-motion';
 import styles from './ArrayVisualizer.module.css';
 
-const BoxView = ({array, comparingIndices = [], swappingIndices = [], sortedIndices = [], currentIndex}) => {
+const BoxView = ({array, comparingIndices = [], swappingIndices = [], sortedIndices = [], currentIndex, isFastMode}) => {
   return (
     <LayoutGroup>
       <div className={styles.boxContainer}>
         {array.map((item, index) => {
-          const isComparing = comparingIndices.includes(index);
+          const isComparing = !isFastMode && comparingIndices.includes(index);
           const isSwapping = swappingIndices.includes(index);
           const isSorted = sortedIndices.includes(index);
           const isHighlighting = isComparing || isSwapping || currentIndex === index;
-
           let stateClass = '';
           if (isSorted) stateClass = styles.sortedBox;
           else if (isSwapping) stateClass = styles.swappingBox;

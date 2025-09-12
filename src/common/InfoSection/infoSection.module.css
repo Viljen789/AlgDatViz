@@ -1,0 +1,89 @@
+/* src/components/Sorting/InfoSection/infoSection.module.css */
+
+/* These top-level styles are for the parent AlgorithmInfoPanel */
+.infoPanel {
+    background-color: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--border-radius-lg);
+    padding: var(--spacing-md);
+}
+.overview {
+    padding: 0 var(--spacing-sm) var(--spacing-md);
+    border-bottom: 1px solid var(--color-border);
+}
+.title {
+    margin: 0 0 var(--spacing-md) 0;
+    font-size: var(--font-size-lg);
+    color: var(--color-text-primary);
+}
+.quickStats {
+    display: flex;
+    gap: var(--spacing-lg);
+    font-size: var(--font-size-sm);
+}
+.statItem .label { color: var(--color-text-secondary); margin-right: var(--spacing-xs); }
+.statItem .value { color: var(--color-text-primary); font-weight: 600; font-family: var(--font-family-mono); }
+
+/* --- Styles for the InfoSection component --- */
+.infoSection {
+  border-bottom: 1px solid var(--color-light-grey);
+  transition: background-color 0.2s ease-in-out;
+}
+.infoSection:last-child {
+  border-bottom: none;
+}
+.infoSection:hover {
+    background-color: var(--color-slight-grey);
+}
+.infoSection:hover .expandIcon {
+    transform: rotate(90deg);
+}
+
+.sectionHeader {
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: var(--spacing-md) var(--spacing-sm);
+    cursor: pointer;
+}
+.sectionHeader h4 {
+    margin: 0;
+    font-size: var(--font-size-base);
+    color: var(--color-text-primary);
+}
+.expandIcon {
+    font-size: var(--font-size-sm);
+    color: var(--color-text-secondary);
+    transition: transform 0.3s ease-in-out;
+}
+
+/* --- The CSS Grid Trick for Smooth, Flicker-Free Expansion --- */
+.sectionContent {
+    display: grid;
+    /* The content row starts with zero height */
+    grid-template-rows: 0fr;
+    transition: grid-template-rows 0.4s cubic-bezier(0.25, 1, 0.5, 1);
+}
+.infoSection:hover .sectionContent {
+    /* On hover, the content row expands to take up the necessary space */
+    grid-template-rows: 1fr;
+}
+.contentWrapper {
+    /* This is crucial: it hides the content while the container is collapsed */
+    overflow: hidden;
+    padding: 0 var(--spacing-sm);
+}
+.infoSection:hover .contentWrapper {
+    /* Add padding back to the content only when it's visible */
+    padding-bottom: var(--spacing-md);
+}
+
+/* --- Content styling --- */
+.description { margin: 0; line-height: 1.6; color: var(--color-text-secondary); }
+.propertiesGrid, .cases { display: flex; flex-direction: column; gap: var(--spacing-md); }
+.propRow { display: flex; justify-content: space-between; font-size: var(--font-size-sm); }
+.propLabel { font-weight: 600; }
+.propValue { font-family: var(--font-family-mono); color: var(--color-text-secondary); }
+.caseItem h5 { margin: 0 0 var(--spacing-xs) 0; }
+.caseItem p { margin: 0; font-size: var(--font-size-sm); color: var(--color-text-secondary); }
