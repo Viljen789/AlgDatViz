@@ -1,171 +1,223 @@
-import {useEffect, useState} from "react";
+// src/components/Graph/GraphDashboard/GraphDashboard.jsx
+
+import { useCallback, useEffect, useState } from "react"; // 1. Import useCallback
 import GraphVisualizer from "./GraphVisualizer/GraphVisualizer";
 import AdjacencyMatrix from "./AdjacencyMatrix/AdjacencyMatrix";
 import AdjacencyList from "./AdjacencyList/AdjacencyList";
-import styles from "./GraphDashboard.module.css"
-import ToggleSwitch from "../../common/ToggleSwitch/ToggleSwitch.jsx";
-import {parseAndUpdateGraph} from "../../utils/graphUtils.js";
+import styles from "./GraphDashboard.module.css";
+import { parseAndUpdateGraph } from "../../utils/graphUtils.js";
+import Tabs from "../../common/Tabs/Tabs.jsx";
+import GraphControls from "./GraphControls/GraphControls";
+import DashboardLayout from "../../common/DashboardLayout/DashboardLayout.jsx"; // Assuming you have this from our previous discussion
+import Panel from "../../common/Panel/Panel.jsx";
 
 const GraphDashboard = () => {
-	const [graph, setGraph] = useState({
-		nodes: [{id: "A", x: 50, y: 50, label: "A"}, {id: "B", x: 200, y: 80, label: "B"}, {
-			id: "C", x: 120, y: 200, label: "C"
-		},], edges: [{from: "A", to: "B", weight: 5}, {from: "A", to: "C", weight: 3}, {from: "B", to: "C", weight: 1},]
-	});
-	const [selectedNodeId, setSelectedNodeId] = useState(null);
-	const [activeView, setActiveView] = useState("list");
-	const [isDirected, setIsDirected] = useState(false);
-	const [isWeighted, setIsWeighted] = useState(false);
-	const [selectedCell, setSelectedCell] = useState(null);
+  const [graph, setGraph] = useState({
+    nodes: [
+      { id: "A", x: 50, y: 50, label: "A" },
+      { id: "B", x: 200, y: 80, label: "B" },
+      { id: "C", x: 120, y: 200, label: "C" },
+    ],
+    edges: [
+      { from: "A", to: "B", weight: 1 },
+      { from: "A", to: "C", weight: 1 },
+      { from: "B", to: "C", weight: 1 },
+    ],
+  });
 
-	const handleListUpdate = (inputValue, sourceNodeId) => {
-		const newGraph = parseAndUpdateGraph(inputValue, sourceNodeId, graph, isWeighted, isDirected);
-		setGraph(newGraph);
-	};
-	const handleMatrixUpdate = (newValue, fromIndex, toIndex) => {
-		setGraph(currentGraph => {
-			const fromNode = currentGraph.nodes[fromIndex];
-			const toNode = currentGraph.nodes[toIndex];
+  const [selectedNodeId, setSelectedNodeId] = useState(null);
+  const [isDirected, setIsDirected] = useState(false);
+  const [isWeighted, setIsWeighted] = useState(false);
+  const [selectedCell, setSelectedCell] = useState(null);
 
-			if (!fromNode || !toNode) return currentGraph;
+  // --- 2. Wrap all handlers in useCallback to stabilize them ---
 
-			let newEdges = currentGraph.edges.filter(edge => !(edge.from === fromNode.id && edge.to === toNode.id) && !(edge.from === toNode.id && edge.to === fromNode.id));
+  const handleListUpdate = useCallback(
+    (inputValue, sourceNodeId) => {
+      const newGraph = parseAndUpdateGraph(
+        inputValue,
+        sourceNodeId,
+        graph,
+        isWeighted,
+        isDirected,
+      );
+      setGraph(newGraph);
+    },
+    [graph, isWeighted, isDirected],
+  ); // Dependencies are state variables the function uses
 
-			if (newValue > 0) {
-				const weight = isWeighted ? newValue : 1;
-				newEdges.push({from: fromNode.id, to: toNode.id, weight});
-				if (!isDirected) {
-					newEdges.push({from: toNode.id, to: fromNode.id, weight});
-				}
-			}
+  const handleMatrixUpdate = useCallback(
+    (newValue, fromIndex, toIndex) => {
+      setGraph((currentGraph) => {
+        const fromNode = currentGraph.nodes[fromIndex];
+        const toNode = currentGraph.nodes[toIndex];
+        if (!fromNode || !toNode) return currentGraph;
 
-			return {...currentGraph, edges: newEdges};
-		});
-	};
+        const newEdges = currentGraph.edges.filter(
+          (edge) =>
+            !(edge.from === fromNode.id && edge.to === toNode.id) &&
+            !(edge.from === toNode.id && edge.to === fromNode.id),
+        );
 
-	const handleAddNewNode = () => {
-		let nextCharCode = 65;
+        if (newValue > 0) {
+          const weight = isWeighted ? newValue : 1;
+          newEdges.push({ from: fromNode.id, to: toNode.id, weight });
+          if (!isDirected) {
+            newEdges.push({ from: toNode.id, to: fromNode.id, weight });
+          }
+        }
+        return { ...currentGraph, edges: newEdges };
+      });
+    },
+    [isDirected, isWeighted],
+  );
 
-		if (graph.nodes.length > 0) {
-			const highestCharCode = Math.max(...graph.nodes.map(node => node.id.charCodeAt(0)));
-			nextCharCode = highestCharCode + 1;
-		}
-		const newNodeId = String.fromCharCode(nextCharCode);
-		const newNode = {
-			id: newNodeId, x: 400 + (Math.random() - 0.5) * 800, y: 300 + (Math.random() - 0.5) * 600, label: newNodeId
-		};
-		const randomEdgeIndex = Math.floor(Math.random() * graph.nodes.length);
-		const randomEdgeNode = graph.nodes[randomEdgeIndex].id;
+  const handleAddNewNode = useCallback(() => {
+    setGraph((currentGraph) => {
+      let nextCharCode = 65;
+      if (currentGraph.nodes.length > 0) {
+        const highestCharCode = Math.max(
+          ...currentGraph.nodes.map((node) => node.id.charCodeAt(0)),
+        );
+        nextCharCode = highestCharCode + 1;
+      }
+      const newNodeId = String.fromCharCode(nextCharCode);
+      const newNode = {
+        id: newNodeId,
+        x: 250 + Math.random() * 200,
+        y: 150 + Math.random() * 200,
+        label: newNodeId,
+      };
 
-		setGraph(currentGraph => ({
-			...currentGraph,
-			nodes: [...currentGraph.nodes, newNode],
-			edges: [...currentGraph.edges, {from: newNodeId, to: randomEdgeNode, weight: 1}]
-		}));
-	}
-	const handleDeleteNode = (nodeId) => {
-		if (!nodeId) return;
-		setGraph(currentGraph => {
-			const newEdges = currentGraph.edges.filter(edge => edge.from !== nodeId && edge.to !== nodeId);
-			const newNodes = currentGraph.nodes.filter(node => node.id !== nodeId);
-			return {...currentGraph, edges: newEdges, nodes: newNodes};
-		});
-		setSelectedNodeId(null);
-	};
-	useEffect(() => {
-		const handleKeyDown = (event) => {
-			if (event.key === "Delete" || event.key === "Backspace") {
-				handleDeleteNode(selectedNodeId);
-			}
-			if (event.key === "ArrowUp" || event.key === "ArrowLeft") {
-				const selectedNode = graph.nodes.find(node => node.id === selectedNodeId);
-				if (selectedNode) {
-					const index = graph.nodes.indexOf(selectedNode);
-					const newIndex = (index - 1 + graph.nodes.length) % graph.nodes.length;
-					setSelectedNodeId(graph.nodes[newIndex].id);
-				}
-			}
-			if (event.key === "ArrowDown" || event.key === "ArrowRight") {
-				const selectedNode = graph.nodes.find(node => node.id === selectedNodeId);
-				if (selectedNode) {
-					const index = graph.nodes.indexOf(selectedNode);
-					const newIndex = (index + 1) % graph.nodes.length;
-					setSelectedNodeId(graph.nodes[newIndex].id);
-				}
-			}
-		};
+      const newNodes = [...currentGraph.nodes, newNode];
+      let newEdges = [...currentGraph.edges];
 
-		window.addEventListener("keydown", handleKeyDown);
-		return () => {
-			window.removeEventListener("keydown", handleKeyDown);
-		};
-	}, [graph.nodes, selectedNodeId]);
+      // Optionally, connect the new node to an existing one
+      if (currentGraph.nodes.length > 0) {
+        const randomEdgeIndex = Math.floor(
+          Math.random() * currentGraph.nodes.length,
+        );
+        const randomEdgeNodeId = currentGraph.nodes[randomEdgeIndex].id;
+        newEdges.push({ from: newNodeId, to: randomEdgeNodeId, weight: 1 });
+        if (!isDirected) {
+          newEdges.push({ from: randomEdgeNodeId, to: newNodeId, weight: 1 });
+        }
+      }
+      return { ...currentGraph, nodes: newNodes, edges: newEdges };
+    });
+  }, [isDirected]);
 
+  const handleDeleteNode = useCallback((nodeId) => {
+    if (!nodeId) return;
+    setGraph((currentGraph) => {
+      const newEdges = currentGraph.edges.filter(
+        (edge) => edge.from !== nodeId && edge.to !== nodeId,
+      );
+      const newNodes = currentGraph.nodes.filter((node) => node.id !== nodeId);
+      return { ...currentGraph, edges: newEdges, nodes: newNodes };
+    });
+    setSelectedNodeId(null);
+  }, []);
 
-	useEffect(() => {
-		if (isDirected) return;
+  // --- 3. Fix the problematic useEffect ---
 
+  useEffect(() => {
+    // If the graph is directed, do nothing.
+    if (isDirected) {
+      return;
+    }
 
-		setGraph(currentGraph => {
-			const newEdges = [...currentGraph.edges];
-			const edgeSet = new Set(currentGraph.edges.map(e => `${e.from}->${e.to}`));
+    // If the graph is undirected, ensure all edges are symmetrical.
+    setGraph((currentGraph) => {
+      let hasChanged = false; // Flag to check if we actually need to update state
+      const newEdges = [...currentGraph.edges];
+      const edgeSet = new Set(
+        currentGraph.edges.map((e) => `${e.from}->${e.to}`),
+      );
 
-			currentGraph.edges.forEach(edge => {
-				const reverseKey = `${edge.to}->${edge.from}`;
-				if (!edgeSet.has(reverseKey)) {
-					newEdges.push({from: edge.to, to: edge.from, weight: edge.weight});
-				}
-			});
-			return {...currentGraph, edges: newEdges};
-		});
-	}, [isDirected]);
+      currentGraph.edges.forEach((edge) => {
+        const reverseKey = `${edge.to}->${edge.from}`;
+        if (!edgeSet.has(reverseKey)) {
+          newEdges.push({ from: edge.to, to: edge.from, weight: edge.weight });
+          hasChanged = true; // A change is needed!
+        }
+      });
 
+      // THE FIX: Only return a new object if a change was actually made.
+      if (hasChanged) {
+        return { ...currentGraph, edges: newEdges };
+      }
 
-	return (<div className={styles.dashboardContainer}>
-		<div className={styles.graphPanel}>
-			<GraphVisualizer graph={graph} selectedNodeId={selectedNodeId} onNodeClick={setSelectedNodeId}
-			                 isDirected={isDirected} isWeighted={isWeighted} selectedCell={selectedCell}/>
-		</div>
-		<div className={styles.dataPanel}>
-			<div className={styles.tabs}>
-				<button className={activeView === "list" ? styles.activeTab : ""}
-				        onClick={() => setActiveView("list")}
-				> Adjacency List
-				</button>
-				<button className={activeView === "matrix" ? styles.activeTab : ""}
-				        onClick={() => setActiveView("matrix")}
-				> Adjacency Matrix
-				</button>
-			</div>
-			<div className={styles.dataContent}>
-				<div className={`${styles.viewWrapper} ${activeView === "list" ? styles.showList : styles.showMatrix}`}>
-					<div className={styles.viewContainer}>
-						<AdjacencyList
-							graph={graph}
-							selectedNodeId={selectedNodeId}
-							isDirected={isDirected}
-							isWeighted={isWeighted}
-							onUpdate={handleListUpdate}
-							onAddNode={handleAddNewNode}
-							onDeleteNode={handleDeleteNode}
-						/>
-					</div>
-					<div className={styles.viewContainer}>
-						<AdjacencyMatrix graph={graph} selectedNodeId={selectedNodeId} isDirected={isDirected}
-						                 onUpdate={handleMatrixUpdate} onCellSelect={setSelectedCell}
-						                 onNodeSelect={setSelectedNodeId}
-						                 isWeighted={isWeighted}
-						                 onAddNode={handleAddNewNode}
-						                 onDeleteNode={handleDeleteNode}
-						/>
-					</div>
-				</div>
-			</div>
-			<div className={styles.controls}>
-				<ToggleSwitch label="Directed" checked={isDirected} onChange={() => setIsDirected(!isDirected)}/>
-				<ToggleSwitch label="Weighted" checked={isWeighted} onChange={() => setIsWeighted(!isWeighted)}/>
-			</div>
-		</div>
-	</div>)
-}
+      // Otherwise, return the original state to prevent the re-render loop.
+      return currentGraph;
+    });
+  }, [isDirected, graph]); // <-- Correct dependencies; // <-- Add `graph` to the dependency array.
+
+  const tabItems = [
+    {
+      label: "Adjacency List",
+      content: (
+        <AdjacencyList
+          graph={graph}
+          selectedNodeId={selectedNodeId}
+          isDirected={isDirected}
+          isWeighted={isWeighted}
+          onUpdate={handleListUpdate}
+          onAddNode={handleAddNewNode}
+          onDeleteNode={handleDeleteNode}
+        />
+      ),
+    },
+    {
+      label: "Adjacency Matrix",
+      content: (
+        <AdjacencyMatrix
+          graph={graph}
+          selectedNodeId={selectedNodeId}
+          isDirected={isDirected}
+          isWeighted={isWeighted}
+          onUpdate={handleMatrixUpdate}
+          onCellSelect={setSelectedCell}
+          onNodeSelect={setSelectedNodeId}
+          onAddNode={handleAddNewNode}
+          onDeleteNode={handleDeleteNode}
+        />
+      ),
+    },
+  ];
+
+  return (
+    <DashboardLayout
+      controls={
+        <GraphControls
+          isDirected={isDirected}
+          onToggleDirected={() => setIsDirected((prev) => !prev)}
+          isWeighted={isWeighted}
+          onToggleWeighted={() => setIsWeighted((prev) => !prev)}
+        />
+      }
+    >
+      <div className={styles.contentFlex}>
+        <Panel
+          className={styles.graphPanel}
+          title="Graph Visualization"
+          style={{ width: "100%", height: "100%" }}
+        >
+          <GraphVisualizer
+            graph={graph}
+            selectedNodeId={selectedNodeId}
+            onNodeClick={setSelectedNodeId}
+            isDirected={isDirected}
+            isWeighted={isWeighted}
+            selectedCell={selectedCell}
+          />
+        </Panel>
+        <Panel className={styles.dataPanel}>
+          <Tabs tabs={tabItems} />
+        </Panel>
+      </div>
+    </DashboardLayout>
+  );
+};
+
 export default GraphDashboard;

@@ -1,0 +1,13 @@
+/* src/common/Panel/Panel.module.css */
+
+.panel {
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--border-radius-lg);
+  box-shadow: 0 4px 12px var(--shadow-color);
+  overflow: hidden; /* Ensures children (like charts) respect the border radius */
+
+  /* Defaults to a flex column, which is the most common use case */
+  display: flex;
+  flex-direction: column;
+}

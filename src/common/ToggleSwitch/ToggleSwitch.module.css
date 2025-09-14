@@ -1,9 +1,13 @@
+/* src/common/ToggleSwitch/ToggleSwitch.module.css */
+
 .switchLabel {
     display: flex;
     align-items: center;
-    gap: 0.75rem;
+    gap: var(--spacing-md); /* Increased gap for better spacing */
     cursor: pointer;
     user-select: none;
+    font-weight: 500; /* Give the label a bit more presence */
+    color: var(--color-text-primary);
 }
 
 .switchContainer {
@@ -19,28 +23,57 @@
 
 .switchTrack {
     width: 44px;
-    height: 22px;
-    background-color: var(--color-border);
-    border-radius: 11px;
-    transition: var(--transition);
+    height: 24px; /* Slightly taller for a more modern feel */
+    background-color: var(--color-medium-grey);
+    border-radius: 12px; /* Fully rounded ends */
+    transition: background-color 0.3s ease;
     position: relative;
+    /* Added a subtle inner shadow for depth */
+    box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
 .switchThumb {
     position: absolute;
     top: 3px;
     left: 3px;
-    width: 16px;
-    height: 16px;
-    background-color: white;
+    width: 18px; /* Adjusted size to fit new track height */
+    height: 18px;
+    background-color: var(--color-surface);
     border-radius: 50%;
-    transition: var(--transition);
+    /* A soft shadow makes the thumb "pop" off the track */
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2), 0 1px 2px rgba(0, 0, 0, 0.1);
+    /* A more sophisticated animation curve for a "snappier" feel */
+    transition: transform 0.3s cubic-bezier(0.25, 1, 0.5, 1);
 }
+
+/* --- Checked State --- */
 
 .hiddenCheckbox:checked + .switchTrack {
     background-color: var(--color-primary);
 }
 
 .hiddenCheckbox:checked + .switchTrack .switchThumb {
-    transform: translateX(22px);
+    /* The transform amount is track width - thumb width - (2 * padding) */
+    /* 44 - 18 - 6 = 20 */
+    transform: translateX(20px);
+}
+
+/* --- Hover State (Interaction Feedback) --- */
+
+.switchLabel:hover .switchTrack {
+    /* Make the track slightly darker on hover when it's OFF */
+    background-color: var(--color-dark-grey);
+}
+
+.hiddenCheckbox:checked + .switchTrack {
+    /* Override the hover effect when the switch is ON */
+    background-color: var(--color-primary);
+}
+
+/* --- Focus State (Accessibility) --- */
+
+/* Use :focus-visible to only show the outline for keyboard users */
+.hiddenCheckbox:focus-visible + .switchTrack {
+    /* An outer glow is a more attractive focus indicator than the default outline */
+    box-shadow: 0 0 0 3px var(--color-lighter-blue);
 }

@@ -1,0 +1,73 @@
+/* src/common/Tabs/Tabs.module.css */
+
+/* --- NEW: Main container --- */
+.tabsContainer {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden; /* Important for keeping the sliding content contained */
+}
+
+/* --- Existing styles (with minor adjustments) --- */
+.tabHeaders {
+  display: flex;
+  position: relative;
+  border-bottom: 1px solid var(--color-border);
+  margin-bottom: var(--spacing-md);
+  flex-shrink: 0; /* Prevent the header from shrinking */
+}
+
+.tabButton {
+  flex: 1;
+  text-align: center;
+  padding: 0.75rem 1rem;
+  border: none;
+  background: none;
+  cursor: pointer;
+  font-size: 1rem;
+  color: var(--color-text-secondary);
+  transition: color 0.2s;
+}
+
+.tabButton:hover {
+  color: var(--color-primary);
+}
+
+.tabButtonActive {
+  color: var(--color-primary);
+  font-weight: 600;
+}
+
+.tabIndicator {
+  position: absolute;
+  bottom: -1px; /* Align with the bottom of the border */
+  height: 3px;
+  background-color: var(--color-primary);
+  transition: transform 0.3s ease, left 0.3s ease, width 0.3s ease;
+}
+
+/* --- NEW: Content area styles --- */
+.tabContent {
+  position: relative;
+  overflow: hidden; /* Hide the non-active tabs */
+  flex-grow: 1; /* Allow the content to fill the remaining space */
+  min-height: 0; /* Important for flex children */
+}
+
+.tabViewWrapper {
+  display: flex;
+  width: 100%;
+  height: 100%;
+  transition: transform 0.4s cubic-bezier(0.45, 0, 0.55, 1);
+}
+
+.tabView {
+  flex: 0 0 100%; /* Each view takes up exactly 100% of the container width */
+  height: 100%;
+  overflow-y: auto; /* Add a scrollbar if the content is too tall */
+  padding: 0 var(--spacing-sm); /* Add some horizontal padding */
+}
+.tabViewContent {
+    padding: 0 var(--spacing-sm);
+}

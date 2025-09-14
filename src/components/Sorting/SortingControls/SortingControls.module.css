@@ -103,6 +103,11 @@
     border-color: var(--color-primary);
     font-weight: 600;
 }
+.controlButton.sortingActive:hover,
+.viewModeButton.sortingActive:hover {
+    color: white;
+    font-weight: 600;
+}
 
 
 @media (max-width: 768px) {

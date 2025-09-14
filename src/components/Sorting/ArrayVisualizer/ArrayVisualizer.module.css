@@ -1,46 +1,31 @@
-.visualizerWrapper {
+.visualizerLayout {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    height: 100%;
+}
+
+/* This makes the bar/box view take up all available space */
+.contentWrapper {
     flex-grow: 1;
     display: flex;
     align-items: center;
     justify-content: center;
-    min-height: 400px;
-    /* ADDED: Allows this container to shrink properly */
-    min-width: 0;
+    padding: var(--spacing-md);
+    min-height: 0; /* Important flexbox fix */
 }
 
-.visualizerContainer {
-    position: relative;
-    width: 100%;
-    height: 100%;
-    background-color: var(--color-surface);
-    border: 1px solid var(--color-border);
-    border-radius: var(--border-radius-lg);
-    box-sizing: border-box;
+/* --- THIS IS THE NEW INTEGRATED CONTROL BAR --- */
+.footerControls {
+    flex-shrink: 0; /* Prevent the footer from shrinking */
     display: flex;
-    flex-direction: column;
-    align-items: center;
     justify-content: center;
-}
-
-
-.visualizerContent {
-    display: flex;
     align-items: center;
-    justify-content: center;
+    padding: var(--spacing-sm) 0;
+    border-top: 1px solid var(--color-border);
+    background-color: var(--color-slight-grey);
 }
 
-.overlayControls {
-    position: absolute;
-    bottom: 1rem;
-    left: 50%;
-    transform: translateX(-50%);
-    background-color: rgba(255, 255, 255, 0.95);
-    backdrop-filter: blur(10px);
-    border-radius: var(--border-radius-lg);
-    padding: 0.5rem;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-    border: 1px solid rgba(255, 255, 255, 0.2);
-}
 
 .barContainer {
     display: flex;
@@ -48,15 +33,17 @@
     justify-content: center;
     gap: 2px;
     height: 300px;
-    padding: 0 1rem;
+    width: 100%;
 }
 
 .arrayBar {
+    flex-grow: 1;
+    min-width: 2px;
+    max-width: 40px;
     transition: all 0.3s ease-in-out;
     border-radius: 2px 2px 0 0;
     cursor: pointer;
     position: relative;
-    min-width: 3px;
 }
 
 .arrayBar::after {
@@ -91,22 +78,6 @@
     transform: scaleY(1.02);
 }
 
-/* Dynamic bar width based on array size */
-.barContainer[data-size="10"] .arrayBar {
-    width: 24px;
-}
-
-.barContainer[data-size="20"] .arrayBar {
-    width: 18px;
-}
-
-.barContainer[data-size="50"] .arrayBar {
-    width: 12px;
-}
-
-.barContainer[data-size="100"] .arrayBar {
-    width: 8px;
-}
 
 @media (max-width: 768px) {
     .barContainer[data-size="10"] .arrayBar {

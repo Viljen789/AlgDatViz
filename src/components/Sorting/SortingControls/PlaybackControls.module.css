@@ -1,58 +1,25 @@
+/* src/components/Sorting/SortingControls/PlaybackControls.module.css */
+
 .playbackContainer {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.5rem;
-  padding: 0.25rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--spacing-md);
 }
 
-.controlButton {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 36px;
-  height: 36px;
-  border: 1px solid rgba(255, 255, 255, 0.3);
-  border-radius: 50%;
-  background-color: rgba(255, 255, 255, 0.9);
-  color: var(--color-text-secondary);
-  cursor: pointer;
-  transition: all 0.2s ease-in-out;
-  backdrop-filter: blur(10px);
+
+.playbackContainer > button {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
-.controlButton:hover:not(:disabled) {
-  border-color: var(--color-primary);
-  color: var(--color-primary);
-  transform: scale(1.1);
-  background-color: white;
-}
 
-.controlButton:disabled {
-  color: #ccc;
-  cursor: not-allowed;
-  opacity: 0.5;
-}
-
-.playPauseButton {
-  width: 44px;
-  height: 44px;
-  border-color: var(--color-primary);
-  color: var(--color-primary);
-  background-color: white;
-}
-
-.playPauseButton:hover:not(:disabled) {
-  background-color: var(--color-primary);
-  color: white;
-  transform: scale(1.15);
-}
-
-.icon {
-  font-size: 1rem;
-  line-height: 1;
-}
-
-.playPauseButton .icon {
-  font-size: 1.2rem;
+.playbackContainer > button svg.lucide-play {
+    margin-left: 3px;
 }

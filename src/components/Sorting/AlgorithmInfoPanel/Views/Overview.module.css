@@ -1,13 +1,3 @@
-/* src/components/Sorting/InfoSection/infoSection.module.css */
-
-/* These top-level styles are for the parent AlgorithmInfoPanel */
-.infoPanel {
-    background-color: var(--color-surface);
-    border: 1px solid var(--color-border);
-    border-radius: var(--border-radius-lg);
-    padding: var(--spacing-md);
-}
-
 .overview {
     padding: 0 var(--spacing-sm) var(--spacing-md);
     border-bottom: 1px solid var(--color-border);
@@ -36,22 +26,12 @@
     font-family: var(--font-family-mono);
 }
 
-/* --- Styles for the InfoSection component --- */
 .infoSection {
     border-bottom: 1px solid var(--color-light-grey);
-    transition: background-color 0.2s ease-in-out;
 }
 
 .infoSection:last-child {
     border-bottom: none;
-}
-
-.infoSection:hover {
-    background-color: var(--color-slight-grey);
-}
-
-.infoSection:hover .expandIcon {
-    transform: rotate(90deg);
 }
 
 .sectionHeader {
@@ -60,6 +40,8 @@
     justify-content: space-between;
     align-items: center;
     padding: var(--spacing-md) var(--spacing-sm);
+    background: none;
+    border: none;
     cursor: pointer;
 }
 
@@ -72,34 +54,16 @@
 .expandIcon {
     font-size: var(--font-size-sm);
     color: var(--color-text-secondary);
-    transition: transform 0.3s ease-in-out;
 }
 
-/* --- The CSS Grid Trick for Smooth, Flicker-Free Expansion --- */
 .sectionContent {
-    display: grid;
-    /* The content row starts with zero height */
-    grid-template-rows: 0fr;
-    transition: grid-template-rows 0.4s cubic-bezier(0.25, 1, 0.5, 1);
-}
-
-.infoSection:hover .sectionContent {
-    /* On hover, the content row expands to take up the necessary space */
-    grid-template-rows: 1fr;
+    overflow: hidden;
 }
 
 .contentWrapper {
-    /* This is crucial: it hides the content while the container is collapsed */
-    overflow: hidden;
-    padding: 0 var(--spacing-sm);
+    padding: 0 var(--spacing-sm) var(--spacing-md);
 }
 
-.infoSection:hover .contentWrapper {
-    /* Add padding back to the content only when it's visible */
-    padding-bottom: var(--spacing-md);
-}
-
-/* --- Content styling --- */
 .description {
     margin: 0;
     line-height: 1.6;

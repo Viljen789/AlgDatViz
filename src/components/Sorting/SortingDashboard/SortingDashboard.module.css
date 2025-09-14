@@ -1,81 +1,51 @@
-.dashboardContainer {
-  display: flex;
-  flex-direction: column;
-  gap: var(--spacing-lg);
-  height: calc(100vh - 120px);
-  padding: var(--spacing-md);
-  box-sizing: border-box;
-}
+/*
+ * This file is ONLY responsible for the GRID LAYOUT of the sorting page's content.
+ * All visual "card" styling is handled by the reusable Panel component.
+ */
 
-.mainContentArea {
-  flex-grow: 1;
-  min-height: 0;
+.contentGrid {
   display: grid;
   gap: var(--spacing-lg);
-  grid-template-columns: 1fr 450px;
-  grid-template-rows: 1fr auto;
+  grid-template-columns: 1fr 450px; /* Flexible visualizer, fixed sidebar */
+  grid-template-rows: 1fr auto;   /* Flexible top row, auto-sized bottom row */
   grid-template-areas:
     "visualizer pseudocode"
     "info       info";
+  height: 100%; /* Make the grid fill the entire mainContentArea from DashboardLayout */
 }
 
-.visualizerWrapper,
-.pseudoCodeWrapper,
-.infoWrapper {
-  grid-area: var(--grid-area); /* We will set this via inline style */
-  min-width: 0;
-  min-height: 0;
+/* --- Grid Area Assignments --- */
+/* We just need to assign the grid-area to each class name */
+.visualizerWrapper {
+  grid-area: visualizer;
 }
 
-.visualizerWrapper { --grid-area: visualizer; }
-.pseudoCodeWrapper { --grid-area: pseudocode; display: flex; }
-.infoWrapper {
-  --grid-area: info;
-  display: flex;
-  flex-direction: column;
-  gap: var(--spacing-lg);
-}
-
-/* --- THIS IS THE KEY FIX --- */
-/* This rule was too broad and caused the layout overlap. */
-/* We only want the direct children of the top two wrappers to fill height. */
-.visualizerWrapper > *,
-.pseudoCodeWrapper > * {
-  width: 100%;
-  height: 100%;
+.pseudoCodeWrapper {
+  grid-area: pseudocode;
 }
 
 .infoWrapper {
   grid-area: info;
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-  gap: var(--spacing-lg);
 }
 
-.infoWrapper > :last-child {
-    height: auto;
-}
 
+/* --- Responsive Layout for Tablets and smaller --- */
 @media (max-width: 1024px) {
-  .mainContentArea {
+  .contentGrid {
+    /* Switch to a single-column layout */
     grid-template-columns: 1fr;
-    grid-template-rows: auto auto auto;
+    grid-template-rows: auto auto auto; /* Each row fits its content */
     grid-template-areas:
       "visualizer"
       "pseudocode"
       "info";
+    /* Add scrolling for the entire content area on smaller screens */
     overflow-y: auto;
-    padding-right: var(--spacing-sm);
+    padding-right: var(--spacing-sm); /* Space for the scrollbar */
   }
+
   .pseudoCodeWrapper {
+    /* Give the pseudocode a max-height on mobile to prevent it from being huge */
     max-height: 400px;
   }
-}
-
-@media (max-width: 768px) {
-    .dashboardContainer {
-        padding: var(--spacing-sm);
-        gap: var(--spacing-md);
-    }
 }

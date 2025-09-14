@@ -1,4 +1,8 @@
-import styles from './PlaybackControls.module.css';
+// src/components/Sorting/SortingControls/PlaybackControls.jsx
+
+import { Pause, Play, RedoDot, UndoDot } from "lucide-react";
+import styles from "./PlaybackControls.module.css";
+import Button from "../../../common/Button/Button"; // Import your standard button
 
 const PlaybackControls = ({
   onPlayPause,
@@ -7,37 +11,23 @@ const PlaybackControls = ({
   isSorting,
   isPaused,
 }) => {
-
   return (
     <div className={styles.playbackContainer}>
-      <button
-        className={styles.controlButton}
-        onClick={onStepBack}
-        disabled={!isSorting}
-        title="Previous Step"
-      >
-        <span className={styles.icon}>⏮</span>
-      </button>
+      <Button onClick={onStepBack} disabled={!isSorting}>
+        <UndoDot size={20} strokeWidth={2.5} />
+      </Button>
 
-      <button
-        className={`${styles.controlButton} ${styles.playPauseButton}`}
-        onClick={onPlayPause}
-        disabled={!isSorting}
-        title={isPaused ? "Play" : "Pause"}
-      >
-        <span className={styles.icon}>
-          {isPaused ? '▶' : '⏸'}
-        </span>
-      </button>
+      <Button onClick={onPlayPause} disabled={!isSorting} variant="primary">
+        {isPaused ? (
+          <Play size={20} strokeWidth={2.5} />
+        ) : (
+          <Pause size={20} strokeWidth={2.5} />
+        )}
+      </Button>
 
-      <button
-        className={styles.controlButton}
-        onClick={onStepForward}
-        disabled={!isSorting}
-        title="Next Step"
-      >
-        <span className={styles.icon}>⏭</span>
-      </button>
+      <Button onClick={onStepForward} disabled={!isSorting}>
+        <RedoDot size={20} strokeWidth={2.5} />
+      </Button>
     </div>
   );
 };
