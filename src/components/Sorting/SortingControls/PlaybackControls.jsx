@@ -15,11 +15,7 @@ const PlaybackControls = ({
 				<UndoDot size={20} strokeWidth={2.5} />
 			</Button>
 
-			<Button
-				onClick={onPlayPause}
-				disabled={!isSorting}
-				variant="primary"
-			>
+			<Button onClick={onPlayPause} disabled={!isSorting} variant="primary">
 				{isPaused ? (
 					<Play size={20} strokeWidth={2.5} />
 				) : (

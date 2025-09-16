@@ -31,9 +31,7 @@ export function getBucketSortStepsWithStats(array) {
 	});
 
 	for (let i = 0; i < n; i++) {
-		const bucketIndex = Math.floor(
-			((bucketCount - 1) * arr[i]) / (max || 1)
-		);
+		const bucketIndex = Math.floor(((bucketCount - 1) * arr[i]) / (max || 1));
 		buckets[bucketIndex].push(arr[i]);
 		swaps++;
 		steps.push({

@@ -17,7 +17,9 @@ const SidebarHub = ({
 			content: (
 				<PseudoCodeViewer
 					algorithm={sortingAlgorithm}
-					activeLine={currentFrame.line}
+					activeLine={
+						currentFrame?.metadata?.line || currentFrame?.line || null
+					}
 					isFastMode={isFastMode}
 				/>
 			),
@@ -26,8 +28,8 @@ const SidebarHub = ({
 			label: 'Performance',
 			content: (
 				<OperationsComparison
-					operationStats={operationStats}
-					algorithmInfo={info}
+					operationStats={operationStats || {}}
+					algorithmInfo={info || {}}
 					arraySize={arraySize}
 					isSorting={isSorting}
 				/>

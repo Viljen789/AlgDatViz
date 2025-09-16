@@ -52,13 +52,8 @@ const CountingSortView = ({
 					<div className={styles.histogram}>
 						{frequencyBars.map(({ value, count, height }) => (
 							<div key={value} className={styles.histogramBar}>
-								<div
-									className={styles.bar}
-									style={{ height: `${height}px` }}
-								>
-									<span className={styles.count}>
-										{count}
-									</span>
+								<div className={styles.bar} style={{ height: `${height}px` }}>
+									<span className={styles.count}>{count}</span>
 								</div>
 								<div className={styles.value}>{value}</div>
 							</div>

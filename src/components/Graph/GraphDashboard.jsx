@@ -120,9 +120,7 @@ const GraphDashboard = () => {
 			const newEdges = currentGraph.edges.filter(
 				edge => edge.from !== nodeId && edge.to !== nodeId
 			);
-			const newNodes = currentGraph.nodes.filter(
-				node => node.id !== nodeId
-			);
+			const newNodes = currentGraph.nodes.filter(node => node.id !== nodeId);
 			return { ...currentGraph, edges: newEdges, nodes: newNodes };
 		});
 		setSelectedNodeId(null);

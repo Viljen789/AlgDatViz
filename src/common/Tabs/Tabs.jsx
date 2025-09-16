@@ -38,9 +38,7 @@ const Tabs = ({ tabs, defaultActive = 0 }) => {
 				>
 					{tabs.map((tab, i) => (
 						<div key={i} className={styles.tabView}>
-							<div className={styles.tabViewContent}>
-								{tab.content}
-							</div>
+							<div className={styles.tabViewContent}>{tab.content}</div>
 						</div>
 					))}
 				</div>

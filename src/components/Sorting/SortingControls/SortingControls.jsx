@@ -15,6 +15,7 @@ const SortingControls = ({
 	isSorting,
 	viewMode,
 	toggleViewMode,
+	isSpecialAlgorithm,
 }) => {
 	const algorithms = [
 		{ value: 'bubbleSort', label: 'Bubble Sort' },
@@ -49,6 +50,10 @@ const SortingControls = ({
 			setSimplifiedMode(isSimplified);
 		}
 	};
+	const handleAlgorithmChange = algorithm => {
+		setSortingAlgorithm(algorithm);
+		if (isSorting) shuffleArray();
+	};
 
 	return (
 		<div className={styles.controlsContainer}>
@@ -57,21 +62,17 @@ const SortingControls = ({
 					label="Algorithm"
 					options={algorithms}
 					value={sortingAlgorithm}
-					onChange={setSortingAlgorithm}
-					disabled={isSorting}
+					onChange={handleAlgorithmChange}
 				/>
 			</div>
-
 			<div className={styles.controlGroup}>
 				<HoverDropdown
 					label="Size"
 					options={sizeOptions}
 					value={arraySize}
 					onChange={setArraySize}
-					disabled={isSorting}
 				/>
 			</div>
-
 			<div className={styles.controlGroup}>
 				<HoverDropdown
 					label="Speed"
@@ -80,14 +81,14 @@ const SortingControls = ({
 					onChange={handleSpeedChange}
 				/>
 			</div>
-
 			<Button onClick={shuffleArray} disabled={isSorting}>
 				Shuffle Array
 			</Button>
-
-			<Button onClick={toggleViewMode}>
-				{viewMode === 'bars' ? 'Show Box View' : ' Show Bar View'}
-			</Button>
+			{(!isSpecialAlgorithm || arraySize > 20) && (
+				<Button onClick={toggleViewMode}>
+					{viewMode === 'bars' ? 'Show Box View' : ' Show Bar View'}
+				</Button>
+			)}
 			<Button onClick={startSort} variant="primary">
 				{isSorting ? 'Stop' : 'Start Sorting'}
 			</Button>

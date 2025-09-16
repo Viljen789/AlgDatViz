@@ -20,19 +20,14 @@ const GraphVisualizer = ({
 		const rootStyles = getComputedStyle(document.documentElement);
 		const theme = {
 			primary: rootStyles.getPropertyValue('--color-primary').trim(),
-			selection: rootStyles
-				.getPropertyValue('--viz-selection-color')
-				.trim(),
+			selection: rootStyles.getPropertyValue('--selection-color').trim(),
 			nodeFill: rootStyles.getPropertyValue('--viz-node-fill').trim(),
 			nodeStroke: rootStyles.getPropertyValue('--viz-node-stroke').trim(),
 			edge: rootStyles.getPropertyValue('--viz-edge-color').trim(),
 			text: rootStyles.getPropertyValue('--viz-text-color').trim(),
 			textOnNode:
-				rootStyles.getPropertyValue('--color-text-on-node').trim() ||
-				'white',
-			surface:
-				rootStyles.getPropertyValue('--color-surface').trim() ||
-				'white',
+				rootStyles.getPropertyValue('--color-text-on-node').trim() || 'white',
+			surface: rootStyles.getPropertyValue('--color-surface').trim() || 'white',
 		};
 
 		const nodes = graph.nodes.map(node => {
@@ -203,19 +198,12 @@ const GraphVisualizer = ({
 			},
 		};
 
-		networkInstance.current = new Network(
-			networkRef.current,
-			data,
-			options
-		);
+		networkInstance.current = new Network(networkRef.current, data, options);
 		networkInstance.current.fit({ animation: { duration: 500 } });
 
 		networkInstance.current.on('click', params => {
-			const clickedNodeId =
-				params.nodes.length > 0 ? params.nodes[0] : null;
-			onNodeClick(
-				clickedNodeId === selectedNodeId ? null : clickedNodeId
-			);
+			const clickedNodeId = params.nodes.length > 0 ? params.nodes[0] : null;
+			onNodeClick(clickedNodeId === selectedNodeId ? null : clickedNodeId);
 		});
 
 		return () => networkInstance.current?.destroy();

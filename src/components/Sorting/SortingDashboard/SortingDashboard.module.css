@@ -1,7 +1,31 @@
+/* src/components/Sorting/SortingDashboard/SortingDashboard.module.css */
+
 .contentGrid {
 	display: grid;
 	gap: var(--spacing-lg);
-
 	grid-template-columns: 1fr 450px;
 	height: 100%;
+	min-height: 0;
+}
+
+/* NEW: This column holds the main visualizer and the explanation panel below it */
+.visualizerColumn {
+	display: flex;
+	flex-direction: column;
+	gap: var(--spacing-lg);
+	min-height: 0;
+}
+
+.visualizerWrapper {
+	flex-grow: 1; /* Allows the main visualizer to take up most of the space */
+	min-height: 0;
+}
+
+.explanationWrapper {
+	flex-shrink: 0; /* Prevents the explanation panel from shrinking */
+	height: auto; /* Let it size to its content */
+}
+
+.sidebarWrapper {
+	/* No changes needed here */
 }

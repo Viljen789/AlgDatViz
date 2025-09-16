@@ -15,6 +15,7 @@ const ArrayVisualizer = ({
 	onStepBack,
 	onStepForward,
 	arraySize,
+	onAnimationComplete,
 	...animationProps
 }) => {
 	const SPECIAL_ALGORITHMS = [
@@ -36,12 +37,21 @@ const ArrayVisualizer = ({
 						algorithm={sortingAlgorithm}
 						array={array}
 						currentFrame={currentFrame}
+						onAnimationComplete={onAnimationComplete}
 						{...animationProps}
 					/>
 				) : viewMode === 'bars' ? (
-					<BarView array={array} {...animationProps} />
+					<BarView
+						array={array}
+						onAnimationComplete={onAnimationComplete}
+						{...animationProps}
+					/>
 				) : (
-					<BoxView array={array} {...animationProps} />
+					<BoxView
+						array={array}
+						onAnimationComplete={onAnimationComplete}
+						{...animationProps}
+					/>
 				)}
 			</div>
 

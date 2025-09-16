@@ -58,20 +58,13 @@ const BucketSortView = ({
 							key={index}
 							className={`${styles.bucket} ${isActive ? styles.activeBucket : ''}`}
 						>
-							<div className={styles.bucketLabel}>
-								Bucket {index}
-							</div>
+							<div className={styles.bucketLabel}>Bucket {index}</div>
 							<div className={styles.bucketContent}>
 								{elements.length === 0 ? (
-									<div className={styles.emptyBucket}>
-										Empty
-									</div>
+									<div className={styles.emptyBucket}>Empty</div>
 								) : (
 									elements.map((value, elemIndex) => (
-										<div
-											key={elemIndex}
-											className={styles.bucketElement}
-										>
+										<div key={elemIndex} className={styles.bucketElement}>
 											{value}
 										</div>
 									))

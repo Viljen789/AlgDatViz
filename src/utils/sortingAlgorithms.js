@@ -124,10 +124,7 @@ export function getBubbleSortSteps(array) {
 				array: [...arr],
 				comparing: [j, j + 1],
 				swapping: [],
-				sorted: Array.from(
-					{ length: sortedCount },
-					(_, k) => n - 1 - k
-				),
+				sorted: Array.from({ length: sortedCount }, (_, k) => n - 1 - k),
 				line: 2,
 			});
 			if (arr[j] > arr[j + 1]) {
@@ -135,10 +132,7 @@ export function getBubbleSortSteps(array) {
 					array: [...arr],
 					comparing: [j, j + 1],
 					swapping: [],
-					sorted: Array.from(
-						{ length: sortedCount },
-						(_, k) => n - 1 - k
-					),
+					sorted: Array.from({ length: sortedCount }, (_, k) => n - 1 - k),
 					line: 3,
 				});
 				[arr[j], arr[j + 1]] = [arr[j + 1], arr[j]];
@@ -146,10 +140,7 @@ export function getBubbleSortSteps(array) {
 					array: [...arr],
 					comparing: [],
 					swapping: [j, j + 1],
-					sorted: Array.from(
-						{ length: sortedCount },
-						(_, k) => n - 1 - k
-					),
+					sorted: Array.from({ length: sortedCount }, (_, k) => n - 1 - k),
 					line: 4,
 				});
 			}
@@ -635,10 +626,7 @@ export function getHeapSortSteps(array) {
 				array: [...arr],
 				comparing: [left, largest],
 				swapping: [],
-				sorted: Array.from(
-					{ length: sortedCount },
-					(_, k) => n - 1 - k
-				),
+				sorted: Array.from({ length: sortedCount }, (_, k) => n - 1 - k),
 			});
 			if (arr[left] > arr[largest]) largest = left;
 		}
@@ -647,10 +635,7 @@ export function getHeapSortSteps(array) {
 				array: [...arr],
 				comparing: [right, largest],
 				swapping: [],
-				sorted: Array.from(
-					{ length: sortedCount },
-					(_, k) => n - 1 - k
-				),
+				sorted: Array.from({ length: sortedCount }, (_, k) => n - 1 - k),
 			});
 			if (arr[right] > arr[largest]) largest = right;
 		}
@@ -660,10 +645,7 @@ export function getHeapSortSteps(array) {
 				array: [...arr],
 				comparing: [],
 				swapping: [i, largest],
-				sorted: Array.from(
-					{ length: sortedCount },
-					(_, k) => n - 1 - k
-				),
+				sorted: Array.from({ length: sortedCount }, (_, k) => n - 1 - k),
 			});
 			heapify(size, largest);
 		}

@@ -6,6 +6,7 @@ import SortingControls from '../SortingControls/SortingControls';
 import ArrayVisualizer from '../ArrayVisualizer/ArrayVisualizer';
 import SidebarHub from '../AlgorithmInfoPanel/Views/SidebarHub/SidebarHub';
 import { ALGORITHM_INFO } from '../../../utils/sorting';
+import MergeSortExplanation from '../AlgorithmInfoPanel/Views/CustomAlgorithmInstructions/MergeSortExplanation.jsx';
 
 const SortingDashboard = () => {
 	const {
@@ -28,6 +29,7 @@ const SortingDashboard = () => {
 		onStepBack,
 		onStepForward,
 		currentFrame,
+		goToNextStep,
 	} = useSortingVisualizer();
 
 	const SPECIAL_ALGORITHMS = [
@@ -38,58 +40,60 @@ const SortingDashboard = () => {
 		'radixSort',
 	];
 	const isSpecialAlgorithm = SPECIAL_ALGORITHMS.includes(sortingAlgorithm);
-	const shouldShowWarning = isSpecialAlgorithm && arraySize > 20;
-
+	/*const shouldShowWarning = isSpecialAlgorithm && arraySize > 20;*/ /*May use later*/
+	const isSpecialMergeSort =
+		sortingAlgorithm === 'mergeSort' && arraySize <= 20;
 	return (
 		<DashboardLayout
 			controls={
 				<SortingControls
-					shuffleArray={shuffleArray}
-					setArraySize={setArraySize}
 					arraySize={arraySize}
-					setAnimationSpeed={setAnimationSpeed}
+					setArraySize={setArraySize}
 					animationSpeed={animationSpeed}
-					setSortingAlgorithm={setSortingAlgorithm}
+					setAnimationSpeed={setAnimationSpeed}
 					sortingAlgorithm={sortingAlgorithm}
-					startSort={startSort}
-					isSorting={isSorting}
+					setSortingAlgorithm={setSortingAlgorithm}
 					viewMode={viewMode}
 					toggleViewMode={toggleViewMode}
-					isSpecialAlgorithm={isSpecialAlgorithm}
-					shouldShowWarning={shouldShowWarning}
+					isSorting={isSorting}
+					isPaused={isPaused}
+					isFastMode={isFastMode}
+					shuffleArray={shuffleArray}
+					startSort={startSort}
+					onPlayPause={onPlayPause}
+					onStepBack={onStepBack}
+					onStepForward={onStepForward}
 				/>
 			}
 		>
 			<div className={styles.contentGrid}>
-				<Panel className={styles.visualizerWrapper}>
-					{shouldShowWarning && (
-						<div className={styles.algorithmWarning}>
-							<strong>
-								{ALGORITHM_INFO[sortingAlgorithm]?.name}
-							</strong>{' '}
-							works best with smaller arrays (≤20 elements) for
-							detailed visualization. Consider reducing array size
-							for better learning experience.
-						</div>
-					)}
+				<div className={styles.visualizerColumn}>
+					<Panel className={styles.visualizerWrapper}>
+						<ArrayVisualizer
+							viewMode={viewMode}
+							array={array}
+							isSorting={isSorting}
+							isPaused={isPaused}
+							onPlayPause={onPlayPause}
+							onStepBack={onStepBack}
+							onStepForward={onStepForward}
+							isFastMode={isFastMode}
+							sortingAlgorithm={sortingAlgorithm}
+							arraySize={arraySize}
+							currentFrame={currentFrame}
+							comparingIndices={currentFrame?.comparing || []}
+							swappingIndices={currentFrame?.swapping || []}
+							sortedIndices={currentFrame?.sorted || []}
+							onAnimationComplete={goToNextStep}
+						/>
+					</Panel>
 
-					<ArrayVisualizer
-						viewMode={viewMode}
-						array={array}
-						arraySize={arraySize}
-						sortingAlgorithm={sortingAlgorithm}
-						isSorting={isSorting}
-						isPaused={isPaused}
-						onPlayPause={onPlayPause}
-						onStepBack={onStepBack}
-						onStepForward={onStepForward}
-						isFastMode={isFastMode}
-						comparingIndices={currentFrame.comparing || []}
-						swappingIndices={currentFrame.swapping || []}
-						sortedIndices={currentFrame.sorted || []}
-						currentFrame={currentFrame}
-					/>
-				</Panel>
+					{isSpecialMergeSort && (
+						<Panel className={styles.explanationWrapper}>
+							<MergeSortExplanation currentFrame={currentFrame} />
+						</Panel>
+					)}
+				</div>
 
 				<Panel className={styles.sidebarWrapper}>
 					<SidebarHub
@@ -100,9 +104,6 @@ const SortingDashboard = () => {
 						arraySize={arraySize}
 						isSorting={isSorting}
 						isFastMode={isFastMode}
-						isSpecialVisualization={
-							isSpecialAlgorithm && arraySize <= 20
-						}
 					/>
 				</Panel>
 			</div>

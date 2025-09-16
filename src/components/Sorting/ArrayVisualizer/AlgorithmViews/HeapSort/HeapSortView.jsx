@@ -17,6 +17,11 @@ const HeapSortView = ({
 		leftChild,
 		rightChild,
 	} = currentFrame.metadata || {};
+	const getValue = item => {
+		return item && typeof item === 'object' && 'value' in item
+			? item.value
+			: item;
+	};
 
 	const heapTree = useMemo(() => {
 		if (!heapArray) return [];
@@ -67,9 +72,7 @@ const HeapSortView = ({
 							? 'Heapifying'
 							: 'Completed'}
 				{heapSize && (
-					<span className={styles.heapInfo}>
-						(Heap Size: {heapSize})
-					</span>
+					<span className={styles.heapInfo}>(Heap Size: {heapSize})</span>
 				)}
 			</div>
 
@@ -86,9 +89,7 @@ const HeapSortView = ({
                 ${index === maxElement ? styles.maxElement : ''}
                 ${index >= (heapSize || array.length) ? styles.notInHeap : ''}`}
 						>
-							<span className={styles.elementValue}>
-								{item.value}
-							</span>
+							<span className={styles.elementValue}>{getValue(item)}</span>
 							<span className={styles.elementIndex}>{index}</span>
 						</div>
 					))}
@@ -103,20 +104,20 @@ const HeapSortView = ({
 					<div className={styles.operationDetails}>
 						{parentIndex !== undefined && (
 							<div className={styles.operationDetail}>
-								<strong>Parent:</strong>{' '}
-								{heapArray[parentIndex]} (index {parentIndex})
+								<strong>Parent:</strong> {getValue(heapArray[parentIndex])}{' '}
+								(index {parentIndex}) {/* ✅ Fixed */}
 							</div>
 						)}
 						{leftChild !== undefined && leftChild < heapSize && (
 							<div className={styles.operationDetail}>
-								<strong>Left Child:</strong>{' '}
-								{heapArray[leftChild]} (index {leftChild})
+								<strong>Left Child:</strong> {getValue(heapArray[leftChild])}{' '}
+								(index {leftChild}) {/* ✅ Fixed */}
 							</div>
 						)}
 						{rightChild !== undefined && rightChild < heapSize && (
 							<div className={styles.operationDetail}>
-								<strong>Right Child:</strong>{' '}
-								{heapArray[rightChild]} (index {rightChild})
+								<strong>Right Child:</strong> {getValue(heapArray[rightChild])}{' '}
+								(index {rightChild}) {/* ✅ Fixed */}
 							</div>
 						)}
 					</div>
@@ -142,22 +143,14 @@ const HeapSortView = ({
 										'--total-at-level': level.length,
 									}}
 								>
-									<div className={styles.nodeValue}>
-										{node.value}
-									</div>
-									<div className={styles.nodeIndex}>
-										{node.index}
-									</div>
+									<div className={styles.nodeValue}>{node.value}</div>
+									<div className={styles.nodeIndex}>{node.index}</div>
 
 									{node.leftChild !== null && (
-										<div
-											className={styles.leftConnection}
-										></div>
+										<div className={styles.leftConnection}></div>
 									)}
 									{node.rightChild !== null && (
-										<div
-											className={styles.rightConnection}
-										></div>
+										<div className={styles.rightConnection}></div>
 									)}
 								</div>
 							))}
@@ -172,11 +165,8 @@ const HeapSortView = ({
 					<div className={styles.sortedContainer}>
 						{sortedIndices
 							.map(index => (
-								<div
-									key={index}
-									className={styles.sortedElement}
-								>
-									{array[index]}
+								<div key={index} className={styles.sortedElement}>
+									{getValue(array[index])}
 								</div>
 							))
 							.reverse()}
