@@ -1,132 +1,132 @@
-
 .sidebar {
-    width: 240px;
-    height: 100vh;
-    background-color: var(--color-surface);
-    border-right: 1px solid var(--color-border);
-    padding: 1.5rem;
-    display: flex;
-    flex-direction: column;
-    box-sizing: border-box;
-    flex-shrink: 0;
-    border-radius: var(--border-radius-lg);
-    transition: width 0.3s ease-in-out;
+	width: 240px;
+	height: 100vh;
+	background-color: var(--color-surface);
+	border-right: 1px solid var(--color-border);
+	padding: 1.5rem;
+	display: flex;
+	flex-direction: column;
+	box-sizing: border-box;
+	flex-shrink: 0;
+	border-radius: var(--border-radius-lg);
+	transition: width 0.3s ease-in-out;
 }
 
 .sidebar.collapsed {
-    width: 60px;
+	width: 60px;
 }
 
 .logo {
-    margin-bottom: 2rem;
-    text-align: center;
+	margin-bottom: 2rem;
+	text-align: center;
 }
 
 .logo p {
-    font-size: 1.5rem;
-    font-weight: 700;
-    color: var(--color-primary);
-    margin: 0;
+	font-size: 1.5rem;
+	font-weight: 700;
+	color: var(--color-primary);
+	margin: 0;
 }
 
 .navList {
-    list-style: none;
-    padding: 0;
-    margin: 0;
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
-    position: relative;
+	list-style: none;
+	padding: 0;
+	margin: 0;
+	display: flex;
+	flex-direction: column;
+	gap: 0.5rem;
+	position: relative;
 }
 
 .activeIndicator {
-    position: absolute;
-    left: 0;
-    width: 100%;
-    background-color: var(--color-primary);
-    border-radius: var(--border-radius-md);
-    z-index: 1;
-    transition: top 0.4s cubic-bezier(0.25, 1, 0.5, 1),
-    height 0.4s cubic-bezier(0.25, 1, 0.5, 1);
+	position: absolute;
+	left: 0;
+	width: 100%;
+	background-color: var(--color-primary);
+	border-radius: var(--border-radius-md);
+	z-index: 1;
+	transition:
+		top 0.4s cubic-bezier(0.25, 1, 0.5, 1),
+		height 0.4s cubic-bezier(0.25, 1, 0.5, 1);
 }
 
 .navLink {
-    position: relative;
-    z-index: 2;
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-    padding: 0.75rem 1rem;
-    text-decoration: none;
-    color: var(--color-text-secondary);
-    font-weight: 500;
-    border-radius: var(--border-radius-md);
-    transition: all 0.2s;
-    background-color: transparent;
+	position: relative;
+	z-index: 2;
+	display: flex;
+	align-items: center;
+	gap: 1rem;
+	padding: 0.75rem 1rem;
+	text-decoration: none;
+	color: var(--color-text-secondary);
+	font-weight: 500;
+	border-radius: var(--border-radius-md);
+	transition: all 0.2s;
+	background-color: transparent;
 }
 
 .navLink:hover {
-    background-color: #f8f9fa;
-    color: var(--color-text-primary);
+	background-color: #f8f9fa;
+	color: var(--color-text-primary);
 }
 
-
 .activeLink {
-    color: white;
+	color: white;
 }
 
 .activeLink:hover {
-    color: white;
-    background-color: transparent;
+	color: white;
+	background-color: transparent;
 }
 
 .sidebar.collapsed {
-    width: 80px;
+	width: 80px;
 }
 
 .sidebar.collapsed .label {
-    opacity: 0;
-    width: 0;
-    overflow: hidden;
-    transition: opacity 0.1s, width 0.2s ease-in-out;
+	opacity: 0;
+	width: 0;
+	overflow: hidden;
+	transition:
+		opacity 0.1s,
+		width 0.2s ease-in-out;
 }
 
-
 .sidebar.collapsed .navLink {
-    justify-content: center;
-    padding: 0.75rem;
-    gap: 0;
+	justify-content: center;
+	padding: 0.75rem;
+	gap: 0;
 }
 
 .icon {
-    flex-shrink: 0;
-    width: 24px;
-    font-size: 1.2rem;
-    text-align: center;
-    font-weight: bold;
+	flex-shrink: 0;
+	width: 24px;
+	font-size: 1.2rem;
+	text-align: center;
+	font-weight: bold;
 }
 
 .label {
-    transition: opacity 0.2s;
+	transition: opacity 0.2s;
 }
 
 .header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 2rem;
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	margin-bottom: 2rem;
 }
 
 .toggleButton {
-    background: #f0f0f0;
-    border: 1px solid var(--color-border);
-    border-radius: 50%;
-    width: 30px;
-    height: 30px;
-    cursor: pointer;
-    font-size: 1.5rem;
-    line-height: 1;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+	background: #f0f0f0;
+	border: 1px solid var(--color-border);
+	border-radius: 50%;
+	width: 30px;
+	height: 30px;
+	cursor: pointer;
+	font-size: 1.5rem;
+	line-height: 1;
+	display: flex;
+	align-items: center;
+	justify-content: center;
 }

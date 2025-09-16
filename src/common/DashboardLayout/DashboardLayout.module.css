@@ -1,19 +1,18 @@
-/* This file defines the overall page structure: a top bar and a main content area */
 .dashboardContainer {
-  display: flex;
-  flex-direction: column;
-  gap: var(--spacing-lg);
-  height: calc(100vh - 100px); /* Assumes a 100px global header/sidebar combo */
-  padding: var(--spacing-lg);
-  box-sizing: border-box;
-  background-color: var(--color-background);
+	display: flex;
+	flex-direction: column;
+	gap: var(--spacing-lg);
+	height: calc(100vh - 100px);
+	padding: var(--spacing-lg);
+	box-sizing: border-box;
+	background-color: var(--color-background);
 }
 
 .controlsArea {
-  flex-shrink: 0; /* Ensures the control bar doesn't shrink */
+	flex-shrink: 0;
 }
 
 .mainContentArea {
-  flex-grow: 1; /* Ensures the content area fills all remaining vertical space */
-  min-height: 0; /* A critical fix for flexbox children to allow scrolling */
+	flex-grow: 1;
+	min-height: 0;
 }

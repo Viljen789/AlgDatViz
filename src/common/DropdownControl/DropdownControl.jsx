@@ -1,8 +1,8 @@
-import {useState} from 'react';
-import {AnimatePresence, motion} from 'framer-motion';
+import { useState } from 'react';
+import { AnimatePresence, motion } from 'framer-motion';
 import styles from './DropdownControl.module.css';
 
-const DropdownControl = ({label, value, children}) => {
+const DropdownControl = ({ label, value, children }) => {
 	const [isOpen, setIsOpen] = useState(false);
 
 	return (
@@ -19,10 +19,10 @@ const DropdownControl = ({label, value, children}) => {
 				{isOpen && (
 					<motion.div
 						className={styles.optionsPanel}
-						initial={{opacity: 0, y: -10}}
-						animate={{opacity: 1, y: 0}}
-						exit={{opacity: 0, y: -10}}
-						transition={{duration: 0.2}}
+						initial={{ opacity: 0, y: -10 }}
+						animate={{ opacity: 1, y: 0 }}
+						exit={{ opacity: 0, y: -10 }}
+						transition={{ duration: 0.2 }}
 					>
 						{children}
 					</motion.div>

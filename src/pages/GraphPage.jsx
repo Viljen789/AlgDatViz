@@ -1,6 +1,5 @@
-import {motion} from 'framer-motion';
+import { motion } from 'framer-motion';
 import GraphDashboard from '../components/Graph/GraphDashboard';
-
 
 const pageVariants = {
 	initial: {
@@ -33,7 +32,7 @@ const GraphPage = () => {
 			transition={pageTransition}
 		>
 			<h1>Graph Visualizer</h1>
-			<GraphDashboard/>
+			<GraphDashboard />
 		</motion.div>
 	);
 };

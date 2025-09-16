@@ -1,6 +1,6 @@
-import styles from "./ToggleSwitch.module.css"
+import styles from './ToggleSwitch.module.css';
 
-const ToggleSwitch = ({label, checked, onChange}) => (
+const ToggleSwitch = ({ label, checked, onChange }) => (
 	<label className={styles.switchLabel}>
 		<span>{label}</span>
 		<div className={styles.switchContainer}>
@@ -15,5 +15,5 @@ const ToggleSwitch = ({label, checked, onChange}) => (
 			</div>
 		</div>
 	</label>
-)
+);
 export default ToggleSwitch;

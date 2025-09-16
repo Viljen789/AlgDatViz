@@ -1,51 +1,76 @@
-// src/utils/sorting/algorithms/countingSort.js
-
 export function getCountingSortStepsWithStats(array) {
-  const arr = [...array];
-  const n = arr.length;
-  let comparisons = 0; // Counting sort has no direct comparisons
-  let swaps = 0; // Represents array writes/placements
+	const arr = [...array];
+	const n = arr.length;
+	let comparisons = 0;
+	let swaps = 0;
+	const steps = [];
+	const createStats = () => ({
+		comparisons,
+		swaps,
+		arraySize: n,
+		totalOperations: comparisons + swaps,
+	});
+	if (n === 0) return { steps, finalStats: createStats() };
 
-  const steps = [];
-  const createStats = () => ({ comparisons, swaps, arraySize: n, totalOperations: comparisons + swaps });
+	const max = Math.max(...arr);
+	const count = new Array(max + 1).fill(0);
 
-  steps.push({ array: [...arr], comparing: [], swapping: [], sorted: [], line: null, stats: createStats() });
+	steps.push({
+		array: [...arr],
+		comparing: [],
+		swapping: [],
+		sorted: [],
+		line: 1,
+		stats: createStats(),
+		metadata: { phase: 'counting', countArray: [...count], max },
+	});
 
-  if (n === 0) {
-    return { steps, finalStats: createStats() };
-  }
+	for (let i = 0; i < n; i++) {
+		count[arr[i]]++;
+		swaps++;
+		steps.push({
+			array: [...arr],
+			comparing: [i],
+			swapping: [],
+			sorted: [],
+			line: 4,
+			stats: createStats(),
+			metadata: { phase: 'counting', countArray: [...count], max },
+		});
+	}
 
-  steps.push({ array: [...arr], comparing: Array.from({ length: n }, (_, k) => k), swapping: [], sorted: [], line: 2, stats: createStats() });
-  const max = Math.max(...arr);
-  const count = new Array(max + 1).fill(0);
+	let sortedIndex = 0;
+	for (let i = 0; i <= max; i++) {
+		while (count[i] > 0) {
+			swaps++;
+			arr[sortedIndex] = i;
+			count[i]--;
+			steps.push({
+				array: [...arr],
+				comparing: [],
+				swapping: [sortedIndex],
+				sorted: Array.from({ length: sortedIndex + 1 }, (_, k) => k),
+				line: 9,
+				stats: createStats(),
+				metadata: {
+					phase: 'reconstructing',
+					countArray: [...count],
+					max,
+				},
+			});
+			sortedIndex++;
+		}
+	}
 
-  steps.push({ array: [...arr], comparing: [], swapping: [], sorted: [], line: 3, stats: createStats() });
-  for (let i = 0; i < n; i++) {
-    steps.push({ array: [...arr], comparing: [i], swapping: [], sorted: [], line: 4, stats: createStats() });
-    count[arr[i]]++;
-    swaps++; // Consider reading into the count array as a form of write/operation
-    steps.push({ array: [...arr], comparing: [i], swapping: [], sorted: [], line: 5, stats: createStats() });
-  }
-
-  let sortedIndex = 0;
-  steps.push({ array: [...arr], comparing: [], swapping: [], sorted: [], line: 6, stats: createStats() });
-  for (let i = 0; i <= max; i++) {
-    steps.push({ array: [...arr], comparing: [], swapping: [], sorted: Array.from({ length: sortedIndex }, (_, k) => k), line: 7, stats: createStats() });
-    while (count[i] > 0) {
-      steps.push({ array: [...arr], comparing: [], swapping: [], sorted: Array.from({ length: sortedIndex }, (_, k) => k), line: 8, stats: createStats() });
-      
-      swaps++; // Placing the element into the sorted array
-      arr[sortedIndex] = i;
-      steps.push({ array: [...arr], comparing: [], swapping: [sortedIndex], sorted: Array.from({ length: sortedIndex }, (_, k) => k), line: 9, stats: createStats() });
-
-      count[i]--;
-      sortedIndex++;
-      steps.push({ array: [...arr], comparing: [], swapping: [], sorted: Array.from({ length: sortedIndex }, (_, k) => k), line: 10, stats: createStats() });
-    }
-  }
-
-  const finalStats = createStats();
-  steps.push({ array: [...arr], comparing: [], swapping: [], sorted: Array.from({ length: n }, (_, k) => k), line: null, stats: finalStats });
-
-  return { steps, finalStats };
+	const finalStats = createStats();
+	steps.push({
+		array: [...arr],
+		comparing: [],
+		swapping: [],
+		sorted: Array.from({ length: n }, (_, k) => k),
+		line: null,
+		stats: finalStats,
+		metadata: { phase: 'completed' },
+	});
+	return { steps, finalStats };
 }

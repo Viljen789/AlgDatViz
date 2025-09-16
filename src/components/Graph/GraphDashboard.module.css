@@ -1,27 +1,21 @@
-/* This file is now ONLY responsible for the INTERNAL layout of the graph page's content */
-
 .contentFlex {
-  display: flex;
-  gap: var(--spacing-lg);
-  height: 100%; /* Make the flex container fill the mainContentArea */
+	display: flex;
+	gap: var(--spacing-lg);
+	height: 100%;
 }
 
-/* We don't need .graphPanel and .dataPanel to have the card styles anymore,
-   because we apply the .panel class directly in the JSX. */
-
 .graphPanel {
-  flex-grow: 1;
-  width: 0;
-  padding: var(--spacing-md); /* Internal padding for the visualizer */
+	flex-grow: 1;
+	width: 0;
+	padding: var(--spacing-md);
 }
 
 .dataPanel {
-  flex-shrink: 0;
-  width: 450px;
+	flex-shrink: 0;
+	width: 450px;
 }
 
-/* Make the Tabs component fill the data panel */
 .dataPanel > :first-child {
-    flex-grow: 1;
-    min-height: 0;
+	flex-grow: 1;
+	min-height: 0;
 }

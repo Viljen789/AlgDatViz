@@ -1,104 +1,107 @@
 .listContainer {
-    display: flex;
-    flex-direction: column;
-
+	display: flex;
+	flex-direction: column;
 }
 
 .row {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-    padding: 0.5rem;
-    border-radius: 4px;
-    border-bottom: 1px solid var(--color-border);
-    transition: background-color 0.2s;
+	display: flex;
+	align-items: center;
+	gap: 0.75rem;
+	padding: 0.5rem;
+	border-radius: 4px;
+	border-bottom: 1px solid var(--color-border);
+	transition: background-color 0.2s;
 }
 
 .row:last-child {
-    border-bottom: none;
+	border-bottom: none;
 }
 
 .nodeLabel {
-    font-weight: 600;
-    color: var(--viz-text-color);
-    flex-shrink: 0;
-    min-width: 40px;
+	font-weight: 600;
+	color: var(--viz-text-color);
+	flex-shrink: 0;
+	min-width: 40px;
 }
 
 .neighborsInput {
-    flex-grow: 1;
-    width: 0;
-    background-color: transparent;
-    border: none;
-    font-family: var(--font-family-mono);
-    font-size: 1rem;
-    color: var(--viz-text-color);
-    padding: 0.25rem;
-    outline: none;
+	flex-grow: 1;
+	width: 0;
+	background-color: transparent;
+	border: none;
+	font-family: var(--font-family-mono);
+	font-size: 1rem;
+	color: var(--viz-text-color);
+	padding: 0.25rem;
+	outline: none;
 }
 
 .neighborsInput::placeholder {
-    color: #adb5bd;
-    font-style: italic;
+	color: #adb5bd;
+	font-style: italic;
 }
 
 .inputInvalid {
-    color: var(--color-error);
-    background-color: rgba(255, 77, 77, 0.05);
+	color: var(--color-error);
+	background-color: rgba(255, 77, 77, 0.05);
 }
 
 .deleteButton {
-    margin-left: auto;
-    background: none;
-    border: none;
-    color: var(--color-border);
-    cursor: pointer;
-    font-size: 1.5rem;
-    line-height: 1;
-    padding: 0 0.25rem;
-    border-radius: 50%;
-    opacity: 0;
-    transition: opacity 0.2s, color 0.2s;
+	margin-left: auto;
+	background: none;
+	border: none;
+	color: var(--color-border);
+	cursor: pointer;
+	font-size: 1.5rem;
+	line-height: 1;
+	padding: 0 0.25rem;
+	border-radius: 50%;
+	opacity: 0;
+	transition:
+		opacity 0.2s,
+		color 0.2s;
 }
 
 .row:hover .deleteButton {
-    opacity: 1;
+	opacity: 1;
 }
 
 .deleteButton:hover {
-    color: var(--color-error);
+	color: var(--color-error);
 }
 
 .selected {
-    background-color: #e9d5ff !important;
+	background-color: #e9d5ff !important;
 }
 
 .addRow {
-    padding: 0;
-    margin-top: 0.5rem;
-    border-radius: var(--border-radius-md);
+	padding: 0;
+	margin-top: 0.5rem;
+	border-radius: var(--border-radius-md);
 }
 
 .addButton {
-    width: 100%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 0.75rem;
-    border: none;
-    cursor: pointer;
-    background-color: transparent;
-    color: var(--color-text-secondary);
-    border-radius: var(--border-radius-md);
-    transition: background-color 0.2s, color 0.2s;
+	width: 100%;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	padding: 0.75rem;
+	border: none;
+	cursor: pointer;
+	background-color: transparent;
+	color: var(--color-text-secondary);
+	border-radius: var(--border-radius-md);
+	transition:
+		background-color 0.2s,
+		color 0.2s;
 }
 
 .addButton:hover {
-    color: var(--color-primary);
-    background-color: var(--color-light-grey);
+	color: var(--color-primary);
+	background-color: var(--color-light-grey);
 }
 
 .plusIcon {
-    font-size: 1.5rem;
-    line-height: 1;
+	font-size: 1.5rem;
+	line-height: 1;
 }

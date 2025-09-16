@@ -1,128 +1,122 @@
 .controlsContainer {
-    padding: var(--spacing-md);
-    background-color: var(--color-surface);
-    border: 1px solid var(--color-border);
-    border-radius: var(--border-radius-lg);
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    justify-content: space-between;
-
-
-
-
+	padding: var(--spacing-md);
+	background-color: var(--color-surface);
+	border: 1px solid var(--color-border);
+	border-radius: var(--border-radius-lg);
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	justify-content: space-between;
 }
 
 .controlGroup {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-
+	display: flex;
+	align-items: center;
+	gap: 0.75rem;
 }
 
 .controlGroup label {
-    font-weight: 600;
-    color: var(--color-text-secondary);
-    white-space: nowrap;
+	font-weight: 600;
+	color: var(--color-text-secondary);
+	white-space: nowrap;
 }
 
 .select {
-    padding: 0.5rem 0.75rem;
-    border: 1px solid var(--color-border);
-    border-radius: var(--border-radius-md);
-    background-color: var(--color-surface);
-    font-size: 0.9rem;
-    color: var(--color-text-primary);
-    cursor: pointer;
-    transition: border-color 0.2s;
-    min-width: 120px;
+	padding: 0.5rem 0.75rem;
+	border: 1px solid var(--color-border);
+	border-radius: var(--border-radius-md);
+	background-color: var(--color-surface);
+	font-size: 0.9rem;
+	color: var(--color-text-primary);
+	cursor: pointer;
+	transition: border-color 0.2s;
+	min-width: 120px;
 }
 
 .select:focus {
-    outline: none;
-    border-color: var(--color-primary);
+	outline: none;
+	border-color: var(--color-primary);
 }
 
 .select:disabled {
-    background-color: #f8f9fa;
-    color: var(--color-text-secondary);
-    cursor: not-allowed;
+	background-color: #f8f9fa;
+	color: var(--color-text-secondary);
+	cursor: not-allowed;
 }
 
 .controlButton {
-    padding: 0.625rem 1.25rem;
-    font-size: 0.9rem;
-    font-weight: 600;
-    color: var(--color-text-secondary);
-    background-color: var(--color-surface);
-    border: 1px solid var(--color-border);
-    border-radius: var(--border-radius-md);
-    cursor: pointer;
-    transition: all 0.2s ease-in-out;
-    white-space: nowrap;
+	padding: 0.625rem 1.25rem;
+	font-size: 0.9rem;
+	font-weight: 600;
+	color: var(--color-text-secondary);
+	background-color: var(--color-surface);
+	border: 1px solid var(--color-border);
+	border-radius: var(--border-radius-md);
+	cursor: pointer;
+	transition: all 0.2s ease-in-out;
+	white-space: nowrap;
 }
 
 .controlButton:hover:not(:disabled) {
-    border-color: var(--color-primary);
-    color: var(--color-primary);
-    transform: translateY(-1px);
+	border-color: var(--color-primary);
+	color: var(--color-primary);
+	transform: translateY(-1px);
 }
 
 .controlButton:disabled {
-    color: var(--color-border);
-    cursor: not-allowed;
-    transform: none;
+	color: var(--color-border);
+	cursor: not-allowed;
+	transform: none;
 }
 
 .viewModeButton {
-    padding: 0.625rem 1rem;
-    font-size: 0.9rem;
-    font-weight: 600;
-    color: var(--color-text-secondary);
-    background-color: var(--color-surface);
-    border: 1px solid var(--color-border);
-    border-radius: var(--border-radius-md);
-    cursor: pointer;
-    transition: all 0.2s ease-in-out;
+	padding: 0.625rem 1rem;
+	font-size: 0.9rem;
+	font-weight: 600;
+	color: var(--color-text-secondary);
+	background-color: var(--color-surface);
+	border: 1px solid var(--color-border);
+	border-radius: var(--border-radius-md);
+	cursor: pointer;
+	transition: all 0.2s ease-in-out;
 }
 
 .viewModeButton:hover:not(:disabled) {
-    border-color: var(--color-primary);
-    background-color: var(--color-primary);
-    color: white;
+	border-color: var(--color-primary);
+	background-color: var(--color-primary);
+	color: white;
 }
 
 .viewModeButton:disabled {
-    color: var(--color-border);
-    cursor: not-allowed;
+	color: var(--color-border);
+	cursor: not-allowed;
 }
 
 .sortingActive {
-    background-color: var(--color-primary);
-    color: white;
-    border-color: var(--color-primary);
-    font-weight: 600;
+	background-color: var(--color-primary);
+	color: white;
+	border-color: var(--color-primary);
+	font-weight: 600;
 }
 .controlButton.sortingActive:hover,
 .viewModeButton.sortingActive:hover {
-    color: white;
-    font-weight: 600;
+	color: white;
+	font-weight: 600;
 }
 
-
 @media (max-width: 768px) {
-    .controlsContainer {
-        flex-direction: column;
-        align-items: stretch;
-        gap: 1rem;
-    }
+	.controlsContainer {
+		flex-direction: column;
+		align-items: stretch;
+		gap: 1rem;
+	}
 
-    .controlGroup {
-        justify-content: space-between;
-        width: 100%;
-    }
+	.controlGroup {
+		justify-content: space-between;
+		width: 100%;
+	}
 
-    .select {
-        min-width: 100px;
-    }
+	.select {
+		min-width: 100px;
+	}
 }

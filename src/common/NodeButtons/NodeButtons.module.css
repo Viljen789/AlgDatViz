@@ -1,42 +1,44 @@
-
 .nodeButton {
-    background: none;
-    border: none;
-    cursor: pointer;
-    border-radius: 50%;
-    transition: opacity 0.2s, color 0.2s, background-color 0.2s;
-    font-size: 1.5rem;
-    line-height: 1;
-    padding: 0 0.25rem;
+	background: none;
+	border: none;
+	cursor: pointer;
+	border-radius: 50%;
+	transition:
+		opacity 0.2s,
+		color 0.2s,
+		background-color 0.2s;
+	font-size: 1.5rem;
+	line-height: 1;
+	padding: 0 0.25rem;
 }
 
 .addButton {
-    width: 100%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 0.75rem;
-    background-color: transparent;
-    color: var(--color-text-secondary);
-    border-radius: var(--border-radius-md);
+	width: 100%;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	padding: 0.75rem;
+	background-color: transparent;
+	color: var(--color-text-secondary);
+	border-radius: var(--border-radius-md);
 }
 
 .addButton:hover {
-    color: var(--color-primary);
-    background-color: var(--color-light-grey);
+	color: var(--color-primary);
+	background-color: var(--color-light-grey);
 }
 
 .plusIcon {
-    font-size: 1.5rem;
-    line-height: 1;
+	font-size: 1.5rem;
+	line-height: 1;
 }
 
 .deleteButton {
-    color: var(--color-border);
-    opacity: 0;
+	color: var(--color-border);
+	opacity: 0;
 }
 
 .deleteButton:hover {
-    color: var(--color-error);
-    opacity: 1;
+	color: var(--color-error);
+	opacity: 1;
 }

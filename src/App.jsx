@@ -1,6 +1,6 @@
-import {useState} from 'react';
-import {BrowserRouter, Route, Routes, useLocation} from 'react-router-dom';
-import {AnimatePresence} from 'framer-motion';
+import { useState } from 'react';
+import { BrowserRouter, Route, Routes, useLocation } from 'react-router-dom';
+import { AnimatePresence } from 'framer-motion';
 import Sidebar from './common/Sidebar/Sidebar.jsx';
 import GraphPage from './pages/GraphPage';
 import SortingPage from './pages/SortingPage';
@@ -21,21 +21,15 @@ const AppLayout = () => {
 					<Routes location={location} key={location.pathname}>
 						<Route
 							path="/graph"
-							element={
-								<GraphPage key={location.pathname}/>
-							}
+							element={<GraphPage key={location.pathname} />}
 						/>
 						<Route
 							path="/sorting"
-							element={
-								<SortingPage key={location.pathname}/>
-							}
+							element={<SortingPage key={location.pathname} />}
 						/>
 						<Route
 							path="/"
-							element={
-								<GraphPage key={location.pathname}/>
-							}
+							element={<GraphPage key={location.pathname} />}
 						/>
 					</Routes>
 				</AnimatePresence>
@@ -47,7 +41,7 @@ const AppLayout = () => {
 function App() {
 	return (
 		<BrowserRouter>
-			<AppLayout/>
+			<AppLayout />
 		</BrowserRouter>
 	);
 }

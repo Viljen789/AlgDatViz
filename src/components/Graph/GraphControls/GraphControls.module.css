@@ -1,19 +1,19 @@
 .controlsContainer {
-  width: 100%;
-  padding: var(--spacing-md);
-  background-color: var(--color-surface);
-  border: 1px solid var(--color-border);
-  border-radius: var(--border-radius-lg);
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: var(--spacing-lg);
-  box-sizing: border-box;
-  box-shadow: 0 4px 12px var(--shadow-color);
+	width: 100%;
+	padding: var(--spacing-md);
+	background-color: var(--color-surface);
+	border: 1px solid var(--color-border);
+	border-radius: var(--border-radius-lg);
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: var(--spacing-lg);
+	box-sizing: border-box;
+	box-shadow: 0 4px 12px var(--shadow-color);
 }
 
 .controlGroup {
-  display: flex;
-  align-items: center;
-  gap: var(--spacing-sm);
+	display: flex;
+	align-items: center;
+	gap: var(--spacing-sm);
 }

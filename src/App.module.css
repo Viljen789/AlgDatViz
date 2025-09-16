@@ -1,13 +1,15 @@
 .appContainer {
-    display: flex;
-    min-height: 100vh;
+	display: flex;
+	min-height: 100vh;
 }
 
 .mainContent {
-    flex-grow: 1;
-    height: 100vh;
-    overflow-y: auto;
-    padding: 2rem;
-    box-sizing: border-box;
-    transition: margin-left 0.3s ease-in-out, width 0.3s ease-in-out;
+	flex-grow: 1;
+	height: 100vh;
+	overflow-y: auto;
+	padding: 2rem;
+	box-sizing: border-box;
+	transition:
+		margin-left 0.3s ease-in-out,
+		width 0.3s ease-in-out;
 }
