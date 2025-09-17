@@ -31,9 +31,7 @@ const AlgorithmDetails = ({ info }) => {
 						</span>
 					</div>
 					<div className={styles.propRow}>
-						<span className={styles.propLabel}>
-							Space complexity:
-						</span>
+						<span className={styles.propLabel}>Space complexity:</span>
 						<span className={styles.propValue}>
 							{info.complexity.space.worst}
 						</span>

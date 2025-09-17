@@ -29,9 +29,7 @@ export function parseAndUpdateGraph(
 		.filter(Boolean);
 
 	if (isDirected) {
-		const edgesToKeep = currentGraph.edges.filter(
-			e => e.from !== sourceNodeId
-		);
+		const edgesToKeep = currentGraph.edges.filter(e => e.from !== sourceNodeId);
 		const finalEdges = [...edgesToKeep, ...newOutgoingEdges];
 		return { ...currentGraph, edges: finalEdges };
 	} else {

@@ -68,8 +68,7 @@ const OperationsComparison = ({
 		return operationStats
 			.filter(
 				(_, index) =>
-					index % sampleRate === 0 ||
-					index === operationStats.length - 1
+					index % sampleRate === 0 || index === operationStats.length - 1
 			)
 			.map(stat => {
 				const theoretical = calculateTheoreticalOps(
@@ -123,8 +122,8 @@ const OperationsComparison = ({
 				<div className={styles.placeholder}>
 					<h4>Performance Analysis</h4>
 					<p>
-						Run a sorting algorithm to see its performance analysis
-						and complexity chart.
+						Run a sorting algorithm to see its performance analysis and
+						complexity chart.
 					</p>
 				</div>
 			</div>
@@ -165,10 +164,7 @@ const OperationsComparison = ({
 						data={chartData}
 						margin={{ top: 5, right: 20, left: 10, bottom: 5 }}
 					>
-						<CartesianGrid
-							strokeDasharray="3 3"
-							stroke="var(--color-border)"
-						/>
+						<CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
 						<XAxis
 							dataKey="step"
 							type="number"
@@ -181,9 +177,7 @@ const OperationsComparison = ({
 							stroke="var(--color-text-secondary)"
 							tick={{ fontSize: 12 }}
 							tickFormatter={value =>
-								value > 1000
-									? `${(value / 1000).toFixed(1)}k`
-									: value
+								value > 1000 ? `${(value / 1000).toFixed(1)}k` : value
 							}
 						/>
 						<Tooltip
@@ -193,10 +187,7 @@ const OperationsComparison = ({
 								borderRadius: 'var(--border-radius-md)',
 								boxShadow: '0 4px 12px var(--shadow-color)',
 							}}
-							formatter={(value, name) => [
-								value?.toLocaleString(),
-								name,
-							]}
+							formatter={(value, name) => [value?.toLocaleString(), name]}
 							labelFormatter={value => `Step ${value}`}
 						/>
 						<Legend />

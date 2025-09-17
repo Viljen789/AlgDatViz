@@ -27,10 +27,7 @@ const AppLayout = () => {
 							path="/sorting"
 							element={<SortingPage key={location.pathname} />}
 						/>
-						<Route
-							path="/"
-							element={<GraphPage key={location.pathname} />}
-						/>
+						<Route path="/" element={<GraphPage key={location.pathname} />} />
 					</Routes>
 				</AnimatePresence>
 			</main>

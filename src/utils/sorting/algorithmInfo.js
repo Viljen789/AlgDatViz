@@ -13,7 +13,8 @@ export const ALGORITHM_INFO = {
 		},
 		cases: {
 			best: 'Det beste tilfellet inntreffer når arrayet allerede er sortert. En enkelt gjennomgang er nok til å bekrefte dette.',
-			worst: 'Det verste tilfellet inntreffer når arrayet er sortert i omvendt rekkefølge. Det krever maksimalt antall bytter og sammenligninger.',
+			worst:
+				'Det verste tilfellet inntreffer når arrayet er sortert i omvendt rekkefølge. Det krever maksimalt antall bytter og sammenligninger.',
 		},
 	},
 	selectionSort: {
@@ -30,7 +31,8 @@ export const ALGORITHM_INFO = {
 		},
 		cases: {
 			best: 'Det beste tilfellet har samme tidskompleksitet som det verste, siden algoritmen alltid må finne minimum i hver runde.',
-			worst: 'Det verste tilfellet inntreffer når arrayet er sortert i omvendt rekkefølge, men tidskompleksiteten forblir O(n²).',
+			worst:
+				'Det verste tilfellet inntreffer når arrayet er sortert i omvendt rekkefølge, men tidskompleksiteten forblir O(n²).',
 		},
 	},
 	insertionSort: {
@@ -47,7 +49,8 @@ export const ALGORITHM_INFO = {
 		},
 		cases: {
 			best: 'Det beste tilfellet inntreffer når arrayet allerede er sortert. Algoritmen trenger bare å sammenligne hvert element med forgjengeren.',
-			worst: 'Det verste tilfellet inntreffer når arrayet er sortert i omvendt rekkefølge. Hvert element må flyttes til begynnelsen av arrayet.',
+			worst:
+				'Det verste tilfellet inntreffer når arrayet er sortert i omvendt rekkefølge. Hvert element må flyttes til begynnelsen av arrayet.',
 		},
 	},
 	mergeSort: {
@@ -68,7 +71,8 @@ export const ALGORITHM_INFO = {
 		},
 		cases: {
 			best: 'Det beste tilfellet har samme tidskompleksitet som andre tilfeller på grunn av algoritmens konsistente deling og fletting.',
-			worst: 'Det verste tilfellet har også O(n log n) tidskompleksitet, noe som gjør flettesortering forutsigbar i ytelse.',
+			worst:
+				'Det verste tilfellet har også O(n log n) tidskompleksitet, noe som gjør flettesortering forutsigbar i ytelse.',
 		},
 	},
 	quickSort: {
@@ -85,7 +89,8 @@ export const ALGORITHM_INFO = {
 		},
 		cases: {
 			best: 'Det beste tilfellet inntreffer når pivot-elementet alltid er medianen av arrayet, noe som fører til perfekt balanserte partisjoner.',
-			worst: 'Det verste tilfellet inntreffer når pivot alltid er det minste eller største elementet, noe som fører til ubalanserte partisjoner og degradering til O(n²).',
+			worst:
+				'Det verste tilfellet inntreffer når pivot alltid er det minste eller største elementet, noe som fører til ubalanserte partisjoner og degradering til O(n²).',
 		},
 	},
 	heapSort: {
@@ -106,7 +111,8 @@ export const ALGORITHM_INFO = {
 		},
 		cases: {
 			best: 'Det beste tilfellet har samme tidskompleksitet som andre tilfeller på grunn av heap-operasjonenes natur.',
-			worst: 'Det verste tilfellet opprettholder O(n log n) ytelse, noe som gjør haugsortering til et pålitelig valg for kritiske applikasjoner.',
+			worst:
+				'Det verste tilfellet opprettholder O(n log n) ytelse, noe som gjør haugsortering til et pålitelig valg for kritiske applikasjoner.',
 		},
 	},
 	countingSort: {
@@ -123,7 +129,8 @@ export const ALGORITHM_INFO = {
 		},
 		cases: {
 			best: 'Det beste tilfellet inntreffer når området av verdier (k) er lite sammenlignet med antall elementer (n).',
-			worst: 'Det verste tilfellet inntreffer når området av verdier er svært stort, noe som krever mye ekstra minne for tellearrayet.',
+			worst:
+				'Det verste tilfellet inntreffer når området av verdier er svært stort, noe som krever mye ekstra minne for tellearrayet.',
 		},
 	},
 	radixSort: {
@@ -144,7 +151,8 @@ export const ALGORITHM_INFO = {
 		},
 		cases: {
 			best: 'Det beste tilfellet inntreffer når tallene har få siffer (liten d) og sifferområdet er begrenset (liten k).',
-			worst: 'Det verste tilfellet inntreffer når tallene har mange siffer, noe som øker antall gjennomganger som trengs.',
+			worst:
+				'Det verste tilfellet inntreffer når tallene har mange siffer, noe som øker antall gjennomganger som trengs.',
 		},
 	},
 	bucketSort: {
@@ -161,7 +169,8 @@ export const ALGORITHM_INFO = {
 		},
 		cases: {
 			best: 'Det beste tilfellet inntreffer når elementene er jevnt distribuert mellom bøttene, noe som minimerer arbeidet i hver bøtte.',
-			worst: 'Det verste tilfellet inntreffer når alle elementene havner i samme bøtte, noe som degraderer til ytelsen til den interne sorteringsalgoritmen.',
+			worst:
+				'Det verste tilfellet inntreffer når alle elementene havner i samme bøtte, noe som degraderer til ytelsen til den interne sorteringsalgoritmen.',
 		},
 	},
 };
@@ -292,10 +301,7 @@ export function getBubbleSortSteps(array) {
 				array: [...arr],
 				comparing: [j, j + 1],
 				swapping: [],
-				sorted: Array.from(
-					{ length: sortedCount },
-					(_, k) => n - 1 - k
-				),
+				sorted: Array.from({ length: sortedCount }, (_, k) => n - 1 - k),
 				line: 2,
 			});
 			if (arr[j] > arr[j + 1]) {
@@ -303,10 +309,7 @@ export function getBubbleSortSteps(array) {
 					array: [...arr],
 					comparing: [j, j + 1],
 					swapping: [],
-					sorted: Array.from(
-						{ length: sortedCount },
-						(_, k) => n - 1 - k
-					),
+					sorted: Array.from({ length: sortedCount }, (_, k) => n - 1 - k),
 					line: 3,
 				});
 				[arr[j], arr[j + 1]] = [arr[j + 1], arr[j]];
@@ -314,10 +317,7 @@ export function getBubbleSortSteps(array) {
 					array: [...arr],
 					comparing: [],
 					swapping: [j, j + 1],
-					sorted: Array.from(
-						{ length: sortedCount },
-						(_, k) => n - 1 - k
-					),
+					sorted: Array.from({ length: sortedCount }, (_, k) => n - 1 - k),
 					line: 4,
 				});
 			}
@@ -508,142 +508,135 @@ export function getInsertionSortSteps(array) {
 	return steps;
 }
 
-export function getMergeSortSteps(array) {
+// In mergeSort.js - replace the existing function
+export function getMergeSortStepsWithStats(array) {
 	const arr = [...array];
-	const steps = [
-		{
-			array: [...arr],
+	const n = arr.length;
+	let comparisons = 0;
+	let swaps = 0;
+	const steps = [];
+
+	const createStats = () => ({
+		comparisons,
+		swaps,
+		arraySize: n,
+		totalOperations: comparisons + swaps,
+	});
+
+	steps.push({
+		array: [...arr],
+		comparing: [],
+		swapping: [],
+		sorted: [],
+		line: null,
+		stats: createStats(),
+		metadata: { phase: 'initializing' },
+	});
+
+	function merge(mainArray, start, middle, end, auxArray, level) {
+		let k = start,
+			i = start,
+			j = middle + 1;
+
+		// Add merge metadata with target and source ranges
+		steps.push({
+			array: [...mainArray],
 			comparing: [],
 			swapping: [],
 			sorted: [],
-			line: null,
-		},
-	];
-
-	function merge(mainArray, startIdx, middleIdx, endIdx, auxiliaryArray) {
-		let k = startIdx;
-		let i = startIdx;
-		let j = middleIdx + 1;
-		steps.push({
-			array: [...mainArray],
-			comparing: Array.from(
-				{ length: endIdx - startIdx + 1 },
-				(_, x) => startIdx + x
-			),
-			swapping: [],
-			sorted: [],
-			line: 10,
+			line: 8,
+			stats: createStats(),
+			metadata: {
+				phase: 'merging',
+				target: [start, end],
+				left: [start, middle],
+				right: [middle + 1, end],
+				level,
+				leftArray: auxArray.slice(start, middle + 1),
+				rightArray: auxArray.slice(middle + 1, end + 1),
+			},
 		});
 
-		while (i <= middleIdx && j <= endIdx) {
-			steps.push({
-				array: [...mainArray],
-				comparing: [i, j],
-				swapping: [],
-				sorted: [],
-				line: 12,
-			});
-			if (auxiliaryArray[i] <= auxiliaryArray[j]) {
-				steps.push({
-					array: [...mainArray],
-					comparing: [i, j],
-					swapping: [k],
-					sorted: [],
-					line: 13,
-				});
-				mainArray[k++] = auxiliaryArray[i++];
+		while (i <= middle && j <= end) {
+			comparisons++;
+			if (auxArray[i] <= auxArray[j]) {
+				swaps++;
+				mainArray[k++] = auxArray[i++];
 			} else {
-				steps.push({
-					array: [...mainArray],
-					comparing: [i, j],
-					swapping: [k],
-					sorted: [],
-					line: 13,
-				});
-				mainArray[k++] = auxiliaryArray[j++];
+				swaps++;
+				mainArray[k++] = auxArray[j++];
 			}
-		}
-		while (i <= middleIdx) {
+
 			steps.push({
 				array: [...mainArray],
-				comparing: [i],
-				swapping: [k],
+				comparing: [i - 1, j - 1].filter(idx => idx >= 0),
+				swapping: [k - 1],
 				sorted: [],
-				line: 14,
+				line: 11,
+				stats: createStats(),
+				metadata: {
+					phase: 'merging',
+					target: [start, end],
+					left: [start, middle],
+					right: [middle + 1, end],
+					level,
+					leftArray: auxArray.slice(start, middle + 1),
+					rightArray: auxArray.slice(middle + 1, end + 1),
+				},
 			});
-			mainArray[k++] = auxiliaryArray[i++];
 		}
-		while (j <= endIdx) {
-			steps.push({
-				array: [...mainArray],
-				comparing: [j],
-				swapping: [k],
-				sorted: [],
-				line: 14,
-			});
-			mainArray[k++] = auxiliaryArray[j++];
+
+		while (i <= middle) {
+			swaps++;
+			mainArray[k++] = auxArray[i++];
+		}
+		while (j <= end) {
+			swaps++;
+			mainArray[k++] = auxArray[j++];
 		}
 	}
 
-	function mergeSortHelper(mainArray, startIdx, endIdx, auxiliaryArray) {
-		if (startIdx === endIdx) return;
-		steps.push({
-			array: [...mainArray],
-			comparing: [],
-			swapping: [],
-			sorted: [],
-			line: 2,
-		});
+	function mergeSortHelper(mainArray, start, end, auxArray, level) {
+		if (start >= end) return;
+
+		const middle = Math.floor((start + end) / 2);
+
+		// Add dividing metadata with range and children
 		steps.push({
 			array: [...mainArray],
 			comparing: [],
 			swapping: [],
 			sorted: [],
 			line: 3,
+			stats: createStats(),
+			metadata: {
+				phase: 'dividing',
+				range: [start, end],
+				left: [start, middle],
+				right: [middle + 1, end],
+				level,
+			},
 		});
-		const middleIdx = Math.floor((startIdx + endIdx) / 2);
-		steps.push({
-			array: [...mainArray],
-			comparing: [],
-			swapping: [],
-			sorted: [],
-			line: 4,
-		});
-		mergeSortHelper(auxiliaryArray, startIdx, middleIdx, mainArray);
-		steps.push({
-			array: [...mainArray],
-			comparing: [],
-			swapping: [],
-			sorted: [],
-			line: 5,
-		});
-		mergeSortHelper(auxiliaryArray, middleIdx + 1, endIdx, mainArray);
-		steps.push({
-			array: [...mainArray],
-			comparing: [],
-			swapping: [],
-			sorted: [],
-			line: 6,
-		});
-		merge(mainArray, startIdx, middleIdx, endIdx, auxiliaryArray);
-		steps.push({
-			array: [...mainArray],
-			comparing: [],
-			swapping: [],
-			sorted: [],
-			line: 7,
-		});
+
+		mergeSortHelper(auxArray, start, middle, mainArray, level + 1);
+		mergeSortHelper(auxArray, middle + 1, end, mainArray, level + 1);
+		merge(mainArray, start, middle, end, auxArray, level);
 	}
 
-	mergeSortHelper(arr, 0, arr.length - 1, arr.slice());
+	mergeSortHelper(arr, 0, n - 1, arr.slice(), 0);
+
+	const finalStats = createStats();
 	steps.push({
 		array: [...arr],
 		comparing: [],
 		swapping: [],
-		sorted: Array.from({ length: arr.length }, (_, k) => k),
+		sorted: Array.from({ length: n }, (_, k) => k),
 		line: null,
+		stats: finalStats,
+		metadata: { phase: 'completed' },
 	});
-	return steps;
+
+	return { steps, finalStats };
 }
 
 export function getQuickSortSteps(array) {
@@ -803,10 +796,7 @@ export function getHeapSortSteps(array) {
 				array: [...arr],
 				comparing: [left, largest],
 				swapping: [],
-				sorted: Array.from(
-					{ length: sortedCount },
-					(_, k) => n - 1 - k
-				),
+				sorted: Array.from({ length: sortedCount }, (_, k) => n - 1 - k),
 			});
 			if (arr[left] > arr[largest]) largest = left;
 		}
@@ -815,10 +805,7 @@ export function getHeapSortSteps(array) {
 				array: [...arr],
 				comparing: [right, largest],
 				swapping: [],
-				sorted: Array.from(
-					{ length: sortedCount },
-					(_, k) => n - 1 - k
-				),
+				sorted: Array.from({ length: sortedCount }, (_, k) => n - 1 - k),
 			});
 			if (arr[right] > arr[largest]) largest = right;
 		}
@@ -828,10 +815,7 @@ export function getHeapSortSteps(array) {
 				array: [...arr],
 				comparing: [],
 				swapping: [i, largest],
-				sorted: Array.from(
-					{ length: sortedCount },
-					(_, k) => n - 1 - k
-				),
+				sorted: Array.from({ length: sortedCount }, (_, k) => n - 1 - k),
 			});
 			heapify(size, largest);
 		}

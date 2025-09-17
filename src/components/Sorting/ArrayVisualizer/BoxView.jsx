@@ -7,14 +7,20 @@ const BoxView = ({
 	swappingIndices = [],
 	sortedIndices = [],
 	currentIndex,
-	isFastMode,
+	isFastMode = false,
+	isPaused,
+	onAnimationComplete,
 }) => {
+	const handleAnimationComplete = () => {
+		if (!isPaused) {
+			onAnimationComplete();
+		}
+	};
 	return (
 		<LayoutGroup>
 			<div className={styles.boxContainer}>
 				{array.map((item, index) => {
-					const isComparing =
-						!isFastMode && comparingIndices.includes(index);
+					const isComparing = !isFastMode && comparingIndices.includes(index);
 					const isSwapping = swappingIndices.includes(index);
 					const isSorted = sortedIndices.includes(index);
 					const isHighlighting =
@@ -29,13 +35,10 @@ const BoxView = ({
 							key={item.id}
 							layout
 							className={`${styles.numberBox} ${stateClass} ${isHighlighting ? styles.highlighting : ''}`}
-							initial={{ scale: 0.8, opacity: 0 }}
-							animate={{ scale: 1, opacity: 1 }}
-							transition={{
-								layout: { duration: 0.3 },
-								scale: { duration: 0.2 },
-								opacity: { duration: 0.2 },
-							}}
+							onLayoutAnimationComplete={
+								index === 0 ? handleAnimationComplete : undefined
+							}
+							transition={{ duration: 0.6, ease: 'easeInOut' }}
 						>
 							{item.value}
 						</motion.div>

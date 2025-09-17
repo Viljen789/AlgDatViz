@@ -47,10 +47,7 @@ const RadixSortView = ({
 									<div className={styles.emptyBucket}>-</div>
 								) : (
 									elements.map((value, elemIndex) => (
-										<div
-											key={elemIndex}
-											className={styles.bucketElement}
-										>
+										<div key={elemIndex} className={styles.bucketElement}>
 											{value}
 										</div>
 									))
@@ -75,9 +72,7 @@ const RadixSortView = ({
                                     ${swappingIndices.includes(index) && phase === 'collecting' ? styles.swapping : ''}
                                 `}
 							>
-								<span className={styles.elementValue}>
-									{item.value}
-								</span>
+								<span className={styles.elementValue}>{item.value}</span>
 								<span
 									className={`
                                         ${styles.elementDigit}

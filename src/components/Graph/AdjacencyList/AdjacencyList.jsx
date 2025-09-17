@@ -67,8 +67,7 @@ const AdjacencyList = ({
 			onUpdate(finalValue, nodeId);
 		} else {
 			setInputValues(
-				prev =>
-					new Map(prev.set(nodeId, displayStrings.get(nodeId) || ''))
+				prev => new Map(prev.set(nodeId, displayStrings.get(nodeId) || ''))
 			);
 			setErrorMap(prev => new Map(prev.set(nodeId, false)));
 		}
@@ -87,9 +86,7 @@ const AdjacencyList = ({
 						<input
 							type="text"
 							value={inputValues.get(node.id) || ''}
-							onChange={e =>
-								handleInputChange(e.target.value, node.id)
-							}
+							onChange={e => handleInputChange(e.target.value, node.id)}
 							onKeyDown={e => {
 								if (e.key === 'Enter') {
 									e.preventDefault();

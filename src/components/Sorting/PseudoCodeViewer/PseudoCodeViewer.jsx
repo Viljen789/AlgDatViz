@@ -20,14 +20,10 @@ const PseudoCodeViewer = ({ algorithm, activeLine, isFastMode }) => {
 						<div
 							key={index}
 							className={`${styles.codeLine} ${
-								activeLine === index + 1 && !isFastMode
-									? styles.activeLine
-									: ''
+								activeLine === index + 1 && !isFastMode ? styles.activeLine : ''
 							}`}
 						>
-							<span className={styles.lineNumber}>
-								{index + 1}
-							</span>
+							<span className={styles.lineNumber}>{index + 1}</span>
 							<pre className={styles.lineText}>{line}</pre>
 						</div>
 					))}

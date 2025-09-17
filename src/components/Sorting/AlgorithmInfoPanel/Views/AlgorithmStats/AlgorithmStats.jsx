@@ -5,27 +5,19 @@ const AlgorithmStats = ({ info }) => {
 		<div className={styles.statsContainer}>
 			<div className={styles.statItem}>
 				<span className={styles.label}>Time (Best)</span>
-				<span className={styles.value}>
-					{info.complexity.time.best}
-				</span>
+				<span className={styles.value}>{info.complexity.time.best}</span>
 			</div>
 			<div className={styles.statItem}>
 				<span className={styles.label}>Time (Avg)</span>
-				<span className={styles.value}>
-					{info.complexity.time.average}
-				</span>
+				<span className={styles.value}>{info.complexity.time.average}</span>
 			</div>
 			<div className={styles.statItem}>
 				<span className={styles.label}>Time (Worst)</span>
-				<span className={styles.value}>
-					{info.complexity.time.worst}
-				</span>
+				<span className={styles.value}>{info.complexity.time.worst}</span>
 			</div>
 			<div className={styles.statItem}>
 				<span className={styles.label}>Space</span>
-				<span className={styles.value}>
-					{info.complexity.space.worst}
-				</span>
+				<span className={styles.value}>{info.complexity.space.worst}</span>
 			</div>
 			<div className={styles.statItem}>
 				<span className={styles.label}>Stable</span>

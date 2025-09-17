@@ -78,11 +78,7 @@ const AdjacencyMatrix = ({
 						{matrix.map((row, i) => (
 							<tr
 								key={i}
-								className={
-									i === selectedIndex
-										? styles.selectedRow
-										: ''
-								}
+								className={i === selectedIndex ? styles.selectedRow : ''}
 							>
 								<th className={styles.nodeHeader}>
 									<div className={styles.labelContainer}>
@@ -94,28 +90,16 @@ const AdjacencyMatrix = ({
 								{row.map((val, j) => (
 									<td
 										key={j}
-										className={
-											j === selectedIndex
-												? styles.selectedCol
-												: ''
-										}
+										className={j === selectedIndex ? styles.selectedCol : ''}
 									>
 										<input
 											type="number"
 											className={`${styles.cellInput} ${selectedCell?.fromIndex === i && selectedCell?.toIndex === j ? styles.cellSelected : ''}`}
 											value={val}
-											onChange={e =>
-												handleInputChange(
-													e.target.value,
-													i,
-													j
-												)
-											}
+											onChange={e => handleInputChange(e.target.value, i, j)}
 											/*disabled={i === j}*/
 											min="0"
-											onFocus={() =>
-												handleCellFocus(i, j)
-											}
+											onFocus={() => handleCellFocus(i, j)}
 											onBlur={handleCellBlur}
 										/>
 									</td>
@@ -123,9 +107,7 @@ const AdjacencyMatrix = ({
 								<td className={styles.actionCell}>
 									<DeleteNodeButton
 										className={styles.deleteButton}
-										onClick={() =>
-											onDeleteNode(graph.nodes[i].id)
-										}
+										onClick={() => onDeleteNode(graph.nodes[i].id)}
 										title={`Delete node ${graph.nodes[i].id}`}
 									/>
 								</td>
@@ -135,10 +117,7 @@ const AdjacencyMatrix = ({
 					<tfoot>
 						<tr>
 							<td colSpan={graph.nodes.length + 2}>
-								<AddNodeButton
-									onClick={onAddNode}
-									title="Add node"
-								/>
+								<AddNodeButton onClick={onAddNode} title="Add node" />
 							</td>
 						</tr>
 					</tfoot>

@@ -1,94 +1,96 @@
 .countingSortContainer {
-    width: 100%;
-    display: flex;
-    flex-direction: column;
-    gap: var(--spacing-lg);
+	width: 100%;
+	display: flex;
+	flex-direction: column;
+	gap: var(--spacing-lg);
 }
 
 .phaseIndicator {
-    font-weight: 600;
-    text-align: center;
-    color: var(--color-text-secondary);
+	font-weight: 600;
+	text-align: center;
+	color: var(--color-text-secondary);
 }
 
-.arraySection, .histogramSection, .resultSection {
-    display: flex;
-    flex-direction: column;
-    gap: var(--spacing-sm);
+.arraySection,
+.histogramSection,
+.resultSection {
+	display: flex;
+	flex-direction: column;
+	gap: var(--spacing-sm);
 }
 
 h4 {
-    margin: 0;
-    color: var(--color-text-primary);
+	margin: 0;
+	color: var(--color-text-primary);
 }
 
 .arrayContainer {
-    display: flex;
-    flex-wrap: wrap;
-    gap: var(--spacing-sm);
+	display: flex;
+	flex-wrap: wrap;
+	gap: var(--spacing-sm);
 }
 
 .arrayElement {
-    min-width: 30px;
-    padding: var(--spacing-sm);
-    border: 1px solid var(--color-border);
-    border-radius: var(--border-radius-sm);
-    text-align: center;
-    font-family: var(--font-family-mono);
-    transition: all 0.3s ease;
+	min-width: 30px;
+	padding: var(--spacing-sm);
+	border: 1px solid var(--color-border);
+	border-radius: var(--border-radius-sm);
+	text-align: center;
+	font-family: var(--font-family-mono);
+	transition: all 0.3s ease;
 }
 
 .comparing {
-    border-color: var(--color-secondary);
-    background-color: var(--color-lighter-blue);
-    transform: scale(1.1);
+	border-color: var(--color-secondary);
+	background-color: var(--color-lighter-blue);
+	transform: scale(1.1);
 }
 
 .sorted {
-    border-color: var(--color-primary);
-    background-color: var(--color-primary);
-    color: var(--color-surface);
+	border-color: var(--color-primary);
+	background-color: var(--color-primary);
+	color: var(--color-surface);
 }
 
 .placing {
-    border-color: var(--color-success);
-    background-color: rgba(76, 175, 80, 0.1);
+	border-color: var(--color-success);
+	background-color: rgba(76, 175, 80, 0.1);
 }
 
 .histogram {
-    display: flex;
-    align-items: flex-end;
-    gap: var(--spacing-xs);
-    padding: var(--spacing-md);
-    background-color: var(--color-slight-grey);
-    border-radius: var(--border-radius-md);
+	display: flex;
+	align-items: flex-end;
+	gap: var(--spacing-xs);
+	padding: var(--spacing-md);
+	background-color: var(--color-slight-grey);
+	border-radius: var(--border-radius-md);
 }
 
 .histogramBar {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: var(--spacing-xs);
-    flex-grow: 1;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: var(--spacing-xs);
+	flex-grow: 1;
 }
 
 .bar {
-    width: 100%;
-    background-color: var(--color-primary);
-    border-radius: var(--border-radius-sm);
-    display: flex;
-    justify-content: center;
-    padding-top: var(--spacing-xs);
-    color: var(--color-surface);
-    font-size: 0.75rem;
-    transition: height 0.3s ease;
+	width: 100%;
+	background-color: var(--color-primary);
+	border-radius: var(--border-radius-sm);
+	display: flex;
+	justify-content: center;
+	padding-top: var(--spacing-xs);
+	color: var(--color-surface);
+	font-size: 0.75rem;
+	transition: height 0.3s ease;
 }
 
 .count {
-    font-weight: 600;
+	font-weight: 600;
 }
 
 .value {
-    font-size: 0.8rem;
-    font-family: var(--font-family-mono);
+	font-size: 0.8rem;
+	font-family: var(--font-family-mono);
 }

@@ -37,9 +37,7 @@ const HoverDropdown = ({ label, options, value, onChange, disabled }) => {
 			onMouseEnter={() => !disabled && setIsOpen(true)}
 			onMouseLeave={() => setIsOpen(false)}
 		>
-			<div
-				className={`${styles.trigger} ${disabled ? styles.disabled : ''}`}
-			>
+			<div className={`${styles.trigger} ${disabled ? styles.disabled : ''}`}>
 				<span>
 					{label}: {currentOption?.label}
 				</span>

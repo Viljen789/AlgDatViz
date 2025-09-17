@@ -1,3 +1,5 @@
+// src/utils/sorting/algorithms/mergeSort.js
+
 export function getMergeSortStepsWithStats(array) {
 	const arr = [...array];
 	const n = arr.length;
@@ -10,14 +12,9 @@ export function getMergeSortStepsWithStats(array) {
 		arraySize: n,
 		totalOperations: comparisons + swaps,
 	});
-	const maxLevel = n > 0 ? Math.floor(Math.log2(n)) : 0;
 
 	steps.push({
 		array: [...arr],
-		comparing: [],
-		swapping: [],
-		sorted: [],
-		line: null,
 		stats: createStats(),
 		metadata: { phase: 'initializing' },
 	});
@@ -27,75 +24,140 @@ export function getMergeSortStepsWithStats(array) {
 			i = start,
 			j = middle + 1;
 		steps.push({
-			array: [...mainArray],
-			comparing: [],
-			swapping: [],
-			sorted: [],
-			line: 8,
+			array: [...auxArray],
 			stats: createStats(),
 			metadata: {
 				phase: 'merging',
-				leftArray: auxArray.slice(start, middle + 1),
-				rightArray: auxArray.slice(middle + 1, end + 1),
-				mergeIndices: [start, end],
-				currentLevel: level,
-				maxLevel,
+				operation: 'merge_prepare',
+				target: [start, end],
+				left: [start, middle],
+				right: [middle + 1, end],
+				level,
 			},
 		});
-
 		while (i <= middle && j <= end) {
 			comparisons++;
-			if (auxArray[i] <= auxArray[j]) {
-				swaps++;
-				mainArray[k++] = auxArray[i++];
-			} else {
-				swaps++;
-				mainArray[k++] = auxArray[j++];
-			}
 			steps.push({
 				array: [...mainArray],
-				comparing: [i - 1, j - 1],
-				swapping: [k - 1],
-				sorted: [],
-				line: 11,
+				comparing: [i, j],
 				stats: createStats(),
 				metadata: {
 					phase: 'merging',
-					leftArray: auxArray.slice(start, middle + 1),
-					rightArray: auxArray.slice(middle + 1, end + 1),
-					mergeIndices: [start, end],
-					currentLevel: level,
-					maxLevel,
+					operation: 'comparing',
+					target: [start, end],
+					left: [start, middle],
+					right: [middle + 1, end],
+					level,
+					comparingValues: [auxArray[i], auxArray[j]],
 				},
 			});
+			if (auxArray[i] <= auxArray[j]) {
+				swaps++;
+				mainArray[k] = auxArray[i];
+				steps.push({
+					array: [...mainArray],
+					swapping: [k],
+					stats: createStats(),
+					metadata: {
+						phase: 'merging',
+						operation: 'move_from_left',
+						target: [start, end],
+						left: [start, middle],
+						right: [middle + 1, end],
+						level,
+						movedElement: auxArray[i],
+					},
+				});
+				i++;
+				k++;
+			} else {
+				swaps++;
+				mainArray[k] = auxArray[j];
+				steps.push({
+					array: [...mainArray],
+					swapping: [k],
+					stats: createStats(),
+					metadata: {
+						phase: 'merging',
+						operation: 'move_from_right',
+						target: [start, end],
+						left: [start, middle],
+						right: [middle + 1, end],
+						level,
+						movedElement: auxArray[j],
+					},
+				});
+				j++;
+				k++;
+			}
 		}
 		while (i <= middle) {
 			swaps++;
-			mainArray[k++] = auxArray[i++];
+			mainArray[k] = auxArray[i];
+			steps.push({
+				array: [...mainArray],
+				swapping: [k],
+				stats: createStats(),
+				metadata: {
+					phase: 'merging',
+					operation: 'move_remaining_left',
+					target: [start, end],
+					left: [start, middle],
+					right: [middle + 1, end],
+					level,
+					movedElement: auxArray[i],
+				},
+			});
+			i++;
+			k++;
 		}
 		while (j <= end) {
 			swaps++;
-			mainArray[k++] = auxArray[j++];
+			mainArray[k] = auxArray[j];
+			steps.push({
+				array: [...mainArray],
+				swapping: [k],
+				stats: createStats(),
+				metadata: {
+					phase: 'merging',
+					operation: 'move_remaining_right',
+					target: [start, end],
+					left: [start, middle],
+					right: [middle + 1, end],
+					level,
+					movedElement: auxArray[j],
+				},
+			});
+			j++;
+			k++;
 		}
+		steps.push({
+			array: [...mainArray],
+			stats: createStats(),
+			metadata: {
+				phase: 'merging',
+				operation: 'merge_complete',
+				target: [start, end],
+				left: [start, middle],
+				right: [middle + 1, end],
+				level,
+			},
+		});
 	}
 
 	function mergeSortHelper(mainArray, start, end, auxArray, level) {
 		if (start >= end) return;
 		const middle = Math.floor((start + end) / 2);
 		steps.push({
-			array: [...mainArray],
-			comparing: [],
-			swapping: [],
-			sorted: [],
-			line: 3,
+			array: [...auxArray],
 			stats: createStats(),
 			metadata: {
 				phase: 'dividing',
-				subarrays: [
-					{ elements: mainArray.slice(start, end + 1), level },
-				],
-				currentLevel: level,
-				maxLevel,
+				operation: 'divide',
+				range: [start, end],
+				left: [start, middle],
+				right: [middle + 1, end],
+				level,
 			},
 		});
 		mergeSortHelper(auxArray, start, middle, mainArray, level + 1);
@@ -107,10 +169,7 @@ export function getMergeSortStepsWithStats(array) {
 	const finalStats = createStats();
 	steps.push({
 		array: [...arr],
-		comparing: [],
-		swapping: [],
 		sorted: Array.from({ length: n }, (_, k) => k),
-		line: null,
 		stats: finalStats,
 		metadata: { phase: 'completed' },
 	});

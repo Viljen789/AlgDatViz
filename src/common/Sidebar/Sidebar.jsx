@@ -18,9 +18,7 @@ const Sidebar = ({ isCollapsed, onToggle }) => {
 	}, [location.pathname, isCollapsed]);
 
 	return (
-		<nav
-			className={`${styles.sidebar} ${isCollapsed ? styles.collapsed : ''}`}
-		>
+		<nav className={`${styles.sidebar} ${isCollapsed ? styles.collapsed : ''}`}>
 			<div className={styles.header}>
 				<div className={styles.logo}></div>
 				<button onClick={onToggle} className={styles.toggleButton}>
@@ -28,10 +26,7 @@ const Sidebar = ({ isCollapsed, onToggle }) => {
 				</button>
 			</div>
 			<ul className={styles.navList}>
-				<div
-					className={styles.activeIndicator}
-					style={activeLinkStyle}
-				></div>
+				<div className={styles.activeIndicator} style={activeLinkStyle}></div>
 
 				<li>
 					<NavLink
