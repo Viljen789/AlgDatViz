@@ -39,7 +39,7 @@
 }
 
 .select:disabled {
-	background-color: #f8f9fa;
+	background-color: var(--color-bg-elevated);
 	color: var(--color-text-secondary);
 	cursor: not-allowed;
 }

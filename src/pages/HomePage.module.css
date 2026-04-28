@@ -1,0 +1,116 @@
+.container {
+	padding: 28px;
+	overflow-y: auto;
+	flex: 1;
+	display: flex;
+	flex-direction: column;
+	gap: 28px;
+}
+
+.introText {
+	margin: 0;
+	font-size: 14px;
+	color: var(--color-text-secondary);
+	line-height: 1.65;
+	max-width: 540px;
+}
+
+.grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+	gap: 14px;
+}
+
+.card {
+	background: var(--color-bg-panel);
+	border: 1px solid var(--color-border);
+	border-radius: 10px;
+	padding: 22px;
+	cursor: pointer;
+	text-align: left;
+	display: flex;
+	flex-direction: column;
+	gap: 12px;
+	transition: all 0.2s ease;
+	font-family: var(--font-family-sans);
+	color: var(--color-text-primary);
+}
+
+.cardHead {
+	display: flex;
+	justify-content: space-between;
+	align-items: flex-start;
+}
+
+.arrow {
+	font-size: 20px;
+	font-weight: 300;
+	transition: all 0.2s ease;
+}
+
+.cardTitle {
+	font-size: 16px;
+	font-weight: 700;
+	color: var(--color-text-primary);
+	letter-spacing: -0.01em;
+}
+
+.cardDesc {
+	font-size: 12.5px;
+	color: var(--color-text-secondary);
+	line-height: 1.65;
+	flex: 1;
+}
+
+.tagRow {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 5px;
+	margin-top: 4px;
+}
+
+.tag {
+	padding: 2px 9px;
+	border: 1px solid;
+	border-radius: 20px;
+	font-size: 10.5px;
+	font-family: var(--font-family-mono);
+	font-weight: 500;
+}
+
+.legend {
+	display: flex;
+	align-items: center;
+	gap: 20px;
+	flex-wrap: wrap;
+	padding: 14px 18px;
+	background: var(--color-bg-panel);
+	border: 1px solid var(--color-border);
+	border-radius: 8px;
+	align-self: flex-start;
+}
+
+.legendTitle {
+	font-size: 9px;
+	letter-spacing: 0.14em;
+	color: var(--color-text-muted);
+	font-weight: 700;
+}
+
+.legendItem {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+}
+
+.dot {
+	width: 8px;
+	height: 8px;
+	border-radius: 2px;
+	flex-shrink: 0;
+}
+
+.legendLabel {
+	font-size: 12px;
+	color: var(--color-text-secondary);
+}

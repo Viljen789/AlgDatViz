@@ -37,7 +37,7 @@
 }
 
 .neighborsInput::placeholder {
-	color: #adb5bd;
+	color: var(--color-text-muted);
 	font-style: italic;
 }
 
@@ -71,7 +71,7 @@
 }
 
 .selected {
-	background-color: #e9d5ff !important;
+	background-color: rgba(79, 124, 248, 0.18) !important;
 }
 
 .addRow {
