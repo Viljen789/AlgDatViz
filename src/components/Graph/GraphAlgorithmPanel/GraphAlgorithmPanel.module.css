@@ -1,0 +1,264 @@
+.panel {
+	display: flex;
+	flex-direction: column;
+	gap: 14px;
+	min-height: 0;
+	height: 100%;
+	overflow-y: auto;
+	padding-right: 2px;
+}
+
+.header {
+	display: grid;
+	gap: 6px;
+}
+
+.header strong {
+	font-size: 18px;
+	letter-spacing: 0;
+	color: var(--color-text-primary);
+}
+
+.header p {
+	margin: 0;
+	font-size: 12px;
+	color: var(--color-text-secondary);
+}
+
+.headingLine {
+	display: flex;
+	align-items: center;
+	gap: 7px;
+	font-size: 10px;
+	text-transform: uppercase;
+	letter-spacing: 0.12em;
+	color: var(--color-text-muted);
+	font-weight: 700;
+}
+
+.controlsGrid {
+	display: grid;
+	grid-template-columns: 1fr 0.7fr 0.7fr;
+	gap: 10px;
+}
+
+.controlsGrid label {
+	display: grid;
+	gap: 5px;
+	min-width: 0;
+}
+
+.controlsGrid span,
+.stateLabel {
+	font-size: 10px;
+	text-transform: uppercase;
+	letter-spacing: 0.1em;
+	color: var(--color-text-muted);
+	font-weight: 700;
+}
+
+.controlsGrid select {
+	min-width: 0;
+	width: 100%;
+	border: 1px solid var(--color-border);
+	border-radius: var(--border-radius-md);
+	background: var(--color-bg-input);
+	color: var(--color-text-primary);
+	padding: 8px 10px;
+	outline: none;
+}
+
+.note {
+	border-left: 3px solid;
+	background: rgba(255, 255, 255, 0.03);
+	color: var(--color-text-secondary);
+	font-size: 12px;
+	line-height: 1.45;
+	padding: 10px 12px;
+	border-radius: var(--border-radius-md);
+}
+
+.playbackRow {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+}
+
+.playbackRow button {
+	width: 36px;
+	height: 36px;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	border-radius: var(--border-radius-md);
+	border: 1px solid var(--color-border);
+	background: var(--color-bg-elevated);
+	color: var(--color-text-primary);
+	cursor: pointer;
+}
+
+.playButton {
+	color: #070811 !important;
+	border-color: transparent !important;
+}
+
+.stepCounter {
+	margin-left: auto;
+	font-family: var(--font-family-mono);
+	font-size: 12px;
+	color: var(--color-text-muted);
+}
+
+.progressTrack {
+	height: 5px;
+	border-radius: 99px;
+	background: var(--color-bg-elevated);
+	overflow: hidden;
+	border: 1px solid var(--color-border);
+}
+
+.progressFill {
+	height: 100%;
+	transition: width 0.2s ease;
+}
+
+.stepCard {
+	border: 1px solid var(--color-border);
+	border-radius: var(--border-radius-md);
+	background: var(--color-bg-elevated);
+	padding: 14px;
+}
+
+.stepTitle {
+	font-size: 15px;
+	font-weight: 700;
+	color: var(--color-text-primary);
+	margin-bottom: 5px;
+}
+
+.stepCard p {
+	margin: 0;
+	font-size: 12.5px;
+	line-height: 1.55;
+}
+
+.insight {
+	margin-top: 10px;
+	padding-top: 10px;
+	border-top: 1px solid var(--color-border);
+	color: var(--color-text-primary);
+	font-size: 12px;
+	line-height: 1.5;
+}
+
+.stateGrid {
+	display: grid;
+	grid-template-columns: 1fr 1fr;
+	gap: 10px;
+}
+
+.wideState {
+	grid-column: 1 / -1;
+}
+
+.chipList {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 5px;
+	min-height: 30px;
+	align-items: center;
+	margin-top: 6px;
+}
+
+.chip,
+.emptyChip {
+	border-radius: 999px;
+	border: 1px solid var(--color-border);
+	background: var(--color-bg-elevated);
+	color: var(--color-text-primary);
+	font-family: var(--font-family-mono);
+	font-size: 11px;
+	padding: 4px 8px;
+}
+
+.emptyChip {
+	color: var(--color-text-muted);
+}
+
+.metricValue {
+	display: inline-flex;
+	margin-top: 8px;
+	font-family: var(--font-family-mono);
+	font-size: 22px;
+	color: var(--color-accent-green);
+}
+
+.distanceGrid {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(54px, 1fr));
+	gap: 6px;
+}
+
+.distanceCell {
+	border: 1px solid var(--color-border);
+	border-radius: var(--border-radius-md);
+	background: var(--color-bg-elevated);
+	padding: 8px;
+	display: grid;
+	gap: 4px;
+	text-align: center;
+}
+
+.distanceCell span {
+	font-size: 10px;
+	color: var(--color-text-muted);
+	font-family: var(--font-family-mono);
+}
+
+.distanceCell strong {
+	font-size: 13px;
+	font-family: var(--font-family-mono);
+	color: var(--color-text-primary);
+}
+
+.codeBlock {
+	border: 1px solid var(--color-border);
+	border-radius: var(--border-radius-md);
+	overflow: hidden;
+	background: #070915;
+}
+
+.codeLine {
+	display: grid;
+	grid-template-columns: 32px 1fr;
+	gap: 10px;
+	align-items: start;
+	padding: 8px 10px;
+	font-family: var(--font-family-mono);
+	font-size: 11.5px;
+	color: var(--color-text-secondary);
+	border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+.codeLine:last-child {
+	border-bottom: none;
+}
+
+.codeLine span {
+	color: var(--color-text-dim);
+}
+
+.codeLine code {
+	white-space: pre-wrap;
+}
+
+.activeCodeLine {
+	background: rgba(79, 124, 248, 0.16);
+	color: var(--color-text-primary);
+}
+
+@media (max-width: 980px) {
+	.controlsGrid {
+		grid-template-columns: 1fr;
+	}
+}

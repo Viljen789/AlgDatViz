@@ -58,6 +58,7 @@ const SortingDashboard = () => {
 					isSorting={isSorting}
 					isPaused={isPaused}
 					isFastMode={isFastMode}
+					isSpecialAlgorithm={isSpecialAlgorithm}
 					shuffleArray={shuffleArray}
 					startSort={startSort}
 					onPlayPause={onPlayPause}

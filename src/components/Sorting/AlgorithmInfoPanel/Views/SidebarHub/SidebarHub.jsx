@@ -1,6 +1,7 @@
 import Tabs from '../../../../../common/Tabs/Tabs';
 import PseudoCodeViewer from '../../../PseudoCodeViewer/PseudoCodeViewer';
 import OperationsComparison from '../../../../../common/OperationsComparison/OperationsComparison';
+import AlgorithmLearning from '../AlgorithmLearning/AlgorithmLearning';
 
 const SidebarHub = ({
 	sortingAlgorithm,
@@ -12,6 +13,17 @@ const SidebarHub = ({
 	isFastMode,
 }) => {
 	const tabItems = [
+		{
+			label: 'Learn',
+			content: (
+				<AlgorithmLearning
+					info={info}
+					sortingAlgorithm={sortingAlgorithm}
+					currentFrame={currentFrame}
+					arraySize={arraySize}
+				/>
+			),
+		},
 		{
 			label: 'Pseudocode',
 			content: (

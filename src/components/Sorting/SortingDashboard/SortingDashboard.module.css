@@ -29,3 +29,30 @@
 .sidebarWrapper {
 	/* No changes needed here */
 }
+
+@media (max-width: 1100px) {
+	.contentGrid {
+		grid-template-columns: 1fr;
+		grid-template-rows: minmax(420px, 1fr) auto;
+		overflow-y: auto;
+		padding-right: 2px;
+	}
+
+	.sidebarWrapper {
+		min-height: 540px;
+	}
+}
+
+@media (max-width: 768px) {
+	.contentGrid {
+		gap: var(--spacing-md);
+	}
+
+	.visualizerWrapper {
+		min-height: 360px;
+	}
+
+	.sidebarWrapper {
+		min-height: 580px;
+	}
+}

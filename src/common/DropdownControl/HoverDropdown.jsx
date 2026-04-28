@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { AnimatePresence, motion } from 'framer-motion';
+import { AnimatePresence, motion as Motion } from 'framer-motion';
 import styles from './HoverDropdown.module.css';
 
 const HoverDropdown = ({ label, options, value, onChange, disabled }) => {
@@ -46,7 +46,7 @@ const HoverDropdown = ({ label, options, value, onChange, disabled }) => {
 
 			<AnimatePresence>
 				{isOpen && !disabled && (
-					<motion.div
+					<Motion.div
 						className={styles.optionsContainer}
 						variants={listVariants}
 						initial="hidden"
@@ -54,7 +54,7 @@ const HoverDropdown = ({ label, options, value, onChange, disabled }) => {
 						exit="exit"
 					>
 						{options.map(option => (
-							<motion.div
+							<Motion.div
 								key={option.value}
 								variants={itemVariants}
 								className={`${styles.option} ${value === option.value ? styles.active : ''}`}
@@ -64,9 +64,9 @@ const HoverDropdown = ({ label, options, value, onChange, disabled }) => {
 								}}
 							>
 								{option.label}
-							</motion.div>
+							</Motion.div>
 						))}
-					</motion.div>
+					</Motion.div>
 				)}
 			</AnimatePresence>
 		</div>

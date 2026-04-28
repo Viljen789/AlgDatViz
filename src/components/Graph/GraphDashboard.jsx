@@ -1,32 +1,118 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import GraphVisualizer from './GraphVisualizer/GraphVisualizer';
 import AdjacencyMatrix from './AdjacencyMatrix/AdjacencyMatrix';
 import AdjacencyList from './AdjacencyList/AdjacencyList';
 import styles from './GraphDashboard.module.css';
 import { parseAndUpdateGraph } from '../../utils/graphUtils.js';
+import { createGraphAlgorithmSteps } from '../../utils/graphAlgorithms.js';
+import { GRAPH_PRESETS } from '../../data/graphPresets.js';
 import Tabs from '../../common/Tabs/Tabs.jsx';
 import GraphControls from './GraphControls/GraphControls';
 import DashboardLayout from '../../common/DashboardLayout/DashboardLayout.jsx';
 import Panel from '../../common/Panel/Panel.jsx';
+import GraphAlgorithmPanel from './GraphAlgorithmPanel/GraphAlgorithmPanel.jsx';
+
+const cloneGraph = graph => JSON.parse(JSON.stringify(graph));
 
 const GraphDashboard = () => {
-	const [graph, setGraph] = useState({
-		nodes: [
-			{ id: 'A', x: 50, y: 50, label: 'A' },
-			{ id: 'B', x: 200, y: 80, label: 'B' },
-			{ id: 'C', x: 120, y: 200, label: 'C' },
-		],
-		edges: [
-			{ from: 'A', to: 'B', weight: 1 },
-			{ from: 'A', to: 'C', weight: 1 },
-			{ from: 'B', to: 'C', weight: 1 },
-		],
-	});
+	const initialPreset = GRAPH_PRESETS.traversal;
+	const [graph, setGraph] = useState(() => cloneGraph(initialPreset.graph));
 
 	const [selectedNodeId, setSelectedNodeId] = useState(null);
-	const [isDirected, setIsDirected] = useState(false);
-	const [isWeighted, setIsWeighted] = useState(false);
+	const [isDirected, setIsDirected] = useState(initialPreset.isDirected);
+	const [isWeighted, setIsWeighted] = useState(initialPreset.isWeighted);
 	const [selectedCell, setSelectedCell] = useState(null);
+	const [presetId, setPresetId] = useState('traversal');
+	const [algorithmId, setAlgorithmId] = useState('bfs');
+	const [startNodeId, setStartNodeId] = useState(initialPreset.startNodeId);
+	const [targetNodeId, setTargetNodeId] = useState('');
+	const [stepIndex, setStepIndex] = useState(0);
+	const [isPlaying, setIsPlaying] = useState(false);
+
+	const algorithmSteps = useMemo(
+		() =>
+			createGraphAlgorithmSteps(graph, algorithmId, {
+				startNodeId,
+				targetNodeId,
+				isDirected,
+				isWeighted,
+			}),
+		[graph, algorithmId, startNodeId, targetNodeId, isDirected, isWeighted]
+	);
+
+	const currentStep = algorithmSteps[stepIndex] ?? algorithmSteps[0];
+
+	useEffect(() => {
+		setStepIndex(0);
+		setIsPlaying(false);
+	}, [algorithmId, startNodeId, targetNodeId, isDirected, isWeighted, graph]);
+
+	useEffect(() => {
+		setStepIndex(index =>
+			Math.min(index, Math.max(algorithmSteps.length - 1, 0))
+		);
+	}, [algorithmSteps.length]);
+
+	useEffect(() => {
+		if (!graph.nodes.some(node => node.id === startNodeId)) {
+			setStartNodeId(graph.nodes[0]?.id ?? '');
+		}
+		if (targetNodeId && !graph.nodes.some(node => node.id === targetNodeId)) {
+			setTargetNodeId('');
+		}
+	}, [graph.nodes, startNodeId, targetNodeId]);
+
+	useEffect(() => {
+		if (!isPlaying) return;
+		if (stepIndex >= algorithmSteps.length - 1) {
+			setIsPlaying(false);
+			return;
+		}
+		const timer = window.setTimeout(() => {
+			setStepIndex(index => Math.min(index + 1, algorithmSteps.length - 1));
+		}, 950);
+		return () => window.clearTimeout(timer);
+	}, [isPlaying, stepIndex, algorithmSteps.length]);
+
+	const handlePresetChange = useCallback(id => {
+		const preset = GRAPH_PRESETS[id];
+		if (!preset) return;
+		setPresetId(id);
+		setGraph(cloneGraph(preset.graph));
+		setIsDirected(preset.isDirected);
+		setIsWeighted(preset.isWeighted);
+		setStartNodeId(preset.startNodeId || preset.graph.nodes[0]?.id || '');
+		setTargetNodeId(preset.targetNodeId || '');
+		setAlgorithmId(preset.algorithmId || 'bfs');
+		setSelectedNodeId(null);
+		setSelectedCell(null);
+	}, []);
+
+	const handleAlgorithmChange = useCallback(
+		nextAlgorithmId => {
+			setAlgorithmId(nextAlgorithmId);
+			if (nextAlgorithmId === 'maxflow') {
+				const source = startNodeId || graph.nodes[0]?.id || '';
+				const sink =
+					targetNodeId && targetNodeId !== source
+						? targetNodeId
+						: [...graph.nodes].reverse().find(node => node.id !== source)?.id ||
+							graph.nodes.find(node => node.id !== source)?.id ||
+							'';
+				setTargetNodeId(sink);
+			}
+		},
+		[graph.nodes, startNodeId, targetNodeId]
+	);
+
+	const handleNodePositionChange = useCallback((nodeId, position) => {
+		setGraph(currentGraph => ({
+			...currentGraph,
+			nodes: currentGraph.nodes.map(node =>
+				node.id === nodeId ? { ...node, ...position } : node
+			),
+		}));
+	}, []);
 
 	const handleListUpdate = useCallback(
 		(inputValue, sourceNodeId) => {
@@ -160,6 +246,39 @@ const GraphDashboard = () => {
 
 	const tabItems = [
 		{
+			label: 'Algorithms',
+			content: currentStep ? (
+					<GraphAlgorithmPanel
+						graph={graph}
+						algorithmId={algorithmId}
+						onAlgorithmChange={handleAlgorithmChange}
+					startNodeId={startNodeId}
+					onStartNodeChange={setStartNodeId}
+					targetNodeId={targetNodeId}
+					onTargetNodeChange={setTargetNodeId}
+					stepIndex={stepIndex}
+					stepCount={algorithmSteps.length}
+					currentStep={currentStep}
+					isPlaying={isPlaying}
+					isDirected={isDirected}
+					isWeighted={isWeighted}
+					onPlayPause={() => setIsPlaying(prev => !prev)}
+					onStepBack={() =>
+						setStepIndex(index => Math.max(index - 1, 0))
+					}
+					onStepForward={() =>
+						setStepIndex(index =>
+							Math.min(index + 1, algorithmSteps.length - 1)
+						)
+					}
+					onReset={() => {
+						setIsPlaying(false);
+						setStepIndex(0);
+					}}
+				/>
+			) : null,
+		},
+		{
 			label: 'Adjacency List',
 			content: (
 				<AdjacencyList
@@ -199,6 +318,8 @@ const GraphDashboard = () => {
 					onToggleDirected={() => setIsDirected(prev => !prev)}
 					isWeighted={isWeighted}
 					onToggleWeighted={() => setIsWeighted(prev => !prev)}
+					presetId={presetId}
+					onPresetChange={handlePresetChange}
 				/>
 			}
 		>
@@ -215,6 +336,8 @@ const GraphDashboard = () => {
 						isDirected={isDirected}
 						isWeighted={isWeighted}
 						selectedCell={selectedCell}
+						algorithmState={currentStep}
+						onNodePositionChange={handleNodePositionChange}
 					/>
 				</Panel>
 				<Panel className={styles.dataPanel}>

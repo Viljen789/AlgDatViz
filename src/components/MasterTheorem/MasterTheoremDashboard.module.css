@@ -1,0 +1,308 @@
+.dashboard {
+	display: grid;
+	grid-template-columns: minmax(0, 1fr) 370px;
+	gap: var(--spacing-lg);
+	height: 100%;
+	min-height: 0;
+	padding: var(--spacing-lg);
+	background: var(--color-bg-app);
+	overflow: hidden;
+}
+
+.workbench,
+.lessonPanel {
+	border: 1px solid var(--color-border);
+	border-radius: var(--border-radius-lg);
+	background: var(--color-bg-panel);
+	min-height: 0;
+	overflow: hidden;
+}
+
+.workbench {
+	display: flex;
+	flex-direction: column;
+}
+
+.heroBand {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 18px;
+	padding: 16px;
+	border-bottom: 1px solid var(--color-border);
+	background: linear-gradient(135deg, rgba(79, 124, 248, 0.12), rgba(248, 167, 79, 0.1));
+}
+
+.heroTitle {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	color: var(--color-accent-yellow);
+}
+
+.heroTitle div {
+	display: grid;
+	gap: 4px;
+}
+
+.heroTitle strong {
+	color: var(--color-text-primary);
+	font-size: 18px;
+	letter-spacing: 0;
+}
+
+.heroTitle span,
+.numberControl span,
+.compareGrid span,
+.resultCard span {
+	font-size: 10px;
+	text-transform: uppercase;
+	letter-spacing: 0.1em;
+	color: var(--color-text-muted);
+	font-weight: 800;
+}
+
+.exampleRow {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px;
+	justify-content: flex-end;
+}
+
+.exampleRow button {
+	border: 1px solid var(--color-border);
+	border-radius: 999px;
+	background: var(--color-bg-elevated);
+	color: var(--color-text-secondary);
+	padding: 7px 11px;
+	font-size: 12px;
+	font-weight: 800;
+	cursor: pointer;
+}
+
+.exampleActive {
+	border-color: var(--color-accent-yellow) !important;
+	color: var(--color-accent-yellow) !important;
+	background: rgba(248, 192, 64, 0.12) !important;
+}
+
+.controls {
+	display: grid;
+	grid-template-columns: repeat(4, 1fr);
+	gap: 12px;
+	padding: 16px;
+	border-bottom: 1px solid var(--color-border);
+}
+
+.numberControl {
+	display: grid;
+	gap: 8px;
+	min-width: 0;
+}
+
+.numberControl div {
+	display: grid;
+	grid-template-columns: 1fr 62px;
+	gap: 8px;
+	align-items: center;
+}
+
+.numberControl input[type='number'] {
+	width: 62px;
+	text-align: center;
+}
+
+.treeArea {
+	flex: 1;
+	min-height: 0;
+	overflow: auto;
+	background:
+		linear-gradient(rgba(255, 255, 255, 0.025) 1px, transparent 1px),
+		linear-gradient(90deg, rgba(255, 255, 255, 0.025) 1px, transparent 1px),
+		var(--color-bg-elevated);
+	background-size: 36px 36px;
+	padding: 18px;
+}
+
+.recursionTree {
+	display: grid;
+	gap: 12px;
+	min-width: 680px;
+}
+
+.levelRow {
+	display: grid;
+	grid-template-columns: 210px 1fr 64px;
+	align-items: center;
+	gap: 12px;
+	border: 1px solid var(--color-border);
+	border-radius: var(--border-radius-md);
+	background: rgba(7, 8, 17, 0.72);
+	padding: 12px;
+}
+
+.levelMeta {
+	display: grid;
+	gap: 4px;
+}
+
+.levelMeta strong {
+	color: var(--color-text-primary);
+	font-size: 13px;
+}
+
+.levelMeta span {
+	color: var(--color-text-muted);
+	font-size: 11px;
+	font-family: var(--font-family-mono);
+}
+
+.levelBarTrack {
+	height: 26px;
+	border: 1px solid var(--color-border);
+	border-radius: 999px;
+	background: var(--color-bg-panel);
+	overflow: hidden;
+}
+
+.levelBar {
+	height: 100%;
+	min-width: 10px;
+	border-radius: inherit;
+	transition:
+		width 0.2s ease,
+		background-color 0.2s ease;
+}
+
+.workValue {
+	text-align: right;
+	font-family: var(--font-family-mono);
+	color: var(--color-text-primary);
+	font-size: 12px;
+}
+
+.lessonPanel {
+	display: flex;
+	flex-direction: column;
+	gap: 14px;
+	padding: 16px;
+	overflow-y: auto;
+}
+
+.resultCard {
+	border: 1px solid;
+	border-left-width: 4px;
+	border-radius: var(--border-radius-md);
+	background: var(--color-bg-elevated);
+	padding: 14px;
+	display: grid;
+	gap: 7px;
+}
+
+.resultCard strong {
+	color: var(--color-text-primary);
+	font-size: 18px;
+}
+
+.resultCard p {
+	margin: 0;
+	color: var(--color-accent-yellow);
+	font-family: var(--font-family-mono);
+	font-size: 16px;
+	font-weight: 900;
+}
+
+.compareGrid {
+	display: grid;
+	gap: 10px;
+}
+
+.compareGrid div {
+	border: 1px solid var(--color-border);
+	border-radius: var(--border-radius-md);
+	background: var(--color-bg-elevated);
+	padding: 12px;
+	display: grid;
+	gap: 6px;
+}
+
+.compareGrid svg {
+	color: var(--color-accent-green);
+}
+
+.compareGrid strong {
+	color: var(--color-text-primary);
+	font-family: var(--font-family-mono);
+}
+
+.explanation,
+.recipe {
+	border-top: 1px solid var(--color-border);
+	padding-top: 14px;
+}
+
+.explanation strong {
+	color: var(--color-accent-orange);
+}
+
+.explanation p {
+	margin: 6px 0 0;
+	font-size: 12.5px;
+	line-height: 1.58;
+}
+
+.recipe {
+	display: grid;
+	gap: 10px;
+	margin-top: auto;
+}
+
+.recipe div {
+	display: grid;
+	grid-template-columns: 26px 1fr;
+	gap: 10px;
+	align-items: start;
+}
+
+.recipe span {
+	width: 26px;
+	height: 26px;
+	border-radius: 50%;
+	border: 1px solid var(--color-border);
+	background: var(--color-bg-elevated);
+	color: var(--color-accent-yellow);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	font-family: var(--font-family-mono);
+	font-size: 11px;
+	font-weight: 900;
+}
+
+.recipe p {
+	margin: 3px 0 0;
+	font-size: 12px;
+	line-height: 1.5;
+}
+
+@media (max-width: 1120px) {
+	.dashboard {
+		grid-template-columns: 1fr;
+		overflow-y: auto;
+	}
+
+	.heroBand,
+	.controls {
+		grid-template-columns: 1fr;
+		flex-direction: column;
+		align-items: stretch;
+	}
+
+	.controls {
+		grid-template-columns: 1fr 1fr;
+	}
+
+	.lessonPanel {
+		min-height: 520px;
+	}
+}

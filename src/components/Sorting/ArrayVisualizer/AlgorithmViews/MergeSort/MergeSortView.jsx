@@ -1,9 +1,9 @@
 import React, { useMemo } from 'react';
-import { AnimatePresence, LayoutGroup, motion } from 'framer-motion';
+import { AnimatePresence, LayoutGroup, motion as Motion } from 'framer-motion';
 import styles from './MergeSortView.module.css';
 
 const MergeSortView = ({ array, currentFrame, isFastMode = false }) => {
-	const meta = currentFrame?.metadata || {};
+	const meta = useMemo(() => currentFrame?.metadata || {}, [currentFrame?.metadata]);
 	const phase = meta.phase || 'initializing';
 	const currentLevel = meta.currentLevel || 0;
 	const maxLevel = meta.maxLevel || 0;
@@ -138,7 +138,7 @@ const MergeSortView = ({ array, currentFrame, isFastMode = false }) => {
 			<LayoutGroup>
 				<div className={styles.recursionContainer}>
 					{recursionPath.map((level, levelIndex) => (
-						<motion.div
+						<Motion.div
 							key={levelIndex}
 							className={styles.recursionLevel}
 							initial={{ opacity: 0, y: -10 }}
@@ -152,7 +152,7 @@ const MergeSortView = ({ array, currentFrame, isFastMode = false }) => {
 
 							<div className={styles.nodesRow}>
 								{level.map(node => (
-									<motion.div
+									<Motion.div
 										key={node.id}
 										className={`${styles.recursionNode} ${
 											node.isActive ? styles.active : ''
@@ -202,7 +202,7 @@ const MergeSortView = ({ array, currentFrame, isFastMode = false }) => {
 														elementState = styles.comparingElement;
 
 													return (
-														<motion.span
+														<Motion.span
 															key={`${node.id}-${element.id || elemIndex}`}
 															layoutId={element.id || `${node.id}-${elemIndex}`}
 															className={`${styles.recursionElement} ${elementState}`}
@@ -232,7 +232,7 @@ const MergeSortView = ({ array, currentFrame, isFastMode = false }) => {
 															}}
 														>
 															{element.value || element}
-														</motion.span>
+														</Motion.span>
 													);
 												})}
 											</AnimatePresence>
@@ -244,7 +244,7 @@ const MergeSortView = ({ array, currentFrame, isFastMode = false }) => {
 
 										{/* Arrows showing flow direction */}
 										{node.isActive && (
-											<motion.div
+											<Motion.div
 												className={`${styles.flowArrow} ${
 													phase === 'dividing'
 														? styles.arrowDown
@@ -264,9 +264,9 @@ const MergeSortView = ({ array, currentFrame, isFastMode = false }) => {
 												}}
 											>
 												{phase === 'dividing' ? '↓' : '↑'}
-											</motion.div>
+											</Motion.div>
 										)}
-									</motion.div>
+									</Motion.div>
 								))}
 							</div>
 
@@ -274,7 +274,7 @@ const MergeSortView = ({ array, currentFrame, isFastMode = false }) => {
 							{levelIndex < recursionPath.length - 1 && (
 								<div className={styles.connectionLines}>
 									{level.map(node => (
-										<motion.div
+										<Motion.div
 											key={`connection-${node.id}`}
 											className={styles.connectionLine}
 											initial={{ scaleY: 0, opacity: 0 }}
@@ -290,14 +290,14 @@ const MergeSortView = ({ array, currentFrame, isFastMode = false }) => {
 									))}
 								</div>
 							)}
-						</motion.div>
+						</Motion.div>
 					))}
 				</div>
 			</LayoutGroup>
 
 			{/* Dynamic merge status */}
 			{phase === 'merging' && (leftHalf.length > 0 || rightHalf.length > 0) && (
-				<motion.div
+				<Motion.div
 					className={styles.mergeProgress}
 					initial={{ opacity: 0, y: 20 }}
 					animate={{ opacity: 1, y: 0 }}
@@ -310,7 +310,7 @@ const MergeSortView = ({ array, currentFrame, isFastMode = false }) => {
 							<div className={styles.mergeArrays}>
 								<div className={styles.leftArray}>
 									{leftHalf.map((value, i) => (
-										<motion.span
+										<Motion.span
 											key={`left-${i}`}
 											className={`${styles.recursionElement} ${styles.leftMerge}`}
 											animate={{
@@ -324,11 +324,11 @@ const MergeSortView = ({ array, currentFrame, isFastMode = false }) => {
 											}}
 										>
 											{value}
-										</motion.span>
+										</Motion.span>
 									))}
 								</div>
 
-								<motion.div
+								<Motion.div
 									className={styles.mergeArrow}
 									animate={{ x: [0, 5, 0] }}
 									transition={{
@@ -337,11 +337,11 @@ const MergeSortView = ({ array, currentFrame, isFastMode = false }) => {
 									}}
 								>
 									→
-								</motion.div>
+								</Motion.div>
 
 								<div className={styles.rightArray}>
 									{rightHalf.map((value, i) => (
-										<motion.span
+										<Motion.span
 											key={`right-${i}`}
 											className={`${styles.recursionElement} ${styles.rightMerge}`}
 											animate={{
@@ -355,13 +355,13 @@ const MergeSortView = ({ array, currentFrame, isFastMode = false }) => {
 											}}
 										>
 											{value}
-										</motion.span>
+										</Motion.span>
 									))}
 								</div>
 							</div>
 						</div>
 					</div>
-				</motion.div>
+				</Motion.div>
 			)}
 		</div>
 	);

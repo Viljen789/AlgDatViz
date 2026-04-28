@@ -4,10 +4,6 @@ import styles from './MergeSortRecursiveView.module.css';
 const MergeSortRecursiveView = ({
 	array,
 	currentFrame,
-	onAnimationComplete,
-	animationSpeed = 100,
-	isSorting = false,
-	isPaused = false,
 }) => {
 	// Build complete tree structure showing all recursive levels
 	const treeStructure = useMemo(() => {
@@ -80,8 +76,8 @@ const MergeSortRecursiveView = ({
 	}
 
 	// Mark nodes as active based on current operation
-	function markActiveNodes(tree, range, state, targetDepth) {
-		tree.forEach((level, depth) => {
+	function markActiveNodes(tree, range, state) {
+		tree.forEach(level => {
 			level.nodes.forEach(node => {
 				if (node.range[0] === range[0] && node.range[1] === range[1]) {
 					node.state = state;
@@ -200,7 +196,7 @@ const MergeSortRecursiveView = ({
 					<div key={levelIndex} className={styles.levelRow}>
 						<div className={styles.levelLabel}>L{levelIndex}</div>
 						<div className={styles.nodesRow}>
-							{level.nodes.map((node, nodeIndex) => (
+							{level.nodes.map(node => (
 								<div
 									key={node.id}
 									className={`${styles.node} ${styles[node.state] || ''} ${node.isActive ? styles.active : ''}`}

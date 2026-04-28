@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { AnimatePresence, motion } from 'framer-motion';
+import { AnimatePresence, motion as Motion } from 'framer-motion';
 import styles from './DropdownControl.module.css';
 
 const DropdownControl = ({ label, value, children }) => {
@@ -17,7 +17,7 @@ const DropdownControl = ({ label, value, children }) => {
 			</div>
 			<AnimatePresence>
 				{isOpen && (
-					<motion.div
+					<Motion.div
 						className={styles.optionsPanel}
 						initial={{ opacity: 0, y: -10 }}
 						animate={{ opacity: 1, y: 0 }}
@@ -25,7 +25,7 @@ const DropdownControl = ({ label, value, children }) => {
 						transition={{ duration: 0.2 }}
 					>
 						{children}
-					</motion.div>
+					</Motion.div>
 				)}
 			</AnimatePresence>
 		</div>

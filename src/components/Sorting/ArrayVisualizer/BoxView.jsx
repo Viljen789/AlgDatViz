@@ -1,4 +1,4 @@
-import { LayoutGroup, motion } from 'framer-motion';
+import { LayoutGroup, motion as Motion } from 'framer-motion';
 import styles from './ArrayVisualizer.module.css';
 
 const BoxView = ({
@@ -31,7 +31,7 @@ const BoxView = ({
 					else if (isComparing) stateClass = styles.comparingBox;
 
 					return (
-						<motion.div
+						<Motion.div
 							key={item.id}
 							layout
 							className={`${styles.numberBox} ${stateClass} ${isHighlighting ? styles.highlighting : ''}`}
@@ -41,7 +41,7 @@ const BoxView = ({
 							transition={{ duration: 0.6, ease: 'easeInOut' }}
 						>
 							{item.value}
-						</motion.div>
+						</Motion.div>
 					);
 				})}
 			</div>

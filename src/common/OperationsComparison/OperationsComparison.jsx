@@ -86,7 +86,7 @@ const OperationsComparison = ({
 					'O(n)': theoretical.on,
 				};
 			});
-	}, [operationStats, arraySize]);
+	}, [operationStats, arraySize, algorithmInfo]);
 
 	const finalStats = useMemo(() => {
 		return operationStats && operationStats.length > 0
@@ -100,16 +100,25 @@ const OperationsComparison = ({
 		const complexity = algorithmInfo?.complexity?.time?.average || 'O(n²)';
 		const n = arraySize;
 
-		switch (complexity) {
-			case 'O(n²)':
-				return Math.round(n * n * 0.5);
-			case 'O(n log n)':
-				return Math.round(n * Math.log2(n));
-			case 'O(n)':
-				return n;
-			default:
-				return Math.round(n * n * 0.5);
+		if (complexity.includes('d') && complexity.includes('n + k')) {
+			const digitPasses = Math.max(1, String(Math.max(n, 1)).length);
+			const radixBuckets = 10;
+			return digitPasses * (n + radixBuckets);
 		}
+
+		if (complexity.includes('n + k')) {
+			const rangeOrBuckets =
+				algorithmInfo?.name === 'Bucket Sort'
+					? Math.max(1, Math.round(Math.sqrt(n)))
+					: n;
+			return n + rangeOrBuckets;
+		}
+
+		if (complexity.includes('n log n')) return Math.round(n * Math.log2(n));
+		if (complexity.includes('n²')) return Math.round(n * n * 0.5);
+		if (complexity.includes('n')) return n;
+
+		return Math.round(n * n * 0.5);
 	}, [algorithmInfo, arraySize]);
 
 	if (
@@ -119,6 +128,7 @@ const OperationsComparison = ({
 	) {
 		return (
 			<div className={styles.comparisonContainer}>
+				<AlgorithmStats info={algorithmInfo} />
 				<div className={styles.placeholder}>
 					<h4>Performance Analysis</h4>
 					<p>

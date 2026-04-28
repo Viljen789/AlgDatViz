@@ -1,0 +1,365 @@
+.learningPanel {
+	display: flex;
+	flex-direction: column;
+	gap: 16px;
+	min-height: 0;
+	color: var(--color-text-primary);
+}
+
+.hero {
+	display: grid;
+	gap: 7px;
+	padding-bottom: 14px;
+	border-bottom: 1px solid var(--color-border);
+}
+
+.eyebrow,
+.complexityTile span,
+.variableGrid span,
+.traceBox > span,
+.compareCard span {
+	font-size: 10.5px;
+	font-weight: 800;
+	color: var(--learning-accent);
+	text-transform: uppercase;
+	letter-spacing: 0.08em;
+}
+
+.hero h3 {
+	margin: 0;
+	font-size: 22px;
+	line-height: 1.15;
+	letter-spacing: 0;
+}
+
+.hero p,
+.section p,
+.traceBox p,
+.compareCard p,
+.promptBox p,
+.checkItem p {
+	margin: 0;
+	font-size: 12.5px;
+	line-height: 1.55;
+	color: var(--color-text-secondary);
+}
+
+.complexityGrid {
+	display: grid;
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+	gap: 8px;
+}
+
+.complexityTile,
+.variableGrid div,
+.compareCard {
+	min-width: 0;
+	border: 1px solid var(--color-border);
+	border-radius: var(--border-radius-md);
+	background: var(--color-bg-elevated);
+	padding: 10px;
+	display: grid;
+	gap: 5px;
+}
+
+.complexityTile strong,
+.variableGrid strong {
+	font-family: var(--font-family-mono);
+	font-size: 14px;
+	color: var(--color-text-primary);
+	overflow-wrap: anywhere;
+}
+
+.variableGrid {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(88px, 1fr));
+	gap: 7px;
+}
+
+.variableGrid span {
+	color: var(--color-text-muted);
+	text-transform: none;
+	letter-spacing: 0;
+	font-weight: 700;
+}
+
+.traceBox {
+	display: grid;
+	gap: 8px;
+	border-left: 3px solid var(--learning-accent);
+	background: rgba(79, 124, 248, 0.1);
+	border-radius: var(--border-radius-md);
+	padding: 11px 12px;
+}
+
+.walkthrough {
+	display: grid;
+	gap: 9px;
+	border: 1px solid color-mix(in srgb, var(--learning-accent) 38%, var(--color-border));
+	border-radius: var(--border-radius-md);
+	background:
+		linear-gradient(135deg, color-mix(in srgb, var(--learning-accent) 16%, transparent), transparent),
+		var(--color-bg-elevated);
+	padding: 12px;
+}
+
+.walkthroughHeader {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 10px;
+}
+
+.walkthroughHeader span {
+	font-size: 10.5px;
+	font-weight: 900;
+	color: var(--learning-accent);
+	text-transform: uppercase;
+	letter-spacing: 0.08em;
+}
+
+.walkthroughHeader strong {
+	font-family: var(--font-family-mono);
+	font-size: 11px;
+	color: var(--color-text-muted);
+}
+
+.walkthroughTrack {
+	height: 5px;
+	border-radius: 999px;
+	background: var(--color-bg-input);
+	border: 1px solid var(--color-border);
+	overflow: hidden;
+}
+
+.walkthroughFill {
+	height: 100%;
+	border-radius: inherit;
+	transition: width 0.2s ease;
+}
+
+.walkthroughCard {
+	display: grid;
+	gap: 6px;
+}
+
+.walkthroughCard strong {
+	font-size: 14px;
+	color: var(--color-text-primary);
+}
+
+.walkthroughCard p {
+	margin: 0;
+	font-size: 12.5px;
+	line-height: 1.55;
+	color: var(--color-text-secondary);
+}
+
+.walkthroughCard em {
+	font-style: normal;
+	font-size: 12px;
+	color: var(--color-text-primary);
+}
+
+.walkthroughControls {
+	display: flex;
+	gap: 8px;
+}
+
+.walkthroughControls button {
+	height: 30px;
+	border: 1px solid var(--color-border);
+	border-radius: var(--border-radius-md);
+	background: var(--color-bg-input);
+	color: var(--color-text-primary);
+	font-weight: 800;
+	font-size: 12px;
+	padding: 0 10px;
+	cursor: pointer;
+}
+
+.traceSteps {
+	display: grid;
+	gap: 8px;
+	padding-top: 2px;
+}
+
+.traceStep {
+	display: grid;
+	grid-template-columns: 24px 1fr;
+	gap: 9px;
+	align-items: start;
+}
+
+.traceStep > span {
+	width: 24px;
+	height: 24px;
+	border-radius: 50%;
+	background: var(--color-bg-elevated);
+	border: 1px solid var(--color-border);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	font-family: var(--font-family-mono);
+	font-size: 10px;
+	color: var(--learning-accent);
+}
+
+.traceStep strong {
+	font-size: 12.5px;
+	color: var(--color-text-primary);
+}
+
+.section {
+	display: grid;
+	gap: 10px;
+}
+
+.sectionTitle {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	color: var(--learning-accent);
+}
+
+.sectionTitle h4 {
+	margin: 0;
+	font-size: 13px;
+	line-height: 1.2;
+	letter-spacing: 0;
+}
+
+.bulletList {
+	margin: 0;
+	padding-left: 18px;
+	display: grid;
+	gap: 7px;
+	color: var(--color-text-secondary);
+	font-size: 12.5px;
+	line-height: 1.45;
+}
+
+.bulletList li::marker {
+	color: var(--learning-accent);
+}
+
+.compareGrid {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+	gap: 8px;
+}
+
+.compareCard strong {
+	font-size: 13px;
+	color: var(--color-text-primary);
+}
+
+.tradeoffGrid {
+	display: grid;
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+	gap: 14px;
+}
+
+.legend {
+	display: grid;
+	gap: 8px;
+}
+
+.legendItem {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	font-size: 12.5px;
+	color: var(--color-text-secondary);
+}
+
+.swatch {
+	width: 16px;
+	height: 16px;
+	border-radius: 4px;
+	border: 1px solid transparent;
+	flex: 0 0 auto;
+}
+
+.codeBlock {
+	border: 1px solid var(--color-border);
+	border-radius: var(--border-radius-md);
+	overflow: hidden;
+	background: #070915;
+}
+
+.codeLine {
+	display: grid;
+	grid-template-columns: 32px 1fr;
+	gap: 10px;
+	padding: 8px 10px;
+	border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+	color: var(--color-text-secondary);
+	font-family: var(--font-family-mono);
+	font-size: 11.5px;
+}
+
+.codeLine:last-child {
+	border-bottom: none;
+}
+
+.codeLine span {
+	color: var(--color-text-dim);
+}
+
+.codeLine code {
+	white-space: pre-wrap;
+}
+
+.codeActive {
+	background: color-mix(in srgb, var(--learning-accent) 22%, transparent);
+	color: var(--color-text-primary);
+}
+
+.checkList {
+	display: grid;
+	gap: 8px;
+}
+
+.checkItem {
+	border: 1px solid var(--color-border);
+	border-radius: var(--border-radius-md);
+	background: var(--color-bg-elevated);
+	padding: 10px 12px;
+}
+
+.checkItem summary {
+	cursor: pointer;
+	font-size: 12.5px;
+	font-weight: 800;
+	color: var(--color-text-primary);
+}
+
+.checkItem p {
+	margin-top: 8px;
+}
+
+.promptBox {
+	display: grid;
+	grid-template-columns: 18px 1fr;
+	gap: 8px;
+	align-items: start;
+	border: 1px solid color-mix(in srgb, var(--learning-accent) 42%, var(--color-border));
+	border-radius: var(--border-radius-md);
+	background: color-mix(in srgb, var(--learning-accent) 12%, transparent);
+	padding: 11px 12px;
+	color: var(--learning-accent);
+}
+
+.emptyState {
+	color: var(--color-text-secondary);
+	font-size: 13px;
+	padding: 12px;
+}
+
+@media (max-width: 520px) {
+	.complexityGrid,
+	.tradeoffGrid {
+		grid-template-columns: 1fr;
+	}
+}

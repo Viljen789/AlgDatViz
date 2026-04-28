@@ -1,9 +1,14 @@
 import { BrowserRouter, Route, Routes, useLocation } from 'react-router-dom';
-import { AnimatePresence, motion } from 'framer-motion';
+import { AnimatePresence, motion as Motion } from 'framer-motion';
 import Sidebar from './common/Sidebar/Sidebar.jsx';
 import HomePage from './pages/HomePage';
 import GraphPage from './pages/GraphPage';
 import SortingPage from './pages/SortingPage';
+import HashMapPage from './pages/HashMapPage';
+import TreePage from './pages/TreePage';
+import MasterTheoremPage from './pages/MasterTheoremPage';
+import StacksQueuesPage from './pages/StacksQueuesPage';
+import StrategiesPage from './pages/StrategiesPage';
 import styles from './App.module.css';
 
 const PAGE_META = {
@@ -14,13 +19,38 @@ const PAGE_META = {
 	},
 	'/sorting': {
 		title: 'Sorting Algorithms',
-		sub: 'Watch sorting algorithms organize data — step by step',
+		sub: 'Watch sorting algorithms organize data - step by step',
 		accent: '#4f7cf8',
 	},
 	'/graph': {
 		title: 'Graph Visualizer',
-		sub: 'Explore graph structures with adjacency lists and matrices',
+		sub: 'Explore traversals, shortest paths, spanning trees, max flow, and graph representations',
 		accent: '#38c9a0',
+	},
+	'/hashmap': {
+		title: 'Hash Maps',
+		sub: 'See hashing, collisions, chaining, load factor, and resizing in action',
+		accent: '#f8a74f',
+	},
+	'/stacks-queues': {
+		title: 'Stacks & Queues',
+		sub: 'Compare LIFO and FIFO behavior through push, pop, enqueue, and dequeue',
+		accent: '#7fa4fc',
+	},
+	'/tree': {
+		title: 'Trees',
+		sub: 'Practice binary search tree operations and traversal orders',
+		accent: '#c97af8',
+	},
+	'/strategies': {
+		title: 'Algorithm Strategies',
+		sub: 'Learn when to use dynamic programming and when greedy choices are safe',
+		accent: '#38c9a0',
+	},
+	'/master-theorem': {
+		title: 'Master Theorem',
+		sub: 'Compare recursion leaves, per-level work, and asymptotic cases',
+		accent: '#f8c040',
 	},
 };
 
@@ -42,7 +72,7 @@ const AppLayout = () => {
 				</header>
 				<div className={styles.content}>
 					<AnimatePresence mode="wait">
-						<motion.div
+						<Motion.div
 							key={location.pathname}
 							initial={{ opacity: 0, y: 8 }}
 							animate={{ opacity: 1, y: 0 }}
@@ -54,8 +84,13 @@ const AppLayout = () => {
 								<Route path="/" element={<HomePage />} />
 								<Route path="/sorting" element={<SortingPage />} />
 								<Route path="/graph" element={<GraphPage />} />
+								<Route path="/hashmap" element={<HashMapPage />} />
+								<Route path="/stacks-queues" element={<StacksQueuesPage />} />
+								<Route path="/tree" element={<TreePage />} />
+								<Route path="/strategies" element={<StrategiesPage />} />
+								<Route path="/master-theorem" element={<MasterTheoremPage />} />
 							</Routes>
-						</motion.div>
+						</Motion.div>
 					</AnimatePresence>
 				</div>
 			</main>

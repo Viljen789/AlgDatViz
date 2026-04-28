@@ -12,7 +12,7 @@ const BarView = ({
 
 	const getBarColor = index => {
 		if (isFastMode) return 'var(--color-text-secondary)';
-		if (sortedIndices.includes(index)) return 'var(--color-primary)';
+		if (sortedIndices.includes(index)) return 'var(--color-accent-green)';
 		if (swappingIndices.includes(index)) return 'var(--color-swapping-bar)';
 		return 'var(--color-text-secondary)';
 	};

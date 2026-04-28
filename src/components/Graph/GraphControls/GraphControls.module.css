@@ -12,8 +12,45 @@
 	box-shadow: 0 4px 12px var(--shadow-color);
 }
 
+.lessonTitle {
+	display: grid;
+	gap: 3px;
+	margin-right: auto;
+	min-width: 210px;
+}
+
+.lessonTitle strong {
+	font-size: 14px;
+	color: var(--color-text-primary);
+}
+
+.lessonTitle span,
+.presetControl span {
+	font-size: 10px;
+	text-transform: uppercase;
+	letter-spacing: 0.1em;
+	color: var(--color-text-muted);
+	font-weight: 700;
+}
+
 .controlGroup {
 	display: flex;
 	align-items: center;
 	gap: var(--spacing-sm);
+}
+
+.presetControl {
+	display: flex;
+	align-items: center;
+	gap: var(--spacing-sm);
+}
+
+.presetControl select {
+	border: 1px solid var(--color-border);
+	border-radius: var(--border-radius-md);
+	background: var(--color-bg-input);
+	color: var(--color-text-primary);
+	padding: 8px 10px;
+	min-width: 170px;
+	outline: none;
 }

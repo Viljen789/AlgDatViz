@@ -1,0 +1,272 @@
+.dashboard {
+	display: grid;
+	grid-template-columns: minmax(0, 1fr) 410px;
+	gap: var(--spacing-lg);
+	height: 100%;
+	min-height: 0;
+	padding: var(--spacing-lg);
+	background: var(--color-bg-app);
+	overflow: hidden;
+}
+
+.workbench,
+.lessonPanel {
+	border: 1px solid var(--color-border);
+	border-radius: var(--border-radius-lg);
+	background: var(--color-bg-panel);
+	min-height: 0;
+	overflow: hidden;
+}
+
+.workbench {
+	display: flex;
+	flex-direction: column;
+}
+
+.lessonPanel {
+	padding: 16px;
+	overflow-y: auto;
+}
+
+.controlBand {
+	display: grid;
+	grid-template-columns: minmax(220px, 1fr) auto auto;
+	gap: 16px;
+	align-items: center;
+	padding: 16px;
+	border-bottom: 1px solid var(--color-border);
+	background: linear-gradient(135deg, rgba(79, 124, 248, 0.13), rgba(56, 201, 160, 0.1));
+}
+
+.titleBlock {
+	display: grid;
+	gap: 4px;
+}
+
+.titleBlock strong {
+	font-size: 18px;
+	color: var(--color-text-primary);
+	letter-spacing: 0;
+}
+
+.titleBlock span,
+.stageCard span,
+.stepControls span {
+	font-size: 10.5px;
+	text-transform: uppercase;
+	letter-spacing: 0.1em;
+	color: var(--color-text-muted);
+	font-weight: 800;
+}
+
+.modeSwitch,
+.stepControls {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px;
+	align-items: center;
+}
+
+.modeSwitch button,
+.stepControls button {
+	height: 36px;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 6px;
+	border: 1px solid var(--color-border);
+	border-radius: var(--border-radius-md);
+	background: var(--color-bg-elevated);
+	color: var(--color-text-primary);
+	font-weight: 800;
+	padding: 0 12px;
+	cursor: pointer;
+}
+
+.stepControls button {
+	width: 36px;
+	padding: 0;
+}
+
+.stepControls span {
+	font-family: var(--font-family-mono);
+}
+
+.modeActive {
+	border-color: var(--color-primary) !important;
+	color: var(--color-primary) !important;
+	background: rgba(79, 124, 248, 0.12) !important;
+}
+
+.stage {
+	flex: 1;
+	min-height: 0;
+	padding: 18px;
+	overflow: auto;
+	background:
+		linear-gradient(rgba(255, 255, 255, 0.025) 1px, transparent 1px),
+		linear-gradient(90deg, rgba(255, 255, 255, 0.025) 1px, transparent 1px),
+		var(--color-bg-elevated);
+	background-size: 36px 36px;
+}
+
+.dpBoard,
+.greedyBoard {
+	min-height: 100%;
+	display: grid;
+	gap: 18px;
+	align-content: center;
+}
+
+.stageCard {
+	border: 1px solid var(--color-border);
+	border-radius: var(--border-radius-lg);
+	background: rgba(7, 8, 17, 0.76);
+	padding: 18px;
+	display: grid;
+	gap: 8px;
+}
+
+.stageCard strong {
+	font-size: 21px;
+	color: var(--color-text-primary);
+	letter-spacing: 0;
+}
+
+.stageCard p {
+	margin: 0;
+	color: var(--color-text-secondary);
+	font-size: 13px;
+	line-height: 1.6;
+}
+
+.dpTable {
+	display: grid;
+	grid-template-columns: repeat(7, minmax(74px, 1fr));
+	gap: 10px;
+	min-width: 680px;
+}
+
+.dpCell {
+	border: 1px solid var(--color-border);
+	border-radius: var(--border-radius-md);
+	background: var(--color-bg-panel);
+	padding: 14px 10px;
+	display: grid;
+	gap: 8px;
+	text-align: center;
+	transition:
+		border-color 0.2s ease,
+		transform 0.2s ease,
+		background 0.2s ease;
+}
+
+.dpCell span {
+	font-family: var(--font-family-mono);
+	font-size: 11px;
+	color: var(--color-text-muted);
+}
+
+.dpCell strong {
+	font-family: var(--font-family-mono);
+	font-size: 24px;
+	color: var(--color-text-primary);
+}
+
+.cellKnown {
+	background: rgba(56, 201, 160, 0.09);
+}
+
+.cellActive {
+	border-color: var(--color-accent-orange);
+	background: rgba(248, 167, 79, 0.16);
+	transform: translateY(-3px);
+}
+
+.timeline {
+	display: grid;
+	gap: 12px;
+	min-width: 680px;
+	border: 1px solid var(--color-border);
+	border-radius: var(--border-radius-lg);
+	background: rgba(7, 8, 17, 0.76);
+	padding: 18px;
+}
+
+.intervalRow {
+	display: grid;
+	grid-template-columns: 36px 1fr;
+	gap: 12px;
+	align-items: center;
+}
+
+.intervalRow > span {
+	font-family: var(--font-family-mono);
+	font-weight: 900;
+	color: var(--color-text-primary);
+}
+
+.intervalTrack {
+	position: relative;
+	height: 42px;
+	border: 1px solid var(--color-border);
+	border-radius: var(--border-radius-md);
+	background:
+		linear-gradient(90deg, rgba(255, 255, 255, 0.05) 1px, transparent 1px),
+		var(--color-bg-input);
+	background-size: 10% 100%;
+}
+
+.intervalBar {
+	position: absolute;
+	top: 7px;
+	height: 26px;
+	border-radius: var(--border-radius-md);
+	border: 1px solid var(--color-border-strong);
+	background: var(--color-bg-panel);
+	color: var(--color-text-secondary);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	font-family: var(--font-family-mono);
+	font-size: 11px;
+	font-weight: 900;
+	transition:
+		background 0.2s ease,
+		border-color 0.2s ease,
+		color 0.2s ease;
+}
+
+.intervalActive {
+	border-color: var(--color-accent-orange);
+	background: rgba(248, 167, 79, 0.22);
+	color: var(--color-text-primary);
+}
+
+.intervalChosen {
+	border-color: var(--color-accent-green);
+	background: rgba(56, 201, 160, 0.22);
+	color: var(--color-text-primary);
+}
+
+.intervalRejected {
+	border-color: var(--color-accent-red);
+	background: rgba(248, 96, 96, 0.16);
+	color: var(--color-text-secondary);
+}
+
+@media (max-width: 1120px) {
+	.dashboard {
+		grid-template-columns: 1fr;
+		overflow-y: auto;
+	}
+
+	.controlBand {
+		grid-template-columns: 1fr;
+		align-items: stretch;
+	}
+
+	.lessonPanel {
+		min-height: 540px;
+	}
+}

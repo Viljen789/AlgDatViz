@@ -1,0 +1,324 @@
+.dashboard {
+	display: grid;
+	grid-template-columns: minmax(0, 1fr) 350px;
+	gap: var(--spacing-lg);
+	height: 100%;
+	min-height: 0;
+	padding: var(--spacing-lg);
+	background: var(--color-bg-app);
+	overflow: hidden;
+}
+
+.treePanel,
+.lessonPanel {
+	border: 1px solid var(--color-border);
+	border-radius: var(--border-radius-lg);
+	background: var(--color-bg-panel);
+	min-height: 0;
+	overflow: hidden;
+}
+
+.treePanel {
+	display: flex;
+	flex-direction: column;
+}
+
+.controls {
+	display: grid;
+	grid-template-columns: minmax(210px, 1fr) minmax(380px, 1.6fr) minmax(260px, 0.9fr);
+	gap: 14px;
+	align-items: end;
+	padding: 16px;
+	border-bottom: 1px solid var(--color-border);
+	background: linear-gradient(135deg, rgba(248, 167, 79, 0.12), rgba(201, 122, 248, 0.08));
+}
+
+.titleBlock {
+	display: grid;
+	gap: 4px;
+}
+
+.titleBlock strong {
+	font-size: 17px;
+	color: var(--color-text-primary);
+	letter-spacing: 0;
+}
+
+.titleBlock span,
+.valueControls span,
+.traversalControls span,
+.statsGrid span,
+.sectionLabel {
+	font-size: 10px;
+	text-transform: uppercase;
+	letter-spacing: 0.1em;
+	color: var(--color-text-muted);
+	font-weight: 700;
+}
+
+.valueControls,
+.traversalControls {
+	display: flex;
+	align-items: end;
+	gap: 8px;
+	flex-wrap: wrap;
+}
+
+.valueControls label,
+.traversalControls label {
+	display: grid;
+	gap: 5px;
+}
+
+.valueControls input {
+	width: 96px;
+}
+
+.traversalControls select {
+	border: 1px solid var(--color-border);
+	border-radius: var(--border-radius-md);
+	background: var(--color-bg-input);
+	color: var(--color-text-primary);
+	padding: 8px 10px;
+	min-width: 130px;
+	outline: none;
+}
+
+.valueControls button,
+.traversalControls button,
+.playback button {
+	height: 36px;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 6px;
+	border: 1px solid var(--color-border);
+	border-radius: var(--border-radius-md);
+	background: var(--color-bg-elevated);
+	color: var(--color-text-primary);
+	font-weight: 700;
+	padding: 0 12px;
+	cursor: pointer;
+}
+
+.canvasShell {
+	flex: 1;
+	min-height: 0;
+	overflow: auto;
+	background:
+		linear-gradient(rgba(255, 255, 255, 0.025) 1px, transparent 1px),
+		linear-gradient(90deg, rgba(255, 255, 255, 0.025) 1px, transparent 1px),
+		var(--color-bg-elevated);
+	background-size: 36px 36px;
+}
+
+.treeSvg {
+	width: 100%;
+	min-width: 720px;
+	height: 100%;
+	min-height: 500px;
+	display: block;
+}
+
+.edge,
+.edgeActive {
+	stroke-width: 3;
+	stroke-linecap: round;
+}
+
+.edge {
+	stroke: var(--color-border-strong);
+}
+
+.edgeActive {
+	stroke: var(--color-accent-orange);
+}
+
+.nodeCircle {
+	fill: #141828;
+	stroke: var(--color-accent-purple);
+	stroke-width: 3;
+	transition:
+		fill 0.18s ease,
+		stroke 0.18s ease,
+		transform 0.18s ease;
+}
+
+.nodePath {
+	fill: rgba(201, 122, 248, 0.18);
+	stroke: var(--color-accent-purple);
+}
+
+.nodeActive {
+	fill: var(--color-accent-orange);
+	stroke: var(--color-accent-yellow);
+}
+
+.nodeText {
+	font-family: var(--font-family-mono);
+	font-size: 15px;
+	font-weight: 800;
+	fill: var(--color-text-primary);
+	pointer-events: none;
+}
+
+.nodeActive + .nodeText {
+	fill: #070811;
+}
+
+.lessonPanel {
+	display: flex;
+	flex-direction: column;
+	gap: 14px;
+	padding: 16px;
+	overflow-y: auto;
+}
+
+.statsGrid {
+	display: grid;
+	grid-template-columns: 1fr 1fr;
+	gap: 10px;
+}
+
+.statsGrid div {
+	border: 1px solid var(--color-border);
+	border-radius: var(--border-radius-md);
+	background: var(--color-bg-elevated);
+	padding: 12px;
+	display: grid;
+	gap: 6px;
+}
+
+.statsGrid strong {
+	font-size: 20px;
+	font-family: var(--font-family-mono);
+	color: var(--color-text-primary);
+}
+
+.playback {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+}
+
+.playback button {
+	width: 38px;
+	padding: 0;
+}
+
+.playButton {
+	background: var(--color-accent-orange) !important;
+	color: #070811 !important;
+	border-color: transparent !important;
+}
+
+.playback span {
+	margin-left: auto;
+	color: var(--color-text-muted);
+	font-family: var(--font-family-mono);
+	font-size: 12px;
+}
+
+.stepCard {
+	border: 1px solid var(--color-border);
+	border-radius: var(--border-radius-md);
+	background: var(--color-bg-elevated);
+	padding: 14px;
+}
+
+.stepCard strong {
+	color: var(--color-text-primary);
+	font-size: 15px;
+}
+
+.stepCard p {
+	margin: 6px 0 0;
+	font-size: 12.5px;
+	line-height: 1.55;
+}
+
+.outputRow {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 6px;
+	margin-top: 8px;
+	min-height: 31px;
+}
+
+.outputRow span,
+.outputRow small {
+	border: 1px solid var(--color-border);
+	border-radius: 999px;
+	background: var(--color-bg-elevated);
+	color: var(--color-text-primary);
+	font-family: var(--font-family-mono);
+	padding: 5px 9px;
+}
+
+.outputRow small {
+	color: var(--color-text-muted);
+}
+
+.codeBlock {
+	border: 1px solid var(--color-border);
+	border-radius: var(--border-radius-md);
+	overflow: hidden;
+	background: #070915;
+}
+
+.codeLine {
+	display: grid;
+	grid-template-columns: 32px 1fr;
+	gap: 10px;
+	padding: 8px 10px;
+	border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+	color: var(--color-text-secondary);
+	font-family: var(--font-family-mono);
+	font-size: 11.5px;
+}
+
+.codeLine:last-child {
+	border-bottom: none;
+}
+
+.codeLine span {
+	color: var(--color-text-dim);
+}
+
+.codeActive {
+	background: rgba(248, 167, 79, 0.16);
+	color: var(--color-text-primary);
+}
+
+.conceptBox {
+	margin-top: auto;
+	border-top: 1px solid var(--color-border);
+	padding-top: 14px;
+}
+
+.conceptBox strong {
+	color: var(--color-accent-orange);
+}
+
+.conceptBox p {
+	margin: 5px 0 0;
+	font-size: 12px;
+	line-height: 1.55;
+}
+
+@media (max-width: 1120px) {
+	.dashboard {
+		grid-template-columns: 1fr;
+		overflow-y: auto;
+	}
+
+	.controls {
+		grid-template-columns: 1fr;
+		align-items: stretch;
+	}
+
+	.treePanel,
+	.lessonPanel {
+		min-height: 540px;
+	}
+}

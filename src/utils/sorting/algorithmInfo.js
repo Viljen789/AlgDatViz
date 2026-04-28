@@ -3,6 +3,31 @@ export const ALGORITHM_INFO = {
 		name: 'Bubble Sort',
 		description:
 			'Bubble Sort sammenligner tilstøtende elementer i arrayet og bytter dem hvis de er i feil rekkefølge. Etter hver gjennomgang er det største elementet garantert på sin endelige posisjon. Algoritmen fortsetter å gjøre gjennomganger til ingen bytter er nødvendig, noe som indikerer at arrayet er sortert.',
+		intuition:
+			'Think of the array as full of small local inversions. Bubble Sort fixes only neighboring inversions, so large values drift right one swap at a time.',
+		thoughtProcess:
+			'The algorithm asks the same simple question again and again: are these two neighbors in the wrong order? Each pass guarantees that one more large value reaches the sorted suffix.',
+		strategy: [
+			'Scan adjacent pairs from left to right.',
+			'Swap a pair when the left value is larger than the right value.',
+			'Treat the end of the array as locked after every pass.',
+			'Stop early if a full pass makes no swaps.',
+		],
+		complexityReason: [
+			'In the average and worst case, the algorithm scans prefixes of size n, n - 1, n - 2, and so on, which adds up to quadratic work.',
+			'The best case is linear because one no-swap pass proves the array is already sorted.',
+			'It only needs a temporary value for swapping, so the extra space is constant.',
+		],
+		tradeoffs: {
+			useWhen: [
+				'Teaching adjacent comparisons, swaps, and inversions.',
+				'Tiny or already-nearly-sorted inputs where readability matters more than speed.',
+			],
+			watchOut: [
+				'It performs many comparisons on large arrays.',
+				'Reversed input causes the maximum number of swaps.',
+			],
+		},
 		complexity: {
 			time: { best: 'O(n)', average: 'O(n²)', worst: 'O(n²)' },
 			space: { worst: 'O(1)' },
@@ -21,6 +46,31 @@ export const ALGORITHM_INFO = {
 		name: 'Selection Sort',
 		description:
 			'Selection Sort deler arrayet i en sortert og usortert del. For hver posisjon i den sorterte delen finner algoritmen det minste elementet i den usorterte delen og bytter det med elementet på gjeldende posisjon. Dette fortsetter til hele arrayet er sortert, hvor den sorterte delen vokser med ett element for hver iterasjon.',
+		intuition:
+			'Selection Sort behaves like repeatedly picking the next smallest card from a messy hand and placing it into a fixed position.',
+		thoughtProcess:
+			'Instead of making many local repairs, it commits to one position at a time. The cost is that every position still requires a search through the unsorted remainder.',
+		strategy: [
+			'Split the array into a sorted prefix and an unsorted suffix.',
+			'Search the suffix for the smallest remaining value.',
+			'Swap that value into the first unsorted position.',
+			'Grow the sorted prefix by one element.',
+		],
+		complexityReason: [
+			'Finding the minimum requires scanning the unsorted suffix for every output position.',
+			'Those scans have lengths n, n - 1, n - 2, and so on, so best, average, and worst cases are all quadratic.',
+			'It swaps at most once per outer pass and uses constant extra space.',
+		],
+		tradeoffs: {
+			useWhen: [
+				'You want a simple algorithm with very few writes.',
+				'You are teaching the idea of growing a sorted prefix.',
+			],
+			watchOut: [
+				'It does not get faster when the input is already sorted.',
+				'The direct swap can move equal values past each other, so it is not stable.',
+			],
+		},
 		complexity: {
 			time: { best: 'O(n²)', average: 'O(n²)', worst: 'O(n²)' },
 			space: { worst: 'O(1)' },
@@ -39,6 +89,31 @@ export const ALGORITHM_INFO = {
 		name: 'Insertion Sort',
 		description:
 			'Insertion Sort bygger den sorterte listen ett element av gangen ved å ta hvert element fra den usorterte delen og sette det inn på riktig posisjon i den sorterte delen. Den sammenligner det gjeldende elementet med elementene til venstre og flytter dem til høyre til den finner riktig posisjon for innsetting.',
+		intuition:
+			'Insertion Sort feels like sorting playing cards in your hand: take the next card and slide it left until it fits.',
+		thoughtProcess:
+			'The sorted prefix is always correct. The algorithm only has to figure out where the next value belongs inside that prefix.',
+		strategy: [
+			'Assume the first element is a sorted prefix.',
+			'Pick the next unsorted value as the key.',
+			'Shift larger prefix values one position to the right.',
+			'Insert the key into the gap that remains.',
+		],
+		complexityReason: [
+			'Nearly sorted input is cheap because each key usually checks only its immediate predecessor.',
+			'Random or reversed input forces many keys to slide across a long prefix, creating quadratic work.',
+			'The algorithm rearranges the array in place and only stores the current key.',
+		],
+		tradeoffs: {
+			useWhen: [
+				'Inputs are small, nearly sorted, or arriving one item at a time.',
+				'You need a stable, in-place comparison sort.',
+			],
+			watchOut: [
+				'Large reversed arrays trigger many shifts.',
+				'It is usually a helper inside bigger hybrid sorting algorithms, not the main choice for large data.',
+			],
+		},
 		complexity: {
 			time: { best: 'O(n)', average: 'O(n²)', worst: 'O(n²)' },
 			space: { worst: 'O(1)' },
@@ -57,6 +132,31 @@ export const ALGORITHM_INFO = {
 		name: 'Merge Sort',
 		description:
 			'Merge Sort deler arrayet rekursivt i to like store halvdeler til hver del inneholder kun ett element. Deretter fletter den disse halvdelene sammen ved å sammenligne elementer fra hver halvdel og velge det minste til det nye arrayet. Fletteprosessen fortsetter rekursivt oppover til hele arrayet er rekonstruert i sortert rekkefølge.',
+		intuition:
+			'Merge Sort wins by making the problem boring: split until every piece is already sorted, then merge those pieces in order.',
+		thoughtProcess:
+			'The hard part of sorting is replaced by two easier habits: divide evenly, then combine two already-sorted lists with a left-vs-right comparison.',
+		strategy: [
+			'Split the array into two halves until each piece has one value.',
+			'Merge neighboring sorted pieces by repeatedly taking the smaller front value.',
+			'Copy leftovers when one side runs out.',
+			'Keep merging upward until the original range is sorted.',
+		],
+		complexityReason: [
+			'Halving creates about log2(n) levels of recursion.',
+			'Each level touches every element once during merging, so the total time is n work per level times log n levels.',
+			'Merging needs auxiliary storage for the values being combined, which is why the extra space is linear.',
+		],
+		tradeoffs: {
+			useWhen: [
+				'You want predictable O(n log n) time regardless of input order.',
+				'Stability matters, such as sorting records by multiple fields.',
+			],
+			watchOut: [
+				'It uses extra memory for merging.',
+				'For tiny arrays, the overhead can be larger than simpler sorts.',
+			],
+		},
 		complexity: {
 			time: {
 				best: 'O(n log n)',
@@ -79,9 +179,35 @@ export const ALGORITHM_INFO = {
 		name: 'Quick Sort',
 		description:
 			'Quick Sort velger et pivot-element og partisjonerer arrayet slik at alle elementer mindre enn pivot kommer til venstre og alle større elementer kommer til høyre. Pivot plasseres på sin endelige sorterte posisjon. Algoritmen fortsetter rekursivt på venstre og høyre partisjon til alle sub-arrayer inneholder kun ett element.',
+		intuition:
+			'Quick Sort asks one value to act as a divider: smaller values go left, larger values go right, and the divider lands in its final place.',
+		thoughtProcess:
+			'The algorithm tries to make progress by doing one linear partition pass, then trusting recursion to solve the two smaller sides.',
+		strategy: [
+			'Choose a pivot value.',
+			'Partition the range so smaller values are before the pivot and larger values are after it.',
+			'The pivot is now fixed.',
+			'Repeat the same idea on the left and right partitions.',
+		],
+		complexityReason: [
+			'A partition pass scans the current range once.',
+			'Balanced pivots create about log2(n) recursive levels, giving O(n log n) time.',
+			'Bad pivots create one huge side and one tiny side, causing n levels and O(n²) time.',
+			'Recursive calls use stack space: about O(log n) when balanced, but O(n) in the worst case.',
+		],
+		tradeoffs: {
+			useWhen: [
+				'You want a fast average-case in-place sort.',
+				'Memory use matters more than stability.',
+			],
+			watchOut: [
+				'Poor pivot choices can degrade to quadratic time.',
+				'It is not stable unless implemented with extra machinery.',
+			],
+		},
 		complexity: {
 			time: { best: 'O(n log n)', average: 'O(n log n)', worst: 'O(n²)' },
-			space: { worst: 'O(log n)' },
+			space: { worst: 'O(n)' },
 		},
 		properties: {
 			stable: 0,
@@ -97,6 +223,32 @@ export const ALGORITHM_INFO = {
 		name: 'Heap Sort',
 		description:
 			'Heap Sort bygger først en max-heap fra arrayet hvor hver foreldre-node er større enn sine barn. Deretter fjerner den gjentatte ganger det største elementet (roten) fra heap, plasserer det på slutten av arrayet, og gjenoppbygger heap-egenskapen for de gjenværende elementene. Dette fortsetter til heap er tom og arrayet er sortert.',
+		intuition:
+			'Heap Sort turns the array into a tournament where the largest remaining value is always at the root and ready to be removed.',
+		thoughtProcess:
+			'First build a structure that makes the maximum cheap to find. Then repeatedly move that maximum to the sorted end and repair the heap.',
+		strategy: [
+			'Arrange the array as a max-heap.',
+			'Swap the root with the last unsorted element.',
+			'Shrink the heap so the moved maximum stays fixed.',
+			'Heapify the root to restore parent-greater-than-children order.',
+		],
+		complexityReason: [
+			'Building the heap can be done in linear time.',
+			'Each of n extractions may push a value down the heap height, which is O(log n).',
+			'The extraction phase dominates, so best, average, and worst cases are O(n log n).',
+			'The heap is stored inside the array, so extra space stays constant.',
+		],
+		tradeoffs: {
+			useWhen: [
+				'You need guaranteed O(n log n) time with O(1) extra space.',
+				'You want to teach the connection between heaps and priority queues.',
+			],
+			watchOut: [
+				'It is not stable.',
+				'Its memory access pattern is less cache-friendly than some alternatives.',
+			],
+		},
 		complexity: {
 			time: {
 				best: 'O(n log n)',
@@ -119,6 +271,31 @@ export const ALGORITHM_INFO = {
 		name: 'Counting Sort',
 		description:
 			'Counting Sort oppretter et hjelpende array for å telle frekvensen av hvert element i input-arrayet. Den itererer gjennom input-arrayet og inkrementerer telleren for hvert element. Deretter rekonstruerer den det sorterte arrayet ved å iterere gjennom telling-arrayet og plassere hvert element det antallet ganger det forekom.',
+		intuition:
+			'Counting Sort avoids comparisons entirely. If values are small integers, just count how many of each value exists and play the counts back in order.',
+		thoughtProcess:
+			'The algorithm trades comparison work for direct addressing. The value itself becomes an index into a frequency table.',
+		strategy: [
+			'Find the value range.',
+			'Create a count slot for every possible value.',
+			'Count how often each value appears.',
+			'Reconstruct the sorted array by walking the count table from low to high.',
+		],
+		complexityReason: [
+			'Counting the input costs O(n).',
+			'Scanning the count table costs O(k), where k is the size of the value range.',
+			'The total time is O(n + k), and the count table uses O(k) extra space.',
+		],
+		tradeoffs: {
+			useWhen: [
+				'Values are non-negative integers in a small range.',
+				'You want linear time and can afford a count table.',
+			],
+			watchOut: [
+				'It is inefficient when the value range is much larger than the number of items.',
+				'It does not directly handle arbitrary objects or negative values without adaptation.',
+			],
+		},
 		complexity: {
 			time: { best: 'O(n + k)', average: 'O(n + k)', worst: 'O(n + k)' },
 			space: { worst: 'O(k)' },
@@ -137,6 +314,31 @@ export const ALGORITHM_INFO = {
 		name: 'Radix Sort',
 		description:
 			'Radix Sort sorterer elementene ved å prosessere hvert siffer individuelt fra høyre til venstre (minst til mest signifikant). For hvert siffer-posisjon bruker den en stabil sorteringsalgoritme (vanligvis counting sort) for å sortere elementene basert på det gjeldende sifferet. Dette sikrer at rekkefølgen fra tidligere siffer-sorteringer bevares.',
+		intuition:
+			'Radix Sort sorts numbers the way a filing system might: group by one digit, keep the order stable, then move to the next digit.',
+		thoughtProcess:
+			'Instead of comparing whole numbers, it repeatedly sorts by a smaller key. Stability preserves the meaning of previous digit passes.',
+		strategy: [
+			'Start with the least significant digit.',
+			'Bucket or counting-sort values by that digit.',
+			'Collect values in stable order.',
+			'Repeat for the next digit until all digits have been processed.',
+		],
+		complexityReason: [
+			'Each digit pass costs O(n + k): n values plus k possible digit buckets.',
+			'There are d digit positions, so the total time is O(d x (n + k)).',
+			'The stable digit pass needs output storage and buckets, giving O(n + k) space.',
+		],
+		tradeoffs: {
+			useWhen: [
+				'Keys are integers or fixed-width strings with a manageable number of digits.',
+				'You want to show how stable sub-sorts compose into a full sort.',
+			],
+			watchOut: [
+				'Many digits increase the number of passes.',
+				'It depends on a stable inner sorting step.',
+			],
+		},
 		complexity: {
 			time: {
 				best: 'O(d × (n + k))',
@@ -159,9 +361,35 @@ export const ALGORITHM_INFO = {
 		name: 'Bucket Sort',
 		description:
 			'Bucket Sort fordeler elementene i flere bøtter (sub-arrayer) basert på elementenes verdier. Hvert element plasseres i en bøtte ved å beregne en bøtte-indeks fra elementets verdi. Deretter sorteres hver bøtte individuelt med en annen sorteringsalgoritme, og til slutt settes alle sorterte bøtter sammen til det endelige sorterte arrayet.',
+		intuition:
+			'Bucket Sort assumes values can be spread into neighborhoods. If each neighborhood is small, sorting inside each one becomes cheap.',
+		thoughtProcess:
+			'The algorithm tries to use distribution to reduce comparison work: place similar values together, sort locally, then concatenate globally.',
+		strategy: [
+			'Create buckets that cover ranges of values.',
+			'Send each value to the bucket matching its range.',
+			'Sort each bucket independently.',
+			'Concatenate buckets from lowest range to highest range.',
+		],
+		complexityReason: [
+			'Distributing and collecting values costs O(n + k), where k is the number of buckets.',
+			'If values are evenly spread, each bucket is small and local sorting is cheap.',
+			'If many values land in one bucket, the algorithm falls back to the cost of sorting that large bucket, often O(n²).',
+			'Buckets store the input values plus bucket structure, so space is O(n + k).',
+		],
+		tradeoffs: {
+			useWhen: [
+				'Input values are roughly uniformly distributed.',
+				'You want to show how distribution can reduce sorting work.',
+			],
+			watchOut: [
+				'Skewed data can collapse into one expensive bucket.',
+				'Choosing bucket ranges poorly can erase the advantage.',
+			],
+		},
 		complexity: {
 			time: { best: 'O(n + k)', average: 'O(n + k)', worst: 'O(n²)' },
-			space: { worst: 'O(n × k)' },
+			space: { worst: 'O(n + k)' },
 		},
 		properties: {
 			stable: 1,

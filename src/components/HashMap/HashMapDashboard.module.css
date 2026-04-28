@@ -1,0 +1,307 @@
+.dashboard {
+	display: grid;
+	grid-template-columns: minmax(0, 1fr) 360px;
+	gap: var(--spacing-lg);
+	height: 100%;
+	min-height: 0;
+	padding: var(--spacing-lg);
+	background: var(--color-bg-app);
+	overflow: hidden;
+}
+
+.workbench,
+.lessonPanel {
+	min-height: 0;
+	border: 1px solid var(--color-border);
+	border-radius: var(--border-radius-lg);
+	background: var(--color-bg-panel);
+	overflow: hidden;
+}
+
+.workbench {
+	display: flex;
+	flex-direction: column;
+}
+
+.controlBand {
+	display: grid;
+	grid-template-columns: minmax(220px, 1fr) minmax(260px, 0.95fr) auto;
+	gap: 16px;
+	align-items: end;
+	padding: 16px;
+	border-bottom: 1px solid var(--color-border);
+	background: linear-gradient(135deg, rgba(79, 124, 248, 0.12), rgba(56, 201, 160, 0.08));
+}
+
+.titleBlock {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	color: var(--color-accent-green);
+}
+
+.titleBlock div {
+	display: grid;
+	gap: 4px;
+}
+
+.titleBlock strong {
+	color: var(--color-text-primary);
+	font-size: 17px;
+	letter-spacing: 0;
+}
+
+.titleBlock span,
+.inputs span,
+.statsGrid span {
+	font-size: 10px;
+	text-transform: uppercase;
+	letter-spacing: 0.1em;
+	color: var(--color-text-muted);
+	font-weight: 700;
+}
+
+.inputs {
+	display: grid;
+	grid-template-columns: 1fr 1fr;
+	gap: 10px;
+}
+
+.inputs label {
+	display: grid;
+	gap: 5px;
+}
+
+.actionRow {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px;
+	justify-content: flex-end;
+}
+
+.actionRow button {
+	height: 36px;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 6px;
+	border: 1px solid var(--color-border);
+	border-radius: var(--border-radius-md);
+	background: var(--color-bg-elevated);
+	color: var(--color-text-primary);
+	font-weight: 700;
+	padding: 0 12px;
+	cursor: pointer;
+}
+
+.bucketGrid {
+	display: grid;
+	gap: 10px;
+	padding: 16px;
+	overflow: auto;
+}
+
+.bucketRow {
+	display: grid;
+	grid-template-columns: 48px 1fr;
+	min-height: 78px;
+	border: 1px solid var(--color-border);
+	border-radius: var(--border-radius-md);
+	background: var(--color-bg-elevated);
+	transition:
+		border-color 0.15s ease,
+		transform 0.15s ease;
+}
+
+.bucketActive {
+	border-color: var(--color-accent-green);
+	transform: translateX(2px);
+	box-shadow: inset 3px 0 0 var(--color-accent-green);
+}
+
+.bucketIndex {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	font-family: var(--font-family-mono);
+	font-size: 18px;
+	font-weight: 800;
+	color: var(--color-text-muted);
+	border-right: 1px solid var(--color-border);
+	background: rgba(255, 255, 255, 0.02);
+}
+
+.chain {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	padding: 12px;
+	overflow-x: auto;
+}
+
+.entryCard {
+	position: relative;
+	display: grid;
+	gap: 4px;
+	min-width: 92px;
+	border: 1px solid var(--color-border);
+	border-radius: var(--border-radius-md);
+	background: #0c1222;
+	padding: 10px 12px;
+}
+
+.entryCard:not(:last-child)::after {
+	content: '>';
+	position: absolute;
+	right: -15px;
+	top: 50%;
+	transform: translateY(-50%);
+	color: var(--color-text-muted);
+	font-family: var(--font-family-mono);
+}
+
+.entryActive {
+	border-color: var(--color-accent-orange);
+	box-shadow: 0 0 0 2px rgba(248, 167, 79, 0.16);
+}
+
+.entryCard span {
+	font-family: var(--font-family-mono);
+	color: var(--color-text-primary);
+}
+
+.entryCard strong {
+	color: var(--color-accent-green);
+	font-size: 18px;
+}
+
+.entryCard small {
+	color: var(--color-text-muted);
+	font-family: var(--font-family-mono);
+}
+
+.emptyBucket {
+	color: var(--color-text-dim);
+	font-family: var(--font-family-mono);
+	font-style: italic;
+}
+
+.lessonPanel {
+	display: flex;
+	flex-direction: column;
+	gap: 14px;
+	padding: 16px;
+	overflow-y: auto;
+}
+
+.resultBox {
+	border: 1px solid rgba(56, 201, 160, 0.34);
+	border-radius: var(--border-radius-md);
+	background: rgba(56, 201, 160, 0.1);
+	color: var(--color-text-primary);
+	font-weight: 800;
+	padding: 12px;
+}
+
+.statsGrid {
+	display: grid;
+	grid-template-columns: 1fr 1fr;
+	gap: 10px;
+}
+
+.statsGrid div {
+	border: 1px solid var(--color-border);
+	border-radius: var(--border-radius-md);
+	background: var(--color-bg-elevated);
+	padding: 12px;
+	display: grid;
+	gap: 6px;
+}
+
+.statsGrid strong {
+	font-size: 22px;
+	font-family: var(--font-family-mono);
+	color: var(--color-text-primary);
+}
+
+.loadMeter {
+	height: 8px;
+	border: 1px solid var(--color-border);
+	border-radius: 999px;
+	background: var(--color-bg-elevated);
+	overflow: hidden;
+}
+
+.loadMeter div {
+	height: 100%;
+	transition:
+		width 0.25s ease,
+		background 0.25s ease;
+}
+
+.traceList {
+	display: grid;
+	gap: 10px;
+}
+
+.traceItem {
+	display: grid;
+	grid-template-columns: 26px 1fr;
+	gap: 10px;
+}
+
+.traceItem > span {
+	width: 26px;
+	height: 26px;
+	border-radius: 50%;
+	background: var(--color-bg-elevated);
+	border: 1px solid var(--color-border);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	font-family: var(--font-family-mono);
+	font-size: 11px;
+	color: var(--color-accent-green);
+}
+
+.traceItem strong {
+	color: var(--color-text-primary);
+	font-size: 13px;
+}
+
+.traceItem p,
+.bigIdea p {
+	margin: 4px 0 0;
+	font-size: 12px;
+	line-height: 1.55;
+}
+
+.bigIdea {
+	margin-top: auto;
+	border-top: 1px solid var(--color-border);
+	padding-top: 14px;
+}
+
+.bigIdea strong {
+	color: var(--color-accent-orange);
+}
+
+@media (max-width: 1120px) {
+	.dashboard {
+		grid-template-columns: 1fr;
+		overflow-y: auto;
+	}
+
+	.lessonPanel {
+		min-height: 420px;
+	}
+
+	.controlBand {
+		grid-template-columns: 1fr;
+		align-items: stretch;
+	}
+
+	.actionRow {
+		justify-content: flex-start;
+	}
+}

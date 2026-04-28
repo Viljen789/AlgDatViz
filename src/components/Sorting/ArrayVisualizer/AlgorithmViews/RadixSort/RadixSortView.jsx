@@ -4,7 +4,6 @@ import { useMemo } from 'react';
 const RadixSortView = ({
 	array,
 	currentFrame,
-	comparingIndices = [],
 	swappingIndices = [],
 }) => {
 	const {

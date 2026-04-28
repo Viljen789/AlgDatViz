@@ -57,7 +57,7 @@ export const useSortingVisualizer = (
 
 	useEffect(() => {
 		shuffleArray();
-	}, [arraySize]);
+	}, [shuffleArray]);
 
 	const toggleViewMode = () =>
 		setViewMode(prev => (prev === 'bars' ? 'boxes' : 'bars'));
