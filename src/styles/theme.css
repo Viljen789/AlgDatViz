@@ -1,73 +1,75 @@
 :root {
-	--color-primary: #7b42f6;
-	--color-secondary: #5c67f2;
-	--color-tertiary: #e040fb;
-	--color-background: #f4f7f9;
-	--color-surface: #ffffff;
-	--color-text-primary: #1e1e2f;
-	--color-text-on-node: #ffffff;
-	--color-border: #dce1e6;
-	--color-slight-grey: #f8f9fa;
-	--color-light-grey: #e9ecef;
-	--color-medium-grey: rgba(206, 212, 218, 0.5);
-	--color-dark-grey: #adb5bd;
-	--color-light-blue: #e9d5ff;
-	--color-lighter-blue: rgba(233, 213, 255, 0.4);
-	--color-dark-blue: #212529;
-	--color-text-secondary: #6c757d;
-	--color-swapping-bar: #dc3545;
+	--color-bg-app: #070811;
+	--color-bg-panel: #0b0d1c;
+	--color-bg-sidebar: #09091a;
+	--color-bg-elevated: #090b16;
+	--color-bg-input: #0f1120;
+	--color-bg-hover: #141828;
 
-	--viz-node-fill: #e9ecef;
-	--viz-node-stroke: #adb5bd;
-	--viz-edge-color: #ced4da;
-	--viz-text-color: #212529;
+	--color-border: #1a1f38;
+	--color-border-strong: #2a3060;
 
-	--viz-hover-color: var(--color-primary);
-	--selection-color: #e9d5ff;
+	--color-text-primary: #d0d5ec;
+	--color-text-secondary: #606888;
+	--color-text-muted: #404870;
+	--color-text-dim: #303558;
 
-	--color-error: #ff4d4d;
-	--color-success: #4caf50;
-	--color-warning: #ff9800;
-	--color-info: #2196f3;
+	--color-accent-blue: #4f7cf8;
+	--color-accent-green: #38c9a0;
+	--color-accent-orange: #f8a74f;
+	--color-accent-purple: #c97af8;
+	--color-accent-red: #f86060;
+	--color-accent-yellow: #f8c040;
+	--color-accent-pivot: #f86060;
+	--color-accent-active: #f8b44f;
 
-	--dark-color-primary: #9d73f8;
-	--dark-color-secondary: #5ea1ef;
-	--dark-color-tertiary: #ea6ffc;
-	--dark-color-background: #1a1a2e;
-	--dark-color-surface: #2a2a40;
-	--dark-color-text-primary: #f0f0f8;
-	--dark-color-text-secondary: #a0a0b8;
-	--dark-color-border: #3a3a5e;
+	--color-primary: var(--color-accent-blue);
+	--color-secondary: #7fa4fc;
+	--color-tertiary: var(--color-accent-purple);
+	--color-background: var(--color-bg-app);
+	--color-surface: var(--color-bg-panel);
+	--color-text-on-node: #070811;
+	--color-slight-grey: var(--color-bg-hover);
+	--color-light-grey: var(--color-bg-elevated);
+	--color-medium-grey: rgba(26, 31, 56, 0.8);
+	--color-dark-grey: var(--color-text-secondary);
+	--color-light-blue: rgba(79, 124, 248, 0.15);
+	--color-lighter-blue: rgba(79, 124, 248, 0.08);
+	--color-dark-blue: var(--color-bg-elevated);
+	--color-swapping-bar: var(--color-accent-orange);
 
-	--font-family-sans: 'Inter', sans-serif;
-	--font-family-mono: 'Roboto Mono', monospace;
-	--font-size-base: 16px;
-	--font-size-sm: 14px;
-	--font-size-lg: 18px;
+	--viz-node-fill: #1a1f38;
+	--viz-node-stroke: #4f7cf8;
+	--viz-edge-color: #2a3060;
+	--viz-text-color: #d0d5ec;
+
+	--viz-hover-color: var(--color-accent-blue);
+	--selection-color: rgba(79, 124, 248, 0.25);
+
+	--color-error: var(--color-accent-red);
+	--color-success: var(--color-accent-green);
+	--color-warning: var(--color-accent-orange);
+	--color-info: var(--color-accent-blue);
+
+	--font-family-sans: 'Space Grotesk', -apple-system, BlinkMacSystemFont, sans-serif;
+	--font-family-mono: 'JetBrains Mono', 'Roboto Mono', monospace;
+	--font-size-base: 14px;
+	--font-size-sm: 12.5px;
+	--font-size-xs: 11px;
+	--font-size-lg: 16px;
 
 	--border-radius-sm: 4px;
-	--border-radius-md: 8px;
-	--border-radius-lg: 12px;
+	--border-radius-md: 6px;
+	--border-radius-lg: 10px;
 	--spacing-xs: 4px;
 	--spacing-sm: 8px;
-	--spacing-md: 16px;
-	--spacing-lg: 24px;
-	--spacing-xl: 32px;
+	--spacing-md: 14px;
+	--spacing-lg: 20px;
+	--spacing-xl: 28px;
 
-	--shadow-color: rgba(0, 0, 0, 0.1);
-	--transition: 0.2s ease-in-out;
+	--shadow-color: rgba(0, 0, 0, 0.5);
+	--shadow-glow: rgba(79, 124, 248, 0.18);
+	--transition: 0.15s ease;
 	--switch-width: 20px;
 	--switch-height: 10px;
-}
-
-body.dark-theme {
-	--color-primary: var(--dark-color-primary);
-	--color-secondary: var(--dark-color-secondary);
-	--color-tertiary: var(--dark-color-tertiary);
-	--color-background: var(--dark-color-background);
-	--color-surface: var(--dark-color-surface);
-	--color-text-primary: var(--dark-color-text-primary);
-	--color-text-secondary: var(--dark-color-text-secondary);
-	--color-border: var(--dark-color-border);
-	--shadow-color: rgba(0, 0, 0, 0.25);
 }

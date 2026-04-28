@@ -141,20 +141,22 @@
 }
 
 .comparingBox {
-	border-color: var(--color-secondary);
-	background-color: #e0e7ff;
+	border-color: var(--color-accent-blue);
+	background-color: rgba(79, 124, 248, 0.18);
+	color: var(--color-text-primary);
 	transform: scale(1.05);
 }
 
 .sortedBox {
-	border-color: var(--color-primary);
-	background-color: var(--color-primary);
-	color: white;
+	border-color: var(--color-accent-green);
+	background-color: var(--color-accent-green);
+	color: var(--color-text-on-node);
 }
 
 .swappingBox {
-	border-color: #dc3545;
-	background-color: #f8d7da;
+	border-color: var(--color-accent-orange);
+	background-color: rgba(248, 167, 79, 0.22);
+	color: var(--color-text-primary);
 	animation: shake 0.5s ease-in-out;
 }
 

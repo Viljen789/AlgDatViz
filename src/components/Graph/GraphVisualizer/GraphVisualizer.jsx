@@ -185,13 +185,13 @@ const GraphVisualizer = ({
 			},
 			nodes: {
 				size: 24,
-				font: { size: 16, face: 'Inter' },
+				font: { size: 16, face: 'Space Grotesk' },
 			},
 			edges: {
 				font: {
 					color: theme.text,
 					size: 14,
-					face: 'Inter',
+					face: 'Space Grotesk',
 					background: theme.surface,
 					align: 'top',
 				},

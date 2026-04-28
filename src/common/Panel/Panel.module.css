@@ -1,10 +1,8 @@
 .panel {
-	background-color: var(--color-surface);
+	background-color: var(--color-bg-panel);
 	border: 1px solid var(--color-border);
 	border-radius: var(--border-radius-lg);
-	box-shadow: 0 4px 12px var(--shadow-color);
 	overflow: hidden;
-
 	display: flex;
 	flex-direction: column;
 }
