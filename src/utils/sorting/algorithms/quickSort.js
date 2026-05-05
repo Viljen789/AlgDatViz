@@ -2,14 +2,18 @@ export function getQuickSortStepsWithStats(array) {
 	const arr = [...array];
 	const n = arr.length;
 	let comparisons = 0;
+	let writes = 0;
 	let swaps = 0;
+	let auxiliaryWrites = 0;
 
 	const steps = [];
 	const createStats = () => ({
 		comparisons,
+		writes,
 		swaps,
+		auxiliaryWrites,
 		arraySize: n,
-		totalOperations: comparisons + swaps,
+		totalOperations: comparisons + writes + auxiliaryWrites,
 	});
 
 	steps.push({
@@ -29,7 +33,7 @@ export function getQuickSortStepsWithStats(array) {
 			comparing: [high],
 			swapping: [],
 			sorted: Array.from(sortedIndices),
-			line: 8,
+			line: 7,
 			stats: createStats(),
 		});
 
@@ -48,13 +52,14 @@ export function getQuickSortStepsWithStats(array) {
 				i++;
 				if (i !== j) {
 					swaps++;
+					writes += 2;
 					[arr[i], arr[j]] = [arr[j], arr[i]];
 					steps.push({
 						array: [...arr],
 						comparing: [],
 						swapping: [i, j],
 						sorted: Array.from(sortedIndices),
-						line: 13,
+						line: 12,
 						stats: createStats(),
 					});
 				}
@@ -63,13 +68,14 @@ export function getQuickSortStepsWithStats(array) {
 
 		if (i + 1 !== high) {
 			swaps++;
+			writes += 2;
 			[arr[i + 1], arr[high]] = [arr[high], arr[i + 1]];
 			steps.push({
 				array: [...arr],
 				comparing: [],
 				swapping: [i + 1, high],
 				sorted: Array.from(sortedIndices),
-				line: 14,
+				line: 13,
 				stats: createStats(),
 			});
 		}

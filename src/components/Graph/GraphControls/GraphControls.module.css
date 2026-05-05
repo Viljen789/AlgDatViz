@@ -36,7 +36,20 @@
 .controlGroup {
 	display: flex;
 	align-items: center;
-	gap: var(--spacing-sm);
+	gap: 6px;
+}
+
+.infoIcon {
+	color: var(--color-text-secondary);
+	opacity: 0.35;
+	cursor: help;
+	transition: all 0.2s;
+}
+
+.infoIcon:hover {
+	opacity: 1;
+	color: var(--color-accent-blue);
+	transform: scale(1.1);
 }
 
 .presetControl {

@@ -1,6 +1,8 @@
 import styles from './GraphControls.module.css';
 import ToggleSwitch from '../../../common/ToggleSwitch/ToggleSwitch';
 import { GRAPH_PRESETS } from '../../../data/graphPresets.js';
+import Tooltip from '../../../common/Tooltip/Tooltip.jsx';
+import { Info } from 'lucide-react';
 
 const GraphControls = ({
 	isDirected,
@@ -22,6 +24,9 @@ const GraphControls = ({
 					checked={isDirected}
 					onChange={onToggleDirected}
 				/>
+				<Tooltip text="In directed graphs, edges have a one-way direction.">
+					<Info size={14} className={styles.infoIcon} />
+				</Tooltip>
 			</div>
 			<div className={styles.controlGroup}>
 				<ToggleSwitch
@@ -29,6 +34,9 @@ const GraphControls = ({
 					checked={isWeighted}
 					onChange={onToggleWeighted}
 				/>
+				<Tooltip text="Weighted edges have a numerical cost or distance.">
+					<Info size={14} className={styles.infoIcon} />
+				</Tooltip>
 			</div>
 			<label className={styles.presetControl}>
 				<span>Example</span>

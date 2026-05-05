@@ -1,96 +1,253 @@
 .countingSortContainer {
-	width: 100%;
-	display: flex;
-	flex-direction: column;
-	gap: var(--spacing-lg);
+	width: min(100%, 980px);
+	display: grid;
+	grid-template-rows: auto auto auto minmax(0, 1fr);
+	gap: 16px;
+	color: var(--color-text-primary);
 }
 
 .phaseIndicator {
-	font-weight: 600;
-	text-align: center;
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 16px;
+	padding: 10px 12px;
+	border: 1px solid rgba(255, 255, 255, 0.07);
+	border-radius: 16px;
+	background: rgba(255, 255, 255, 0.035);
+	box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
+}
+
+.phaseLabel {
+	color: var(--color-accent-green);
+	font-size: 10px;
+	font-weight: 800;
+	text-transform: uppercase;
+	letter-spacing: 0.14em;
+	white-space: nowrap;
+}
+
+.phaseNarration {
 	color: var(--color-text-secondary);
+	font-size: 12px;
+	line-height: 1.4;
+	text-align: right;
+}
+
+.costStrip {
+	display: grid;
+	grid-template-columns: repeat(3, minmax(76px, auto)) minmax(0, 1fr);
+	align-items: stretch;
+	gap: 8px;
+}
+
+.costStrip div {
+	display: flex;
+	flex-direction: column;
+	justify-content: center;
+	gap: 4px;
+	min-height: 58px;
+	padding: 8px 10px;
+	border: 1px solid rgba(255, 255, 255, 0.07);
+	border-radius: 14px;
+	background: rgba(255, 255, 255, 0.03);
+}
+
+.costStrip span {
+	color: var(--color-text-muted);
+	font-size: 10px;
+	font-weight: 800;
+	letter-spacing: 0.14em;
+	text-transform: uppercase;
+}
+
+.costStrip strong {
+	color: var(--color-text-primary);
+	font-family: var(--font-family-mono);
+	font-size: 16px;
+	font-weight: 750;
+}
+
+.costStrip p {
+	display: flex;
+	align-items: center;
+	margin: 0;
+	padding: 10px 12px;
+	border: 1px solid rgba(79, 124, 248, 0.18);
+	border-radius: 14px;
+	background: rgba(79, 124, 248, 0.07);
+	color: var(--color-text-secondary);
+	font-size: 12px;
+	line-height: 1.35;
+}
+
+.costWarn {
+	border-color: rgba(248, 167, 79, 0.34) !important;
+	background: rgba(248, 167, 79, 0.08) !important;
+}
+
+.costWarn strong {
+	color: var(--color-accent-orange);
 }
 
 .arraySection,
-.histogramSection,
-.resultSection {
+.histogramSection {
 	display: flex;
 	flex-direction: column;
-	gap: var(--spacing-sm);
+	gap: 10px;
+	min-width: 0;
 }
 
-h4 {
+.sectionTitle {
 	margin: 0;
-	color: var(--color-text-primary);
+	color: var(--color-text-muted);
+	font-size: 10px;
+	font-weight: 800;
+	text-transform: uppercase;
+	letter-spacing: 0.14em;
 }
 
 .arrayContainer {
 	display: flex;
 	flex-wrap: wrap;
-	gap: var(--spacing-sm);
+	gap: 8px;
+	min-width: 0;
 }
 
 .arrayElement {
-	min-width: 30px;
-	padding: var(--spacing-sm);
-	border: 1px solid var(--color-border);
-	border-radius: var(--border-radius-sm);
+	min-width: 34px;
+	height: 34px;
+	padding: 0 8px;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	border: 1px solid rgba(255, 255, 255, 0.075);
+	border-radius: 11px;
+	background: rgba(255, 255, 255, 0.035);
+	color: var(--color-text-primary);
 	text-align: center;
 	font-family: var(--font-family-mono);
-	transition: all 0.3s ease;
+	font-size: 12px;
+	font-weight: 650;
+	transition:
+		transform var(--duration-step) var(--ease-quiet),
+		background var(--duration-step) var(--ease-quiet),
+		border-color var(--duration-step) var(--ease-quiet),
+		color var(--duration-step) var(--ease-quiet);
 }
 
 .comparing {
-	border-color: var(--color-secondary);
-	background-color: var(--color-lighter-blue);
-	transform: scale(1.1);
+	border-color: rgba(79, 124, 248, 0.56);
+	background: rgba(79, 124, 248, 0.14);
+	transform: translateY(-2px);
 }
 
 .sorted {
-	border-color: var(--color-primary);
-	background-color: var(--color-primary);
-	color: var(--color-surface);
+	border-color: rgba(56, 201, 160, 0.58);
+	background: rgba(56, 201, 160, 0.13);
 }
 
 .placing {
-	border-color: var(--color-success);
-	background-color: rgba(76, 175, 80, 0.1);
+	border-color: rgba(248, 167, 79, 0.6);
+	background: rgba(248, 167, 79, 0.16);
+	transform: translateY(-2px);
+}
+
+.histogramWrap {
+	min-width: 0;
+	overflow-x: auto;
+	padding-bottom: 2px;
+}
+
+.histogramWrap::-webkit-scrollbar {
+	height: 6px;
+}
+
+.histogramWrap::-webkit-scrollbar-thumb {
+	background: rgba(255, 255, 255, 0.14);
+	border-radius: 999px;
 }
 
 .histogram {
-	display: flex;
-	align-items: flex-end;
-	gap: var(--spacing-xs);
-	padding: var(--spacing-md);
-	background-color: var(--color-slight-grey);
-	border-radius: var(--border-radius-md);
+	display: grid;
+	grid-template-columns: repeat(var(--count-slots, 1), minmax(26px, 1fr));
+	grid-auto-flow: column;
+	align-items: end;
+	gap: 6px;
+	min-width: max-content;
+	padding: 12px;
+	border: 1px solid rgba(255, 255, 255, 0.07);
+	border-radius: 16px;
+	background:
+		linear-gradient(180deg, rgba(255, 255, 255, 0.045), transparent 44%),
+		rgba(255, 255, 255, 0.026);
 }
 
 .histogramBar {
+	min-width: 28px;
 	display: flex;
 	flex-direction: column;
 	align-items: center;
-	gap: var(--spacing-xs);
-	flex-grow: 1;
+	justify-content: flex-end;
+	gap: 7px;
 }
 
 .bar {
 	width: 100%;
-	background-color: var(--color-primary);
-	border-radius: var(--border-radius-sm);
+	min-height: 5px;
 	display: flex;
+	align-items: flex-start;
 	justify-content: center;
-	padding-top: var(--spacing-xs);
-	color: var(--color-surface);
-	font-size: 0.75rem;
-	transition: height 0.3s ease;
+	padding-top: 4px;
+	border-radius: 8px 8px 3px 3px;
+	background: rgba(79, 124, 248, 0.24);
+	border: 1px solid rgba(79, 124, 248, 0.32);
+	color: var(--color-text-primary);
+	font-family: var(--font-family-mono);
+	font-size: 10px;
+	font-weight: 800;
+	transition:
+		height var(--duration-step) var(--ease-quiet),
+		background var(--duration-step) var(--ease-quiet),
+		border-color var(--duration-step) var(--ease-quiet),
+		transform var(--duration-step) var(--ease-quiet);
+}
+
+.activeSlot .bar {
+	background: rgba(248, 167, 79, 0.24);
+	border-color: rgba(248, 167, 79, 0.54);
+	transform: translateY(-2px);
 }
 
 .count {
-	font-weight: 600;
+	line-height: 1;
 }
 
 .value {
-	font-size: 0.8rem;
+	color: var(--color-text-muted);
 	font-family: var(--font-family-mono);
+	font-size: 10px;
+}
+
+@media (max-width: 760px) {
+	.countingSortContainer {
+		gap: 14px;
+	}
+
+	.phaseIndicator {
+		align-items: flex-start;
+		flex-direction: column;
+	}
+
+	.phaseNarration {
+		text-align: left;
+	}
+
+	.costStrip {
+		grid-template-columns: repeat(3, minmax(0, 1fr));
+	}
+
+	.costStrip p {
+		grid-column: 1 / -1;
+	}
 }

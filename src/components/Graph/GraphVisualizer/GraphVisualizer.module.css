@@ -35,25 +35,25 @@
 }
 
 .edgePathSelected {
-	stroke: var(--color-accent-blue);
+	stroke: var(--state-special);
 	stroke-width: 4;
 }
 
 .edgePathAccepted {
-	stroke: var(--color-accent-green);
+	stroke: var(--state-done);
 	stroke-width: 5;
 }
 
 .edgePathCandidate {
-	stroke: var(--color-accent-orange);
+	stroke: var(--state-flight);
 	stroke-width: 5;
 	stroke-dasharray: 10 6;
 }
 
 .edgePathRejected {
-	stroke: var(--color-accent-red);
+	stroke: var(--state-special);
 	stroke-dasharray: 6 6;
-	opacity: 0.82;
+	opacity: 0.7;
 }
 
 .edgePathPreview {
@@ -107,29 +107,30 @@
 }
 
 .nodeVisited {
-	fill: rgba(56, 201, 160, 0.2);
-	stroke: var(--color-accent-green);
+	fill: rgba(56, 201, 160, 0.18);
+	stroke: var(--state-done);
 }
 
 .nodeQueued {
 	fill: rgba(79, 124, 248, 0.2);
-	stroke: var(--color-accent-blue);
+	stroke: var(--state-active);
 }
 
 .nodeSettled {
-	fill: rgba(248, 192, 64, 0.2);
-	stroke: var(--color-accent-yellow);
+	fill: rgba(56, 201, 160, 0.32);
+	stroke: var(--state-done);
+	stroke-width: 4;
 }
 
 .nodeSelected {
-	fill: rgba(79, 124, 248, 0.28);
-	stroke: var(--color-accent-blue);
+	fill: rgba(201, 122, 248, 0.18);
+	stroke: var(--state-special);
 	stroke-width: 4;
 }
 
 .nodeActive {
-	fill: var(--color-accent-orange);
-	stroke: var(--color-accent-yellow);
+	fill: rgba(248, 167, 79, 0.7);
+	stroke: var(--state-flight);
 	stroke-width: 5;
 }
 

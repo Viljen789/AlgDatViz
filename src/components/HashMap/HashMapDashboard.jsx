@@ -1,450 +1,309 @@
-import { Database, Plus, RefreshCw, RotateCcw, Search, Trash2 } from 'lucide-react';
-import { useMemo, useState } from 'react';
-import LearningPanel from '../../common/LearningPanel/LearningPanel.jsx';
+import { useEffect, useMemo, useState } from 'react';
+import HashMapHero from './HashMapHero/HashMapHero';
+import StepControlBar from '../../common/StepControlBar/StepControlBar';
+import PseudocodeRail from '../../common/PseudocodeRail/PseudocodeRail';
+import { HASH_MAP_PRESETS, HASH_OPERATIONS, HASH_PSEUDO } from './hashMapMeta';
+import {
+	buildOperationTrace,
+	createBucketsFromEntries,
+} from './hashMapTrace';
 import styles from './HashMapDashboard.module.css';
 
-const INITIAL_ENTRIES = [
-	{ key: 'cat', value: '5' },
-	{ key: 'zap', value: '9' },
-	{ key: 'dog', value: '4' },
-	{ key: 'ate', value: '8' },
-	{ key: 'tea', value: '7' },
+const INITIAL_PRESET = HASH_MAP_PRESETS[0];
+const INITIAL_ENTRIES = INITIAL_PRESET.entries;
+const INITIAL_CAPACITY = INITIAL_PRESET.capacity;
+
+const SPEED_OPTIONS = [
+	{ value: 1300, label: '0.5×' },
+	{ value: 850, label: '1×' },
+	{ value: 450, label: '2×' },
+	{ value: 200, label: '5×' },
 ];
 
-const isPrime = value => {
-	if (value < 2) return false;
-	for (let i = 2; i * i <= value; i += 1) {
-		if (value % i === 0) return false;
-	}
-	return true;
-};
-
-const nextPrime = value => {
-	let candidate = Math.max(3, value);
-	while (!isPrime(candidate)) candidate += 1;
-	return candidate;
-};
-
-const computeHash = (key, capacity) => {
-	let hash = 7;
-	const rounds = [];
-	for (const char of key) {
-		const code = char.charCodeAt(0);
-		hash = (Math.imul(hash, 31) + code) >>> 0;
-		rounds.push(`${char}:${code}`);
-	}
-	return {
-		rawHash: hash,
-		index: hash % capacity,
-		rounds,
-	};
-};
-
-const createBuckets = (entries, capacity) => {
-	const buckets = Array.from({ length: capacity }, () => []);
-	entries.forEach(entry => {
-		const details = computeHash(entry.key, capacity);
-		buckets[details.index].push({ ...entry, hash: details.rawHash });
-	});
-	return buckets;
-};
-
-const flattenBuckets = buckets => buckets.flat().map(({ key, value }) => ({ key, value }));
-
-const cloneBuckets = buckets => buckets.map(bucket => bucket.map(entry => ({ ...entry })));
-
-const INITIAL_CAPACITY = 7;
-const INITIAL_SELECTED_BUCKET = computeHash('cat', INITIAL_CAPACITY).index;
-
-const HASH_MAP_LEARNING = {
-	name: 'Hash Maps',
-	category: 'Dictionary data structure',
-	summary:
-		'Hash maps turn keys into bucket indexes so put, get, and delete are usually constant-time operations.',
-	intuition:
-		'A good hash function spreads keys across buckets. Short chains keep each operation close to O(1); long collision chains pull the cost toward O(n).',
-	strategy: [
-		'Hash the key into a large integer.',
-		'Compress that integer with modulo capacity to choose a bucket.',
-		'Scan only that bucket chain for matching keys.',
-		'Resize and rehash when load factor gets high.',
-	],
-	complexity: {
-		time: {
-			average: 'O(1)',
-			worst: 'O(n)',
-			amortized: 'O(1) insert',
-		},
-		space: { worst: 'O(n + m)' },
-		variables: [
-			{ symbol: 'n', label: 'entries' },
-			{ symbol: 'm', label: 'buckets' },
-			{ symbol: 'alpha', label: 'load factor n / m' },
-		],
-		why: [
-			'Average-case O(1) depends on keys being spread across many buckets.',
-			'Worst-case O(n) happens when many keys collide into the same chain.',
-			'Resize is expensive once, but spread across many inserts it becomes amortized O(1).',
-		],
-	},
-	tradeoffs: {
-		useWhen: [
-			'Fast lookup by key matters more than sorted order.',
-			'Keys can be hashed consistently.',
-		],
-		watchOut: [
-			'Poor hash functions create long chains.',
-			'Iteration order is not a sorted order guarantee.',
-		],
-	},
-	legend: [
-		{ label: 'Selected bucket', color: 'var(--color-accent-green)' },
-		{ label: 'Active key', color: 'var(--color-accent-orange)' },
-		{ label: 'Collision chain', color: 'var(--color-accent-blue)' },
-	],
-	compareCards: [
-		{
-			label: 'Average case',
-			title: 'Short chains',
-			text: 'Good distribution keeps each bucket small, so operations inspect only a few entries.',
-		},
-		{
-			label: 'Worst case',
-			title: 'One crowded bucket',
-			text: 'If many keys collide, a lookup scans a long chain and behaves like linear search.',
-		},
-		{
-			label: 'Resize',
-			title: 'Amortized repair',
-			text: 'Rehashing costs O(n), but it buys many future constant-time inserts.',
-		},
-	],
-	pseudocode: [
-		'hash = 7',
-		'for each character in key:',
-		'  hash = hash * 31 + characterCode',
-		'index = hash % capacity',
-		'scan bucket[index] for the key',
-		'insert, update, return, or delete the entry',
-		'if load factor is high: resize and rehash',
-	],
-	conceptChecks: [
-		{
-			question: 'Why does resizing require rehashing every key?',
-			answer:
-				'The bucket index is hash % capacity, so changing capacity can change every key location.',
-		},
-		{
-			question: 'Why is insertion amortized O(1)?',
-			answer:
-				'Most inserts are cheap; occasional O(n) resizes are spread across many previous cheap inserts.',
-		},
-	],
-};
+const idleFrame = (buckets, capacity) => ({
+	buckets,
+	capacity,
+	selectedBucket: null,
+	activeKey: null,
+	phase: 'idle',
+	hash: null,
+	scanIndex: null,
+	collision: false,
+	line: null,
+	title: 'Ready',
+	description: 'Pick an operation, type a key, and run.',
+});
 
 const HashMapDashboard = () => {
-	const [capacity, setCapacity] = useState(INITIAL_CAPACITY);
-	const [buckets, setBuckets] = useState(() =>
-		createBuckets(INITIAL_ENTRIES, INITIAL_CAPACITY)
+	const [liveBuckets, setLiveBuckets] = useState(() =>
+		createBucketsFromEntries(INITIAL_ENTRIES, INITIAL_CAPACITY)
 	);
-	const [keyInput, setKeyInput] = useState('cat');
-	const [valueInput, setValueInput] = useState('11');
-	const [selectedBucket, setSelectedBucket] = useState(INITIAL_SELECTED_BUCKET);
-	const [selectedKey, setSelectedKey] = useState('cat');
-	const [lastResult, setLastResult] = useState('Ready');
-	const [trace, setTrace] = useState([
-		{
-			label: 'Hash function',
-			text: 'hash = hash * 31 + characterCode, then hash % capacity chooses the bucket.',
-		},
+	const [liveCapacity, setLiveCapacity] = useState(INITIAL_CAPACITY);
+	const [presetId, setPresetId] = useState(INITIAL_PRESET.id);
+
+	const [operationId, setOperationId] = useState(INITIAL_PRESET.operationId);
+	const [keyInput, setKeyInput] = useState(INITIAL_PRESET.key);
+	const [valueInput, setValueInput] = useState(INITIAL_PRESET.value);
+
+	const [frames, setFrames] = useState(() => [
+		idleFrame(
+			createBucketsFromEntries(INITIAL_ENTRIES, INITIAL_CAPACITY),
+			INITIAL_CAPACITY
+		),
 	]);
+	const [frameIdx, setFrameIdx] = useState(0);
+	const [isPlaying, setIsPlaying] = useState(false);
+	const [speed, setSpeed] = useState(850);
 
-	const entryCount = useMemo(() => buckets.reduce((sum, bucket) => sum + bucket.length, 0), [buckets]);
-	const collisions = useMemo(
-		() => buckets.reduce((sum, bucket) => sum + Math.max(bucket.length - 1, 0), 0),
-		[buckets]
+	const op = HASH_OPERATIONS[operationId];
+	const currentFrame = frames[frameIdx] || frames[0];
+	const renderBuckets = currentFrame?.buckets || liveBuckets;
+	const renderCapacity = currentFrame?.capacity || liveCapacity;
+
+	const entryCount = useMemo(
+		() => liveBuckets.reduce((sum, b) => sum + b.length, 0),
+		[liveBuckets]
 	);
-	const loadFactor = entryCount / capacity;
-	const learningPrompt =
-		loadFactor > 0.75
-			? 'Try resizing now: the high load factor is the moment a real hash map would spread keys into a larger table.'
-			: 'Try inserting keys until the load factor passes 0.75, then resize to see why rehashing restores short chains.';
+	const collisions = useMemo(
+		() =>
+			liveBuckets.reduce(
+				(sum, b) => sum + Math.max(b.length - 1, 0),
+				0
+			),
+		[liveBuckets]
+	);
+	const loadFactor = liveCapacity ? entryCount / liveCapacity : 0;
 
-	const explainHash = (key, index, rawHash) => [
-		{
-			label: 'Read key',
-			text: `"${key}" is converted into character codes before indexing.`,
-		},
-		{
-			label: 'Compress',
-			text: `${rawHash} % ${capacity} = ${index}, so bucket ${index} is inspected.`,
-		},
-	];
-
-	const handlePut = () => {
-		const key = keyInput.trim();
-		if (!key) return;
-		const value = valueInput.trim() || 'value';
-		const details = computeHash(key, capacity);
-		const nextBuckets = cloneBuckets(buckets);
-		const bucket = nextBuckets[details.index];
-		const existingIndex = bucket.findIndex(entry => entry.key === key);
-		const hasCollision = bucket.length > 0 && existingIndex === -1;
-
-		if (existingIndex >= 0) {
-			bucket[existingIndex] = { key, value, hash: details.rawHash };
-		} else {
-			bucket.push({ key, value, hash: details.rawHash });
+	useEffect(() => {
+		if (!isPlaying) return;
+		if (frameIdx >= frames.length - 1) {
+			setIsPlaying(false);
+			return;
 		}
+		const t = window.setTimeout(() => {
+			setFrameIdx(idx => Math.min(idx + 1, frames.length - 1));
+		}, speed);
+		return () => window.clearTimeout(t);
+	}, [isPlaying, frameIdx, frames.length, speed]);
 
-		setBuckets(nextBuckets);
-		setSelectedBucket(details.index);
-		setSelectedKey(key);
-		setLastResult(
-			existingIndex >= 0
-				? `Updated ${key} in bucket ${details.index}`
-				: `Inserted ${key} in bucket ${details.index}`
-		);
-		setTrace([
-			...explainHash(key, details.index, details.rawHash),
-			{
-				label: existingIndex >= 0 ? 'Update' : hasCollision ? 'Collision' : 'Insert',
-				text:
-					existingIndex >= 0
-						? 'The key already exists, so only the value changes.'
-						: hasCollision
-							? 'Another key already lives here, so separate chaining appends a new cell.'
-							: 'The bucket is empty, so insertion is constant time for this case.',
-			},
-			{
-				label: 'Load factor',
-				text:
-					(entryCount + (existingIndex >= 0 ? 0 : 1)) / capacity > 0.75
-						? 'The table is getting dense. Resizing keeps chains short.'
-						: 'Short chains are why hash maps are usually O(1) on average.',
-			},
-		]);
-	};
-
-	const handleGet = () => {
-		const key = keyInput.trim();
-		if (!key) return;
-		const details = computeHash(key, capacity);
-		const bucket = buckets[details.index];
-		const found = bucket.find(entry => entry.key === key);
-		setSelectedBucket(details.index);
-		setSelectedKey(key);
-		setLastResult(found ? `Found ${key} = ${found.value}` : `${key} is not stored`);
-		setTrace([
-			...explainHash(key, details.index, details.rawHash),
-			{
-				label: 'Scan chain',
-				text: found
-					? `The chain contains "${key}", so return ${found.value}.`
-					: 'The chain was checked and no matching key was found.',
-			},
-		]);
-	};
-
-	const handleDelete = () => {
-		const key = keyInput.trim();
-		if (!key) return;
-		const details = computeHash(key, capacity);
-		const nextBuckets = cloneBuckets(buckets);
-		const before = nextBuckets[details.index].length;
-		nextBuckets[details.index] = nextBuckets[details.index].filter(
-			entry => entry.key !== key
-		);
-		const removed = nextBuckets[details.index].length !== before;
-		setBuckets(nextBuckets);
-		setSelectedBucket(details.index);
-		setSelectedKey(key);
-		setLastResult(removed ? `Deleted ${key}` : `${key} was not present`);
-		setTrace([
-			...explainHash(key, details.index, details.rawHash),
-			{
-				label: removed ? 'Remove node' : 'No change',
-				text: removed
-					? 'Only the matching key-value cell is removed from the chain.'
-					: 'Delete is a no-op when the key is absent.',
-			},
-		]);
-	};
-
-	const handleResize = () => {
-		const entries = flattenBuckets(buckets);
-		const nextCapacity = nextPrime(capacity * 2);
-		const nextBuckets = createBuckets(entries, nextCapacity);
-		setCapacity(nextCapacity);
-		setBuckets(nextBuckets);
-		setSelectedBucket(null);
-		setSelectedKey('');
-		setLastResult(`Resized to ${nextCapacity} buckets`);
-		setTrace([
-			{
-				label: 'Allocate',
-				text: `Create a larger table with ${nextCapacity} buckets.`,
-			},
-			{
-				label: 'Rehash',
-				text: 'Every key is hashed again because hash % capacity changes.',
-			},
-			{
-				label: 'Effect',
-				text: 'Chains spread out, lowering the load factor and collision pressure.',
-			},
-		]);
+	const handleRun = () => {
+		const args = {
+			key: keyInput.trim(),
+			value: valueInput.trim() || 'value',
+			buckets: liveBuckets,
+			capacity: liveCapacity,
+		};
+		if (op.needsKey && !args.key) return;
+		const result = buildOperationTrace(operationId, args);
+		if (!result.frames.length) return;
+		setFrames(result.frames);
+		setFrameIdx(0);
+		setIsPlaying(true);
+		// Commit final state immediately so subsequent ops use it.
+		setLiveBuckets(result.finalBuckets);
+		setLiveCapacity(result.finalCapacity);
 	};
 
 	const handleReset = () => {
-		const resetCapacity = INITIAL_CAPACITY;
-		setCapacity(resetCapacity);
-		setBuckets(createBuckets(INITIAL_ENTRIES, resetCapacity));
-		setSelectedBucket(INITIAL_SELECTED_BUCKET);
-		setSelectedKey('cat');
-		setKeyInput('cat');
-		setValueInput('11');
-		setLastResult('Example loaded');
-		setTrace([
-			{
-				label: 'Example',
-				text: 'cat and zap intentionally collide in this table, making chaining visible.',
-			},
-		]);
+		const preset =
+			HASH_MAP_PRESETS.find(item => item.id === presetId) || INITIAL_PRESET;
+		const fresh = createBucketsFromEntries(preset.entries, preset.capacity);
+		setLiveBuckets(fresh);
+		setLiveCapacity(preset.capacity);
+		setKeyInput(preset.key);
+		setValueInput(preset.value);
+		setOperationId(preset.operationId);
+		setFrames([idleFrame(fresh, preset.capacity)]);
+		setFrameIdx(0);
+		setIsPlaying(false);
 	};
 
+	const handlePresetChange = id => {
+		const preset = HASH_MAP_PRESETS.find(item => item.id === id);
+		if (!preset) return;
+		const fresh = createBucketsFromEntries(preset.entries, preset.capacity);
+		setPresetId(id);
+		setLiveBuckets(fresh);
+		setLiveCapacity(preset.capacity);
+		setOperationId(preset.operationId);
+		setKeyInput(preset.key);
+		setValueInput(preset.value);
+		setFrames([idleFrame(fresh, preset.capacity)]);
+		setFrameIdx(0);
+		setIsPlaying(false);
+	};
+
+	const handleOperationChange = id => {
+		setOperationId(id);
+		setIsPlaying(false);
+		setFrames([idleFrame(liveBuckets, liveCapacity)]);
+		setFrameIdx(0);
+	};
+
+	const handlePlayPause = () => {
+		if (frames.length <= 1) {
+			handleRun();
+			return;
+		}
+		if (frameIdx >= frames.length - 1) {
+			setFrameIdx(0);
+			setIsPlaying(true);
+			return;
+		}
+		setIsPlaying(p => !p);
+	};
+
+	const totalSteps = frames.length;
+	const canStep = totalSteps > 1;
+	const lines = HASH_PSEUDO[operationId] || [];
+	const activeLine = currentFrame?.line ?? null;
+
+	const statusSuffix = !canStep
+		? 'ready'
+		: frameIdx >= totalSteps - 1
+			? 'done'
+			: isPlaying
+				? 'running'
+				: 'paused';
+
 	return (
-		<div className={styles.dashboard}>
-			<section className={styles.workbench}>
-				<div className={styles.controlBand}>
-					<div className={styles.titleBlock}>
-						<Database size={20} />
-						<div>
-							<strong>Hash map laboratory</strong>
-							<span>Keys become bucket indexes through a hash function</span>
-						</div>
-					</div>
-					<div className={styles.inputs}>
-						<label>
-							<span>Key</span>
-							<input
-								value={keyInput}
-								onChange={event => setKeyInput(event.target.value)}
-								onKeyDown={event => {
-									if (event.key === 'Enter') handlePut();
-								}}
-							/>
-						</label>
-						<label>
-							<span>Value</span>
-							<input
-								value={valueInput}
-								onChange={event => setValueInput(event.target.value)}
-								onKeyDown={event => {
-									if (event.key === 'Enter') handlePut();
-								}}
-							/>
-						</label>
-					</div>
-					<div className={styles.actionRow}>
-						<button type="button" onClick={handlePut} title="Put key-value pair">
-							<Plus size={16} />
-							Put
-						</button>
-						<button type="button" onClick={handleGet} title="Find key">
-							<Search size={16} />
-							Get
-						</button>
-						<button type="button" onClick={handleDelete} title="Delete key">
-							<Trash2 size={16} />
-							Delete
-						</button>
-						<button type="button" onClick={handleResize} title="Resize table">
-							<RefreshCw size={16} />
-							Resize
-						</button>
-						<button type="button" onClick={handleReset} title="Reset example">
-							<RotateCcw size={16} />
-						</button>
-					</div>
-				</div>
+		<div className={styles.shell}>
+			<HashMapHero
+				operationId={operationId}
+				onOperationChange={handleOperationChange}
+				presetId={presetId}
+				onPresetChange={handlePresetChange}
+				keyValue={keyInput}
+				onKeyChange={setKeyInput}
+				valueValue={valueInput}
+				onValueChange={setValueInput}
+				onRun={handleRun}
+				onReset={handleReset}
+				capacity={liveCapacity}
+				entryCount={entryCount}
+				collisions={collisions}
+				loadFactor={loadFactor}
+				statusSuffix={statusSuffix}
+			/>
 
-				<div className={styles.bucketGrid}>
-					{buckets.map((bucket, index) => (
-						<div
-							key={index}
-							className={`${styles.bucketRow} ${
-								index === selectedBucket ? styles.bucketActive : ''
-							}`}
-						>
-							<div className={styles.bucketIndex}>{index}</div>
-							<div className={styles.chain}>
-								{bucket.length ? (
-									bucket.map((entry, entryIndex) => (
-										<div
-											key={`${entry.key}-${entryIndex}`}
-											className={`${styles.entryCard} ${
-												entry.key === selectedKey ? styles.entryActive : ''
-											}`}
-										>
-											<span>{entry.key}</span>
-											<strong>{entry.value}</strong>
-											<small>h:{entry.hash % capacity}</small>
+			<div className={styles.body}>
+				<section className={styles.canvas} aria-label="Hash map canvas">
+					<div className={styles.canvasOverlay}>
+						<span className={styles.notation}>
+							{op?.complexity}
+						</span>
+						<span className={styles.notationDot}>·</span>
+						<span className={styles.stat}>
+							m = {renderCapacity}
+						</span>
+						{currentFrame?.hash != null && (
+							<>
+								<span className={styles.notationDot}>·</span>
+								<span className={styles.stat}>
+									hash {currentFrame.hash}
+								</span>
+							</>
+						)}
+						{currentFrame?.title && (
+							<>
+								<span className={styles.notationDot}>·</span>
+								<span className={styles.stat}>{currentFrame.title}</span>
+							</>
+						)}
+					</div>
+
+					<div className={styles.canvasStage}>
+						<div className={styles.bucketGrid}>
+							{renderBuckets.map((bucket, idx) => {
+								const isSelected = idx === currentFrame?.selectedBucket;
+								return (
+									<div
+										key={idx}
+										className={`${styles.bucketRow} ${
+											isSelected ? styles.bucketActive : ''
+										}`}
+									>
+										<span className={styles.bucketIndex}>{idx}</span>
+										<div className={styles.chain}>
+											{bucket.length === 0 ? (
+												<span className={styles.bucketEmpty}>null</span>
+											) : (
+												bucket.map((entry, j) => {
+													const isMatch =
+														isSelected &&
+														entry.key === currentFrame?.activeKey;
+													return (
+														<div
+															key={`${entry.key}-${j}`}
+															className={`${styles.entry} ${
+																isMatch ? styles.entryActive : ''
+															}`}
+														>
+															<span className={styles.entryKey}>
+																{entry.key}
+															</span>
+															<span className={styles.entryArrow}>→</span>
+															<span className={styles.entryValue}>
+																{entry.value}
+															</span>
+														</div>
+													);
+												})
+											)}
 										</div>
-									))
-								) : (
-									<span className={styles.emptyBucket}>null</span>
-								)}
-							</div>
+									</div>
+								);
+							})}
 						</div>
-					))}
-				</div>
-			</section>
+					</div>
 
-			<aside className={styles.lessonPanel}>
-				<div className={styles.resultBox}>{lastResult}</div>
-				<div className={styles.statsGrid}>
-					<div>
-						<span>Capacity</span>
-						<strong>{capacity}</strong>
-					</div>
-					<div>
-						<span>Entries</span>
-						<strong>{entryCount}</strong>
-					</div>
-					<div>
-						<span>Load</span>
-						<strong>{loadFactor.toFixed(2)}</strong>
-					</div>
-					<div>
-						<span>Collisions</span>
-						<strong>{collisions}</strong>
-					</div>
-				</div>
-				<div className={styles.loadMeter}>
-					<div
-						style={{
-							width: `${Math.min(loadFactor * 100, 100)}%`,
-							background:
-								loadFactor > 0.75
-									? 'var(--color-accent-red)'
-									: 'var(--color-accent-green)',
-						}}
-					/>
-				</div>
-				<LearningPanel
-					content={{ ...HASH_MAP_LEARNING, prompt: learningPrompt }}
-					trace={{
-						title: lastResult,
-						text:
-							loadFactor > 0.75
-								? 'The table is dense enough that collisions are likely; resizing is the teaching move now.'
-								: 'Follow the hash, bucket choice, and chain scan for the latest operation.',
-						steps: trace,
-					}}
-					accent="var(--color-accent-orange)"
+					{currentFrame?.description && (
+						<div className={styles.frameNote} aria-live="polite">
+							<span className={styles.frameNoteLabel}>STEP</span>
+							<span className={styles.frameNoteText}>
+								{currentFrame.description}
+							</span>
+						</div>
+					)}
+				</section>
+
+				<PseudocodeRail
+					lines={lines}
+					activeLine={activeLine}
+					isRunning={canStep}
 				/>
-			</aside>
+			</div>
+
+			<div className={styles.bar}>
+				<StepControlBar
+					isPlaying={isPlaying}
+					canStep={canStep}
+					currentStep={frameIdx}
+					totalSteps={totalSteps}
+					speed={speed}
+					speedOptions={SPEED_OPTIONS}
+					onPlayPause={handlePlayPause}
+					onStepBack={() =>
+						setFrameIdx(i => Math.max(i - 1, 0))
+					}
+					onStepForward={() =>
+						setFrameIdx(i => Math.min(i + 1, frames.length - 1))
+					}
+					onSeek={s => {
+						setFrameIdx(Math.max(0, Math.min(s, frames.length - 1)));
+						setIsPlaying(false);
+					}}
+					onFirst={() => {
+						setFrameIdx(0);
+						setIsPlaying(false);
+					}}
+					onLast={() => {
+						setFrameIdx(frames.length - 1);
+						setIsPlaying(false);
+					}}
+					onSpeedChange={setSpeed}
+				/>
+			</div>
 		</div>
 	);
 };

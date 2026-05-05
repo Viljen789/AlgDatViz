@@ -1,346 +1,244 @@
-import { ArrowDownToLine, ArrowUpFromLine, Eye, RotateCcw } from 'lucide-react';
-import { useMemo, useState } from 'react';
-import LearningPanel from '../../common/LearningPanel/LearningPanel.jsx';
+import { useState } from 'react';
+import { LayoutGroup, motion as Motion, AnimatePresence } from 'framer-motion';
+import StacksQueuesHero from './StacksQueuesHero/StacksQueuesHero';
+import PseudocodeRail from '../../common/PseudocodeRail/PseudocodeRail';
+import { SQ_MODES, SQ_PSEUDO } from './stacksQueuesMeta';
 import styles from './StacksQueuesDashboard.module.css';
 
 const INITIAL_STACK = ['call()', 'parse()', 'eval()'];
 const INITIAL_QUEUE = ['A', 'B', 'C'];
-const VALUE_POOL = ['D', 'E', 'F', 'G', 'H', 'I', 'J'];
+const VALUE_POOL = ['D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L'];
 
-const CONTENT = {
-	stack: {
-		name: 'Stack',
-		category: 'Linear data structure',
-		summary:
-			'Stacks are last-in, first-out containers: the newest item is the first one removed.',
-		intuition:
-			'A stack behaves like a pile of plates or a call stack. You only touch the top, so push, pop, and peek are constant-time operations.',
-		strategy: [
-			'Push adds a value to the top.',
-			'Pop removes the top value.',
-			'Peek reads the top without removing it.',
-			'Only the most recent item is accessible directly.',
-		],
-		complexity: {
-			time: { average: 'O(1)', worst: 'O(1)' },
-			space: { worst: 'O(n)' },
-			variables: [{ symbol: 'n', label: 'stored items' }],
-			why: [
-				'The top pointer tells the structure where to read or write.',
-				'No scan is needed for push, pop, or peek.',
-				'Memory grows with the number of stored values.',
-			],
-		},
-		tradeoffs: {
-			useWhen: [
-				'You need undo, backtracking, recursion, parsing, or depth-first behavior.',
-				'The newest unfinished task should run next.',
-			],
-			watchOut: [
-				'You cannot efficiently access the bottom or middle.',
-				'Deep recursion can overflow a program call stack.',
-			],
-		},
-		legend: [
-			{ label: 'Top item', color: 'var(--color-accent-blue)' },
-			{ label: 'Removed item', color: 'var(--color-accent-orange)' },
-			{ label: 'Stored items', color: 'var(--color-border-strong)' },
-		],
-		compareCards: [
-			{
-				label: 'Order rule',
-				title: 'LIFO',
-				text: 'Last item in is the first item out.',
-			},
-			{
-				label: 'Graph flavor',
-				title: 'DFS-like',
-				text: 'Stacks naturally chase the newest branch first.',
-			},
-		],
-		pseudocode: [
-			'push(x):',
-			'  top = top + 1',
-			'  data[top] = x',
-			'pop():',
-			'  value = data[top]',
-			'  top = top - 1',
-			'  return value',
-		],
-		conceptChecks: [
-			{
-				question: 'Why does a stack fit undo?',
-				answer:
-					'The last action is the first one you usually want to reverse, which matches LIFO order.',
-			},
-		],
-	},
-	queue: {
-		name: 'Queue',
-		category: 'Linear data structure',
-		summary:
-			'Queues are first-in, first-out containers: the oldest waiting item is served first.',
-		intuition:
-			'A queue behaves like a line at a counter. Enqueue adds to the rear, while dequeue removes from the front.',
-		strategy: [
-			'Enqueue adds a value to the rear.',
-			'Dequeue removes the front value.',
-			'Peek reads the front without removing it.',
-			'The structure preserves arrival order.',
-		],
-		complexity: {
-			time: { average: 'O(1)', worst: 'O(1)' },
-			space: { worst: 'O(n)' },
-			variables: [{ symbol: 'n', label: 'stored items' }],
-			why: [
-				'Front and rear pointers avoid shifting items.',
-				'Each operation touches one end of the queue.',
-				'Memory grows with waiting items.',
-			],
-		},
-		tradeoffs: {
-			useWhen: [
-				'You need scheduling, buffering, BFS, or fair first-come-first-served behavior.',
-				'Older work should be processed before newer work.',
-			],
-			watchOut: [
-				'Removing from the front of a plain array can be O(n) if items shift.',
-				'Queues do not prioritize important items unless upgraded to a priority queue.',
-			],
-		},
-		legend: [
-			{ label: 'Front item', color: 'var(--color-accent-green)' },
-			{ label: 'Rear item', color: 'var(--color-accent-blue)' },
-			{ label: 'Dequeued item', color: 'var(--color-accent-orange)' },
-		],
-		compareCards: [
-			{
-				label: 'Order rule',
-				title: 'FIFO',
-				text: 'First item in is the first item out.',
-			},
-			{
-				label: 'Graph flavor',
-				title: 'BFS-like',
-				text: 'Queues naturally process nodes layer by layer.',
-			},
-		],
-		pseudocode: [
-			'enqueue(x):',
-			'  data[rear] = x',
-			'  rear = rear + 1',
-			'dequeue():',
-			'  value = data[front]',
-			'  front = front + 1',
-			'  return value',
-		],
-		conceptChecks: [
-			{
-				question: 'Why does BFS use a queue?',
-				answer:
-					'The queue processes all nodes discovered earlier before nodes discovered later, preserving layers.',
-			},
-		],
-	},
-};
-
-const makeTrace = (mode, action, items, result) => {
-	const isStack = mode === 'stack';
-	const access = isStack ? items[items.length - 1] : items[0];
-	return {
-		title: action,
-		text: result || `${CONTENT[mode].name} has ${items.length} item${items.length === 1 ? '' : 's'}.`,
-		steps: [
-			{
-				label: isStack ? 'Accessible end' : 'Front / rear',
-				text: isStack
-					? `Top is ${access || 'empty'}.`
-					: `Front is ${items[0] || 'empty'}, rear is ${items[items.length - 1] || 'empty'}.`,
-			},
-			{
-				label: 'Order rule',
-				text: isStack ? 'LIFO: newest item leaves first.' : 'FIFO: oldest item leaves first.',
-			},
-		],
-	};
-};
+const TWEEN = { type: 'tween', duration: 0.34, ease: [0.16, 1, 0.3, 1] };
 
 const StacksQueuesDashboard = () => {
 	const [mode, setMode] = useState('stack');
 	const [stack, setStack] = useState(INITIAL_STACK);
 	const [queue, setQueue] = useState(INITIAL_QUEUE);
 	const [nextIndex, setNextIndex] = useState(0);
-	const [lastAction, setLastAction] = useState('Ready');
-	const [lastRemoved, setLastRemoved] = useState('');
-
-	const items = mode === 'stack' ? stack : queue;
-	const content = CONTENT[mode];
-	const accent = mode === 'stack' ? 'var(--color-accent-blue)' : 'var(--color-accent-green)';
-
-	const trace = useMemo(
-		() =>
-			makeTrace(
-				mode,
-				lastAction,
-				items,
-				lastRemoved ? `Removed ${lastRemoved}. Watch which end changed.` : ''
-			),
-		[mode, lastAction, items, lastRemoved]
+	const [activeLine, setActiveLine] = useState(null);
+	const [statusSuffix, setStatusSuffix] = useState('ready');
+	const [lastResult, setLastResult] = useState(
+		'Push a value to begin. Switch modes to compare LIFO and FIFO behavior.'
 	);
+
+	const m = SQ_MODES[mode];
+	const items = mode === 'stack' ? stack : queue;
+	const lines = SQ_PSEUDO[mode] || [];
 
 	const getNextValue = () => {
 		const value = VALUE_POOL[nextIndex % VALUE_POOL.length];
-		setNextIndex(index => index + 1);
+		setNextIndex(i => i + 1);
 		return value;
 	};
 
 	const handleAdd = () => {
 		const value = getNextValue();
-		setLastRemoved('');
 		if (mode === 'stack') {
-			setStack(current => [...current, value]);
-			setLastAction(`Push ${value}`);
+			setStack(s => [...s, value]);
+			setActiveLine(2); // data[top] = x
+			setLastResult(`Pushed ${value} onto the stack.`);
 		} else {
-			setQueue(current => [...current, value]);
-			setLastAction(`Enqueue ${value}`);
+			setQueue(q => [...q, value]);
+			setActiveLine(1); // data[rear] = x (line 1 in SQ_PSEUDO.queue is the second line)
+			setLastResult(`Enqueued ${value} at the rear.`);
 		}
+		setStatusSuffix(`+${value}`);
 	};
 
 	const handleRemove = () => {
-		setLastRemoved('');
 		if (mode === 'stack') {
+			if (!stack.length) {
+				setLastResult('Stack is empty.');
+				setStatusSuffix('empty');
+				return;
+			}
 			const removed = stack[stack.length - 1];
-			setLastRemoved(removed || '');
-			setLastAction(removed ? `Pop ${removed}` : 'Stack is empty');
-			if (removed) setStack(current => current.slice(0, -1));
+			setStack(s => s.slice(0, -1));
+			setActiveLine(5); // value = data[top]
+			setLastResult(`Popped ${removed} from the top.`);
+			setStatusSuffix(`-${removed}`);
 		} else {
+			if (!queue.length) {
+				setLastResult('Queue is empty.');
+				setStatusSuffix('empty');
+				return;
+			}
 			const removed = queue[0];
-			setLastRemoved(removed || '');
-			setLastAction(removed ? `Dequeue ${removed}` : 'Queue is empty');
-			if (removed) setQueue(current => current.slice(1));
+			setQueue(q => q.slice(1));
+			setActiveLine(5); // value = data[front]
+			setLastResult(`Dequeued ${removed} from the front.`);
+			setStatusSuffix(`-${removed}`);
 		}
 	};
 
 	const handlePeek = () => {
 		const value = mode === 'stack' ? stack[stack.length - 1] : queue[0];
-		setLastRemoved('');
-		setLastAction(value ? `Peek ${value}` : `${content.name} is empty`);
+		if (!value) {
+			setLastResult(`${m.name} is empty.`);
+			setStatusSuffix('empty');
+			setActiveLine(null);
+			return;
+		}
+		setActiveLine(null);
+		setStatusSuffix(`peek ${value}`);
+		setLastResult(
+			mode === 'stack'
+				? `Top of stack is ${value}. The pile is unchanged.`
+				: `Front of queue is ${value}. The line is unchanged.`
+		);
 	};
 
 	const handleReset = () => {
 		setStack(INITIAL_STACK);
 		setQueue(INITIAL_QUEUE);
 		setNextIndex(0);
-		setLastRemoved('');
-		setLastAction('Reset examples');
+		setActiveLine(null);
+		setStatusSuffix('ready');
+		setLastResult('Examples reloaded.');
 	};
 
-	return (
-		<div className={styles.dashboard}>
-			<section className={styles.workbench}>
-				<div className={styles.controlBand}>
-					<div className={styles.titleBlock}>
-						<strong>Stacks & queues laboratory</strong>
-						<span>Same O(1) operations, opposite ordering rules</span>
-					</div>
+	const handleModeChange = next => {
+		setMode(next);
+		setActiveLine(null);
+		setStatusSuffix(`${next === 'stack' ? 'LIFO' : 'FIFO'} mode`);
+		setLastResult(
+			next === 'stack'
+				? 'Stack mode. Push and pop both touch the top.'
+				: 'Queue mode. Enqueue at the rear, dequeue at the front.'
+		);
+	};
 
-					<div className={styles.modeSwitch}>
-						<button
-							type="button"
-							className={mode === 'stack' ? styles.modeActive : ''}
-							onClick={() => {
-								setMode('stack');
-								setLastRemoved('');
-								setLastAction('Switched to stack');
-							}}
-						>
-							Stack
-						</button>
-						<button
-							type="button"
-							className={mode === 'queue' ? styles.modeActive : ''}
-							onClick={() => {
-								setMode('queue');
-								setLastRemoved('');
-								setLastAction('Switched to queue');
-							}}
-						>
-							Queue
-						</button>
-					</div>
-
-					<div className={styles.actionRow}>
-						<button type="button" onClick={handleAdd}>
-							<ArrowDownToLine size={16} />
-							{mode === 'stack' ? 'Push' : 'Enqueue'}
-						</button>
-						<button type="button" onClick={handleRemove}>
-							<ArrowUpFromLine size={16} />
-							{mode === 'stack' ? 'Pop' : 'Dequeue'}
-						</button>
-						<button type="button" onClick={handlePeek}>
-							<Eye size={16} />
-							Peek
-						</button>
-						<button type="button" onClick={handleReset} title="Reset examples">
-							<RotateCcw size={16} />
-						</button>
-					</div>
-				</div>
-
-				<div className={styles.visualGrid}>
-					<div className={`${styles.structureCard} ${mode === 'stack' ? styles.focused : ''}`}>
-						<div className={styles.structureHeader}>
-							<strong>Stack</strong>
-							<span>LIFO</span>
-						</div>
-						<div className={styles.stackView}>
-							{stack
-								.slice()
-								.reverse()
-								.map((item, index) => (
-									<div
-										key={`${item}-${index}`}
-										className={`${styles.stackItem} ${index === 0 ? styles.activeItem : ''}`}
-									>
-										<span>{item}</span>
-										{index === 0 && <small>top</small>}
-									</div>
-								))}
-						</div>
-					</div>
-
-					<div className={`${styles.structureCard} ${mode === 'queue' ? styles.focused : ''}`}>
-						<div className={styles.structureHeader}>
-							<strong>Queue</strong>
-							<span>FIFO</span>
-						</div>
-						<div className={styles.queueView}>
-							{queue.map((item, index) => (
-								<div
-									key={`${item}-${index}`}
-									className={`${styles.queueItem} ${
-										index === 0 || index === queue.length - 1 ? styles.activeItem : ''
-									}`}
+	const renderStack = () => (
+		<div
+			className={`${styles.pane} ${mode === 'stack' ? styles.paneActive : ''}`}
+		>
+			<div className={styles.paneHeader}>
+				<span className={styles.paneTitle}>Stack</span>
+				<span className={styles.paneAcronym}>LIFO</span>
+			</div>
+			<LayoutGroup>
+				<div className={styles.stackView}>
+					<AnimatePresence initial={false}>
+						{[...stack].reverse().map((item, idx, arr) => {
+							const isTop = idx === 0;
+							return (
+								<Motion.div
+									layout
+									key={`${item}-${arr.length - idx}`}
+									initial={{ opacity: 0, y: -16 }}
+									animate={{ opacity: 1, y: 0 }}
+									exit={{ opacity: 0, y: -16 }}
+									transition={TWEEN}
+									className={`${styles.stackItem} ${isTop ? styles.itemTop : ''}`}
 								>
-									<span>{item}</span>
-									<small>
-										{index === 0
-											? 'front'
-											: index === queue.length - 1
-												? 'rear'
-												: ''}
-									</small>
-								</div>
-							))}
-						</div>
+									<span className={styles.itemLabel}>{item}</span>
+									{isTop && <span className={styles.itemAnchor}>top</span>}
+								</Motion.div>
+							);
+						})}
+					</AnimatePresence>
+					<div className={styles.stackFloor} aria-hidden="true">
+						bottom
 					</div>
 				</div>
-			</section>
+			</LayoutGroup>
+		</div>
+	);
 
-			<aside className={styles.lessonPanel}>
-				<LearningPanel content={content} trace={trace} accent={accent} />
-			</aside>
+	const renderQueue = () => (
+		<div
+			className={`${styles.pane} ${mode === 'queue' ? styles.paneActive : ''}`}
+		>
+			<div className={styles.paneHeader}>
+				<span className={styles.paneTitle}>Queue</span>
+				<span className={styles.paneAcronym}>FIFO</span>
+			</div>
+			<LayoutGroup>
+				<div className={styles.queueView}>
+					<span className={styles.queueLabel}>front</span>
+					<div className={styles.queueLane}>
+						<AnimatePresence initial={false}>
+							{queue.map((item, idx) => {
+								const isFront = idx === 0;
+								const isRear = idx === queue.length - 1;
+								return (
+									<Motion.div
+										layout
+										key={`${item}-${idx}-${queue.length}`}
+										initial={{ opacity: 0, x: 20 }}
+										animate={{ opacity: 1, x: 0 }}
+										exit={{ opacity: 0, x: -20 }}
+										transition={TWEEN}
+										className={`${styles.queueItem} ${
+											isFront ? styles.itemFront : ''
+										} ${isRear ? styles.itemRear : ''}`}
+									>
+										<span className={styles.itemLabel}>{item}</span>
+										{isFront && (
+											<span className={styles.itemAnchor}>front</span>
+										)}
+										{isRear && !isFront && (
+											<span className={styles.itemAnchor}>rear</span>
+										)}
+									</Motion.div>
+								);
+							})}
+						</AnimatePresence>
+					</div>
+					<span className={styles.queueLabel}>rear</span>
+				</div>
+			</LayoutGroup>
+		</div>
+	);
+
+	return (
+		<div className={styles.shell}>
+			<StacksQueuesHero
+				mode={mode}
+				onModeChange={handleModeChange}
+				onAdd={handleAdd}
+				onRemove={handleRemove}
+				onPeek={handlePeek}
+				onReset={handleReset}
+				count={items.length}
+				statusSuffix={statusSuffix}
+			/>
+
+			<div className={styles.body}>
+				<section className={styles.canvas} aria-label="Stack and queue canvas">
+					<div className={styles.canvasOverlay}>
+						<span className={styles.notation}>{m.complexity}</span>
+					</div>
+
+					<div className={styles.canvasStage}>
+						{mode === 'stack' ? (
+							<>
+								{renderStack()}
+								{renderQueue()}
+							</>
+						) : (
+							<>
+								{renderQueue()}
+								{renderStack()}
+							</>
+						)}
+					</div>
+
+					{lastResult && (
+						<div className={styles.frameNote} aria-live="polite">
+							<span className={styles.frameNoteLabel}>NOTE</span>
+							<span className={styles.frameNoteText}>{lastResult}</span>
+						</div>
+					)}
+				</section>
+
+				<PseudocodeRail
+					lines={lines}
+					activeLine={activeLine}
+					isRunning
+				/>
+			</div>
 		</div>
 	);
 };

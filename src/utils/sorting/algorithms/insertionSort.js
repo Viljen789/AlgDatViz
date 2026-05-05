@@ -2,14 +2,18 @@ export function getInsertionSortStepsWithStats(array) {
 	const arr = [...array];
 	const n = arr.length;
 	let comparisons = 0;
+	let writes = 0;
 	let swaps = 0;
+	let auxiliaryWrites = 0;
 
 	const steps = [];
 	const createStats = () => ({
 		comparisons,
+		writes,
 		swaps,
+		auxiliaryWrites,
 		arraySize: n,
-		totalOperations: comparisons + swaps,
+		totalOperations: comparisons + writes + auxiliaryWrites,
 	});
 
 	steps.push({
@@ -29,7 +33,7 @@ export function getInsertionSortStepsWithStats(array) {
 			comparing: [i],
 			swapping: [],
 			sorted: Array.from({ length: i }, (_, k) => k),
-			line: 2,
+			line: 1,
 			stats: createStats(),
 		});
 
@@ -40,18 +44,18 @@ export function getInsertionSortStepsWithStats(array) {
 				comparing: [j, i],
 				swapping: [],
 				sorted: Array.from({ length: i }, (_, k) => k),
-				line: 4,
+				line: 3,
 				stats: createStats(),
 			});
 			if (arr[j] > key) {
-				swaps++;
+				writes++;
 				arr[j + 1] = arr[j];
 				steps.push({
 					array: [...arr],
 					comparing: [],
 					swapping: [j, j + 1],
 					sorted: Array.from({ length: i }, (_, k) => k),
-					line: 5,
+					line: 4,
 					stats: createStats(),
 				});
 				j--;
@@ -60,14 +64,14 @@ export function getInsertionSortStepsWithStats(array) {
 			}
 		}
 
-		swaps++;
+		writes++;
 		arr[j + 1] = key;
 		steps.push({
 			array: [...arr],
 			comparing: [],
 			swapping: [j + 1],
 			sorted: Array.from({ length: i + 1 }, (_, k) => k),
-			line: 7,
+			line: 6,
 			stats: createStats(),
 		});
 	}

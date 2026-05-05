@@ -1,0 +1,128 @@
+export const TREE_OPERATIONS = {
+	search: {
+		id: 'search',
+		name: 'Search',
+		category: 'BST operation',
+		needsValue: true,
+		oneLine: 'Compare the target with each node and walk left or right.',
+		motionPhrase: 'compare and descend',
+		complexity: 'O(log n) avg · O(n) worst',
+	},
+	insert: {
+		id: 'insert',
+		name: 'Insert',
+		category: 'BST operation',
+		needsValue: true,
+		oneLine: 'Search to the first empty child pointer, then attach the new node there.',
+		motionPhrase: 'search, then attach',
+		complexity: 'O(log n) avg · O(n) worst',
+	},
+	delete: {
+		id: 'delete',
+		name: 'Delete',
+		category: 'BST operation',
+		needsValue: true,
+		oneLine: 'Find the node, then unlink while preserving the BST ordering rule.',
+		motionPhrase: 'search, then unlink',
+		complexity: 'O(log n) avg · O(n) worst',
+	},
+	inorder: {
+		id: 'inorder',
+		name: 'Inorder traversal',
+		category: 'Traversal',
+		needsValue: false,
+		oneLine: 'Visit the left subtree, then the node, then the right subtree.',
+		motionPhrase: 'left, self, right — sorted output',
+		complexity: 'O(n)',
+	},
+	preorder: {
+		id: 'preorder',
+		name: 'Preorder traversal',
+		category: 'Traversal',
+		needsValue: false,
+		oneLine: 'Visit the node first, then traverse the left and right subtrees.',
+		motionPhrase: 'self first, then children',
+		complexity: 'O(n)',
+	},
+	postorder: {
+		id: 'postorder',
+		name: 'Postorder traversal',
+		category: 'Traversal',
+		needsValue: false,
+		oneLine: 'Traverse the left and right subtrees, then visit the node.',
+		motionPhrase: 'children first, then self',
+		complexity: 'O(n)',
+	},
+	levelorder: {
+		id: 'levelorder',
+		name: 'Level-order traversal',
+		category: 'Traversal',
+		needsValue: false,
+		oneLine: 'Visit nodes layer by layer using a queue.',
+		motionPhrase: 'breadth queue, layer by layer',
+		complexity: 'O(n)',
+	},
+};
+
+export const TREE_OP_ORDER = [
+	'search',
+	'insert',
+	'delete',
+	'inorder',
+	'preorder',
+	'postorder',
+	'levelorder',
+];
+
+export const TREE_CATEGORY_ORDER = ['BST operation', 'Traversal'];
+
+export const TREE_PSEUDO = {
+	search: [
+		'compare target with current node',
+		'if equal: stop',
+		'if target is smaller: go left',
+		'  // left subtree contains smaller values',
+		'if target is larger: go right',
+		'  // right subtree contains larger values',
+	],
+	insert: [
+		'search for the value',
+		'if found: do nothing (BSTs hold unique keys)',
+		'else: link new node at the empty child pointer',
+	],
+	delete: [
+		'search for the value',
+		'if leaf: detach directly',
+		'if one child: bypass to that child',
+		'if two children: replace with inorder successor',
+	],
+	inorder: [
+		'function inorder(node):',
+		'  if node is null: return',
+		'  inorder(node.left)',
+		'  visit(node)',
+		'  inorder(node.right)',
+	],
+	preorder: [
+		'function preorder(node):',
+		'  if node is null: return',
+		'  visit(node)',
+		'  preorder(node.left)',
+		'  preorder(node.right)',
+	],
+	postorder: [
+		'function postorder(node):',
+		'  if node is null: return',
+		'  postorder(node.left)',
+		'  postorder(node.right)',
+		'  visit(node)',
+	],
+	levelorder: [
+		'queue = [root]',
+		'while queue is not empty:',
+		'  node = queue.dequeue()',
+		'  visit(node)',
+		'  queue.enqueue(node.left)',
+		'  queue.enqueue(node.right)',
+	],
+};

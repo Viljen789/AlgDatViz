@@ -1,0 +1,245 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-04-28T00:00:00Z",
+  "title": "Design System: AlgDatViz",
+  "extensions": {
+    "colorMeta": {
+      "carbon-indigo": {
+        "role": "neutral",
+        "displayName": "Carbon Indigo",
+        "canonical": "#070811",
+        "tonalRamp": ["#040510", "#070811", "#09091a", "#0b0d1c", "#0f1120", "#141828", "#1a1f38", "#2a3060"]
+      },
+      "panel-indigo": {
+        "role": "neutral",
+        "displayName": "Panel Indigo",
+        "canonical": "#0b0d1c",
+        "tonalRamp": ["#070811", "#0b0d1c", "#0f1120", "#141828", "#1a1f38", "#2a3060", "#404870", "#606888"]
+      },
+      "lunar-paper": {
+        "role": "neutral",
+        "displayName": "Lunar Paper",
+        "canonical": "#d0d5ec",
+        "tonalRamp": ["#303558", "#404870", "#606888", "#7c84a8", "#9aa1c0", "#b3b9d6", "#d0d5ec", "#e8ebf6"]
+      },
+      "probe-blue": {
+        "role": "primary",
+        "displayName": "Probe Blue",
+        "canonical": "#4f7cf8",
+        "purpose": "Active / comparing / focused algorithm state. Brand color.",
+        "tonalRamp": ["#0a1638", "#142366", "#1f3494", "#2c4dc4", "#4f7cf8", "#7fa4fc", "#a9c0fd", "#d2dffe"]
+      },
+      "verified-jade": {
+        "role": "secondary",
+        "displayName": "Verified Jade",
+        "canonical": "#38c9a0",
+        "purpose": "Done / sorted / found / correct algorithm state.",
+        "tonalRamp": ["#082b22", "#0f4438", "#155f4f", "#1e8a72", "#28aa8b", "#38c9a0", "#71dbb9", "#aeead4"]
+      },
+      "filament-amber": {
+        "role": "tertiary",
+        "displayName": "Filament Amber",
+        "canonical": "#f8a74f",
+        "purpose": "In flight / swapping / writing / transient state.",
+        "tonalRamp": ["#3a230a", "#5e3a14", "#88571e", "#b6772c", "#dc903f", "#f8a74f", "#fbc187", "#fdddbb"]
+      },
+      "tracer-violet": {
+        "role": "tertiary",
+        "displayName": "Tracer Violet",
+        "canonical": "#c97af8",
+        "purpose": "Pivot / target / specially-marked element.",
+        "tonalRamp": ["#2c1240", "#451a64", "#5f238c", "#823abf", "#a557dc", "#c97af8", "#dba6fa", "#ecccfd"]
+      },
+      "beam-yellow": {
+        "role": "tertiary",
+        "displayName": "Beam Yellow",
+        "canonical": "#f8c040",
+        "purpose": "Path highlight on graphs and trees only.",
+        "tonalRamp": ["#3a2a06", "#5d440b", "#876314", "#b58520", "#dca432", "#f8c040", "#fad481", "#fde5b3"]
+      },
+      "error-red": {
+        "role": "error",
+        "displayName": "Error Red",
+        "canonical": "#f86060",
+        "purpose": "Application errors only. Never algorithm state.",
+        "tonalRamp": ["#3d0d0d", "#641414", "#8e1e1e", "#bd2c2c", "#dc4040", "#f86060", "#fb9494", "#fdc6c6"]
+      }
+    },
+    "typographyMeta": {
+      "display": { "displayName": "Display", "purpose": "Hero moments, landing introductions." },
+      "headline": { "displayName": "Headline", "purpose": "Page titles inside the app shell." },
+      "title": { "displayName": "Title", "purpose": "Card and section titles." },
+      "body": { "displayName": "Body", "purpose": "Default reading text. Cap at 65–75ch." },
+      "body-sm": { "displayName": "Body Small", "purpose": "Helper text, descriptions, captions." },
+      "label": { "displayName": "Label", "purpose": "Uppercase micro-headers and section labels." },
+      "notation": { "displayName": "Notation", "purpose": "Mono — code, complexity, variable names. Never UI chrome." }
+    },
+    "shadows": [
+      {
+        "name": "focus-glow",
+        "value": "0 0 0 3px rgba(79, 124, 248, 0.25)",
+        "purpose": "Keyboard focus halo on interactive elements (not inputs)."
+      },
+      {
+        "name": "canvas-lamp",
+        "value": "0 24px 80px -32px rgba(79, 124, 248, 0.18)",
+        "purpose": "The 'pool of light' under the active visualization canvas. One per page."
+      },
+      {
+        "name": "card-hover",
+        "value": "0 8px 32px rgba(79, 124, 248, 0.16)",
+        "purpose": "Home-page topic-card hover. Tinted to the card's accent color in practice."
+      }
+    ],
+    "motion": [
+      {
+        "name": "ease-quiet",
+        "value": "cubic-bezier(0.22, 1, 0.36, 1)",
+        "purpose": "Default ease-out-quart. Hover transitions, surface lifts, opacity reveals."
+      },
+      {
+        "name": "ease-step",
+        "value": "cubic-bezier(0.16, 1, 0.3, 1)",
+        "purpose": "Ease-out-expo. Algorithm-step transitions where the destination should land softly."
+      },
+      {
+        "name": "ease-trace",
+        "value": "cubic-bezier(0.65, 0, 0.35, 1)",
+        "purpose": "Smooth cubic in-out. Path tracing on graphs and recurrence chains in DP."
+      },
+      {
+        "name": "duration-instant",
+        "value": "120ms",
+        "purpose": "Hover, focus, opacity-only state changes."
+      },
+      {
+        "name": "duration-step",
+        "value": "320ms",
+        "purpose": "Default algorithm step duration at 1x speed."
+      },
+      {
+        "name": "duration-merge",
+        "value": "560ms",
+        "purpose": "Recursion descents and merges that need a beat to be readable."
+      }
+    ],
+    "breakpoints": [
+      { "name": "sm", "value": "640px" },
+      { "name": "md", "value": "960px" },
+      { "name": "lg", "value": "1280px" },
+      { "name": "xl", "value": "1600px" }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Principal action on a page. At most one Primary visible at a time.",
+      "html": "<button class=\"ds-btn-primary\">Run algorithm</button>",
+      "css": ".ds-btn-primary { background: #4f7cf8; color: #fff; padding: 8px 14px; font-family: 'Space Grotesk', sans-serif; font-size: 12.5px; font-weight: 600; border: 1px solid transparent; border-radius: 6px; cursor: pointer; transition: opacity 120ms cubic-bezier(0.22, 1, 0.36, 1); } .ds-btn-primary:hover { opacity: 0.85; } .ds-btn-primary:active { opacity: 0.7; } .ds-btn-primary:focus-visible { outline: none; box-shadow: 0 0 0 3px rgba(79, 124, 248, 0.25); }"
+    },
+    {
+      "name": "Ghost Button",
+      "kind": "button",
+      "refersTo": "button-ghost",
+      "description": "Secondary actions, tool buttons, and most controls.",
+      "html": "<button class=\"ds-btn-ghost\"><svg width=\"14\" height=\"14\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><circle cx=\"12\" cy=\"12\" r=\"10\"></circle><path d=\"M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3\"></path><line x1=\"12\" y1=\"17\" x2=\"12.01\" y2=\"17\"></line></svg><span>Help</span></button>",
+      "css": ".ds-btn-ghost { display: inline-flex; align-items: center; gap: 8px; background: transparent; color: #606888; padding: 6px 12px; font-family: 'Space Grotesk', sans-serif; font-size: 12.5px; font-weight: 500; border: 1px solid #1a1f38; border-radius: 6px; cursor: pointer; transition: background 120ms cubic-bezier(0.22, 1, 0.36, 1), color 120ms; } .ds-btn-ghost:hover { background: #141828; color: #d0d5ec; border-color: #4f7cf8; } .ds-btn-ghost:focus-visible { outline: none; box-shadow: 0 0 0 3px rgba(79, 124, 248, 0.25); }"
+    },
+    {
+      "name": "Topic Card",
+      "kind": "card",
+      "refersTo": "card",
+      "description": "Home-page navigation card. Hovers lift with an accent-tinted glow.",
+      "html": "<button class=\"ds-card-topic\"><div class=\"ds-card-head\"><svg width=\"32\" height=\"32\" viewBox=\"0 0 32 32\" fill=\"none\"><rect x=\"4\" y=\"20\" width=\"4\" height=\"8\" rx=\"1\" fill=\"#4f7cf8\" opacity=\"0.9\"></rect><rect x=\"10\" y=\"14\" width=\"4\" height=\"14\" rx=\"1\" fill=\"#4f7cf8\" opacity=\"0.75\"></rect><rect x=\"16\" y=\"8\" width=\"4\" height=\"20\" rx=\"1\" fill=\"#4f7cf8\" opacity=\"0.6\"></rect><rect x=\"22\" y=\"4\" width=\"4\" height=\"24\" rx=\"1\" fill=\"#4f7cf8\" opacity=\"0.45\"></rect></svg><span class=\"ds-card-arrow\">→</span></div><div class=\"ds-card-title\">Sorting Algorithms</div><div class=\"ds-card-desc\">Watch sorting algorithms organize data step-by-step with synchronized pseudocode.</div><div class=\"ds-card-tags\"><span class=\"ds-chip\">Bubble</span><span class=\"ds-chip\">Quick</span><span class=\"ds-chip\">Merge</span></div></button>",
+      "css": ".ds-card-topic { background: #0b0d1c; border: 1px solid #1a1f38; border-radius: 10px; padding: 22px; cursor: pointer; text-align: left; display: flex; flex-direction: column; gap: 12px; font-family: 'Space Grotesk', sans-serif; color: #d0d5ec; transition: transform 200ms cubic-bezier(0.22, 1, 0.36, 1), border-color 200ms, box-shadow 200ms; } .ds-card-topic:hover { transform: translateY(-3px); border-color: rgba(79, 124, 248, 0.67); box-shadow: 0 8px 32px rgba(79, 124, 248, 0.16); } .ds-card-head { display: flex; justify-content: space-between; align-items: flex-start; } .ds-card-arrow { font-size: 20px; font-weight: 300; color: #4f7cf8; opacity: 0; transform: translateX(-6px); transition: all 200ms; } .ds-card-topic:hover .ds-card-arrow { opacity: 1; transform: translateX(0); } .ds-card-title { font-size: 16px; font-weight: 700; letter-spacing: -0.01em; color: #d0d5ec; } .ds-card-desc { font-size: 12.5px; color: #606888; line-height: 1.65; flex: 1; } .ds-card-tags { display: flex; flex-wrap: wrap; gap: 5px; } .ds-chip { padding: 2px 9px; border: 1px solid rgba(79, 124, 248, 0.33); border-radius: 999px; font-size: 10.5px; font-family: 'JetBrains Mono', monospace; font-weight: 500; color: rgba(79, 124, 248, 0.8); }"
+    },
+    {
+      "name": "Input",
+      "kind": "input",
+      "refersTo": "input",
+      "description": "Mono-typed text/number input. Border carries focus state.",
+      "html": "<input class=\"ds-input\" type=\"text\" value=\"32\" />",
+      "css": ".ds-input { background: #0f1120; border: 1px solid #1a1f38; border-radius: 6px; color: #d0d5ec; padding: 7px 10px; font-family: 'JetBrains Mono', monospace; font-size: 13px; outline: none; transition: border-color 120ms cubic-bezier(0.22, 1, 0.36, 1); } .ds-input:focus { border-color: #4f7cf8; }"
+    },
+    {
+      "name": "Chip",
+      "kind": "chip",
+      "refersTo": "chip",
+      "description": "Algorithm tag. Read-only data label, not interactive.",
+      "html": "<span class=\"ds-chip-tag\">O(n log n)</span>",
+      "css": ".ds-chip-tag { display: inline-block; padding: 2px 9px; background: transparent; border: 1px solid rgba(79, 124, 248, 0.33); border-radius: 999px; color: rgba(79, 124, 248, 0.8); font-family: 'JetBrains Mono', monospace; font-size: 10.5px; font-weight: 500; letter-spacing: 0.02em; }"
+    },
+    {
+      "name": "Sidebar Nav Link",
+      "kind": "nav",
+      "refersTo": "nav-link",
+      "description": "App-shell navigation. Active route shown by accent left bar.",
+      "html": "<a class=\"ds-nav-link ds-nav-link-active\" style=\"--accent: #4f7cf8\" href=\"#\"><span class=\"ds-nav-bar\"></span><span class=\"ds-nav-icon\"><svg width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M3 3v18h18\"></path><path d=\"M7 14l4-4 4 4 5-5\"></path></svg></span><span class=\"ds-nav-label\">Sorting</span></a>",
+      "css": ".ds-nav-link { width: 100%; box-sizing: border-box; padding: 10px 18px; display: flex; align-items: center; gap: 9px; position: relative; text-align: left; color: #606888; text-decoration: none; font-family: 'Space Grotesk', sans-serif; font-size: 13.5px; font-weight: 400; background: transparent; transition: all 150ms cubic-bezier(0.22, 1, 0.36, 1); } .ds-nav-link:hover:not(.ds-nav-link-active) { color: #d0d5ec; background: rgba(255, 255, 255, 0.02); } .ds-nav-link-active { color: #d0d5ec; font-weight: 600; } .ds-nav-bar { position: absolute; left: 0; top: 50%; transform: translateY(-50%); width: 3px; height: 18px; border-radius: 0 2px 2px 0; background: transparent; transition: background 150ms; } .ds-nav-link-active .ds-nav-bar { background: var(--accent, #4f7cf8); } .ds-nav-link:hover:not(.ds-nav-link-active) .ds-nav-bar { background: var(--accent, #4f7cf8); } .ds-nav-icon { display: flex; align-items: center; color: #404870; } .ds-nav-link-active .ds-nav-icon, .ds-nav-link:hover .ds-nav-icon { color: var(--accent, #4f7cf8); }"
+    },
+    {
+      "name": "Step Control Bar",
+      "kind": "custom",
+      "refersTo": "step-control-bar",
+      "description": "Signature component. Floating bottom bar replacing right-side panels on visualization screens.",
+      "html": "<div class=\"ds-step-bar\"><button class=\"ds-step-btn\" aria-label=\"First\"><svg width=\"14\" height=\"14\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><polygon points=\"19 20 9 12 19 4 19 20\"></polygon><line x1=\"5\" y1=\"19\" x2=\"5\" y2=\"5\"></line></svg></button><button class=\"ds-step-btn\" aria-label=\"Previous\"><svg width=\"14\" height=\"14\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><polyline points=\"15 18 9 12 15 6\"></polyline></svg></button><button class=\"ds-step-btn ds-step-play\" aria-label=\"Play\"><svg width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"currentColor\"><polygon points=\"5 3 19 12 5 21 5 3\"></polygon></svg></button><button class=\"ds-step-btn\" aria-label=\"Next\"><svg width=\"14\" height=\"14\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><polyline points=\"9 18 15 12 9 6\"></polyline></svg></button><button class=\"ds-step-btn\" aria-label=\"Last\"><svg width=\"14\" height=\"14\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><polygon points=\"5 4 15 12 5 20 5 4\"></polygon><line x1=\"19\" y1=\"5\" x2=\"19\" y2=\"19\"></line></svg></button><div class=\"ds-step-divider\"></div><div class=\"ds-step-scrub\"><input type=\"range\" class=\"ds-step-range\" min=\"0\" max=\"100\" value=\"34\" /></div><div class=\"ds-step-divider\"></div><div class=\"ds-step-meta\"><span class=\"ds-step-count\">step 34 / 96</span></div></div>",
+      "css": ".ds-step-bar { display: inline-flex; align-items: center; gap: 4px; background: #141828; border: 1px solid #1a1f38; border-radius: 10px; padding: 6px 8px; box-shadow: 0 24px 80px -32px rgba(79, 124, 248, 0.18); font-family: 'Space Grotesk', sans-serif; } .ds-step-btn { width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center; background: transparent; color: #606888; border: 1px solid transparent; border-radius: 6px; cursor: pointer; transition: all 120ms cubic-bezier(0.22, 1, 0.36, 1); } .ds-step-btn:hover { background: rgba(255, 255, 255, 0.04); color: #d0d5ec; } .ds-step-btn:focus-visible { outline: none; box-shadow: 0 0 0 3px rgba(79, 124, 248, 0.25); } .ds-step-btn.ds-step-play { color: #4f7cf8; } .ds-step-btn.ds-step-play:hover { background: rgba(79, 124, 248, 0.12); } .ds-step-divider { width: 1px; height: 22px; background: #1a1f38; margin: 0 6px; } .ds-step-scrub { width: 220px; display: flex; align-items: center; padding: 0 6px; } .ds-step-range { width: 100%; appearance: none; height: 4px; border-radius: 2px; background: #1a1f38; accent-color: #4f7cf8; outline: none; } .ds-step-range::-webkit-slider-thumb { appearance: none; width: 12px; height: 12px; border-radius: 50%; background: #4f7cf8; cursor: pointer; } .ds-step-meta { padding: 0 10px 0 4px; font-family: 'JetBrains Mono', monospace; font-size: 11px; color: #606888; letter-spacing: 0.02em; }"
+    },
+    {
+      "name": "Visualization Canvas",
+      "kind": "custom",
+      "refersTo": "viz-canvas",
+      "description": "The hero performance surface. Owns at least 60% of every visualization page.",
+      "html": "<section class=\"ds-canvas\"><div class=\"ds-canvas-overlay-tr\"><span class=\"ds-canvas-notation\">O(n log n) · n = 32</span></div><div class=\"ds-canvas-stage\"><svg width=\"100%\" height=\"180\" viewBox=\"0 0 320 180\"><g><rect x=\"10\" y=\"60\" width=\"24\" height=\"110\" rx=\"2\" fill=\"#4f7cf8\"></rect><rect x=\"40\" y=\"30\" width=\"24\" height=\"140\" rx=\"2\" fill=\"#f8a74f\"></rect><rect x=\"70\" y=\"90\" width=\"24\" height=\"80\" rx=\"2\" fill=\"#38c9a0\"></rect><rect x=\"100\" y=\"45\" width=\"24\" height=\"125\" rx=\"2\" fill=\"#38c9a0\"></rect><rect x=\"130\" y=\"75\" width=\"24\" height=\"95\" rx=\"2\" fill=\"#c97af8\"></rect><rect x=\"160\" y=\"15\" width=\"24\" height=\"155\" rx=\"2\" fill=\"#d0d5ec\" opacity=\"0.4\"></rect><rect x=\"190\" y=\"105\" width=\"24\" height=\"65\" rx=\"2\" fill=\"#d0d5ec\" opacity=\"0.4\"></rect><rect x=\"220\" y=\"55\" width=\"24\" height=\"115\" rx=\"2\" fill=\"#d0d5ec\" opacity=\"0.4\"></rect></g></svg></div></section>",
+      "css": ".ds-canvas { position: relative; background: #0b0d1c; border-radius: 14px; padding: clamp(20px, 3vw, 44px); box-shadow: 0 24px 80px -32px rgba(79, 124, 248, 0.18); font-family: 'Space Grotesk', sans-serif; min-height: 280px; } .ds-canvas-overlay-tr { position: absolute; top: 18px; right: 22px; } .ds-canvas-notation { font-family: 'JetBrains Mono', monospace; font-size: 13px; color: #606888; letter-spacing: 0.02em; } .ds-canvas-stage { display: flex; align-items: flex-end; justify-content: center; padding-top: 18px; }"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Late Study Desk",
+    "overview": "Imagine a CS student at one in the morning. The room is dark. A single warm desk lamp pools light across an open textbook and a quiet laptop. The work is hard but unhurried. The interface is mostly dark, mostly still, mostly silent. When the canvas moves, it moves the way a thought moves: with intent, in sequence, with a beat of pause between steps. Color enters sparingly and means something every time it does.",
+    "keyCharacteristics": [
+      "One focal area per screen. Everything else is desk surface.",
+      "Warm-on-dark. Text and accents are tinted, never pure white on pure black.",
+      "Choreographed motion, not interpolation. Transitions encode meaning.",
+      "A single complexity notation, set in mono, beats a table of six.",
+      "Borders are ghost-thin or absent. Depth comes from tonal layering, not strokes."
+    ],
+    "rules": [
+      { "name": "The Algorithm State Quartet Rule", "body": "Algorithm-state encoding is restricted to four hues: Probe Blue (active), Verified Jade (done), Filament Amber (in flight), Tracer Violet (special). Red is reserved for application errors.", "section": "colors" },
+      { "name": "The Single Pool Rule", "body": "Each screen has exactly one focal area lit by one accent at any given moment. Two simultaneous accents on the same surface compete and turn the canvas into a circus.", "section": "colors" },
+      { "name": "The No-Pure-Black Rule", "body": "#000000 is forbidden. Carbon Indigo (#070811) is the floor.", "section": "colors" },
+      { "name": "The Mono Voice Rule", "body": "JetBrains Mono is reserved for data — code, complexity notations, variable names, numeric values inside a visualization. It must not appear on UI chrome.", "section": "typography" },
+      { "name": "The One Notation Rule", "body": "Each visualization shows exactly one complexity notation in scannable position. A table of best/worst/average/space is offered behind progressive disclosure, never in the default view.", "section": "typography" },
+      { "name": "The 65ch Cap", "body": "Pedagogical prose never exceeds 75 characters per line, ideally 65.", "section": "typography" },
+      { "name": "The One Lamp Rule", "body": "A page may have at most one Canvas Lamp shadow. Two lamps means there is no focus.", "section": "elevation" },
+      { "name": "The Ghost Border Rule", "body": "Default borders are 1px in Border Soft. Stronger borders are forbidden on content surfaces. Colored borders (a blue stripe on a card, a green left-edge accent) are forbidden everywhere.", "section": "elevation" }
+    ],
+    "dos": [
+      "Do anchor every page on a single hero canvas. The canvas earns at least 60% of the visible area.",
+      "Do restrict algorithm-state color to the quartet: Probe Blue, Verified Jade, Filament Amber, Tracer Violet.",
+      "Do use Carbon Indigo (#070811) for the deepest surface. Pure black is forbidden.",
+      "Do use tonal layering (Carbon → Panel → Hover Indigo) for depth before reaching for a shadow.",
+      "Do show exactly one complexity notation per visualization, set in JetBrains Mono.",
+      "Do cap pedagogical prose at 65–75ch.",
+      "Do write motion that encodes meaning. The merge step in merge sort is the lesson; choreograph it.",
+      "Do honor prefers-reduced-motion by softening timing and shortening travel, not by stripping animation.",
+      "Do keep voice unhurried and lecturer-grade. Short sentences. No exclamation marks. No 'Let's dive in!'"
+    ],
+    "donts": [
+      "Don't use side-stripe borders (a border-left greater than 1px as a colored accent on cards, list items, panels).",
+      "Don't build the page with a permanent right-side panel of metrics, parameters, and controls.",
+      "Don't show panels-of-everything: best-case / worst-case / average / space-complexity tables in the default view.",
+      "Don't nest cards inside cards.",
+      "Don't use #000000, #ffffff, or any pure CSS named color.",
+      "Don't use gradient text (background-clip: text + linear-gradient).",
+      "Don't use glassmorphism, backdrop blur, or ambient frosted-glass surfaces.",
+      "Don't use red and green together to encode opposite algorithm states.",
+      "Don't use kid-coding aesthetics — bright primaries, cartoon mascots, rocket emoji.",
+      "Don't ship the LLM dark-mode-with-purple-gradient hero template.",
+      "Don't animate CSS layout properties (width, height, top, left, margin). Animate transform, opacity, SVG attributes.",
+      "Don't write multi-paragraph explanatory blocks beside the visualization."
+    ]
+  }
+}

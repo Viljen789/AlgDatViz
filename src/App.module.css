@@ -23,6 +23,39 @@
 	position: relative;
 }
 
+.headerContent {
+	display: flex;
+	justify-content: space-between;
+	align-items: flex-start;
+}
+
+.titleGroup {
+	display: flex;
+	flex-direction: column;
+}
+
+.helpButton {
+	background: rgba(255, 255, 255, 0.03);
+	border: 1px solid var(--color-border);
+	border-radius: var(--border-radius-md);
+	padding: 6px 12px;
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	color: var(--color-text-secondary);
+	cursor: pointer;
+	transition: all 0.2s;
+	font-size: 13px;
+	font-weight: 500;
+	margin-top: 2px;
+}
+
+.helpButton:hover {
+	background: rgba(255, 255, 255, 0.08);
+	color: var(--color-text-primary);
+	border-color: var(--color-accent-blue);
+}
+
 .title {
 	margin: 0;
 	font-size: 20px;
@@ -59,4 +92,104 @@
 	flex-direction: column;
 	min-height: 0;
 	overflow: hidden;
+}
+
+.routeFallback {
+	flex: 1;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	gap: 18px;
+	min-height: 0;
+	color: var(--color-text-secondary);
+	font-family: var(--font-family-sans);
+	text-align: center;
+}
+
+.fallbackFrame {
+	width: min(320px, calc(100% - 48px));
+	aspect-ratio: 16 / 9;
+	display: flex;
+	align-items: end;
+	justify-content: center;
+	padding: 28px;
+	border-radius: 14px;
+	background:
+		linear-gradient(180deg, rgba(20, 24, 40, 0.86), rgba(9, 11, 22, 0.96)),
+		var(--color-bg-panel);
+	box-shadow: var(--shadow-canvas-lamp);
+	box-sizing: border-box;
+}
+
+.routeFallback strong {
+	display: block;
+	margin-bottom: 5px;
+	color: var(--color-text-primary);
+	font-size: 14px;
+}
+
+.routeFallback p {
+	margin: 0;
+	font-size: 12px;
+}
+
+.fallbackStage {
+	display: flex;
+	align-items: end;
+	justify-content: center;
+	gap: 8px;
+	width: 100%;
+	height: 100%;
+}
+
+.fallbackStage span {
+	width: 14%;
+	border-radius: 8px 8px 3px 3px;
+	background: var(--color-accent-blue);
+	opacity: 0.3;
+	animation: fallbackPulse 1.1s var(--ease-step) infinite;
+}
+
+.fallbackStage span:nth-child(1) {
+	height: 38%;
+}
+
+.fallbackStage span:nth-child(2) {
+	height: 62%;
+	animation-delay: 90ms;
+}
+
+.fallbackStage span:nth-child(3) {
+	height: 44%;
+	animation-delay: 180ms;
+}
+
+.fallbackStage span:nth-child(4) {
+	height: 76%;
+	animation-delay: 270ms;
+}
+
+.fallbackStage span:nth-child(5) {
+	height: 54%;
+	animation-delay: 360ms;
+}
+
+@keyframes fallbackPulse {
+	0%,
+	100% {
+		opacity: 0.26;
+		transform: scaleY(0.78);
+	}
+
+	50% {
+		opacity: 0.88;
+		transform: scaleY(1);
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.fallbackStage span {
+		animation: none;
+	}
 }

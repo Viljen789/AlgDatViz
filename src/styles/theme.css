@@ -20,8 +20,15 @@
 	--color-accent-purple: #c97af8;
 	--color-accent-red: #f86060;
 	--color-accent-yellow: #f8c040;
-	--color-accent-pivot: #f86060;
-	--color-accent-active: #f8b44f;
+
+	--state-active: var(--color-accent-blue);
+	--state-done: var(--color-accent-green);
+	--state-flight: var(--color-accent-orange);
+	--state-special: var(--color-accent-purple);
+	--state-path: var(--color-accent-yellow);
+
+	--color-accent-pivot: var(--state-special);
+	--color-accent-active: var(--state-flight);
 
 	--color-primary: var(--color-accent-blue);
 	--color-secondary: #7fa4fc;
@@ -36,7 +43,7 @@
 	--color-light-blue: rgba(79, 124, 248, 0.15);
 	--color-lighter-blue: rgba(79, 124, 248, 0.08);
 	--color-dark-blue: var(--color-bg-elevated);
-	--color-swapping-bar: var(--color-accent-orange);
+	--color-swapping-bar: var(--state-flight);
 
 	--viz-node-fill: #1a1f38;
 	--viz-node-stroke: #4f7cf8;
@@ -57,19 +64,43 @@
 	--font-size-sm: 12.5px;
 	--font-size-xs: 11px;
 	--font-size-lg: 16px;
+	--font-size-display: clamp(28px, 4vw, 44px);
 
 	--border-radius-sm: 4px;
 	--border-radius-md: 6px;
 	--border-radius-lg: 10px;
+	--border-radius-xl: 14px;
+	--border-radius-pill: 999px;
 	--spacing-xs: 4px;
 	--spacing-sm: 8px;
 	--spacing-md: 14px;
 	--spacing-lg: 20px;
 	--spacing-xl: 28px;
+	--spacing-2xl: 44px;
+	--spacing-3xl: 72px;
 
 	--shadow-color: rgba(0, 0, 0, 0.5);
 	--shadow-glow: rgba(79, 124, 248, 0.18);
-	--transition: 0.15s ease;
+	--shadow-focus: 0 0 0 3px rgba(79, 124, 248, 0.25);
+	--shadow-canvas-lamp: 0 24px 80px -32px rgba(79, 124, 248, 0.18);
+	--shadow-card-hover: 0 8px 32px rgba(79, 124, 248, 0.16);
+
+	--ease-quiet: cubic-bezier(0.22, 1, 0.36, 1);
+	--ease-step: cubic-bezier(0.16, 1, 0.3, 1);
+	--ease-trace: cubic-bezier(0.65, 0, 0.35, 1);
+	--duration-instant: 120ms;
+	--duration-step: 320ms;
+	--duration-merge: 560ms;
+
+	--transition: var(--duration-instant) var(--ease-quiet);
 	--switch-width: 20px;
 	--switch-height: 10px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+	:root {
+		--duration-instant: 80ms;
+		--duration-step: 220ms;
+		--duration-merge: 360ms;
+	}
 }

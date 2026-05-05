@@ -1,16 +1,24 @@
-// Updated useSortingVisualizer.js - Add auto-animation for merge sort recursive view
+// Sorting timeline state and playback orchestration.
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { SORTING_FUNCTIONS } from '../utils/sorting';
+import {
+	createValuesForProfile,
+	getDefaultDataProfile,
+} from '../utils/sorting/dataProfiles.js';
 
 export const useSortingVisualizer = (
 	initialAlgorithm = 'bubbleSort',
 	initialSize = 20
 ) => {
 	const [array, setArray] = useState([]);
-	const [arraySize, setArraySize] = useState(initialSize);
-	const [animationSpeed, setAnimationSpeed] = useState(100);
-	const [sortingAlgorithm, setSortingAlgorithm] = useState(initialAlgorithm);
+	const [arraySize, setArraySizeState] = useState(initialSize);
+	const [animationSpeed, setAnimationSpeedState] = useState(100);
+	const [sortingAlgorithm, setSortingAlgorithmState] =
+		useState(initialAlgorithm);
+	const [dataProfile, setDataProfileState] = useState(() =>
+		getDefaultDataProfile(initialAlgorithm)
+	);
 	const [viewMode, setViewMode] = useState('bars');
 	const [animationSteps, setAnimationSteps] = useState([]);
 	const [currentStep, setCurrentStep] = useState(0);
@@ -18,10 +26,9 @@ export const useSortingVisualizer = (
 	const [isPaused, setIsPaused] = useState(true);
 	const [operationStats, setOperationStats] = useState(null);
 	const [throttledOperationStats, setThrottledOperationStats] = useState(null);
-	const [isAutoPlaying, setIsAutoPlaying] = useState(false); // NEW: For recursive view auto-play
 
 	const throttleTimerRef = useRef(null);
-	const autoPlayTimerRef = useRef(null); // NEW: For auto-play timer
+	const animationTimerRef = useRef(null);
 
 	const resetAnimation = useCallback(() => {
 		setIsSorting(false);
@@ -30,37 +37,78 @@ export const useSortingVisualizer = (
 		setAnimationSteps([]);
 		setOperationStats(null);
 		setThrottledOperationStats(null);
-		setIsAutoPlaying(false); // NEW: Reset auto-play
 
 		if (throttleTimerRef.current) {
 			clearTimeout(throttleTimerRef.current);
+			throttleTimerRef.current = null;
 		}
-		if (autoPlayTimerRef.current) {
-			// NEW: Clear auto-play timer
-			clearTimeout(autoPlayTimerRef.current);
+		if (animationTimerRef.current) {
+			clearTimeout(animationTimerRef.current);
+			animationTimerRef.current = null;
 		}
 	}, []);
 
+	const setSortingAlgorithm = useCallback(
+		nextAlgorithm => {
+			const resolvedAlgorithm =
+				typeof nextAlgorithm === 'function'
+					? nextAlgorithm(sortingAlgorithm)
+					: nextAlgorithm;
+			resetAnimation();
+			setSortingAlgorithmState(resolvedAlgorithm);
+			setDataProfileState(getDefaultDataProfile(resolvedAlgorithm));
+		},
+		[resetAnimation, sortingAlgorithm]
+	);
+
+	const setArraySize = useCallback(
+		nextSize => {
+			resetAnimation();
+			setArraySizeState(prev =>
+				typeof nextSize === 'function' ? nextSize(prev) : nextSize
+			);
+		},
+		[resetAnimation]
+	);
+
+	const setAnimationSpeed = useCallback(nextSpeed => {
+		setAnimationSpeedState(prev =>
+			typeof nextSpeed === 'function' ? nextSpeed(prev) : nextSpeed
+		);
+	}, []);
+
+	const setDataProfile = useCallback(
+		nextProfile => {
+			resetAnimation();
+			setDataProfileState(prev =>
+				typeof nextProfile === 'function' ? nextProfile(prev) : nextProfile
+			);
+		},
+		[resetAnimation]
+	);
+
 	const shuffleArray = useCallback(() => {
-		const nums = Array.from({ length: arraySize }, (_, i) => i + 1);
-		for (let i = nums.length - 1; i > 0; i--) {
-			const j = Math.floor(Math.random() * (i + 1));
-			[nums[i], nums[j]] = [nums[j], nums[i]];
-		}
+		const nums = createValuesForProfile(
+			arraySize,
+			sortingAlgorithm,
+			dataProfile
+		);
 		const newArray = nums.map((value, index) => ({
 			id: `item-${index}-${Math.random().toString(36).slice(2, 9)}`,
 			value,
 		}));
 		setArray(newArray);
 		resetAnimation();
-	}, [arraySize, resetAnimation]);
+	}, [arraySize, dataProfile, resetAnimation, sortingAlgorithm]);
 
 	useEffect(() => {
 		shuffleArray();
 	}, [shuffleArray]);
 
-	const toggleViewMode = () =>
+	const toggleViewMode = useCallback(() => {
+		resetAnimation();
 		setViewMode(prev => (prev === 'bars' ? 'boxes' : 'bars'));
+	}, [resetAnimation]);
 
 	const startSort = useCallback(() => {
 		if (isSorting) {
@@ -81,7 +129,10 @@ export const useSortingVisualizer = (
 		const statsHistory = steps.map((step, index) => ({
 			step: index + 1,
 			comparisons: step.stats?.comparisons || 0,
-			arrayWrites: step.stats?.swaps || 0,
+			writes: step.stats?.writes ?? step.stats?.swaps ?? 0,
+			swaps: step.stats?.swaps ?? 0,
+			auxiliaryWrites: step.stats?.auxiliaryWrites ?? 0,
+			arrayWrites: step.stats?.writes ?? step.stats?.swaps ?? 0,
 			totalOperations: step.stats?.totalOperations || 0,
 		}));
 
@@ -91,61 +142,47 @@ export const useSortingVisualizer = (
 		setCurrentStep(0);
 		setIsSorting(true);
 		setIsPaused(false);
+	}, [isSorting, array, sortingAlgorithm, resetAnimation, shuffleArray]);
 
-		// NEW: Enable auto-play for merge sort recursive view
-		if (sortingAlgorithm === 'mergeSort' && arraySize <= 20) {
-			setIsAutoPlaying(true);
-		}
-	}, [
-		isSorting,
-		array,
-		sortingAlgorithm,
-		resetAnimation,
-		shuffleArray,
-		arraySize,
-	]);
-
-	// NEW: Auto-play functionality for recursive views
+	// Auto-play functionality for all views
 	useEffect(() => {
-		if (!isSorting || isPaused || !isAutoPlaying || !animationSteps.length) {
-			if (autoPlayTimerRef.current) {
-				clearTimeout(autoPlayTimerRef.current);
+		if (!isSorting || isPaused || !animationSteps.length) {
+			if (animationTimerRef.current) {
+				clearTimeout(animationTimerRef.current);
 			}
 			return;
 		}
 
-		const speed = Math.max(1500 - animationSpeed * 12, 300); // Slower for recursive view
-		autoPlayTimerRef.current = setTimeout(() => {
+		// Calculate speed based on animationSpeed slider
+		// animationSpeed typically ranges from 25 to 500 (from SortingControls)
+		// We want a delay between 1000ms and 10ms
+		const delay = Math.max(1050 - animationSpeed * 2, 10);
+
+		animationTimerRef.current = setTimeout(() => {
 			setCurrentStep(prev => {
-				if (prev < animationSteps.length - 1) {
-					return prev + 1;
-				} else {
+				const next = Math.min(prev + 1, animationSteps.length - 1);
+				if (next >= animationSteps.length - 1) {
+					setIsSorting(false);
 					setIsPaused(true);
-					setIsAutoPlaying(false);
-					return prev;
 				}
+				return next;
 			});
-		}, speed);
+		}, delay);
 
 		return () => {
-			if (autoPlayTimerRef.current) {
-				clearTimeout(autoPlayTimerRef.current);
+			if (animationTimerRef.current) {
+				clearTimeout(animationTimerRef.current);
 			}
 		};
-	}, [
-		currentStep,
-		isSorting,
-		isPaused,
-		isAutoPlaying,
-		animationSteps.length,
-		animationSpeed,
-	]);
+	}, [currentStep, isSorting, isPaused, animationSteps.length, animationSpeed]);
 
 	// Function to advance to the next step manually
 	const goToNextStep = useCallback(() => {
-		if (currentStep < animationSteps.length - 1) {
-			setCurrentStep(prev => prev + 1);
-		} else {
+		if (!animationSteps.length) return;
+		const next = Math.min(currentStep + 1, animationSteps.length - 1);
+		setCurrentStep(next);
+		if (next >= animationSteps.length - 1) {
+			setIsSorting(false);
 			setIsPaused(true);
 		}
 	}, [currentStep, animationSteps.length]);
@@ -156,16 +193,31 @@ export const useSortingVisualizer = (
 	};
 
 	const onStepForward = () => {
-		if (isSorting) {
-			goToNextStep();
-		}
+		if (!animationSteps.length) return;
+		const next = Math.min(currentStep + 1, animationSteps.length - 1);
+		setIsPaused(true);
+		setCurrentStep(next);
+		setIsSorting(next < animationSteps.length - 1);
 	};
 
 	const onStepBack = () => {
-		if (isSorting) {
-			setCurrentStep(prev => Math.max(prev - 1, 0));
-		}
+		if (!animationSteps.length) return;
+		const next = Math.max(currentStep - 1, 0);
+		setIsPaused(true);
+		setCurrentStep(next);
+		setIsSorting(next < animationSteps.length - 1);
 	};
+
+	const seekToStep = useCallback(
+		step => {
+			if (!animationSteps.length) return;
+			const clamped = Math.max(0, Math.min(step, animationSteps.length - 1));
+			setCurrentStep(clamped);
+			setIsPaused(true);
+			setIsSorting(clamped < animationSteps.length - 1);
+		},
+		[animationSteps.length]
+	);
 
 	const currentFrame = useMemo(() => {
 		return animationSteps[currentStep];
@@ -210,6 +262,8 @@ export const useSortingVisualizer = (
 		setAnimationSpeed,
 		sortingAlgorithm,
 		setSortingAlgorithm,
+		dataProfile,
+		setDataProfile,
 		viewMode,
 		toggleViewMode,
 		animationSteps,
@@ -226,7 +280,7 @@ export const useSortingVisualizer = (
 		currentFrame,
 		isFastMode,
 		goToNextStep,
-		isAutoPlaying, // NEW: Export auto-play state
-		setIsAutoPlaying, // NEW: Export auto-play control
+		seekToStep,
+		resetAnimation,
 	};
 };

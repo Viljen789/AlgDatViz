@@ -2,13 +2,17 @@ export function getHeapSortStepsWithStats(array) {
 	const arr = [...array];
 	const n = arr.length;
 	let comparisons = 0;
+	let writes = 0;
 	let swaps = 0;
+	let auxiliaryWrites = 0;
 	const steps = [];
 	const createStats = () => ({
 		comparisons,
+		writes,
 		swaps,
+		auxiliaryWrites,
 		arraySize: n,
-		totalOperations: comparisons + swaps,
+		totalOperations: comparisons + writes + auxiliaryWrites,
 	});
 
 	function heapify(size, i) {
@@ -20,7 +24,7 @@ export function getHeapSortStepsWithStats(array) {
 			comparing: [],
 			swapping: [],
 			sorted: Array.from({ length: n - size }, (_, k) => n - 1 - k),
-			line: 5,
+			line: 4,
 			stats: createStats(),
 			metadata: {
 				phase: 'heapifying',
@@ -41,13 +45,14 @@ export function getHeapSortStepsWithStats(array) {
 		}
 		if (largest !== i) {
 			swaps++;
+			writes += 2;
 			[arr[i], arr[largest]] = [arr[largest], arr[i]];
 			steps.push({
 				array: [...arr],
 				comparing: [i, largest],
 				swapping: [i, largest],
 				sorted: Array.from({ length: n - size }, (_, k) => n - 1 - k),
-				line: 5,
+				line: 4,
 				stats: createStats(),
 				metadata: {
 					phase: 'heapifying',
@@ -67,7 +72,7 @@ export function getHeapSortStepsWithStats(array) {
 		comparing: [],
 		swapping: [],
 		sorted: [],
-		line: 1,
+		line: 0,
 		stats: createStats(),
 		metadata: { phase: 'building', heapArray: [...arr], heapSize: n },
 	});
@@ -77,13 +82,14 @@ export function getHeapSortStepsWithStats(array) {
 
 	for (let i = n - 1; i > 0; i--) {
 		swaps++;
+		writes += 2;
 		[arr[0], arr[i]] = [arr[i], arr[0]];
 		steps.push({
 			array: [...arr],
 			comparing: [0, i],
 			swapping: [0, i],
 			sorted: Array.from({ length: n - i }, (_, k) => n - 1 - k),
-			line: 3,
+			line: 2,
 			stats: createStats(),
 			metadata: {
 				phase: 'extracting',

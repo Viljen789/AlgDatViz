@@ -5,71 +5,71 @@ const getExplanationText = meta => {
 	const { phase, operation, range, target, left, right } = meta || {};
 	if (phase === 'initializing')
 		return {
-			title: '🚀 Starter Merge Sort',
+			title: '🚀 Starting Merge Sort',
 			description:
-				'Alle elementer starter ved roten. Vi deler listen rekursivt til hver del bare inneholder ett element, og fletter dem deretter sammen i sortert rekkefølge.',
-			action: 'Klar for å starte oppdelingsfasen...',
+				'All elements start at the root. We split the list recursively until each part contains only one element, then merge them back in sorted order.',
+			action: 'Ready to start the division phase...',
 		};
 	if (phase === 'dividing' && operation === 'divide') {
 		const rangeText = `[${range[0]}-${range[1]}]`;
 		const leftText = `[${left[0]}-${left[1]}]`;
 		const rightText = `[${right[0]}-${right[1]}]`;
 		return {
-			title: '📂 Deler Opp Listen',
-			description: `Deler området ${rangeText} i to mindre deler: ${leftText} og ${rightText}.`,
-			action: 'Elementene flyter ned til sine respektive barnenoder.',
+			title: '📂 Dividing the List',
+			description: `Splitting range ${rangeText} into two smaller parts: ${leftText} and ${rightText}.`,
+			action: 'Elements flow down to their respective child nodes.',
 		};
 	}
 	if (phase === 'merging') {
-		const targetText = `[${target[0]}-${target[1]}]`;
-		const leftText = `[${left[0]}-${left[1]}]`;
-		const rightText = `[${right[0]}-${right[1]}]`;
+		const targetText = target ? `[${target[0]}-${target[1]}]` : '';
+		const leftText = left ? `[${left[0]}-${left[1]}]` : '';
+		const rightText = right ? `[${right[0]}-${right[1]}]` : '';
 		if (operation === 'merge_prepare')
 			return {
-				title: '🔄 Forbereder Fletting',
-				description: `Klar til å flette ${leftText} og ${rightText} sammen til målområdet ${targetText}.`,
-				action: 'Skal starte sammenligning og fletting...',
+				title: '🔄 Preparing Merge',
+				description: `Ready to merge ${leftText} and ${rightText} into the target area ${targetText}.`,
+				action: 'Starting comparison and merging...',
 			};
 		if (operation === 'comparing') {
 			const [leftVal, rightVal] = meta.comparingValues || ['?', '?'];
 			return {
-				title: '⚖️ Sammenligner Elementer',
-				description: `Sammenligner ${leftVal} fra venstre side med ${rightVal} fra høyre side.`,
-				action: `Den minste verdien (${Math.min(leftVal, rightVal)}) vil bli plassert i det flettede resultatet.`,
+				title: '⚖️ Comparing Elements',
+				description: `Comparing ${leftVal} from the left side with ${rightVal} from the right side.`,
+				action: `The smaller value (${Math.min(leftVal, rightVal)}) will be placed in the merged result.`,
 			};
 		}
 		if (operation?.includes('move_from')) {
-			const side = operation.includes('left') ? 'venstre' : 'høyre';
+			const side = operation.includes('left') ? 'left' : 'right';
 			return {
-				title: `⬅️ Tar fra ${side}`,
-				description: `Element ${meta.movedElement || '?'} fra ${side} side er minst, og flyttes opp til foreldrenoden.`,
-				action: `${side.charAt(0).toUpperCase() + side.slice(1)} side vinner sammenligningen!`,
+				title: `⬅️ Taking from ${side}`,
+				description: `Element ${meta.movedElement || '?'} from the ${side} side is smaller, and moves up to the parent node.`,
+				action: `${side.charAt(0).toUpperCase() + side.slice(1)} side wins the comparison!`,
 			};
 		}
 		if (operation?.includes('remaining'))
 			return {
-				title: '🏃 Flytter Resterende',
+				title: '🏃 Moving Remaining',
 				description:
-					'En side er tom, så vi flytter alle gjenværende elementer fra den andre siden.',
-				action: 'Ingen flere sammenligninger trengs - kopierer bare resten!',
+					'One side is empty, so we move all remaining elements from the other side.',
+				action: 'No more comparisons needed - just copying the rest!',
 			};
 		if (operation === 'merge_complete')
 			return {
-				title: '✅ Fletting Fullført',
-				description: `Flettet ${leftText} og ${rightText} til et sortert område ${targetText}.`,
-				action: 'Denne delen er nå sortert! Går opp i rekursjonstreet...',
+				title: '✅ Merge Complete',
+				description: `Merged ${leftText} and ${rightText} into a sorted range ${targetText}.`,
+				action: 'This part is now sorted! Going up the recursion tree...',
 			};
 	}
 	if (phase === 'completed')
 		return {
-			title: '🎉 Sortering Fullført!',
+			title: '🎉 Sorting Complete!',
 			description:
-				"Hele listen er nå sortert ved hjelp av 'del og hersk'-prinsippet.",
-			action: 'Alle elementer er i sine endelige, sorterte posisjoner!',
+				"The entire list is now sorted using the 'divide and conquer' principle.",
+			action: 'All elements are in their final, sorted positions!',
 		};
 	return {
-		title: 'Flettesortering Visualisering',
-		description: "Følg den rekursive 'del og hersk'-prosessen...",
+		title: 'Merge Sort Visualization',
+		description: "Follow the recursive 'divide and conquer' process...",
 		action: '',
 	};
 };

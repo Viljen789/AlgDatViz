@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react';
 import {
 	BookOpen,
 	ChevronLeft,
@@ -123,6 +124,17 @@ const GraphAlgorithmPanel = ({
 	isDirected,
 	isWeighted,
 }) => {
+	const [showPulse, setShowPulse] = useState(false);
+
+	useEffect(() => {
+		const timer = setTimeout(() => {
+			if (!isPlaying && stepIndex === 0) setShowPulse(true);
+		}, 5000);
+		return () => clearTimeout(timer);
+	}, [isPlaying, stepIndex]);
+
+	const stopPulse = () => setShowPulse(false);
+
 	const meta = GRAPH_ALGORITHMS[algorithmId];
 	const progress =
 		stepCount <= 1 ? 0 : Math.round((stepIndex / (stepCount - 1)) * 100);
@@ -219,15 +231,20 @@ const GraphAlgorithmPanel = ({
 				>
 					<ChevronLeft size={18} />
 				</button>
-				<button
-					type="button"
-					onClick={onPlayPause}
-					className={styles.playButton}
-					title={isPlaying ? 'Pause' : 'Play'}
-					style={{ backgroundColor: meta.accent }}
-				>
-					{isPlaying ? <Pause size={18} /> : <Play size={18} />}
-				</button>
+				<div className={showPulse ? 'pulse-hint' : ''}>
+					<button
+						type="button"
+						onClick={() => {
+							stopPulse();
+							onPlayPause();
+						}}
+						className={styles.playButton}
+						title={isPlaying ? 'Pause' : 'Play'}
+						style={{ backgroundColor: meta.accent }}
+					>
+						{isPlaying ? <Pause size={18} /> : <Play size={18} />}
+					</button>
+				</div>
 				<button
 					type="button"
 					onClick={onStepForward}

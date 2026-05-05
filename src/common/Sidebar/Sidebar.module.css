@@ -54,6 +54,14 @@
 	background: rgba(255, 255, 255, 0.02);
 }
 
+.navLink:hover:not(.activeLink) .icon {
+	color: var(--accent);
+}
+
+.navLink:hover:not(.activeLink) .navBar {
+	background: var(--accent) !important;
+}
+
 .activeLink {
 	font-weight: 600;
 }
@@ -66,12 +74,11 @@
 	width: 3px;
 	height: 18px;
 	border-radius: 0 2px 2px 0;
-	background: transparent !important;
 	transition: background 0.15s;
 }
 
-.navLink:not(.activeLink) .navBar {
-	background: transparent !important;
+.activeLink .navBar {
+	background: var(--accent) !important;
 }
 
 .icon {
@@ -110,4 +117,48 @@
 	font-size: 10.5px;
 	color: var(--color-text-dim);
 	letter-spacing: 0.02em;
+}
+
+@media (max-width: 720px) {
+	.sidebar {
+		width: 64px;
+	}
+
+	.logo {
+		justify-content: center;
+		padding: 18px 0;
+	}
+
+	.logoText,
+	.label,
+	.footerText {
+		display: none;
+	}
+
+	.navLink {
+		justify-content: center;
+		gap: 0;
+		padding: 12px 0;
+	}
+
+	.navBar {
+		height: 22px;
+	}
+
+	.icon {
+		width: 34px;
+		height: 34px;
+		justify-content: center;
+		border-radius: 12px;
+	}
+
+	.navLink:hover:not(.activeLink) .icon,
+	.activeLink .icon {
+		background: rgba(255, 255, 255, 0.045);
+	}
+
+	.footer {
+		justify-content: center;
+		padding: 14px 0;
+	}
 }

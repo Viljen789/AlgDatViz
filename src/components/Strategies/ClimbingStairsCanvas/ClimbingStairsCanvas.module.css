@@ -1,0 +1,250 @@
+.canvas {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: 24px;
+	width: 100%;
+	max-width: 880px;
+	margin: 0 auto;
+	padding: 12px 4px 0;
+}
+
+.equationStrip {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: baseline;
+	justify-content: center;
+	gap: 6px 8px;
+	font-family: var(--font-family-mono);
+	font-size: 17px;
+	color: var(--color-text-primary);
+	letter-spacing: 0.01em;
+	min-height: 44px;
+	text-wrap: balance;
+}
+
+.equationTemplate {
+	color: var(--color-text-secondary);
+}
+
+.equationLead {
+	color: var(--state-active);
+	font-weight: 700;
+}
+
+.equationOp {
+	color: var(--color-text-muted);
+}
+
+.equationConst {
+	color: var(--state-done);
+	font-weight: 700;
+}
+
+.equationTermWrap {
+	display: inline-flex;
+	gap: 6px;
+	align-items: baseline;
+}
+
+.equationTerm {
+	color: var(--state-flight);
+	font-weight: 600;
+}
+
+.equationTail {
+	display: inline-flex;
+	align-items: baseline;
+	gap: 6px;
+	opacity: 0;
+	transform: translateY(2px);
+	transition:
+		opacity var(--duration-step) var(--ease-step),
+		transform var(--duration-step) var(--ease-step);
+}
+
+.equationTailVisible {
+	opacity: 1;
+	transform: translateY(0);
+}
+
+.equationResult {
+	color: var(--state-done);
+	font-weight: 700;
+	font-size: 19px;
+}
+
+.tableScroll {
+	width: 100%;
+	overflow-x: auto;
+	overflow-y: visible;
+}
+
+.tableInner {
+	position: relative;
+	display: flex;
+	flex-direction: column;
+	margin: 0 auto;
+}
+
+.arrowLayer {
+	overflow: visible;
+}
+
+.arrowPath {
+	stroke: var(--state-flight);
+	stroke-width: 1.6;
+	stroke-linecap: round;
+	stroke-dasharray: 1;
+	stroke-dashoffset: 1;
+	animation: drawIn 480ms var(--ease-step) forwards;
+	fill: none;
+}
+
+.arrowHead {
+	fill: var(--state-flight);
+	opacity: 0;
+	animation: fadeIn 320ms var(--ease-step) forwards;
+	animation-delay: 320ms;
+}
+
+.arrowLabel {
+	font-family: var(--font-family-mono);
+	font-size: 11px;
+	font-weight: 700;
+	fill: var(--state-flight);
+	letter-spacing: 0.02em;
+	opacity: 0;
+	animation: fadeIn 320ms var(--ease-step) forwards;
+	animation-delay: 320ms;
+}
+
+@keyframes drawIn {
+	to {
+		stroke-dashoffset: 0;
+	}
+}
+
+@keyframes fadeIn {
+	to {
+		opacity: 1;
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.arrowPath {
+		animation-duration: 120ms;
+	}
+	.arrowHead,
+	.arrowLabel {
+		animation-delay: 80ms;
+	}
+}
+
+.cellRow {
+	list-style: none;
+	display: grid;
+	grid-template-columns: repeat(auto-fit, 64px);
+	grid-auto-flow: column;
+	gap: 10px;
+	margin: 0;
+	padding: 0;
+}
+
+.cell {
+	width: 64px;
+	height: 84px;
+	border-radius: var(--border-radius-md);
+	border: 1px solid var(--color-border);
+	background: var(--color-bg-input);
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	gap: 4px;
+	transition:
+		border-color var(--duration-step) var(--ease-step),
+		background var(--duration-step) var(--ease-step),
+		box-shadow var(--duration-step) var(--ease-step);
+}
+
+.cellIndex {
+	font-family: var(--font-family-mono);
+	font-size: 11px;
+	color: var(--color-text-muted);
+	letter-spacing: 0.04em;
+}
+
+.cellValue {
+	font-family: var(--font-family-mono);
+	font-size: 22px;
+	font-weight: 700;
+	color: var(--color-text-secondary);
+	letter-spacing: -0.01em;
+}
+
+.cell-idle {
+	border-color: var(--color-border);
+}
+
+.cell-done {
+	border-color: rgba(56, 201, 160, 0.35);
+	background: rgba(56, 201, 160, 0.06);
+}
+
+.cell-done .cellValue {
+	color: var(--state-done);
+}
+
+.cell-flight {
+	border-color: var(--state-flight);
+	background: rgba(248, 167, 79, 0.1);
+	box-shadow: 0 0 0 1px rgba(248, 167, 79, 0.15);
+}
+
+.cell-flight .cellValue {
+	color: var(--state-flight);
+}
+
+.cell-active {
+	border-color: var(--state-active);
+	background: rgba(79, 124, 248, 0.12);
+	box-shadow:
+		0 0 0 1px rgba(79, 124, 248, 0.25),
+		0 0 24px -4px rgba(79, 124, 248, 0.4);
+	animation: cellPulse 1.6s var(--ease-quiet) infinite;
+}
+
+.cell-active .cellValue {
+	color: var(--state-active);
+}
+
+@keyframes cellPulse {
+	0%,
+	100% {
+		box-shadow:
+			0 0 0 1px rgba(79, 124, 248, 0.25),
+			0 0 24px -4px rgba(79, 124, 248, 0.4);
+	}
+	50% {
+		box-shadow:
+			0 0 0 1px rgba(79, 124, 248, 0.45),
+			0 0 32px -2px rgba(79, 124, 248, 0.65);
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.cell-active {
+		animation: none;
+	}
+}
+
+.caption {
+	margin: 0;
+	font-family: var(--font-family-sans);
+	font-size: 13px;
+	color: var(--color-text-secondary);
+	line-height: 1.55;
+	max-width: 60ch;
+	text-align: center;
+}

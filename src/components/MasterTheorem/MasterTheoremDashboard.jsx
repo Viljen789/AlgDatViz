@@ -1,6 +1,7 @@
-import { Calculator, GitFork, Layers, Sigma } from 'lucide-react';
-import { useMemo, useState } from 'react';
+import { Calculator, GitFork, Layers, Sigma, Info } from 'lucide-react';
+import { useMemo, useState, useEffect } from 'react';
 import LearningPanel from '../../common/LearningPanel/LearningPanel.jsx';
+import Tooltip from '../../common/Tooltip/Tooltip.jsx';
 import styles from './MasterTheoremDashboard.module.css';
 
 const EXAMPLES = [
@@ -210,6 +211,17 @@ const NumberControl = ({ label, value, min, max, step = 1, onChange }) => (
 
 const MasterTheoremDashboard = () => {
 	const [params, setParams] = useState(EXAMPLES[0]);
+	const [showPulse, setShowPulse] = useState(false);
+
+	useEffect(() => {
+		const timer = setTimeout(() => {
+			if (params.label === EXAMPLES[0].label) setShowPulse(true);
+		}, 5000);
+		return () => clearTimeout(timer);
+	}, [params.label]);
+
+	const stopPulse = () => setShowPulse(false);
+
 	const analysis = useMemo(() => getCase(params), [params]);
 	const levels = useMemo(() => buildLevels(params), [params]);
 	const learningContent = useMemo(
@@ -235,17 +247,24 @@ const MasterTheoremDashboard = () => {
 							<strong>Master Theorem lab</strong>
 							<span>T(n) = aT(n / b) + f(n), where f(n) = n^d log^k n</span>
 						</div>
+						<Tooltip text="The Master Theorem solves recurrences of the form T(n) = aT(n/b) + f(n).">
+							<Info size={14} style={{ marginLeft: '10px', opacity: 0.5, cursor: 'help' }} />
+						</Tooltip>
 					</div>
 					<div className={styles.exampleRow}>
-						{EXAMPLES.map(example => (
-							<button
-								key={example.label}
-								type="button"
-								onClick={() => setParams(example)}
-								className={params.label === example.label ? styles.exampleActive : ''}
-							>
-								{example.label}
-							</button>
+						{EXAMPLES.map((example, index) => (
+							<div key={example.label} className={index === 2 && showPulse ? 'pulse-hint' : ''}>
+								<button
+									type="button"
+									onClick={() => {
+										stopPulse();
+										setParams(example);
+									}}
+									className={params.label === example.label ? styles.exampleActive : ''}
+								>
+									{example.label}
+								</button>
+							</div>
 						))}
 					</div>
 				</div>

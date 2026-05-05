@@ -1,0 +1,436 @@
+.canvas {
+	display: flex;
+	flex-direction: column;
+	gap: 24px;
+	width: 100%;
+	max-width: 1100px;
+	margin: 0 auto;
+	padding: 12px 4px 0;
+}
+
+/* ─── Equation strip ─────────────────────────────────── */
+
+.equationStrip {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: baseline;
+	justify-content: center;
+	gap: 6px 8px;
+	font-family: var(--font-family-mono);
+	font-size: 17px;
+	color: var(--color-text-primary);
+	letter-spacing: 0.01em;
+	line-height: 1.5;
+	min-height: 44px;
+	padding: 4px 12px;
+	text-wrap: balance;
+}
+
+.equationTemplate {
+	color: var(--color-text-secondary);
+	font-style: normal;
+}
+
+.equationLead {
+	color: var(--state-active);
+	font-weight: 700;
+}
+
+.equationOp {
+	color: var(--color-text-muted);
+	font-weight: 500;
+}
+
+.equationConst {
+	color: var(--color-text-secondary);
+	font-weight: 600;
+}
+
+.equationFn {
+	color: var(--color-text-secondary);
+}
+
+.equationSep {
+	color: var(--color-text-muted);
+	margin-left: -2px;
+	margin-right: 2px;
+}
+
+.equationTermWrap {
+	display: inline-flex;
+	align-items: baseline;
+	gap: 0;
+}
+
+.equationTerm {
+	color: var(--state-flight);
+	font-weight: 600;
+	transition:
+		color var(--duration-step) var(--ease-step),
+		text-shadow var(--duration-step) var(--ease-step);
+}
+
+.equationTermWinning {
+	color: var(--state-special);
+	font-weight: 700;
+	text-shadow: 0 0 10px rgba(201, 122, 248, 0.4);
+}
+
+.equationInfinity {
+	color: var(--color-text-secondary);
+	font-size: 22px;
+}
+
+.equationNote {
+	font-family: var(--font-family-sans);
+	font-size: 13px;
+	color: var(--color-text-muted);
+	font-weight: 400;
+}
+
+.equationTail {
+	display: inline-flex;
+	align-items: baseline;
+	gap: 6px;
+	opacity: 0;
+	transform: translateY(2px);
+	transition:
+		opacity var(--duration-step) var(--ease-step),
+		transform var(--duration-step) var(--ease-step);
+}
+
+.equationTailVisible {
+	opacity: 1;
+	transform: translateY(0);
+}
+
+.equationResult {
+	color: var(--state-done);
+	font-weight: 700;
+	font-size: 19px;
+}
+
+/* ─── DP table + arrow layer ─────────────────────────── */
+
+.tableScroll {
+	width: 100%;
+	overflow-x: auto;
+	overflow-y: visible;
+	padding-bottom: 4px;
+}
+
+.tableInner {
+	position: relative;
+	display: flex;
+	flex-direction: column;
+	margin: 0 auto;
+}
+
+.arrowLayer {
+	overflow: visible;
+}
+
+.arrowGroup {
+	transition: opacity var(--duration-step) var(--ease-step);
+}
+
+.arrowPath {
+	stroke: var(--state-flight);
+	stroke-width: 1.6;
+	stroke-linecap: round;
+	stroke-dasharray: 1;
+	stroke-dashoffset: 1;
+	animation: drawIn var(--duration-step) var(--ease-step) forwards;
+	transition: stroke var(--duration-step) var(--ease-step);
+}
+
+.arrowHead {
+	fill: var(--state-flight);
+	opacity: 0;
+	animation: fadeIn var(--duration-step) var(--ease-step) forwards;
+	animation-delay: calc(var(--duration-step) * 0.7);
+	transition: fill var(--duration-step) var(--ease-step);
+}
+
+.arrowLabel {
+	font-family: var(--font-family-mono);
+	font-size: 11px;
+	font-weight: 700;
+	fill: var(--state-flight);
+	letter-spacing: 0.02em;
+	opacity: 0;
+	animation: fadeIn var(--duration-step) var(--ease-step) forwards;
+	animation-delay: calc(var(--duration-step) * 0.7);
+	transition: fill var(--duration-step) var(--ease-step);
+}
+
+.arrowGroupWinning .arrowPath {
+	stroke: var(--state-special);
+	stroke-width: 2;
+	filter: drop-shadow(0 0 6px rgba(201, 122, 248, 0.45));
+}
+
+.arrowGroupWinning .arrowHead,
+.arrowGroupWinning .arrowLabel {
+	fill: var(--state-special);
+}
+
+@keyframes drawIn {
+	from {
+		stroke-dashoffset: 1;
+	}
+	to {
+		stroke-dashoffset: 0;
+	}
+}
+
+@keyframes fadeIn {
+	from {
+		opacity: 0;
+	}
+	to {
+		opacity: 1;
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.arrowPath {
+		animation-duration: 120ms;
+	}
+	.arrowHead,
+	.arrowLabel {
+		animation-delay: 80ms;
+	}
+}
+
+.cellRow {
+	list-style: none;
+	display: grid;
+	grid-template-columns: repeat(auto-fit, 56px);
+	grid-auto-flow: column;
+	gap: 8px;
+	margin: 0;
+	padding: 0;
+}
+
+.cell {
+	width: 56px;
+	height: 76px;
+	border-radius: var(--border-radius-md);
+	border: 1px solid var(--color-border);
+	background: var(--color-bg-input);
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	gap: 4px;
+	transition:
+		border-color var(--duration-step) var(--ease-step),
+		background var(--duration-step) var(--ease-step),
+		transform var(--duration-step) var(--ease-step),
+		box-shadow var(--duration-step) var(--ease-step);
+}
+
+.cellIndex {
+	font-family: var(--font-family-mono);
+	font-size: 10px;
+	color: var(--color-text-muted);
+	letter-spacing: 0.04em;
+}
+
+.cellValue {
+	font-family: var(--font-family-mono);
+	font-size: 20px;
+	font-weight: 700;
+	color: var(--color-text-secondary);
+	letter-spacing: -0.01em;
+}
+
+.cell-idle {
+	border-color: var(--color-border);
+	background: var(--color-bg-input);
+}
+
+.cell-done {
+	border-color: rgba(56, 201, 160, 0.35);
+	background: rgba(56, 201, 160, 0.06);
+}
+
+.cell-done .cellValue {
+	color: var(--state-done);
+}
+
+.cell-flight {
+	border-color: var(--state-flight);
+	background: rgba(248, 167, 79, 0.1);
+	box-shadow: 0 0 0 1px rgba(248, 167, 79, 0.15);
+}
+
+.cell-flight .cellValue {
+	color: var(--state-flight);
+}
+
+.cell-winning {
+	border-color: var(--state-special);
+	background: rgba(201, 122, 248, 0.12);
+	box-shadow: 0 0 0 1px rgba(201, 122, 248, 0.25);
+}
+
+.cell-winning .cellValue {
+	color: var(--state-special);
+}
+
+.cell-active {
+	border-color: var(--state-active);
+	background: rgba(79, 124, 248, 0.12);
+	box-shadow:
+		0 0 0 1px rgba(79, 124, 248, 0.25),
+		0 0 24px -4px rgba(79, 124, 248, 0.4);
+	animation: cellPulse 1.6s var(--ease-quiet) infinite;
+}
+
+.cell-active .cellValue {
+	color: var(--state-active);
+}
+
+@keyframes cellPulse {
+	0%,
+	100% {
+		box-shadow:
+			0 0 0 1px rgba(79, 124, 248, 0.25),
+			0 0 24px -4px rgba(79, 124, 248, 0.4);
+	}
+	50% {
+		box-shadow:
+			0 0 0 1px rgba(79, 124, 248, 0.45),
+			0 0 32px -2px rgba(79, 124, 248, 0.65);
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.cell-active {
+		animation: none;
+	}
+}
+
+/* ─── Greedy strip ───────────────────────────────────── */
+
+.greedyStrip {
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+	padding: 14px 18px 12px;
+	border-radius: var(--border-radius-lg);
+	border: 1px solid var(--color-border);
+	background: rgba(15, 17, 32, 0.6);
+	transition:
+		opacity var(--duration-step) var(--ease-step),
+		border-color var(--duration-step) var(--ease-step);
+}
+
+.greedyDone {
+	opacity: 0.92;
+	border-color: var(--color-border-strong);
+}
+
+.greedyHeader {
+	display: flex;
+	align-items: baseline;
+	gap: 12px;
+}
+
+.greedyLabel {
+	font-family: var(--font-family-sans);
+	font-size: 9px;
+	font-weight: 700;
+	letter-spacing: 0.18em;
+	text-transform: uppercase;
+	color: var(--color-text-muted);
+}
+
+.greedyTagline {
+	font-size: 12px;
+	color: var(--color-text-secondary);
+	font-style: italic;
+}
+
+.greedyRow {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 16px;
+	flex-wrap: wrap;
+}
+
+.greedyTokens {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	flex-wrap: wrap;
+	min-height: 32px;
+}
+
+.greedyEmpty {
+	font-family: var(--font-family-mono);
+	font-size: 12px;
+	color: var(--color-text-muted);
+	font-style: italic;
+}
+
+.greedyToken {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	min-width: 38px;
+	height: 32px;
+	padding: 0 10px;
+	border-radius: var(--border-radius-pill);
+	background: rgba(248, 167, 79, 0.12);
+	border: 1px solid rgba(248, 167, 79, 0.4);
+	color: var(--state-flight);
+	font-family: var(--font-family-mono);
+	font-size: 13px;
+	font-weight: 700;
+	letter-spacing: 0.02em;
+}
+
+.greedyMeta {
+	display: inline-flex;
+	align-items: baseline;
+	gap: 8px;
+	font-family: var(--font-family-mono);
+	font-size: 12px;
+	color: var(--color-text-secondary);
+	letter-spacing: 0.02em;
+}
+
+.greedyCount {
+	color: var(--color-text-primary);
+	font-weight: 600;
+}
+
+.greedyDot {
+	color: var(--color-text-dim);
+}
+
+.greedyRemaining {
+	color: var(--color-text-secondary);
+}
+
+.greedyVerdict {
+	margin: 4px 0 0;
+	font-family: var(--font-family-sans);
+	font-size: 13px;
+	color: var(--color-text-primary);
+	line-height: 1.55;
+	max-width: 65ch;
+}
+
+@media (max-width: 720px) {
+	.canvas {
+		gap: 18px;
+	}
+	.equationStrip {
+		font-size: 14px;
+	}
+}

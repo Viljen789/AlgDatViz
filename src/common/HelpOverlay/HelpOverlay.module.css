@@ -1,0 +1,146 @@
+.backdrop {
+	position: fixed;
+	top: 0;
+	left: 0;
+	width: 100vw;
+	height: 100vh;
+	background: rgba(10, 12, 20, 0.85);
+	backdrop-filter: blur(4px);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	z-index: 2000;
+	padding: var(--spacing-xl);
+}
+
+.modal {
+	background: var(--color-surface);
+	border: 1px solid var(--color-border);
+	border-radius: var(--border-radius-xl);
+	width: 100%;
+	max-width: 600px;
+	overflow: hidden;
+	box-shadow: 0 24px 48px rgba(0, 0, 0, 0.5), 
+	            0 0 0 1px rgba(255, 255, 255, 0.05);
+}
+
+.header {
+	padding: var(--spacing-xl);
+	background: rgba(255, 255, 255, 0.02);
+	border-bottom: 1px solid var(--color-border);
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+}
+
+.titleGroup {
+	display: flex;
+	align-items: center;
+	gap: var(--spacing-md);
+}
+
+.titleIcon {
+	color: var(--color-accent-blue);
+}
+
+.header h2 {
+	margin: 0;
+	font-size: 1.5rem;
+	color: var(--color-text-primary);
+}
+
+.header p {
+	margin: 0;
+	font-size: 0.875rem;
+	color: var(--color-text-secondary);
+}
+
+.closeButton {
+	background: transparent;
+	border: none;
+	color: var(--color-text-secondary);
+	cursor: pointer;
+	padding: var(--spacing-xs);
+	border-radius: var(--border-radius-sm);
+	transition: all 0.2s;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+
+.closeButton:hover {
+	background: rgba(255, 255, 255, 0.05);
+	color: var(--color-text-primary);
+}
+
+.content {
+	padding: var(--spacing-xl);
+}
+
+.tipGrid {
+	display: flex;
+	flex-direction: column;
+	gap: var(--spacing-lg);
+}
+
+.tipItem {
+	display: flex;
+	gap: var(--spacing-md);
+	align-items: flex-start;
+}
+
+.tipIcon {
+	flex-shrink: 0;
+	width: 32px;
+	height: 32px;
+	background: rgba(79, 124, 248, 0.1);
+	border-radius: var(--border-radius-md);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	color: var(--color-accent-blue);
+}
+
+.tipItem p {
+	margin: 0;
+	font-size: 1rem;
+	line-height: 1.5;
+	color: var(--color-text-primary);
+}
+
+.footer {
+	padding: var(--spacing-lg) var(--spacing-xl);
+	background: rgba(0, 0, 0, 0.2);
+	border-top: 1px solid var(--color-border);
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+}
+
+.infoBadge {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	color: var(--color-text-secondary);
+	font-size: 0.75rem;
+}
+
+.gotItButton {
+	background: var(--color-accent-blue);
+	color: white;
+	border: none;
+	padding: 10px 24px;
+	border-radius: var(--border-radius-md);
+	font-weight: 600;
+	cursor: pointer;
+	transition: transform 0.2s, opacity 0.2s;
+}
+
+.gotItButton:hover {
+	transform: translateY(-1px);
+	opacity: 0.9;
+}
+
+.gotItButton:active {
+	transform: translateY(0);
+}

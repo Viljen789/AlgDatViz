@@ -21,76 +21,36 @@
 	align-items: center;
 	padding: var(--spacing-sm) 0;
 	border-top: 1px solid var(--color-border);
-	background-color: var(--color-slight-grey);
+	background-color: var(--color-bg-hover);
 }
 
 .barContainer {
 	display: flex;
 	align-items: flex-end;
 	justify-content: center;
-	gap: 2px;
-	height: 300px;
+	gap: 4px;
+	height: 100%;
 	width: 100%;
+	min-height: 200px;
+	padding: 0 4px;
 }
 
 .arrayBar {
 	flex-grow: 1;
-	min-width: 2px;
-	max-width: 40px;
-	transition: all 0.3s ease-in-out;
-	border-radius: 2px 2px 0 0;
-	cursor: pointer;
+	flex-basis: 0;
+	min-width: 4px;
+	max-width: 36px;
+	border-radius: 3px 3px 0 0;
 	position: relative;
-}
-
-.arrayBar::after {
-	content: '';
-	position: absolute;
-	top: -2px;
-	left: -2px;
-	right: -2px;
-	bottom: -2px;
-	border: 2px solid transparent;
-	border-radius: 4px 4px 2px 2px;
-	transition: border-color 0.3s ease-in-out;
-	pointer-events: none;
-}
-
-.arrayBar.highlighting::after {
-	border-color: #ffc107;
-	animation: pulse 0.6s ease-in-out;
-}
-
-@keyframes pulse {
-	0%,
-	100% {
-		transform: scale(1);
-	}
-	50% {
-		transform: scale(1.1);
-	}
-}
-
-.arrayBar:hover {
-	opacity: 0.8;
-	transform: scaleY(1.02);
+	will-change: transform, background-color;
 }
 
 @media (max-width: 768px) {
-	.barContainer[data-size='10'] .arrayBar {
-		width: 20px;
+	.barContainer {
+		gap: 2px;
 	}
-
-	.barContainer[data-size='20'] .arrayBar {
-		width: 14px;
-	}
-
-	.barContainer[data-size='50'] .arrayBar {
-		width: 8px;
-	}
-
-	.barContainer[data-size='100'] .arrayBar {
-		width: 6px;
+	.arrayBar {
+		min-width: 2px;
 	}
 }
 
@@ -106,69 +66,39 @@
 
 .numberBox {
 	padding: 0.75rem 1rem;
-	font-size: 1.1rem;
+	font-size: 1.05rem;
 	font-weight: 600;
-	border: 2px solid var(--viz-edge-color);
+	border: 1px solid var(--color-border);
 	border-radius: var(--border-radius-md);
-	background-color: var(--color-surface);
-	color: var(--viz-text-color);
+	background-color: var(--color-bg-elevated);
+	color: var(--color-text-primary);
 	min-width: 50px;
 	text-align: center;
-	transition: all 0.3s ease-in-out;
-	cursor: pointer;
+	font-family: var(--font-family-mono);
+	transition: all var(--duration-step) var(--ease-step);
 	position: relative;
 }
 
-.numberBox:hover {
-	transform: translateY(-2px);
-	box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-}
-
-.numberBox.highlighting {
-	border-color: #ffc107;
-	box-shadow: 0 0 10px rgba(255, 193, 7, 0.3);
-	animation: boxPulse 0.6s ease-in-out;
-}
-
-@keyframes boxPulse {
-	0%,
-	100% {
-		transform: scale(1);
-	}
-	50% {
-		transform: scale(1.05);
-	}
-}
-
 .comparingBox {
-	border-color: var(--color-accent-blue);
-	background-color: rgba(79, 124, 248, 0.18);
+	border-color: var(--state-active);
+	background-color: rgba(79, 124, 248, 0.16);
 	color: var(--color-text-primary);
-	transform: scale(1.05);
 }
 
 .sortedBox {
-	border-color: var(--color-accent-green);
-	background-color: var(--color-accent-green);
-	color: var(--color-text-on-node);
+	border-color: var(--state-done);
+	background-color: rgba(56, 201, 160, 0.18);
+	color: var(--color-text-primary);
 }
 
 .swappingBox {
-	border-color: var(--color-accent-orange);
-	background-color: rgba(248, 167, 79, 0.22);
+	border-color: var(--state-flight);
+	background-color: rgba(248, 167, 79, 0.2);
 	color: var(--color-text-primary);
-	animation: shake 0.5s ease-in-out;
 }
 
-@keyframes shake {
-	0%,
-	100% {
-		transform: translateX(0);
-	}
-	25% {
-		transform: translateX(-2px);
-	}
-	75% {
-		transform: translateX(2px);
-	}
+.specialBox {
+	border-color: var(--state-special);
+	background-color: rgba(201, 122, 248, 0.18);
+	color: var(--color-text-primary);
 }

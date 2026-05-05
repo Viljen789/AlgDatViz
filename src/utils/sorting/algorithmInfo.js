@@ -491,7 +491,7 @@ export const PSEUDO_CODE = {
 	],
 	bucketSort: [
 		'// Note: Assumes input is uniformly distributed',
-		'create n empty buckets (where n is array size)',
+		'create k empty buckets covering value ranges',
 		'find the maximum value (max) in the array',
 		'for each element in the input array:',
 		'  calculate bucket_index for the element',

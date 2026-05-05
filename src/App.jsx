@@ -1,15 +1,38 @@
 import { BrowserRouter, Route, Routes, useLocation } from 'react-router-dom';
 import { AnimatePresence, motion as Motion } from 'framer-motion';
+import { HelpCircle } from 'lucide-react';
+import { lazy, Suspense, useState } from 'react';
 import Sidebar from './common/Sidebar/Sidebar.jsx';
-import HomePage from './pages/HomePage';
-import GraphPage from './pages/GraphPage';
-import SortingPage from './pages/SortingPage';
-import HashMapPage from './pages/HashMapPage';
-import TreePage from './pages/TreePage';
-import MasterTheoremPage from './pages/MasterTheoremPage';
-import StacksQueuesPage from './pages/StacksQueuesPage';
-import StrategiesPage from './pages/StrategiesPage';
+import HelpOverlay from './common/HelpOverlay/HelpOverlay.jsx';
+import { PAGE_HELP } from './data/pageHelpContent';
 import styles from './App.module.css';
+
+const HomePage = lazy(() => import('./pages/HomePage.jsx'));
+const GraphPage = lazy(() => import('./pages/GraphPage.jsx'));
+const SortingPage = lazy(() => import('./pages/SortingPage.jsx'));
+const HashMapPage = lazy(() => import('./pages/HashMapPage.jsx'));
+const TreePage = lazy(() => import('./pages/TreePage.jsx'));
+const MasterTheoremPage = lazy(() => import('./pages/MasterTheoremPage.jsx'));
+const StacksQueuesPage = lazy(() => import('./pages/StacksQueuesPage.jsx'));
+const StrategiesPage = lazy(() => import('./pages/StrategiesPage.jsx'));
+
+const RouteFallback = () => (
+	<div className={styles.routeFallback} role="status" aria-live="polite">
+		<div className={styles.fallbackFrame} aria-hidden="true">
+			<div className={styles.fallbackStage}>
+				<span />
+				<span />
+				<span />
+				<span />
+				<span />
+			</div>
+		</div>
+		<div className={styles.fallbackCopy}>
+			<strong>Preparing lesson</strong>
+			<p>Loading the visual stage.</p>
+		</div>
+	</div>
+);
 
 const PAGE_META = {
 	'/': {
@@ -54,22 +77,50 @@ const PAGE_META = {
 	},
 };
 
+const ROUTES_WITH_HERO = new Set([
+	'/sorting',
+	'/graph',
+	'/tree',
+	'/hashmap',
+	'/stacks-queues',
+	'/strategies',
+	'/master-theorem',
+]);
+
 const AppLayout = () => {
 	const location = useLocation();
 	const meta = PAGE_META[location.pathname] || PAGE_META['/'];
+	const [isHelpOpen, setIsHelpOpen] = useState(false);
+
+	const helpContent = PAGE_HELP[location.pathname] || PAGE_HELP['/'];
+	const showAppHeader = !ROUTES_WITH_HERO.has(location.pathname);
 
 	return (
 		<div className={styles.appContainer}>
 			<Sidebar />
 			<main className={styles.mainContent}>
-				<header className={styles.header}>
-					<h1 className={styles.title}>{meta.title}</h1>
-					<p className={styles.subtitle}>{meta.sub}</p>
-					<div
-						className={styles.headerLine}
-						style={{ background: meta.accent }}
-					/>
-				</header>
+				{showAppHeader && (
+					<header className={styles.header}>
+						<div className={styles.headerContent}>
+							<div className={styles.titleGroup}>
+								<h1 className={styles.title}>{meta.title}</h1>
+								<p className={styles.subtitle}>{meta.sub}</p>
+							</div>
+							<button
+								className={styles.helpButton}
+								onClick={() => setIsHelpOpen(true)}
+								title="How to use this page"
+							>
+								<HelpCircle size={18} />
+								<span>Help</span>
+							</button>
+						</div>
+						<div
+							className={styles.headerLine}
+							style={{ background: meta.accent }}
+						/>
+					</header>
+				)}
 				<div className={styles.content}>
 					<AnimatePresence mode="wait">
 						<Motion.div
@@ -80,20 +131,28 @@ const AppLayout = () => {
 							transition={{ duration: 0.2, ease: 'easeOut' }}
 							className={styles.pageWrapper}
 						>
-							<Routes location={location}>
-								<Route path="/" element={<HomePage />} />
-								<Route path="/sorting" element={<SortingPage />} />
-								<Route path="/graph" element={<GraphPage />} />
-								<Route path="/hashmap" element={<HashMapPage />} />
-								<Route path="/stacks-queues" element={<StacksQueuesPage />} />
-								<Route path="/tree" element={<TreePage />} />
-								<Route path="/strategies" element={<StrategiesPage />} />
-								<Route path="/master-theorem" element={<MasterTheoremPage />} />
-							</Routes>
+							<Suspense fallback={<RouteFallback />}>
+								<Routes location={location}>
+									<Route path="/" element={<HomePage />} />
+									<Route path="/sorting" element={<SortingPage />} />
+									<Route path="/graph" element={<GraphPage />} />
+									<Route path="/hashmap" element={<HashMapPage />} />
+									<Route path="/stacks-queues" element={<StacksQueuesPage />} />
+									<Route path="/tree" element={<TreePage />} />
+									<Route path="/strategies" element={<StrategiesPage />} />
+									<Route path="/master-theorem" element={<MasterTheoremPage />} />
+								</Routes>
+							</Suspense>
 						</Motion.div>
 					</AnimatePresence>
 				</div>
 			</main>
+
+			<HelpOverlay
+				isOpen={isHelpOpen}
+				onClose={() => setIsHelpOpen(false)}
+				content={helpContent}
+			/>
 		</div>
 	);
 };

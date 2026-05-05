@@ -288,7 +288,10 @@ const GraphVisualizer = ({
 							onClick={event => {
 								event.stopPropagation();
 								if (dragMovedRef.current) return;
-								onNodeClick(nodeId === selectedNodeId ? null : nodeId);
+								onNodeClick(nodeId, {
+									shift: event.shiftKey,
+									meta: event.metaKey || event.ctrlKey,
+								});
 							}}
 						>
 							<circle
