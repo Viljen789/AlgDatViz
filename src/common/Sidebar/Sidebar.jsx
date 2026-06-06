@@ -1,5 +1,6 @@
 import { NavLink, useLocation } from 'react-router-dom';
 import {
+	ArrowDownNarrowWide,
 	BarChart3,
 	Brain,
 	Check,
@@ -11,6 +12,7 @@ import {
 	Lock,
 	Network,
 	Sigma,
+	Triangle,
 } from 'lucide-react';
 import { CURRICULUM, TOPIC_BY_ROUTE } from '../../data/curriculum.js';
 import useProgress from '../../hooks/useProgress.js';
@@ -20,6 +22,7 @@ import styles from './Sidebar.module.css';
 // Maps the `icon` name stored on each curriculum topic to a lucide component.
 // (Icons can't be serialized in the data module, so the mapping lives here.)
 const ICONS = {
+	ArrowDownNarrowWide,
 	BarChart3,
 	Brain,
 	GitBranch,
@@ -29,6 +32,7 @@ const ICONS = {
 	Lock,
 	Network,
 	Sigma,
+	Triangle,
 };
 
 const Sidebar = () => {

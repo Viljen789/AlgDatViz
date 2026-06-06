@@ -23,6 +23,8 @@ const PAGES = [
 	{ path: '/tree', name: '05-trees' },
 	{ path: '/graph', name: '06-graphs' },
 	{ path: '/strategies', name: '07-strategies' },
+	{ path: '/linear-time-sorting', name: '09-linsort' },
+	{ path: '/heaps', name: '10-heaps' },
 	{ path: '/styleguide', name: '08-styleguide' },
 ];
 

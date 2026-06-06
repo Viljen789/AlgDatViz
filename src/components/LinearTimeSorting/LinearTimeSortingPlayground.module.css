@@ -1,0 +1,138 @@
+/* =============================================================================
+   LinearTimeSortingPlayground — the interactive sandbox, on canonical tokens.
+   Tinted by --topic-accent inherited from TopicTemplate.
+   ============================================================================ */
+
+.shell {
+	width: 100%;
+	display: flex;
+	flex-direction: column;
+	gap: var(--space-lg);
+}
+
+/* ---------- Controls ---------- */
+
+.controls {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: flex-end;
+	justify-content: space-between;
+	gap: var(--space-lg);
+}
+
+.algTabs {
+	display: inline-flex;
+	gap: var(--space-2xs);
+	padding: var(--space-2xs);
+	background: var(--surface-0);
+	border: 1px solid var(--color-border);
+	border-radius: var(--radius-md);
+}
+
+.algTab {
+	padding: var(--space-xs) var(--space-md);
+	border: none;
+	background: transparent;
+	border-radius: var(--radius-sm);
+	color: var(--color-text-secondary);
+	font-family: var(--font-family-sans);
+	font-size: var(--font-size-label);
+	font-weight: var(--font-weight-medium);
+	cursor: pointer;
+	transition: color var(--transition), background-color var(--transition);
+}
+
+.algTab:hover {
+	color: var(--color-text-primary);
+	background: var(--surface-hover);
+}
+
+.algTab:focus-visible {
+	outline: none;
+	box-shadow: var(--shadow-focus);
+}
+
+.algTabActive {
+	color: var(--color-text-on-accent);
+	background: var(--topic-accent);
+}
+
+.algTabActive:hover {
+	color: var(--color-text-on-accent);
+	background: var(--topic-accent);
+}
+
+.actions {
+	display: flex;
+	align-items: center;
+	gap: var(--space-sm);
+}
+
+.opLine {
+	margin: 0;
+	font-size: var(--font-size-body);
+	line-height: var(--line-height-body);
+	color: var(--color-text-secondary);
+	max-width: 70ch;
+}
+
+/* ---------- Canvas + trace ---------- */
+
+.body {
+	display: grid;
+	grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
+	gap: var(--space-lg);
+	align-items: stretch;
+}
+
+.canvas {
+	position: relative;
+	background: var(--surface-1);
+	border: 1px solid var(--color-border);
+	border-radius: var(--radius-lg);
+	box-shadow: var(--shadow-2);
+	display: flex;
+	flex-direction: column;
+	min-height: 360px;
+	overflow: auto;
+	padding: clamp(var(--space-lg), 3vw, var(--space-2xl));
+}
+
+/* The trace column stacks the live narration (FrameTrace) above the synced
+   pseudocode + live-state panel (PseudoState). PseudoState owns its own styling;
+   we only set the column flow + gap. */
+.trace {
+	min-width: 0;
+	display: flex;
+	flex-direction: column;
+	gap: var(--space-md);
+}
+
+.pseudo {
+	min-width: 0;
+}
+
+/* ---------- Transport ---------- */
+
+.transport {
+	display: flex;
+	justify-content: center;
+}
+
+/* ---------- Responsive ---------- */
+
+@media (max-width: 960px) {
+	.body {
+		grid-template-columns: 1fr;
+	}
+}
+
+@media (max-width: 720px) {
+	.controls {
+		flex-direction: column;
+		align-items: stretch;
+	}
+	.canvas {
+		padding: var(--space-md);
+	}
+}

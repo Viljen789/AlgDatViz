@@ -123,8 +123,23 @@ export const CURRICULUM = [
 		countsToProgress: true,
 	},
 	{
-		id: 'hashing',
+		id: 'linear-time-sorting',
 		number: '05',
+		name: 'Linear-time sorting',
+		navLabel: 'Linear-time sort',
+		pullQuote:
+			'Beat n log n by not comparing at all — when the keys cooperate.',
+		complexity: 'O(n + k)',
+		tokenId: 'linsort',
+		accent: topicAccent('linsort'),
+		icon: 'ArrowDownNarrowWide',
+		to: '/linear-time-sorting',
+		status: 'ready',
+		countsToProgress: true,
+	},
+	{
+		id: 'hashing',
+		number: '06',
 		name: 'Hashing',
 		navLabel: 'Hash maps',
 		pullQuote: 'Constant-time lookup, when collisions cooperate.',
@@ -138,7 +153,7 @@ export const CURRICULUM = [
 	},
 	{
 		id: 'trees',
-		number: '06',
+		number: '07',
 		name: 'Trees',
 		navLabel: 'Trees',
 		pullQuote:
@@ -152,8 +167,23 @@ export const CURRICULUM = [
 		countsToProgress: true,
 	},
 	{
+		id: 'heaps',
+		number: '08',
+		name: 'Heaps & priority queues',
+		navLabel: 'Heaps',
+		pullQuote:
+			'A tree flattened into an array. Always hand back the best element next.',
+		complexity: 'O(log n)',
+		tokenId: 'heaps',
+		accent: topicAccent('heaps'),
+		icon: 'Triangle',
+		to: '/heaps',
+		status: 'ready',
+		countsToProgress: true,
+	},
+	{
 		id: 'graphs',
-		number: '07',
+		number: '09',
 		name: 'Graphs',
 		navLabel: 'Graphs',
 		pullQuote:
@@ -168,7 +198,7 @@ export const CURRICULUM = [
 	},
 	{
 		id: 'strategies',
-		number: '08',
+		number: '10',
 		name: 'Strategies',
 		navLabel: 'Strategies',
 		pullQuote:
@@ -182,19 +212,8 @@ export const CURRICULUM = [
 		countsToProgress: true,
 	},
 	// ── Coming soon: the examinable back half, in course order. Locked, neutral
-	//    treatment, excluded from progress. Built out in Phase 1b / Phase 5.
-	comingSoon(
-		'09',
-		'Linear-time sorting',
-		'Beat n log n by not comparing at all — when the keys cooperate.',
-		'O(n + k)'
-	),
-	comingSoon(
-		'10',
-		'Heaps & priority queues',
-		'A tree flattened into an array. Always hand back the best element next.',
-		'O(log n)'
-	),
+	//    treatment, excluded from progress. Built out in Phase 5 (course order,
+	//    two topics per batch).
 	comingSoon(
 		'11',
 		'Minimum spanning trees',

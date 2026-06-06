@@ -1,0 +1,351 @@
+/* =============================================================================
+   HeapStage — the synchronized tree↔array dual view for the Heaps scrolly.
+   Canonical tokens only; tinted by the inherited --topic-accent (heaps = magenta).
+   No hardcoded hex, no raw white/black.
+   ============================================================================ */
+
+.wrap {
+	position: relative;
+	width: 100%;
+	height: 100%;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	gap: var(--space-lg);
+	padding: clamp(var(--space-lg), 3vw, var(--space-2xl));
+	box-sizing: border-box;
+	background: var(--surface-1);
+	border: 1px solid var(--color-border);
+	border-radius: var(--radius-lg);
+	box-shadow: var(--shadow-2);
+	overflow: hidden;
+}
+
+.notation {
+	position: absolute;
+	top: clamp(var(--space-md), 2.2vw, var(--space-lg));
+	left: clamp(var(--space-md), 2.5vw, var(--space-lg));
+	font-family: var(--font-family-mono);
+	font-size: var(--font-size-caption);
+	letter-spacing: var(--tracking-wide);
+	color: var(--color-text-secondary);
+	pointer-events: none;
+}
+
+/* ---------- Tree ---------- */
+
+.svg {
+	width: 100%;
+	max-width: 480px;
+	display: block;
+}
+
+.edge {
+	stroke: var(--color-border-strong);
+	stroke-width: 2.5;
+	stroke-linecap: round;
+	transition: stroke var(--duration-step) var(--ease-quiet);
+}
+
+.edgeChild {
+	stroke: var(--topic-accent);
+}
+
+.edgeParent {
+	stroke: var(--color-warning);
+}
+
+.edgeSift {
+	stroke: var(--topic-accent);
+	stroke-dasharray: 5 5;
+}
+
+.node {
+	fill: var(--surface-2);
+	stroke: var(--color-text-muted);
+	stroke-width: 2.5;
+	transition:
+		fill var(--duration-step) var(--ease-quiet),
+		stroke var(--duration-step) var(--ease-quiet),
+		stroke-width var(--duration-step) var(--ease-quiet);
+}
+
+.nodeMax {
+	fill: var(--topic-accent);
+	stroke: var(--topic-accent);
+	stroke-width: 3.5;
+}
+
+.nodeFocus {
+	fill: color-mix(in srgb, var(--topic-accent) 20%, var(--surface-2));
+	stroke: var(--topic-accent);
+	stroke-width: 3.5;
+}
+
+.nodeChild {
+	fill: color-mix(in srgb, var(--topic-accent) 14%, var(--surface-2));
+	stroke: var(--topic-accent);
+}
+
+.nodeParent {
+	fill: color-mix(in srgb, var(--color-warning) 18%, var(--surface-2));
+	stroke: var(--color-warning);
+	stroke-width: 3.5;
+}
+
+.nodeSift {
+	fill: color-mix(in srgb, var(--topic-accent) 22%, var(--surface-2));
+	stroke: var(--topic-accent);
+}
+
+.nodeReveal {
+	opacity: 0;
+	animation: nodeEnter 460ms var(--ease-quiet) forwards;
+	animation-delay: var(--delay, 0ms);
+}
+
+@keyframes nodeEnter {
+	to {
+		opacity: 1;
+	}
+}
+
+.nodeText {
+	font-family: var(--font-family-mono);
+	font-size: 14px;
+	font-weight: var(--font-weight-bold);
+	fill: var(--color-text-primary);
+	pointer-events: none;
+	user-select: none;
+}
+
+.nodeMax .nodeText {
+	fill: var(--color-text-on-accent);
+}
+
+/* The little index label under each node — half the dual view. */
+.nodeIdx {
+	font-family: var(--font-family-mono);
+	font-size: 10px;
+	fill: var(--color-text-dim);
+	pointer-events: none;
+	user-select: none;
+}
+
+/* ---------- Backing array (the dual view) ---------- */
+
+.arrayRow {
+	display: flex;
+	gap: var(--space-2xs);
+	flex-wrap: wrap;
+	justify-content: center;
+}
+
+.cellWrap {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: 3px;
+}
+
+.cell {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 38px;
+	height: 38px;
+	background: var(--surface-2);
+	border: 1px solid var(--color-border);
+	border-radius: var(--radius-sm);
+	font-family: var(--font-family-mono);
+	font-size: var(--font-size-label);
+	font-weight: var(--font-weight-medium);
+	color: var(--color-text-primary);
+	transition:
+		background-color var(--duration-step) var(--ease-step),
+		border-color var(--duration-step) var(--ease-step),
+		color var(--duration-step) var(--ease-step);
+}
+
+.cellActive {
+	background: color-mix(in srgb, var(--topic-accent) 16%, transparent);
+	border-color: var(--topic-accent);
+	color: var(--topic-accent);
+}
+
+.cellMax {
+	background: var(--topic-accent);
+	border-color: var(--topic-accent);
+	color: var(--color-text-on-accent);
+}
+
+.cellParent {
+	background: color-mix(in srgb, var(--color-warning) 16%, transparent);
+	border-color: var(--color-warning);
+	color: var(--color-warning);
+}
+
+.cellIdx {
+	font-family: var(--font-family-mono);
+	font-size: var(--font-size-caption);
+	color: var(--color-text-dim);
+}
+
+/* ---------- Index-math ribbon ---------- */
+
+.formula {
+	font-family: var(--font-family-mono);
+	font-size: var(--font-size-label);
+	color: var(--color-text-secondary);
+	letter-spacing: var(--tracking-wide);
+}
+
+.formula strong {
+	color: var(--topic-accent);
+	font-weight: var(--font-weight-bold);
+}
+
+/* ---------- Build-vs-insert panel (E1) ---------- */
+
+.compare {
+	width: 100%;
+	max-width: 480px;
+	display: flex;
+	flex-direction: column;
+	gap: var(--space-md);
+}
+
+.compareLead,
+.compareNote {
+	margin: 0;
+	font-size: var(--font-size-label);
+	line-height: var(--line-height-snug);
+	color: var(--color-text-secondary);
+}
+
+.compareNote {
+	color: var(--color-text-muted);
+	font-style: italic;
+}
+
+.compareRow {
+	display: flex;
+	flex-direction: column;
+	gap: var(--space-xs);
+}
+
+.compareHead {
+	display: flex;
+	align-items: baseline;
+	justify-content: space-between;
+	gap: var(--space-sm);
+}
+
+.compareLabel {
+	font-size: var(--font-size-label);
+	color: var(--color-text-primary);
+}
+
+.compareCost {
+	font-family: var(--font-family-mono);
+	font-size: var(--font-size-caption);
+	letter-spacing: var(--tracking-wide);
+	color: var(--color-text-muted);
+}
+
+.compareGood .compareCost {
+	color: var(--color-success);
+}
+
+.compareBad .compareCost {
+	color: var(--color-warning);
+}
+
+.compareTrack {
+	position: relative;
+	height: 30px;
+	border-radius: var(--radius-sm);
+	background: var(--color-bg-sunken);
+	border: 1px solid var(--color-border);
+	overflow: hidden;
+	display: flex;
+	align-items: center;
+}
+
+.compareFill {
+	position: absolute;
+	inset: 0 auto 0 0;
+	width: var(--pct, 0%);
+	border-radius: var(--radius-sm);
+	transition: width var(--duration-merge) var(--ease-quiet);
+}
+
+.compareGood .compareFill {
+	background: color-mix(in srgb, var(--color-success) 32%, transparent);
+}
+
+.compareBad .compareFill {
+	background: color-mix(in srgb, var(--color-warning) 32%, transparent);
+}
+
+.compareOps {
+	position: relative;
+	margin-left: var(--space-sm);
+	font-family: var(--font-family-mono);
+	font-size: var(--font-size-caption);
+	font-weight: var(--font-weight-medium);
+	color: var(--color-text-primary);
+}
+
+/* ---------- Caption ---------- */
+
+.caption {
+	position: absolute;
+	top: clamp(16px, 2.2vw, 26px);
+	right: clamp(16px, 2.5vw, 28px);
+	margin: 0;
+	max-width: 56%;
+	text-align: right;
+	font-family: var(--font-family-mono);
+	font-size: var(--font-size-label);
+	color: var(--color-text-secondary);
+	letter-spacing: var(--tracking-wide);
+	line-height: var(--line-height-snug);
+}
+
+/* ---------- Reduced motion ---------- */
+
+@media (prefers-reduced-motion: reduce) {
+	.nodeReveal {
+		animation: none;
+		opacity: 1;
+	}
+	.compareFill {
+		transition-duration: 1ms;
+	}
+}
+
+/* ---------- Responsive ---------- */
+
+@media (max-width: 720px) {
+	.wrap {
+		justify-content: flex-start;
+		gap: var(--space-md);
+		padding: var(--space-lg) var(--space-md);
+	}
+	.notation {
+		position: static;
+	}
+	.svg {
+		max-width: 100%;
+	}
+	.cell {
+		width: 32px;
+		height: 32px;
+	}
+	.caption {
+		max-width: 68%;
+		font-size: var(--font-size-caption);
+	}
+}

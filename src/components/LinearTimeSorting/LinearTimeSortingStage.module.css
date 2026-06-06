@@ -1,0 +1,504 @@
+/* =============================================================================
+   LinearTimeSortingStage — synchronized visualization for the scrolly.
+   Canonical tokens only. Tinted by --topic-accent inherited from TopicTemplate.
+   ============================================================================ */
+
+.wrap {
+	position: relative;
+	width: 100%;
+	height: 100%;
+	display: flex;
+	flex-direction: column;
+	justify-content: center;
+	gap: var(--space-lg);
+	padding: clamp(var(--space-lg), 3vw, var(--space-2xl));
+	box-sizing: border-box;
+	background: var(--surface-1);
+	border: 1px solid var(--color-border);
+	border-radius: var(--radius-lg);
+	box-shadow: var(--shadow-2);
+	overflow: hidden;
+}
+
+.notation {
+	position: absolute;
+	top: clamp(var(--space-md), 2.2vw, var(--space-lg));
+	right: clamp(var(--space-md), 2.5vw, var(--space-lg));
+	font-family: var(--font-family-mono);
+	font-size: var(--font-size-caption);
+	letter-spacing: var(--tracking-wide);
+	color: var(--color-text-secondary);
+	pointer-events: none;
+}
+
+.sceneSlot {
+	width: 100%;
+	display: flex;
+	flex-direction: column;
+	gap: var(--space-md);
+	opacity: 0;
+	transform: translateY(6px);
+	animation: sceneIn 360ms var(--ease-quiet) forwards;
+}
+
+@keyframes sceneIn {
+	to {
+		opacity: 1;
+		transform: translateY(0);
+	}
+}
+
+/* ---------- Shared array / cell language ---------- */
+
+.inputRow {
+	display: flex;
+	flex-wrap: wrap;
+	gap: var(--space-xs);
+	justify-content: center;
+}
+
+.cell {
+	display: inline-flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	min-width: 30px;
+	padding: var(--space-2xs) var(--space-sm);
+	background: var(--surface-2);
+	border: 1px solid var(--color-border);
+	border-radius: var(--radius-sm);
+	font-family: var(--font-family-mono);
+	font-size: var(--font-size-label);
+	color: var(--color-text-primary);
+}
+
+.cellDim {
+	color: var(--color-text-dim);
+	font-size: var(--font-size-caption);
+}
+
+.cellHot {
+	color: var(--topic-accent);
+	font-weight: var(--font-weight-semibold);
+}
+
+.connector {
+	margin: 0;
+	text-align: center;
+	font-family: var(--font-family-mono);
+	font-size: var(--font-size-caption);
+	color: var(--color-text-muted);
+}
+
+.caption {
+	margin: 0;
+	text-align: center;
+	font-family: var(--font-family-mono);
+	font-size: var(--font-size-caption);
+	letter-spacing: var(--tracking-wide);
+	color: var(--color-text-muted);
+}
+
+.algView {
+	display: flex;
+	flex-direction: column;
+	gap: var(--space-md);
+	width: 100%;
+	max-width: 480px;
+	margin: 0 auto;
+}
+
+/* ---------- Decision tree (scenes 0–1) ---------- */
+
+.treeView {
+	display: flex;
+	flex-direction: column;
+	gap: var(--space-lg);
+	width: 100%;
+	max-width: 520px;
+	margin: 0 auto;
+}
+
+.treeRows {
+	display: flex;
+	flex-direction: column;
+	gap: var(--space-sm);
+}
+
+.treeRow {
+	display: flex;
+	flex-wrap: wrap;
+	gap: var(--space-xs);
+	justify-content: center;
+	opacity: 0;
+	transform: translateY(-4px);
+	animation: rowEnter 360ms var(--ease-quiet) forwards;
+	animation-delay: calc(var(--depth) * 70ms);
+}
+
+@keyframes rowEnter {
+	to {
+		opacity: 1;
+		transform: translateY(0);
+	}
+}
+
+.cmpNode {
+	display: inline-flex;
+	align-items: center;
+	padding: var(--space-2xs) var(--space-sm);
+	background: color-mix(in srgb, var(--topic-accent) 12%, transparent);
+	border: 1px solid color-mix(in srgb, var(--topic-accent) 40%, transparent);
+	border-radius: var(--radius-pill);
+	font-family: var(--font-family-mono);
+	font-size: var(--font-size-caption);
+	color: var(--color-text-primary);
+}
+
+.leafNode {
+	display: inline-flex;
+	align-items: center;
+	padding: var(--space-2xs) var(--space-xs);
+	background: var(--surface-2);
+	border: 1px dashed var(--color-border-strong);
+	border-radius: var(--radius-sm);
+	font-family: var(--font-family-mono);
+	font-size: var(--font-size-caption);
+	color: var(--color-text-secondary);
+}
+
+.boundCard {
+	display: flex;
+	flex-direction: column;
+	gap: var(--space-2xs);
+	padding: var(--space-md);
+	background: var(--surface-2);
+	border: 1px solid var(--color-border);
+	border-radius: var(--radius-md);
+	opacity: 0.55;
+	transition: opacity var(--duration-merge) var(--ease-quiet),
+		border-color var(--duration-step) var(--ease-step);
+}
+
+.boundCardOn {
+	opacity: 1;
+	border-color: color-mix(in srgb, var(--topic-accent) 50%, var(--color-border));
+}
+
+.boundRow {
+	display: flex;
+	align-items: baseline;
+	justify-content: space-between;
+	gap: var(--space-md);
+}
+
+.boundLabel {
+	font-family: var(--font-family-mono);
+	font-size: var(--font-size-caption);
+	color: var(--color-text-muted);
+}
+
+.boundValue {
+	font-family: var(--font-family-mono);
+	font-size: var(--font-size-label);
+	color: var(--color-text-primary);
+}
+
+.boundValueAccent {
+	font-family: var(--font-family-mono);
+	font-size: var(--font-size-label);
+	font-weight: var(--font-weight-semibold);
+	color: var(--topic-accent);
+}
+
+.boundNote {
+	margin: var(--space-2xs) 0 0;
+	font-size: var(--font-size-caption);
+	color: var(--color-text-secondary);
+}
+
+/* ---------- Counting histogram (scene 2) ---------- */
+
+.histogram {
+	display: grid;
+	grid-template-columns: repeat(var(--slots, 5), 1fr);
+	gap: var(--space-xs);
+	align-items: end;
+	min-height: 96px;
+}
+
+.histColumn {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: var(--space-2xs);
+}
+
+.histBarWrap {
+	display: flex;
+	align-items: flex-end;
+	height: 80px;
+	width: 100%;
+}
+
+.histBar {
+	position: relative;
+	width: 100%;
+	min-height: 3px;
+	height: var(--h, 0%);
+	background: var(--topic-accent);
+	border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+	display: flex;
+	align-items: flex-start;
+	justify-content: center;
+	transition: height var(--duration-merge) var(--ease-quiet);
+}
+
+.histCount {
+	position: absolute;
+	top: -16px;
+	font-family: var(--font-family-mono);
+	font-size: var(--font-size-caption);
+	color: var(--color-text-secondary);
+}
+
+.histValue {
+	font-family: var(--font-family-mono);
+	font-size: var(--font-size-caption);
+	color: var(--color-text-muted);
+}
+
+/* ---------- Radix passes (scene 3) ---------- */
+
+.radixPass {
+	display: flex;
+	flex-direction: column;
+	gap: var(--space-2xs);
+}
+
+.radixPassLabel {
+	font-family: var(--font-family-mono);
+	font-size: var(--font-size-caption);
+	color: var(--color-text-muted);
+	letter-spacing: var(--tracking-wide);
+}
+
+/* ---------- Stability (scene 4) ---------- */
+
+.stabView {
+	display: flex;
+	flex-direction: column;
+	gap: var(--space-md);
+	width: 100%;
+	max-width: 520px;
+	margin: 0 auto;
+}
+
+.stabInput {
+	display: flex;
+	flex-direction: column;
+	gap: var(--space-2xs);
+	align-items: center;
+}
+
+.stabInputLabel {
+	font-family: var(--font-family-mono);
+	font-size: var(--font-size-caption);
+	color: var(--color-text-muted);
+}
+
+.stabCompare {
+	display: grid;
+	grid-template-columns: 1fr 1fr;
+	gap: var(--space-md);
+}
+
+.stabCol {
+	display: flex;
+	flex-direction: column;
+	gap: var(--space-xs);
+	padding: var(--space-sm);
+	background: var(--surface-2);
+	border: 1px solid var(--color-border);
+	border-radius: var(--radius-md);
+}
+
+.stabHead {
+	display: flex;
+	flex-direction: column;
+	gap: var(--space-2xs);
+}
+
+.stabTitle {
+	font-size: var(--font-size-label);
+	font-weight: var(--font-weight-medium);
+	color: var(--color-text-primary);
+}
+
+.stabBadge {
+	align-self: flex-start;
+	padding: 1px var(--space-xs);
+	border-radius: var(--radius-pill);
+	font-family: var(--font-family-mono);
+	font-size: var(--font-size-caption);
+}
+
+.stabBadgeOk {
+	background: var(--color-success-wash);
+	color: var(--color-success);
+}
+
+.stabBadgeBad {
+	background: var(--color-warning-wash);
+	color: var(--color-warning);
+}
+
+.stabRow {
+	display: flex;
+	flex-wrap: wrap;
+	gap: var(--space-2xs);
+	justify-content: center;
+}
+
+.stabCell {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	min-width: 28px;
+	padding: var(--space-2xs) var(--space-xs);
+	background: var(--surface-3);
+	border: 1px solid var(--color-border);
+	border-radius: var(--radius-sm);
+	font-family: var(--font-family-mono);
+	font-size: var(--font-size-caption);
+	color: var(--color-text-secondary);
+}
+
+.stabCellTied {
+	border-color: color-mix(in srgb, var(--topic-accent) 55%, transparent);
+	background: color-mix(in srgb, var(--topic-accent) 14%, transparent);
+	color: var(--color-text-primary);
+}
+
+/* ---------- Bucket sort (scene 5) ---------- */
+
+.bucketRow {
+	display: grid;
+	grid-template-columns: repeat(2, 1fr);
+	gap: var(--space-sm);
+}
+
+.bucket {
+	display: flex;
+	flex-direction: column;
+	gap: var(--space-2xs);
+	padding: var(--space-xs);
+	background: var(--surface-2);
+	border: 1px solid var(--color-border);
+	border-radius: var(--radius-md);
+}
+
+.bucketIndex {
+	font-family: var(--font-family-mono);
+	font-size: var(--font-size-caption);
+	color: var(--color-text-muted);
+}
+
+.bucketCells {
+	display: flex;
+	flex-wrap: wrap;
+	gap: var(--space-2xs);
+	min-height: 24px;
+	align-items: center;
+}
+
+.bucketEmpty {
+	font-family: var(--font-family-mono);
+	color: var(--color-text-dim);
+}
+
+/* ---------- Assumptions summary (scene 6) ---------- */
+
+.summaryView {
+	display: flex;
+	flex-direction: column;
+	gap: var(--space-md);
+	width: 100%;
+	max-width: 520px;
+	margin: 0 auto;
+}
+
+.summaryTable {
+	width: 100%;
+	border-collapse: collapse;
+	font-size: var(--font-size-label);
+}
+
+.summaryTable th {
+	text-align: left;
+	padding: var(--space-xs) var(--space-sm);
+	font-family: var(--font-family-mono);
+	font-size: var(--font-size-caption);
+	letter-spacing: var(--tracking-wide);
+	color: var(--color-text-muted);
+	border-bottom: 1px solid var(--color-border);
+}
+
+.summaryTable td {
+	padding: var(--space-xs) var(--space-sm);
+	border-bottom: 1px solid var(--color-border-subtle);
+}
+
+.summaryName {
+	color: var(--color-text-primary);
+	font-weight: var(--font-weight-medium);
+}
+
+.summaryCost {
+	font-family: var(--font-family-mono);
+	color: var(--topic-accent);
+}
+
+.summaryNeeds {
+	color: var(--color-text-secondary);
+}
+
+.summaryBaseline {
+	background: var(--surface-2);
+}
+
+.summaryBaseline .summaryCost {
+	color: var(--color-text-secondary);
+}
+
+/* ---------- Reduced motion ---------- */
+
+@media (prefers-reduced-motion: reduce) {
+	.sceneSlot,
+	.treeRow {
+		animation-duration: 1ms;
+		animation-delay: 0ms;
+	}
+	.histBar,
+	.boundCard {
+		transition-duration: 1ms;
+	}
+}
+
+/* ---------- Responsive ---------- */
+
+@media (max-width: 720px) {
+	.wrap {
+		justify-content: flex-start;
+		gap: var(--space-md);
+		padding: var(--space-lg) var(--space-md);
+	}
+	.notation {
+		position: static;
+		text-align: right;
+	}
+	.stabCompare,
+	.bucketRow {
+		grid-template-columns: 1fr;
+	}
+}

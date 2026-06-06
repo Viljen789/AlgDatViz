@@ -15,6 +15,10 @@ const TreePage = lazy(() => import('./pages/TreePage.jsx'));
 const MasterTheoremPage = lazy(() => import('./pages/MasterTheoremPage.jsx'));
 const StacksQueuesPage = lazy(() => import('./pages/StacksQueuesPage.jsx'));
 const StrategiesPage = lazy(() => import('./pages/StrategiesPage.jsx'));
+const LinearTimeSortingPage = lazy(() =>
+	import('./pages/LinearTimeSortingPage.jsx')
+);
+const HeapsPage = lazy(() => import('./pages/HeapsPage.jsx'));
 const MergeSortLessonPage = lazy(() => import('./pages/MergeSortLessonPage.jsx'));
 const StyleGuide = lazy(() => import('./styles/styleguide/StyleGuide.jsx'));
 
@@ -128,6 +132,11 @@ const AppLayout = () => {
 									<Route path="/stacks-queues" element={<StacksQueuesPage />} />
 									<Route path="/tree" element={<TreePage />} />
 									<Route path="/strategies" element={<StrategiesPage />} />
+									<Route
+										path="/linear-time-sorting"
+										element={<LinearTimeSortingPage />}
+									/>
+									<Route path="/heaps" element={<HeapsPage />} />
 									<Route path="/master-theorem" element={<MasterTheoremPage />} />
 									<Route
 										path="/lessons/merge-sort"
