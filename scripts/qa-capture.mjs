@@ -9,6 +9,7 @@ import { fileURLToPath } from 'node:url';
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const OUT = resolve(__dirname, '..', 'test-results', 'qa');
 const BASE = process.env.BASE_URL || 'http://localhost:5173';
+const THEME = process.env.PW_THEME || 'dark';
 
 const PAGES = [
 	{ path: '/', name: '00-home' },
@@ -31,17 +32,20 @@ try {
 	const context = await browser.newContext({
 		viewport: { width: 1440, height: 900 },
 		deviceScaleFactor: 1,
-		colorScheme: 'dark',
+		colorScheme: THEME,
 	});
 	const page = await context.newPage();
-	// fresh progress state so the home map shows the default
+	// fresh progress state; pin the theme under test
 	await page.goto(BASE + '/');
-	await page.evaluate(() => window.localStorage.clear());
+	await page.evaluate(t => {
+		window.localStorage.clear();
+		window.localStorage.setItem('algdatviz:theme', t);
+	}, THEME);
 
 	for (const cfg of PAGES) {
 		await page.goto(BASE + cfg.path, { waitUntil: 'networkidle' });
 		await page.waitForTimeout(700);
-		await page.screenshot({ path: resolve(OUT, `${cfg.name}-top.png`), fullPage: false });
+		await page.screenshot({ path: resolve(OUT, `${cfg.name}-${THEME}-top.png`), fullPage: false });
 
 		// scroll the largest scroll container to reveal the concept/stage
 		const scroller = await page.evaluateHandle(() => {
@@ -59,7 +63,7 @@ try {
 		});
 		await scroller.evaluate(el => el.scrollTo({ top: 1100, behavior: 'auto' }));
 		await page.waitForTimeout(700);
-		await page.screenshot({ path: resolve(OUT, `${cfg.name}-scroll.png`), fullPage: false });
+		await page.screenshot({ path: resolve(OUT, `${cfg.name}-${THEME}-scroll.png`), fullPage: false });
 		console.log(`captured ${cfg.name}`);
 	}
 	await context.close();

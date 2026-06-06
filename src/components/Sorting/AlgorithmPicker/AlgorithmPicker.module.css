@@ -72,9 +72,9 @@
 	align-items: center;
 	min-height: 20px;
 	padding: 0 8px;
-	border: 1px solid rgba(255, 255, 255, 0.075);
+	border: 1px solid color-mix(in srgb, var(--glass-tint) 7.5%, transparent);
 	border-radius: 999px;
-	background: rgba(255, 255, 255, 0.035);
+	background: color-mix(in srgb, var(--glass-tint) 3.5%, transparent);
 	color: var(--color-text-muted);
 	font-size: 10px;
 	font-weight: 700;
@@ -112,9 +112,9 @@
 	align-items: center;
 	min-height: 19px;
 	padding: 0 7px;
-	border: 1px solid rgba(255, 255, 255, 0.075);
+	border: 1px solid color-mix(in srgb, var(--glass-tint) 7.5%, transparent);
 	border-radius: 999px;
-	background: rgba(255, 255, 255, 0.03);
+	background: color-mix(in srgb, var(--glass-tint) 3%, transparent);
 	color: var(--color-text-muted);
 	font-size: 9.5px;
 	font-weight: 750;

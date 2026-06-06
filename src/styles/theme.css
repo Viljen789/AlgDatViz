@@ -271,6 +271,20 @@
 	--shadow-4: 0 8px 16px hsl(232 50% 2% / 0.4),
 		0 24px 56px hsl(232 50% 2% / 0.5);
 
+	/* ---------------------------------------------------------------------------
+	   10b. THEME-AWARE LITERALS (glass + scrim) — replace the residual raw
+	   white/black rgba() literals scattered across module CSS. In DARK mode the
+	   "glass" inset highlights/hairlines are white; in LIGHT they invert to a
+	   dark ink so the same `color-mix(... var(--glass-tint) X%, transparent)`
+	   reads as a subtle shade instead of a wash-out. The scrim/overlay token is
+	   the modal/dropdown drop-shadow + dim-backdrop ink (always a deep ink, just
+	   lighter-weight in light mode). `--mask-ink` is used by mask-image gradients
+	   (alpha is what matters there; it stays a near-opaque ink in both themes).
+	   --------------------------------------------------------------------------- */
+	--glass-tint: hsl(0 0% 100%); /* dark: white highlights/hairlines */
+	--scrim-ink: hsl(232 60% 1%); /* deep ink for shadows + modal backdrops */
+	--mask-ink: hsl(0 0% 0%); /* opaque base for mask-image gradients */
+
 	/* Topic-tinted accent glow — applied via --topic-accent where a page sets it */
 	--shadow-glow-accent: 0 0 0 1px hsl(var(--topic-foundations-h) var(--topic-s) var(--topic-l) / 0.25),
 		0 12px 40px hsl(var(--topic-foundations-h) var(--topic-s) var(--topic-l) / 0.18);
@@ -313,6 +327,109 @@
 	--color-lighter-blue: hsl(var(--topic-foundations-h) var(--topic-s) var(--topic-l) / 0.08);
 	--color-dark-blue: var(--surface-2);
 	--color-swapping-bar: var(--state-flight);
+}
+
+/* =============================================================================
+   LIGHT THEME — semantic-token override only.
+   -----------------------------------------------------------------------------
+   `:root` above is the DARK default (also reachable explicitly via
+   [data-theme='dark'] for clarity). This block re-points only the SEMANTIC
+   tokens — surfaces, borders, text, shadows, the two topic-family legibility
+   knobs, and the glass/scrim literals — so EVERY component flips theme without
+   touching a single module file. Per-topic hues, washes, accent slots, states,
+   glows and the focus ring all derive from --topic-h/-s/-l + the surface ramp,
+   so lowering --topic-l here re-tones the whole family for white automatically.
+
+   Palette: a calm warm-cool neutral built on the same 232° blue-violet base at
+   very low saturation, so the light greys feel intentional (not clinical pure
+   white). Topic hues drop to l38 / s62 so the family reads as legible accents on
+   white instead of washing out (large-text + most small-text AA; see note in §3).
+   ============================================================================ */
+[data-theme='dark'] {
+	color-scheme: dark;
+}
+
+[data-theme='light'] {
+	color-scheme: light;
+
+	/* 1. SURFACES & ELEVATION — light canvas; raised surfaces brighten toward
+	   white and lean on shadow (not lightness steps) for elevation. */
+	--color-bg-app: hsl(232 28% 96%); /* warm-cool off-white canvas */
+	--color-bg-sunken: hsl(232 26% 92%); /* recessed wells, tracks */
+	--color-bg-sidebar: hsl(232 30% 98%); /* chrome / sidebar */
+
+	--surface-0: hsl(232 28% 96%); /* flush with canvas */
+	--surface-1: hsl(0 0% 100%); /* default panel / card — clean white */
+	--surface-2: hsl(232 30% 99%); /* raised panel, popover */
+	--surface-3: hsl(0 0% 100%); /* topmost: menus, tooltips, modals */
+	--surface-input: hsl(232 24% 98%); /* form field wells */
+	--surface-hover: hsl(232 30% 94%); /* generic interactive hover */
+
+	/* Borders / hairlines — darker than the surface, increasing presence */
+	--color-border: hsl(231 20% 84%);
+	--color-border-strong: hsl(230 18% 70%);
+	--color-border-subtle: hsl(232 22% 89%);
+
+	/* 2. TEXT — dark ink ramp, all AA+ on the light surfaces above */
+	--color-text-primary: hsl(231 38% 14%); /* ~13.8:1 on canvas */
+	--color-text-secondary: hsl(230 20% 34%); /* ~7.0:1 */
+	--color-text-muted: hsl(230 16% 42%); /* ~5.2:1 — AA body */
+	--color-text-dim: hsl(231 14% 52%); /* ~3.6:1 — large/decorative only */
+	--color-text-on-accent: hsl(0 0% 100%); /* white text atop dark accents */
+	--color-text-on-node: hsl(0 0% 100%);
+
+	/* 3. TOPIC FAMILY legibility knobs — the 8 hues + washes + accent slots +
+	   states + glows all derive from these. Darker + slightly desaturated so the
+	   family reads as accents/icons/fills on white. At l38 every hue clears the
+	   3:1 large-text bar on white, and 6/8 clear small-text AA (4.5:1); gold
+	   (master) and teal-green (graphs) cannot reach 4.5:1 as small text at any
+	   recognizable lightness — those few small-text spots use a neutral/ tinted
+	   treatment instead (see --nav-active-text and per-spot fixes). */
+	--topic-s: 62%;
+	--topic-l: 38%;
+
+	/* Brand red sits in the family lightness so it matches on white. */
+	--color-accent-red: hsl(2 72% 48%);
+
+	/* 5. SEMANTIC status hues — re-toned for AA on light surfaces. */
+	--color-success: hsl(145 60% 33%); /* emerald, AA on white */
+	--color-warning: hsl(33 90% 38%); /* amber, AA as text on white */
+	--color-error: var(--color-accent-red);
+	--color-info: hsl(200 80% 38%); /* cyan-blue, AA on white */
+
+	--color-success-wash: hsl(145 60% 33% / 0.12);
+	--color-warning-wash: hsl(33 90% 38% / 0.12);
+	--color-error-wash: hsl(2 72% 48% / 0.12);
+	--color-info-wash: hsl(200 80% 38% / 0.12);
+
+	/* 6. ROLE ALIAS that hard-codes a lightness (others derive automatically) */
+	--color-secondary: hsl(var(--topic-foundations-h) var(--topic-s) 32%);
+
+	/* 10. ELEVATION / SHADOWS — much lighter; a soft neutral ink, low alpha. */
+	--shadow-color: hsl(232 30% 24% / 0.16);
+
+	--shadow-1: 0 1px 2px hsl(232 30% 24% / 0.08);
+	--shadow-2: 0 2px 4px hsl(232 30% 24% / 0.08),
+		0 4px 12px hsl(232 30% 24% / 0.07);
+	--shadow-3: 0 4px 8px hsl(232 30% 24% / 0.09),
+		0 12px 28px hsl(232 30% 24% / 0.1);
+	--shadow-4: 0 8px 16px hsl(232 30% 24% / 0.1),
+		0 24px 56px hsl(232 30% 24% / 0.14);
+
+	/* 10b. THEME-AWARE LITERALS — invert the glass tint to a dark ink so the
+	   same color-mix(... var(--glass-tint) X%) hairlines/insets read on white;
+	   keep the scrim deep but lighten the backdrop dim for light context. */
+	--glass-tint: hsl(231 38% 14%); /* dark ink for highlights/hairlines */
+	--scrim-ink: hsl(232 35% 18%); /* slate ink — modal dim + soft shadows */
+
+	/* Sidebar active nav label: neutral text in light (topic hues like gold/
+	   amber/teal/azure can't reach AA as small text on white). Identity still
+	   reads via the accent icon, left bar and tinted background. */
+	--nav-active-text: var(--color-text-primary);
+
+	/* Legacy greys re-pointed so old aliases stay sensible on light. */
+	--color-medium-grey: var(--color-border-strong);
+	--color-dark-grey: var(--color-text-secondary);
 }
 
 @media (prefers-reduced-motion: reduce) {

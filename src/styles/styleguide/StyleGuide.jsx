@@ -1,11 +1,12 @@
 import { useState } from 'react';
-import { Search, Trash2, Check } from 'lucide-react';
+import { Search, Trash2, Check, Moon, Sun } from 'lucide-react';
 import Button from '../../common/Button/Button.jsx';
 import Input from '../../common/Input/Input.jsx';
 import Card, { CardEmpty } from '../../common/Card/Card.jsx';
 import Surface from '../../common/Surface/Surface.jsx';
 import Tabs from '../../common/Tabs/Tabs.jsx';
 import ToggleSwitch from '../../common/ToggleSwitch/ToggleSwitch.jsx';
+import useTheme from '../../hooks/useTheme.js';
 import styles from './StyleGuide.module.css';
 
 const TOPICS = [
@@ -81,6 +82,7 @@ const StyleGuide = () => {
 	const [toggleOn, setToggleOn] = useState(true);
 	const [animKey, setAnimKey] = useState(0);
 	const [loading, setLoading] = useState(false);
+	const { theme, setTheme } = useTheme();
 
 	return (
 		<div className={styles.page}>
@@ -92,6 +94,31 @@ const StyleGuide = () => {
 					token-wired primitives. Everything here reads from{' '}
 					<code>src/styles/theme.css</code>.
 				</p>
+				<div className={styles.themeBar} role="group" aria-label="Preview theme">
+					<span className={styles.themeBarLabel}>Theme</span>
+					<div className={styles.themeSeg}>
+						<button
+							type="button"
+							className={styles.themeSegBtn}
+							aria-pressed={theme === 'light'}
+							onClick={() => setTheme('light')}
+						>
+							<Sun size={14} strokeWidth={2.2} aria-hidden="true" /> Light
+						</button>
+						<button
+							type="button"
+							className={styles.themeSegBtn}
+							aria-pressed={theme === 'dark'}
+							onClick={() => setTheme('dark')}
+						>
+							<Moon size={14} strokeWidth={2.2} aria-hidden="true" /> Dark
+						</button>
+					</div>
+					<span className={styles.themeBarHint}>
+						Every token below re-points live — the page is the proof both themes
+						ship intentionally.
+					</span>
+				</div>
 			</header>
 
 			<Section

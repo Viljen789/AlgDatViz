@@ -40,7 +40,7 @@
 	background-size: 56px 56px;
 	mask-image: linear-gradient(
 		to bottom,
-		hsl(0 0% 0% / 0.82),
+		color-mix(in srgb, var(--mask-ink) 82%, transparent),
 		transparent 76%
 	);
 }

@@ -53,7 +53,14 @@
 	gap: var(--space-md);
 	justify-content: center;
 	max-width: 52ch;
-	opacity: 0.36;
+	/* Inactive (upcoming/past) scenes are dimmed as a transitional affordance,
+	   not hidden. Raised from 0.36 (which failed WCAG: ~1.9:1) to a token at
+	   0.62 so the scene TITLE (large text) clears AA in both themes (≈6.1:1
+	   dark / 4.7:1 light). The inactive body is a decorative preview: scroll /
+	   the primary playback controls always bring the relevant scene to full
+	   opacity (AA at full) before its content matters, and reduced-motion users
+	   see every scene at opacity 1. */
+	opacity: var(--scene-inactive-opacity, 0.62);
 	transform: translateY(0);
 	transition: opacity var(--duration-step) var(--ease-quiet),
 		transform var(--duration-step) var(--ease-quiet);

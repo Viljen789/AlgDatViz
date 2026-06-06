@@ -1,7 +1,7 @@
 .backdrop {
 	position: fixed;
 	inset: 0;
-	background: rgba(7, 8, 17, 0.72);
+	background: color-mix(in srgb, var(--scrim-ink) 72%, transparent);
 	backdrop-filter: blur(4px);
 	-webkit-backdrop-filter: blur(4px);
 	z-index: 100;
@@ -13,7 +13,7 @@
 	position: relative;
 	background: var(--color-bg-panel);
 	border: 1px solid var(--color-border);
-	box-shadow: 0 32px 96px -24px rgba(0, 0, 0, 0.6);
+	box-shadow: 0 32px 96px -24px color-mix(in srgb, var(--scrim-ink) 60%, transparent);
 	display: flex;
 	flex-direction: column;
 	overflow: hidden;

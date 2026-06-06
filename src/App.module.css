@@ -35,7 +35,7 @@
 }
 
 .helpButton {
-	background: rgba(255, 255, 255, 0.03);
+	background: color-mix(in srgb, var(--glass-tint) 3%, transparent);
 	border: 1px solid var(--color-border);
 	border-radius: var(--border-radius-md);
 	padding: 6px 12px;
@@ -51,7 +51,7 @@
 }
 
 .helpButton:hover {
-	background: rgba(255, 255, 255, 0.08);
+	background: color-mix(in srgb, var(--glass-tint) 8%, transparent);
 	color: var(--color-text-primary);
 	border-color: var(--color-accent-blue);
 }
@@ -116,7 +116,7 @@
 	padding: 28px;
 	border-radius: 14px;
 	background:
-		linear-gradient(180deg, rgba(20, 24, 40, 0.86), rgba(9, 11, 22, 0.96)),
+		linear-gradient(180deg, color-mix(in srgb, var(--surface-2) 86%, transparent), color-mix(in srgb, var(--color-bg-app) 96%, transparent)),
 		var(--color-bg-panel);
 	box-shadow: var(--shadow-canvas-lamp);
 	box-sizing: border-box;

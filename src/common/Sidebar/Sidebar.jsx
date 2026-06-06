@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 import { CURRICULUM, TOPIC_BY_ROUTE } from '../../data/curriculum.js';
 import useProgress from '../../hooks/useProgress.js';
+import ThemeToggle from '../ThemeToggle/ThemeToggle.jsx';
 import styles from './Sidebar.module.css';
 
 // Maps the `icon` name stored on each curriculum topic to a lucide component.
@@ -144,6 +145,7 @@ const Sidebar = () => {
 			</ul>
 
 			<div className={styles.footer}>
+				<ThemeToggle />
 				<div
 					className={styles.progress}
 					role="group"

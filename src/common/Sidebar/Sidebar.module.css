@@ -84,8 +84,12 @@
 
 .activeLink {
 	font-weight: var(--font-weight-semibold);
-	color: var(--accent);
-	background: color-mix(in srgb, var(--accent) 12%, transparent);
+	/* Label text uses an accent-or-neutral token: the topic hue in dark (legible
+	   on the dark tint), but neutral high-contrast text in light — gold/amber/
+	   teal/azure topic hues can't reach WCAG AA (4.5:1) as small text on white.
+	   Topic identity still reads via the icon, left bar and tinted background. */
+	color: var(--nav-active-text, var(--accent));
+	background: color-mix(in srgb, var(--accent) 14%, transparent);
 }
 
 .activeLink .icon {
@@ -184,6 +188,9 @@
 .footer {
 	padding: var(--space-md) var(--space-lg);
 	border-top: 1px solid var(--color-border);
+	display: flex;
+	flex-direction: column;
+	gap: var(--space-md);
 }
 
 .progress {
