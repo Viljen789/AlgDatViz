@@ -152,6 +152,216 @@
 	color: var(--color-text-muted);
 }
 
+/* ---------- Hero aside: cheat-sheet + scene navigator ---------- */
+
+.heroAside {
+	display: flex;
+	flex-wrap: wrap;
+	gap: var(--space-md);
+	margin-top: var(--space-sm);
+	align-items: flex-start;
+}
+
+/* ---- Cheat sheet (collapsible disclosure) ---- */
+.cheatSheet {
+	flex: 1 1 320px;
+	min-width: 0;
+	background: var(--surface-1);
+	border: 1px solid var(--color-border);
+	border-radius: var(--radius-lg);
+	overflow: hidden;
+}
+
+.cheatToggle {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: var(--space-md);
+	width: 100%;
+	padding: var(--space-md) var(--space-lg);
+	background: transparent;
+	border: none;
+	cursor: pointer;
+	text-align: left;
+	transition: background-color var(--transition);
+}
+
+.cheatToggle:hover {
+	background: var(--surface-hover);
+}
+
+.cheatToggle:focus-visible {
+	outline: none;
+	box-shadow: var(--shadow-focus);
+}
+
+.cheatToggleLabel {
+	display: flex;
+	flex-direction: column;
+	gap: var(--space-2xs);
+}
+
+.cheatHint {
+	font-size: var(--font-size-label);
+	color: var(--color-text-secondary);
+}
+
+.cheatChevron {
+	color: var(--color-text-muted);
+	flex-shrink: 0;
+	transition: transform var(--duration-step) var(--ease-quiet);
+}
+
+.cheatChevronOpen {
+	transform: rotate(180deg);
+}
+
+.cheatBody {
+	padding: 0 var(--space-lg) var(--space-lg);
+	display: flex;
+	flex-direction: column;
+	gap: var(--space-lg);
+	border-top: 1px solid var(--color-border);
+}
+
+.cheatKeyIdea {
+	margin-top: var(--space-lg);
+	padding: var(--space-md) var(--space-lg);
+	border-left: 2px solid var(--topic-accent);
+	background: color-mix(in srgb, var(--topic-accent) 6%, transparent);
+	border-radius: var(--radius-sm);
+}
+
+.cheatKeyLabel {
+	display: block;
+	font-family: var(--font-family-mono);
+	font-size: var(--font-size-caption);
+	font-weight: var(--font-weight-bold);
+	letter-spacing: var(--tracking-caps);
+	text-transform: uppercase;
+	color: var(--color-text-muted);
+	margin-bottom: var(--space-xs);
+}
+
+.cheatKeyText {
+	margin: 0;
+	font-size: var(--font-size-body);
+	line-height: var(--line-height-snug);
+	color: var(--color-text-primary);
+}
+
+.cheatSection {
+	display: flex;
+	flex-direction: column;
+	gap: var(--space-sm);
+}
+
+.cheatSectionTitle {
+	margin: 0;
+	font-size: var(--font-size-label);
+	font-weight: var(--font-weight-semibold);
+	color: var(--color-text-secondary);
+}
+
+.cheatList {
+	margin: 0;
+	display: flex;
+	flex-direction: column;
+	gap: var(--space-xs);
+}
+
+.cheatRow {
+	display: flex;
+	gap: var(--space-md);
+	align-items: baseline;
+	justify-content: space-between;
+}
+
+.cheatTerm {
+	margin: 0;
+	font-family: var(--font-family-mono);
+	font-size: var(--font-size-label);
+	color: var(--color-text-secondary);
+	flex-shrink: 0;
+}
+
+.cheatDef {
+	margin: 0;
+	font-size: var(--font-size-label);
+	color: var(--color-text-primary);
+	text-align: right;
+}
+
+.cheatDefFull {
+	margin: 0;
+	font-size: var(--font-size-label);
+	line-height: var(--line-height-body);
+	color: var(--color-text-primary);
+}
+
+/* ---- Scene navigator / minimap ---- */
+.sceneNav {
+	flex: 0 1 280px;
+	min-width: 0;
+	padding: var(--space-md);
+	background: var(--surface-1);
+	border: 1px solid var(--color-border);
+	border-radius: var(--radius-lg);
+}
+
+.sceneNavList {
+	list-style: none;
+	margin: 0;
+	padding: 0;
+	display: flex;
+	flex-direction: column;
+	gap: var(--space-2xs);
+}
+
+.sceneNavLink {
+	display: flex;
+	align-items: baseline;
+	gap: var(--space-sm);
+	padding: var(--space-xs) var(--space-sm);
+	border-radius: var(--radius-sm);
+	border-left: 2px solid transparent;
+	text-decoration: none;
+	color: var(--color-text-secondary);
+	transition: color var(--transition), background-color var(--transition),
+		border-color var(--transition);
+}
+
+.sceneNavLink:hover {
+	color: var(--color-text-primary);
+	background: var(--surface-hover);
+}
+
+.sceneNavLink:focus-visible {
+	outline: none;
+	box-shadow: var(--shadow-focus);
+}
+
+.sceneNavLinkActive {
+	color: var(--color-text-primary);
+	border-left-color: var(--topic-accent);
+	background: color-mix(in srgb, var(--topic-accent) 6%, transparent);
+}
+
+.sceneNavNum {
+	font-family: var(--font-family-mono);
+	font-size: var(--font-size-caption);
+	color: var(--color-text-muted);
+	flex-shrink: 0;
+	width: 1.6em;
+}
+
+.sceneNavTitle {
+	font-size: var(--font-size-label);
+	line-height: var(--line-height-snug);
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
 /* ---------- Playground ---------- */
 
 .playgroundSection {

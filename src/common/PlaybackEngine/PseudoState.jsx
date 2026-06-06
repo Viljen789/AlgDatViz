@@ -1,0 +1,154 @@
+// PseudoState — synced pseudocode + live variable-state panel.
+//
+// Pairs an algorithm's pseudocode with a single playback frame: the executing
+// line is highlighted in lockstep and a live variable-state readout shows the
+// machine's current values. It is reusable by both the playground stage and
+// (Phase 2) the teaching stage, so every topic narrates the same way.
+//
+// ──────────────────────────────────────────────────────────────────────────
+// THE FRAME CONTRACT (Phase 1b topics emit frames in this shape)
+//
+//   frame = {
+//     line:      number,            // 0-based index into `lines`; the currently
+//                                   //   executing pseudocode line. null/undefined
+//                                   //   = no line highlighted.
+//     state:     Array<{            // ordered variable-state rows (render order
+//       label:   string,           //   is the array order). Each row:
+//       value:   string|number,    //   the variable's current value.
+//       active?: boolean,          //   emphasize this row (it just changed).
+//     }>,
+//     highlight: Array<string|number> | undefined,
+//                                   // optional emphasis ids the host stage can
+//                                   //   read (e.g. node/cell ids to glow). The
+//                                   //   panel does not render these itself; it
+//                                   //   exposes them so the stage stays in sync.
+//   }
+//
+// A frame generator is any pure `(input) => frame[]`. Generators belong in the
+// topic's utils so they can be unit-tested without React. See
+// PseudoState.example.js for a minimal conformant generator + its test.
+// ──────────────────────────────────────────────────────────────────────────
+//
+// PROPS
+//   lines        string[]          — the pseudocode, one entry per line.
+//   frame        Frame             — the active frame (see contract above). If a
+//                                    bare `line`/`state` is easier, pass them as
+//                                    top-level props instead (below).
+//   line         number            — override: active line index (used when no
+//                                    `frame` is given).
+//   state        StateRow[]        — override: state rows (used when no `frame`).
+//   label        string            — pseudocode rail heading (default 'PSEUDOCODE').
+//   stateLabel   string            — state readout heading (default 'STATE').
+//   step         number            — optional step index for the counter.
+//   totalSteps   number            — optional total for the counter.
+//   isRunning    boolean           — when false, no line is highlighted even if
+//                                    `line` is set (default true).
+//   className    string            — extra class on the root.
+
+import { useEffect, useRef } from 'react';
+import styles from './PseudoState.module.css';
+
+const PseudoState = ({
+	lines = [],
+	frame,
+	line,
+	state,
+	label = 'PSEUDOCODE',
+	stateLabel = 'STATE',
+	step,
+	totalSteps,
+	isRunning = true,
+	className = '',
+}) => {
+	const activeLine = frame ? frame.line : line;
+	const rows = frame ? frame.state : state;
+	const showCounter =
+		typeof step === 'number' && typeof totalSteps === 'number';
+
+	const railRef = useRef(null);
+	const activeRef = useRef(null);
+
+	// Keep the executing line centered in the rail as it advances.
+	useEffect(() => {
+		if (!railRef.current || !activeRef.current) return;
+		if (typeof activeLine !== 'number') return;
+		const rail = railRef.current;
+		const active = activeRef.current;
+		const offset =
+			active.offsetTop - rail.clientHeight / 2 + active.clientHeight / 2;
+		rail.scrollTo({ top: offset, behavior: 'smooth' });
+	}, [activeLine]);
+
+	const hasState = Array.isArray(rows) && rows.length > 0;
+
+	return (
+		<div className={`${styles.panel} ${className}`}>
+			<section className={styles.rail} aria-label="Pseudocode">
+				<header className={styles.head}>
+					<span className={styles.label}>{label}</span>
+					{showCounter ? (
+						<span className={styles.counter}>
+							step {step} / {Math.max(totalSteps - 1, 0)}
+						</span>
+					) : (
+						<span className={styles.counter}>{lines.length} lines</span>
+					)}
+				</header>
+				<div className={styles.railScroll} ref={railRef}>
+					<ol className={styles.lineList}>
+						{lines.map((text, idx) => {
+							const isActive = isRunning && idx === activeLine;
+							const trimmed = String(text ?? '').trim();
+							const isComment = trimmed.startsWith('//');
+							const isEmpty = trimmed === '';
+							return (
+								<li
+									key={idx}
+									ref={isActive ? activeRef : null}
+									className={[
+										styles.line,
+										isActive ? styles.lineActive : '',
+										isComment ? styles.lineComment : '',
+										isEmpty ? styles.lineEmpty : '',
+									]
+										.filter(Boolean)
+										.join(' ')}
+									aria-current={isActive ? 'step' : undefined}
+									data-line={idx + 1}
+								>
+									<span className={styles.gutter} aria-hidden="true">
+										{isEmpty ? '' : idx + 1}
+									</span>
+									<code className={styles.code}>{text || ' '}</code>
+								</li>
+							);
+						})}
+					</ol>
+				</div>
+			</section>
+
+			{hasState && (
+				<section className={styles.stateBox} aria-label="Live state">
+					<header className={styles.head}>
+						<span className={styles.label}>{stateLabel}</span>
+					</header>
+					<dl className={styles.stateList} aria-live="polite">
+						{rows.map((row, idx) => (
+							<div
+								key={row.id ?? row.label ?? idx}
+								className={`${styles.stateRow} ${
+									row.active ? styles.stateRowActive : ''
+								}`}
+							>
+								<dt className={styles.stateKey}>{row.label}</dt>
+								<dd className={styles.stateVal}>{row.value}</dd>
+							</div>
+						))}
+					</dl>
+				</section>
+			)}
+		</div>
+	);
+};
+
+export default PseudoState;

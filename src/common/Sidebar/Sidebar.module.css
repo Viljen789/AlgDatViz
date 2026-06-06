@@ -108,6 +108,28 @@
 	background: var(--accent);
 }
 
+/* Coming-soon: muted, inert, not interactive. Neutral locked treatment. */
+.locked {
+	cursor: default;
+	color: var(--color-text-dim);
+}
+
+.locked .icon {
+	color: var(--color-text-dim);
+}
+
+.soonBadge {
+	flex-shrink: 0;
+	font-family: var(--font-family-mono);
+	font-size: var(--font-size-caption);
+	letter-spacing: var(--tracking-wide);
+	text-transform: uppercase;
+	color: var(--color-text-muted);
+	padding: 2px 6px;
+	border: 1px solid var(--color-border);
+	border-radius: var(--radius-pill);
+}
+
 .icon {
 	display: flex;
 	align-items: center;

@@ -16,16 +16,22 @@ import styles from './TopicScrolly.module.css';
  *   scenes         Array<{ id, eyebrow, title, body, check? }>
  *   renderStage    (activeScene:number) => node — the sticky stage.
  *   checkStates    optional map { [sceneId]: state } for the inline checks.
- *   onChoiceAnswer optional (sceneId, value) => void for choice checks.
+ *   onAnswer       optional (sceneId, payload) => void — generic check submit
+ *                  for every check kind (choice/numeric/text/order/classify/…).
+ *   onChoiceAnswer optional (sceneId, value) => void — backward-compatible alias
+ *                  of onAnswer (kept so existing topics keep working).
  *   onActiveScene  optional (index:number) => void notifier.
  */
 const TopicScrolly = ({
 	scenes,
 	renderStage,
 	checkStates,
+	onAnswer,
 	onChoiceAnswer,
 	onActiveScene,
 }) => {
+	// Generic submit handler; onChoiceAnswer remains supported as an alias.
+	const handleAnswer = onAnswer || onChoiceAnswer;
 	const [activeScene, setActiveScene] = useState(0);
 	const sceneRefs = useRef([]);
 	const rootRef = useRef(null);
@@ -71,6 +77,7 @@ const TopicScrolly = ({
 				{scenes.map((scene, idx) => (
 					<article
 						key={scene.id}
+						id={`scene-${scene.id}`}
 						ref={node => {
 							sceneRefs.current[idx] = node;
 						}}
@@ -91,8 +98,8 @@ const TopicScrolly = ({
 							<LessonCheck
 								check={scene.check}
 								state={checkStates?.[scene.id]}
-								onChoiceAnswer={value =>
-									onChoiceAnswer?.(scene.id, value)
+								onAnswer={payload =>
+									handleAnswer?.(scene.id, payload)
 								}
 							/>
 						)}

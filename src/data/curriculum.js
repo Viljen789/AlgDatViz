@@ -24,12 +24,37 @@
 //   accent      `var(--topic-<tokenId>)` — the topic's signature hue
 //   icon        lucide icon name (mapped to a component in the Sidebar)
 //   to          route to the topic's front door
-//   status      'ready' | 'preview'
+//   status      'ready' | 'preview' | 'soon'
 //   featured    optional — highlighted on the curriculum map
 //   countsToProgress  whether the topic participates in overall progress
-//                     (preview entries that just alias another topic do not)
+//                     (preview aliases and 'soon' placeholders do not)
+//   locked      optional — true for 'soon' nodes: non-navigable, muted/locked
+//                     treatment. They have no `to` route and no per-topic hue
+//                     token yet (a real `--topic-*` hue is assigned when each is
+//                     actually built); they use a neutral locked treatment.
 
 const topicAccent = tokenId => `var(--topic-${tokenId})`;
+
+// The unbuilt back half of the TDT4120 curriculum, in course order. These are
+// honest "coming soon" placeholders: locked, non-navigable, excluded from
+// overall progress, and given a neutral/muted treatment (no per-topic hue is
+// minted until the topic is actually built in Phase 1b/5). They keep the home
+// curriculum map honest about full scope without claiming coverage we lack.
+const comingSoon = (number, name, pullQuote, complexity) => ({
+	id: `soon-${name.toLowerCase().replace(/[^a-z]+/g, '-').replace(/^-|-$/g, '')}`,
+	number,
+	name,
+	navLabel: name,
+	pullQuote,
+	complexity,
+	tokenId: null,
+	accent: 'var(--color-text-dim)',
+	icon: 'Lock',
+	to: null,
+	status: 'soon',
+	locked: true,
+	countsToProgress: false,
+});
 
 export const CURRICULUM = [
 	{
@@ -156,6 +181,50 @@ export const CURRICULUM = [
 		status: 'ready',
 		countsToProgress: true,
 	},
+	// ── Coming soon: the examinable back half, in course order. Locked, neutral
+	//    treatment, excluded from progress. Built out in Phase 1b / Phase 5.
+	comingSoon(
+		'09',
+		'Linear-time sorting',
+		'Beat n log n by not comparing at all — when the keys cooperate.',
+		'O(n + k)'
+	),
+	comingSoon(
+		'10',
+		'Heaps & priority queues',
+		'A tree flattened into an array. Always hand back the best element next.',
+		'O(log n)'
+	),
+	comingSoon(
+		'11',
+		'Minimum spanning trees',
+		'Connect everything for the least total weight. Greedy, and provably right.',
+		'O(E log V)'
+	),
+	comingSoon(
+		'12',
+		'Shortest paths (single-source)',
+		'One source, every destination — relax edges until nothing improves.',
+		'O((V + E) log V)'
+	),
+	comingSoon(
+		'13',
+		'All-pairs shortest paths',
+		'Every shortest route at once, through dynamic programming on intermediates.',
+		'O(V³)'
+	),
+	comingSoon(
+		'14',
+		'Maximum flow',
+		'How much can a network carry? Push, find residuals, and cut the bottleneck.',
+		'O(V·E²)'
+	),
+	comingSoon(
+		'15',
+		'NP-completeness',
+		'The line between "hard to solve" and "easy to check" — and reductions across it.',
+		'P vs NP'
+	),
 ];
 
 export const TOPIC_BY_ID = Object.fromEntries(
@@ -165,7 +234,8 @@ export const TOPIC_BY_ID = Object.fromEntries(
 export const TOPIC_BY_ROUTE = Object.fromEntries(
 	// A route may be shared (foundations aliases /stacks-queues); the first
 	// real ('ready') topic for a route wins so chrome shows the right title.
-	CURRICULUM.reduce((acc, topic) => {
+	// 'soon' placeholders have no route (to: null) and are skipped.
+	CURRICULUM.filter(topic => topic.to).reduce((acc, topic) => {
 		const existing = acc.find(([route]) => route === topic.to);
 		if (!existing) acc.push([topic.to, topic]);
 		else if (existing[1].status !== 'ready' && topic.status === 'ready')
@@ -176,7 +246,12 @@ export const TOPIC_BY_ROUTE = Object.fromEntries(
 
 export const FIRST_TOPIC = CURRICULUM[0];
 
-// Topics that count toward overall progress (excludes preview aliases).
+// Topics with a real lesson surface (ready/preview) — navigable. Excludes the
+// locked 'soon' placeholders.
+export const BUILT_TOPICS = CURRICULUM.filter(topic => topic.status !== 'soon');
+
+// Topics that count toward overall progress (excludes preview aliases and the
+// locked 'soon' placeholders — so the denominator is always only what's built).
 export const PROGRESS_TOPICS = CURRICULUM.filter(
 	topic => topic.countsToProgress
 );

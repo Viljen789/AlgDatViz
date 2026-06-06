@@ -1,7 +1,12 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { ArrowRight, Check, RotateCcw } from 'lucide-react';
-import { CURRICULUM, FIRST_TOPIC, TOPIC_BY_ID } from '../data/curriculum.js';
+import { ArrowRight, Check, Lock, RotateCcw } from 'lucide-react';
+import {
+	BUILT_TOPICS,
+	CURRICULUM,
+	FIRST_TOPIC,
+	TOPIC_BY_ID,
+} from '../data/curriculum.js';
 import useProgress from '../hooks/useProgress.js';
 import useReducedMotion from '../hooks/useReducedMotion.js';
 import styles from './HomePage.module.css';
@@ -136,8 +141,9 @@ const HomePage = () => {
 	const lastTopic = lastVisited ? TOPIC_BY_ID[lastVisited] : null;
 	const nextTopic = useMemo(() => {
 		if (allComplete) return null;
-		// First not-yet-completed topic in teaching order.
-		const firstOpen = CURRICULUM.find(topic => !isCompleted(topic.id));
+		// First not-yet-completed *built* topic in teaching order (skips locked
+		// coming-soon placeholders).
+		const firstOpen = BUILT_TOPICS.find(topic => !isCompleted(topic.id));
 		return firstOpen || FIRST_TOPIC;
 	}, [allComplete, isCompleted]);
 
@@ -161,7 +167,7 @@ const HomePage = () => {
 		return {
 			title: 'Algorithms, in motion.',
 			subtitle:
-				'A guided path through the TDT4120 curriculum. Built to make the why click — not just the what.',
+				'A guided path building toward the full TDT4120 curriculum. The first seven topics are live; the rest are on the way. Built to make the why click — not just the what.',
 			ctaLabel: `Begin with ${FIRST_TOPIC.name.toLowerCase()}`,
 			ctaTopic: FIRST_TOPIC,
 		};
@@ -264,17 +270,6 @@ const HomePage = () => {
 						</div>
 					)}
 				</div>
-				<div className={styles.heroDivider} aria-hidden="true">
-					<svg viewBox="0 0 24 32" preserveAspectRatio="none">
-						<path
-							d="M12 2 V30"
-							stroke="currentColor"
-							strokeWidth="1"
-							strokeLinecap="round"
-						/>
-						<circle cx="12" cy="30" r="2" fill="currentColor" />
-					</svg>
-				</div>
 			</section>
 
 			<section
@@ -284,17 +279,69 @@ const HomePage = () => {
 				<header className={styles.pathHeader}>
 					<p className={styles.label}>The path</p>
 					<h2 id="path-heading" className={styles.pathHeading}>
-						Eight topics, in the order they teach themselves.
+						The full curriculum, in the order it teaches itself.
 					</h2>
+					<p className={styles.pathSub}>
+						Seven topics are live and interactive. The rest of the TDT4120
+						syllabus is mapped here and on its way.
+					</p>
 				</header>
 
 				<ol className={styles.spine} aria-label="Learning path">
 					{CURRICULUM.map((topic, idx) => {
+						const reached = idx <= pathIndex || reducedMotion;
+
+						// Coming-soon: a clearly-labelled, non-navigable, muted node.
+						if (topic.status === 'soon') {
+							return (
+								<li
+									key={topic.id}
+									data-idx={idx}
+									ref={node => {
+										nodeRefs.current[idx] = node;
+									}}
+									tabIndex={-1}
+									className={`${styles.node} ${styles.nodeSoon} ${
+										reached ? styles.nodeReached : ''
+									}`}
+									style={{ '--accent': topic.accent }}
+								>
+									<div className={styles.nodeMarker} aria-hidden="true">
+										<span className={styles.nodeDot} />
+									</div>
+									<div
+										className={styles.nodeBody}
+										aria-label={`${topic.name} — coming soon`}
+									>
+										<div className={styles.nodeHead}>
+											<span className={styles.nodeNumber}>
+												{topic.number}
+											</span>
+											<span className={styles.nodeSoonBadge}>
+												<Lock
+													size={11}
+													strokeWidth={2.4}
+													aria-hidden="true"
+												/>
+												Coming soon
+											</span>
+										</div>
+										<h3 className={styles.nodeName}>{topic.name}</h3>
+										<p className={styles.nodeQuote}>{topic.pullQuote}</p>
+										<div className={styles.nodeFoot}>
+											<span className={styles.nodeComplexity}>
+												{topic.complexity}
+											</span>
+										</div>
+									</div>
+								</li>
+							);
+						}
+
 						const completed = isCompleted(topic.id);
 						const visited = !completed && isVisited(topic.id);
 						const isNext = !completed && topic.id === nextTopic?.id;
 						const Preview = PREVIEW_BY_ID[topic.id];
-						const reached = idx <= pathIndex || reducedMotion;
 						const statusText = completed
 							? 'Completed'
 							: isNext

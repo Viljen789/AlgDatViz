@@ -199,23 +199,6 @@
 	letter-spacing: var(--tracking-wide);
 }
 
-.heroDivider {
-	position: absolute;
-	bottom: 24px;
-	left: clamp(28px, 6vw, 96px);
-	width: 12px;
-	height: 32px;
-	color: var(--color-border-strong);
-	opacity: 0.7;
-	pointer-events: none;
-}
-
-.heroDivider svg {
-	width: 100%;
-	height: 100%;
-	display: block;
-}
-
 /* ---------- Path section ---------- */
 
 .pathSection {
@@ -251,6 +234,14 @@
 	letter-spacing: var(--tracking-display);
 	color: var(--color-text-primary);
 	text-wrap: balance;
+}
+
+.pathSub {
+	margin: 0;
+	font-size: var(--font-size-body);
+	line-height: var(--line-height-body);
+	color: var(--color-text-secondary);
+	max-width: 52ch;
 }
 
 /* ---------- Spine ---------- */
@@ -466,6 +457,46 @@
 	background: color-mix(in srgb, var(--accent) 14%, transparent);
 }
 
+/* Coming-soon node: muted, non-interactive, dashed-rail card, neutral. */
+.nodeSoon .nodeBody {
+	cursor: default;
+	padding: var(--space-md);
+	border: 1px dashed var(--color-border);
+	border-radius: var(--radius-lg);
+	background: var(--color-bg-sunken);
+}
+
+.nodeSoon .nodeBody:hover .nodeName {
+	color: var(--color-text-muted);
+}
+
+.nodeSoon .nodeName,
+.nodeSoon .nodeQuote,
+.nodeSoon .nodeComplexity {
+	color: var(--color-text-muted);
+}
+
+.nodeSoon .nodeDot {
+	background: var(--color-bg-sunken);
+	border-color: var(--color-border);
+}
+
+.nodeSoonBadge {
+	display: inline-flex;
+	align-items: center;
+	gap: 5px;
+	font-family: var(--font-family-mono);
+	font-size: var(--font-size-caption);
+	font-weight: var(--font-weight-bold);
+	letter-spacing: var(--tracking-caps);
+	text-transform: uppercase;
+	color: var(--color-text-muted);
+	padding: 2px 8px;
+	border-radius: var(--radius-pill);
+	border: 1px solid var(--color-border);
+	background: var(--surface-2);
+}
+
 .nodeName {
 	margin: 0;
 	font-family: var(--font-family-display);
@@ -601,8 +632,3 @@
 	}
 }
 
-@media (max-width: 480px) {
-	.heroDivider {
-		display: none;
-	}
-}

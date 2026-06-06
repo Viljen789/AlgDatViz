@@ -8,6 +8,7 @@ import {
 	House,
 	Layers,
 	List,
+	Lock,
 	Network,
 	Sigma,
 } from 'lucide-react';
@@ -24,6 +25,7 @@ const ICONS = {
 	Hash,
 	Layers,
 	List,
+	Lock,
 	Network,
 	Sigma,
 };
@@ -63,6 +65,34 @@ const Sidebar = () => {
 
 				{CURRICULUM.map(topic => {
 					const Icon = ICONS[topic.icon] ?? List;
+
+					// 'soon' placeholders are locked: rendered muted and inert (no
+					// route, not focusable as a link, clearly labelled "coming soon").
+					if (topic.status === 'soon') {
+						return (
+							<li key={topic.id}>
+								<span
+									className={`${styles.navLink} ${styles.locked}`}
+									aria-disabled="true"
+									aria-label={`${topic.name} — coming soon`}
+								>
+									<span className={styles.navBar} aria-hidden="true" />
+									<span className={styles.icon} aria-hidden="true">
+										<Lock size={14} strokeWidth={2.2} />
+									</span>
+									<span className={styles.label}>{topic.navLabel}</span>
+									<span
+										className={styles.soonBadge}
+										aria-hidden="true"
+										title="Coming soon"
+									>
+										Soon
+									</span>
+								</span>
+							</li>
+						);
+					}
+
 					const completed = isCompleted(topic.id);
 					const visited = !completed && isVisited(topic.id);
 					const statusLabel = completed

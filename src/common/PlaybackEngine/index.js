@@ -13,3 +13,4 @@
 export { default as usePlayback, usePlayback as usePlaybackHook } from './usePlayback.js';
 export { default as usePlaybackKeys } from './usePlaybackKeys.js';
 export { default as FrameTrace } from './FrameTrace.jsx';
+export { default as PseudoState } from './PseudoState.jsx';
