@@ -1,0 +1,150 @@
+/* =============================================================================
+   SceneControlBar — explicit playback for the teaching scenes (Phase 2a).
+   Canonical tokens only; tinted by --topic-accent inherited from TopicTemplate.
+   ============================================================================ */
+
+.bar {
+	display: flex;
+	flex-direction: column;
+	gap: var(--space-sm);
+	width: 100%;
+	max-width: 440px;
+	padding: var(--space-sm) var(--space-md);
+	background: var(--surface-2);
+	border: 1px solid var(--color-border);
+	border-radius: var(--radius-lg);
+	box-shadow: var(--shadow-1);
+}
+
+.controls {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	gap: var(--space-xs);
+}
+
+.btn {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 32px;
+	height: 32px;
+	padding: 0;
+	border: 1px solid transparent;
+	border-radius: var(--radius-md);
+	background: transparent;
+	color: var(--color-text-secondary);
+	cursor: pointer;
+	transition: color var(--transition), background-color var(--transition),
+		border-color var(--transition), transform var(--transition);
+}
+
+.btn:hover:not(:disabled) {
+	color: var(--color-text-primary);
+	background: var(--surface-hover);
+}
+
+.btn:active:not(:disabled) {
+	transform: translateY(1px);
+}
+
+.btn:disabled {
+	opacity: 0.35;
+	cursor: not-allowed;
+}
+
+.btn:focus-visible {
+	outline: none;
+	box-shadow: var(--shadow-focus);
+}
+
+.play {
+	color: var(--topic-accent);
+	background: color-mix(in srgb, var(--topic-accent) 12%, transparent);
+	border-color: color-mix(in srgb, var(--topic-accent) 34%, transparent);
+}
+
+.play:hover:not(:disabled) {
+	color: var(--topic-accent);
+	background: color-mix(in srgb, var(--topic-accent) 20%, transparent);
+}
+
+.scrubber {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	justify-content: center;
+	gap: var(--space-xs);
+}
+
+.dot {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 18px;
+	height: 18px;
+	padding: 0;
+	border: none;
+	background: transparent;
+	border-radius: var(--radius-pill);
+	cursor: pointer;
+}
+
+.dot:focus-visible {
+	outline: none;
+	box-shadow: var(--shadow-focus);
+}
+
+.dotMark {
+	width: 7px;
+	height: 7px;
+	border-radius: var(--radius-pill);
+	background: var(--color-text-dim);
+	transition: background-color var(--transition), transform var(--transition);
+}
+
+.dot:hover .dotMark {
+	background: var(--color-text-secondary);
+}
+
+.dotActive .dotMark {
+	background: var(--topic-accent);
+	transform: scale(1.4);
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.dotMark,
+	.btn {
+		transition: none;
+	}
+}
+
+.meta {
+	margin: 0;
+	text-align: center;
+	font-family: var(--font-family-mono);
+	font-size: var(--font-size-caption);
+	color: var(--color-text-muted);
+}
+
+.metaCount {
+	color: var(--color-text-secondary);
+}
+
+.metaSep {
+	color: var(--color-text-dim);
+}
+
+.metaPlaying {
+	color: var(--topic-accent);
+}
+
+.metaBlocked {
+	color: var(--color-text-muted);
+}
+
+@media (max-width: 960px) {
+	.bar {
+		max-width: none;
+	}
+}

@@ -1,5 +1,7 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import useReducedMotion from '../../hooks/useReducedMotion.js';
 import LessonCheck from './LessonCheck.jsx';
+import SceneControlBar from './SceneControlBar.jsx';
 import styles from './TopicScrolly.module.css';
 
 /**
@@ -32,9 +34,12 @@ const TopicScrolly = ({
 }) => {
 	// Generic submit handler; onChoiceAnswer remains supported as an alias.
 	const handleAnswer = onAnswer || onChoiceAnswer;
+	const reducedMotion = useReducedMotion();
 	const [activeScene, setActiveScene] = useState(0);
+	const [isPlaying, setIsPlaying] = useState(false);
 	const sceneRefs = useRef([]);
 	const rootRef = useRef(null);
+	const total = scenes.length;
 
 	useEffect(() => {
 		const root = rootRef.current;
@@ -63,6 +68,56 @@ const TopicScrolly = ({
 		return () => observer.disconnect();
 	}, [onActiveScene]);
 
+	// Explicit scene playback (Phase 2a): controls + keyboard are the primary way
+	// to move through scenes. They drive the active scene by bringing it into view
+	// (user-initiated scroll — never wheel/trackpad hijacking). Reduced motion
+	// snaps instantly. The IntersectionObserver above stays active so natural
+	// scrolling still works and keeps the controls in sync.
+	const goToScene = useCallback(
+		(idx, { fromAuto = false } = {}) => {
+			const clamped = Math.max(0, Math.min(idx, scenes.length - 1));
+			if (!fromAuto) setIsPlaying(false); // any manual interaction pauses
+			setActiveScene(clamped);
+			onActiveScene?.(clamped);
+			sceneRefs.current[clamped]?.scrollIntoView({
+				behavior: reducedMotion ? 'auto' : 'smooth',
+				block: 'center',
+			});
+		},
+		[scenes.length, onActiveScene, reducedMotion]
+	);
+
+	// Retrieval before progress: auto-advance won't pass a scene whose check is
+	// still unanswered.
+	const currentScene = scenes[activeScene];
+	const blockedReason =
+		currentScene?.check && !checkStates?.[currentScene.id]?.status
+			? 'answer the check to continue'
+			: null;
+
+	const handleTogglePlay = useCallback(() => {
+		if (isPlaying) {
+			setIsPlaying(false);
+			return;
+		}
+		if (activeScene >= scenes.length - 1) goToScene(0, { fromAuto: true });
+		setIsPlaying(true);
+	}, [isPlaying, activeScene, scenes.length, goToScene]);
+
+	// Calm auto-advance: dwell on each scene, then step. Stops at the end; never
+	// advances while a check is unanswered.
+	useEffect(() => {
+		if (!isPlaying || blockedReason) return undefined;
+		if (activeScene >= scenes.length - 1) {
+			setIsPlaying(false);
+			return undefined;
+		}
+		const id = window.setTimeout(() => {
+			goToScene(activeScene + 1, { fromAuto: true });
+		}, 7000);
+		return () => window.clearTimeout(id);
+	}, [isPlaying, blockedReason, activeScene, scenes.length, goToScene]);
+
 	return (
 		<section
 			ref={rootRef}
@@ -70,7 +125,28 @@ const TopicScrolly = ({
 			aria-label="Concept, scene by scene"
 		>
 			<div className={styles.stageColumn}>
-				<div className={styles.stageSticky}>{renderStage(activeScene)}</div>
+				<div className={styles.stageSticky}>
+					<div className={styles.stageFigure}>
+						{renderStage(activeScene)}
+					</div>
+					{total > 1 && (
+						<SceneControlBar
+							total={total}
+							active={activeScene}
+							isPlaying={isPlaying}
+							scenes={scenes}
+							blockedReason={blockedReason}
+							scopeRef={rootRef}
+							reducedMotion={reducedMotion}
+							onPrev={() => goToScene(activeScene - 1)}
+							onNext={() => goToScene(activeScene + 1)}
+							onFirst={() => goToScene(0)}
+							onLast={() => goToScene(total - 1)}
+							onJump={idx => goToScene(idx)}
+							onTogglePlay={handleTogglePlay}
+						/>
+					)}
+				</div>
 			</div>
 
 			<div className={styles.proseColumn}>
