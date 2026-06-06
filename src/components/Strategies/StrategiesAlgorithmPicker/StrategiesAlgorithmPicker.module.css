@@ -60,12 +60,16 @@
 }
 
 .rowActive {
-	background: rgba(56, 201, 160, 0.08);
-	border-color: rgba(56, 201, 160, 0.45);
+	background: var(--topic-strategies-wash);
+	border-color: color-mix(
+		in srgb,
+		var(--topic-strategies) 45%,
+		transparent
+	);
 }
 
 .rowActive:hover {
-	background: rgba(56, 201, 160, 0.12);
+	background: color-mix(in srgb, var(--topic-strategies) 12%, transparent);
 }
 
 .name {
@@ -96,5 +100,5 @@
 }
 
 .rowActive .complexity {
-	color: var(--state-done);
+	color: var(--topic-strategies);
 }

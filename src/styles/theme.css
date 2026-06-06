@@ -1,26 +1,117 @@
+/* =============================================================================
+   AlgDatViz — Design tokens (single source of truth)
+   -----------------------------------------------------------------------------
+   This file is consumed by ~100 CSS-module files. Every token name that existed
+   before the Phase 1 redesign is preserved (re-pointed to the new system where
+   it improves consistency) so existing pages keep rendering. New work should
+   prefer the canonical tokens documented in each section below; the "Backward
+   compatibility" block at the end keeps the legacy aliases alive.
+
+   Naming:
+     --color-*   raw + semantic colors and surfaces
+     --topic-*   per-topic signature hues (one harmonized HSL family)
+     --font-*    typography (families, scale, line-height, tracking, weight)
+     --space-*   / --spacing-*  spacing scale
+     --radius-*  / --border-radius-*  corner radii
+     --shadow-*  elevation language
+     --ease-* / --duration-*  motion
+   ============================================================================ */
+
 :root {
-	--color-bg-app: #070811;
-	--color-bg-panel: #0b0d1c;
-	--color-bg-sidebar: #09091a;
-	--color-bg-elevated: #090b16;
-	--color-bg-input: #0f1120;
-	--color-bg-hover: #141828;
+	/* ---------------------------------------------------------------------------
+	   1. SURFACE & ELEVATION
+	   A layered dark surface system. Instead of "flat near-black + one blue
+	   glow", surfaces step up in lightness as they come forward, and elevation
+	   is expressed with a consistent, mostly-neutral shadow language plus an
+	   optional, restrained topic-tinted glow.
 
-	--color-border: #1a1f38;
-	--color-border-strong: #2a3060;
+	   Hues sit on a cool blue-violet base (hsl 232°) at low saturation so the
+	   greys feel intentional and warm-cool balanced rather than pure black.
+	   --------------------------------------------------------------------------- */
 
-	--color-text-primary: #d0d5ec;
-	--color-text-secondary: #606888;
-	--color-text-muted: #404870;
-	--color-text-dim: #303558;
+	--color-bg-app: hsl(232 36% 5%); /* #07080f — app canvas (base) */
+	--color-bg-sunken: hsl(232 34% 4%); /* recessed wells, tracks */
+	--color-bg-sidebar: hsl(234 38% 6%); /* chrome / sidebar */
 
-	--color-accent-blue: #4f7cf8;
-	--color-accent-green: #38c9a0;
-	--color-accent-orange: #f8a74f;
-	--color-accent-purple: #c97af8;
-	--color-accent-red: #f86060;
-	--color-accent-yellow: #f8c040;
+	/* Layered surfaces — each step ~+2% lightness as it comes toward the user */
+	--surface-0: hsl(232 34% 6%); /* flush with canvas */
+	--surface-1: hsl(231 32% 8%); /* default panel / card */
+	--surface-2: hsl(230 30% 11%); /* raised panel, popover */
+	--surface-3: hsl(229 29% 14%); /* topmost: menus, tooltips, modals */
+	--surface-input: hsl(232 32% 9%); /* form field wells */
+	--surface-hover: hsl(229 28% 13%); /* generic interactive hover */
 
+	/* Borders / hairlines — low-saturation, increasing presence */
+	--color-border: hsl(231 26% 17%);
+	--color-border-strong: hsl(230 30% 27%);
+	--color-border-subtle: hsl(232 24% 13%);
+
+	/* ---------------------------------------------------------------------------
+	   2. TEXT — tuned for WCAG AA on the surfaces above
+	   --------------------------------------------------------------------------- */
+	--color-text-primary: hsl(228 35% 90%); /* headings / body, AAA on bg */
+	--color-text-secondary: hsl(229 18% 66%); /* supporting body, AA on bg */
+	--color-text-muted: hsl(230 16% 54%); /* labels / meta, AA on bg */
+	--color-text-dim: hsl(231 18% 36%); /* decorative / disabled hint */
+	--color-text-on-accent: hsl(232 40% 6%); /* text atop saturated accents */
+	--color-text-on-node: hsl(232 40% 6%);
+
+	/* ---------------------------------------------------------------------------
+	   3. PER-TOPIC SIGNATURE HUES — one harmonized HSL family
+	   Every topic shares the SAME saturation (72%) and lightness (66%) so the
+	   set reads as one palette; only the hue rotates. Hues are spread around the
+	   wheel and mapped to the topic ids in src/data/curriculum.js. Each is
+	   defined exactly once here. A matching translucent "wash" (for fills /
+	   selection tints) is derived from the same hue.
+
+	   Topic ids: foundations, stacks-queues, master-theorem, sorting, hashing,
+	              trees, graphs, strategies.
+	   --------------------------------------------------------------------------- */
+	--topic-s: 72%; /* shared saturation for the whole family */
+	--topic-l: 66%; /* shared lightness for the whole family */
+
+	--topic-foundations-h: 226; /* blue — the home base hue */
+	--topic-stacks-h: 250; /* indigo */
+	--topic-master-h: 48; /* gold */
+	--topic-sorting-h: 210; /* azure */
+	--topic-hashing-h: 28; /* amber */
+	--topic-trees-h: 286; /* violet */
+	--topic-graphs-h: 162; /* teal-green */
+	--topic-strategies-h: 338; /* rose */
+
+	--topic-foundations: hsl(var(--topic-foundations-h) var(--topic-s) var(--topic-l));
+	--topic-stacks: hsl(var(--topic-stacks-h) var(--topic-s) var(--topic-l));
+	--topic-master: hsl(var(--topic-master-h) var(--topic-s) var(--topic-l));
+	--topic-sorting: hsl(var(--topic-sorting-h) var(--topic-s) var(--topic-l));
+	--topic-hashing: hsl(var(--topic-hashing-h) var(--topic-s) var(--topic-l));
+	--topic-trees: hsl(var(--topic-trees-h) var(--topic-s) var(--topic-l));
+	--topic-graphs: hsl(var(--topic-graphs-h) var(--topic-s) var(--topic-l));
+	--topic-strategies: hsl(var(--topic-strategies-h) var(--topic-s) var(--topic-l));
+
+	/* Translucent washes, same hue (for fills, hovers, selection tints) */
+	--topic-foundations-wash: hsl(var(--topic-foundations-h) var(--topic-s) var(--topic-l) / 0.14);
+	--topic-stacks-wash: hsl(var(--topic-stacks-h) var(--topic-s) var(--topic-l) / 0.14);
+	--topic-master-wash: hsl(var(--topic-master-h) var(--topic-s) var(--topic-l) / 0.14);
+	--topic-sorting-wash: hsl(var(--topic-sorting-h) var(--topic-s) var(--topic-l) / 0.14);
+	--topic-hashing-wash: hsl(var(--topic-hashing-h) var(--topic-s) var(--topic-l) / 0.14);
+	--topic-trees-wash: hsl(var(--topic-trees-h) var(--topic-s) var(--topic-l) / 0.14);
+	--topic-graphs-wash: hsl(var(--topic-graphs-h) var(--topic-s) var(--topic-l) / 0.14);
+	--topic-strategies-wash: hsl(var(--topic-strategies-h) var(--topic-s) var(--topic-l) / 0.14);
+
+	/* ---------------------------------------------------------------------------
+	   4. BRAND ACCENT (derived from the family) + algorithm "state" colors
+	   The primary brand accent is the sorting/foundations azure-blue. The five
+	   accent slots that the rest of the app references by name are re-pointed to
+	   harmonized hues so legacy components inherit the new palette for free.
+	   --------------------------------------------------------------------------- */
+	--color-accent-blue: hsl(var(--topic-foundations-h) var(--topic-s) var(--topic-l));
+	--color-accent-green: hsl(var(--topic-graphs-h) var(--topic-s) var(--topic-l));
+	--color-accent-orange: hsl(var(--topic-hashing-h) var(--topic-s) var(--topic-l));
+	--color-accent-purple: hsl(var(--topic-trees-h) var(--topic-s) var(--topic-l));
+	--color-accent-yellow: hsl(var(--topic-master-h) var(--topic-s) var(--topic-l));
+	--color-accent-red: hsl(2 78% 66%);
+
+	/* Algorithm visualization "state" roles (kept stable — heavily referenced) */
 	--state-active: var(--color-accent-blue);
 	--state-done: var(--color-accent-green);
 	--state-flight: var(--color-accent-orange);
@@ -30,77 +121,205 @@
 	--color-accent-pivot: var(--state-special);
 	--color-accent-active: var(--state-flight);
 
+	/* ---------------------------------------------------------------------------
+	   5. SEMANTIC COLORS — conventional status hues, held DISTINCT from topic
+	   identity. Success/warning/error/info each get their own value (not a topic
+	   hue) so e.g. a "success" state on the Graphs page (teal hue 162) does not
+	   read as the topic accent. They sit at a higher saturation / different
+	   lightness than the topic family (s72/l66) to feel like system status, and
+	   all clear WCAG AA (≥4.5:1) on the surface ramp. Hues chosen to avoid every
+	   topic hue: success emerald 145 (vs graphs 162), info cyan 196 (vs sorting
+	   210 / foundations 226), warning amber 38, error red 2 (no topic nearby).
+	   --------------------------------------------------------------------------- */
+	--color-success: hsl(145 63% 49%); /* emerald — distinct from graphs teal */
+	--color-warning: hsl(38 92% 55%); /* amber */
+	--color-error: var(--color-accent-red); /* hsl(2 78% 66%) red */
+	--color-info: hsl(196 85% 58%); /* cyan — distinct from sorting/foundations blue */
+
+	--color-success-wash: hsl(145 63% 49% / 0.14);
+	--color-warning-wash: hsl(38 92% 55% / 0.14);
+	--color-error-wash: hsl(2 78% 66% / 0.14);
+	--color-info-wash: hsl(196 85% 58% / 0.14);
+
+	/* ---------------------------------------------------------------------------
+	   6. ROLE ALIASES — the high-level vocabulary most components reach for
+	   --------------------------------------------------------------------------- */
 	--color-primary: var(--color-accent-blue);
-	--color-secondary: #7fa4fc;
+	--color-secondary: hsl(var(--topic-foundations-h) var(--topic-s) 76%);
 	--color-tertiary: var(--color-accent-purple);
 	--color-background: var(--color-bg-app);
-	--color-surface: var(--color-bg-panel);
-	--color-text-on-node: #070811;
-	--color-slight-grey: var(--color-bg-hover);
-	--color-light-grey: var(--color-bg-elevated);
-	--color-medium-grey: rgba(26, 31, 56, 0.8);
-	--color-dark-grey: var(--color-text-secondary);
-	--color-light-blue: rgba(79, 124, 248, 0.15);
-	--color-lighter-blue: rgba(79, 124, 248, 0.08);
-	--color-dark-blue: var(--color-bg-elevated);
-	--color-swapping-bar: var(--state-flight);
+	--color-surface: var(--surface-1);
+	--color-bg-panel: var(--surface-1);
+	--color-bg-elevated: var(--surface-2);
+	--color-bg-input: var(--surface-input);
+	--color-bg-hover: var(--surface-hover);
 
-	--viz-node-fill: #1a1f38;
-	--viz-node-stroke: #4f7cf8;
-	--viz-edge-color: #2a3060;
-	--viz-text-color: #d0d5ec;
-
+	/* Selection + interactive feedback tints (topic-neutral default = brand) */
+	--selection-color: hsl(var(--topic-foundations-h) var(--topic-s) var(--topic-l) / 0.25);
 	--viz-hover-color: var(--color-accent-blue);
-	--selection-color: rgba(79, 124, 248, 0.25);
 
-	--color-error: var(--color-accent-red);
-	--color-success: var(--color-accent-green);
-	--color-warning: var(--color-accent-orange);
-	--color-info: var(--color-accent-blue);
+	/* Visualizer node/edge palette */
+	--viz-node-fill: var(--surface-2);
+	--viz-node-stroke: var(--color-accent-blue);
+	--viz-edge-color: var(--color-border-strong);
+	--viz-text-color: var(--color-text-primary);
 
-	--font-family-sans: 'Space Grotesk', -apple-system, BlinkMacSystemFont, sans-serif;
-	--font-family-mono: 'JetBrains Mono', 'Roboto Mono', monospace;
-	--font-size-base: 14px;
-	--font-size-sm: 12.5px;
-	--font-size-xs: 11px;
-	--font-size-lg: 16px;
-	--font-size-display: clamp(28px, 4vw, 44px);
+	/* ---------------------------------------------------------------------------
+	   7. TYPOGRAPHY
+	   Families: Display = Bricolage Grotesque, Body = Inter, Mono = JetBrains.
+	   A modular type scale (ratio ~1.2 minor third, fluid at the top) gives
+	   deliberate display / heading / body / label / caption steps with matching
+	   line-height and tracking. Large display gets tight tracking; body gets a
+	   generous line-height for readability by first-time students.
+	   --------------------------------------------------------------------------- */
+	--font-family-display: 'Bricolage Grotesque', 'Inter', -apple-system,
+		BlinkMacSystemFont, sans-serif;
+	--font-family-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI',
+		sans-serif;
+	--font-family-mono: 'JetBrains Mono', 'Roboto Mono', ui-monospace, monospace;
 
-	--border-radius-sm: 4px;
-	--border-radius-md: 6px;
-	--border-radius-lg: 10px;
-	--border-radius-xl: 14px;
-	--border-radius-pill: 999px;
-	--spacing-xs: 4px;
-	--spacing-sm: 8px;
-	--spacing-md: 14px;
-	--spacing-lg: 20px;
-	--spacing-xl: 28px;
-	--spacing-2xl: 44px;
-	--spacing-3xl: 72px;
+	/* Type scale (px-based, fluid via clamp where it reads as "display") */
+	--font-size-display-2xl: clamp(2.75rem, 1.6rem + 5.2vw, 5rem); /* hero */
+	--font-size-display-xl: clamp(2.25rem, 1.5rem + 3.3vw, 3.5rem);
+	--font-size-display-lg: clamp(1.875rem, 1.4rem + 2vw, 2.5rem);
+	--font-size-heading-lg: 1.75rem; /* 28px — h2 */
+	--font-size-heading-md: 1.375rem; /* 22px — h3 */
+	--font-size-heading-sm: 1.125rem; /* 18px — h4 */
+	--font-size-body-lg: 1.0625rem; /* 17px — lead paragraph */
+	--font-size-body: 0.9375rem; /* 15px — base body */
+	--font-size-label: 0.8125rem; /* 13px — UI labels, buttons */
+	--font-size-caption: 0.6875rem; /* 11px — meta / captions */
 
-	--shadow-color: rgba(0, 0, 0, 0.5);
-	--shadow-glow: rgba(79, 124, 248, 0.18);
-	--shadow-focus: 0 0 0 3px rgba(79, 124, 248, 0.25);
-	--shadow-canvas-lamp: 0 24px 80px -32px rgba(79, 124, 248, 0.18);
-	--shadow-card-hover: 0 8px 32px rgba(79, 124, 248, 0.16);
+	/* Legacy size names re-mapped onto the scale (heavily referenced) */
+	--font-size-base: var(--font-size-body);
+	--font-size-lg: var(--font-size-body-lg);
+	--font-size-sm: var(--font-size-label);
+	--font-size-xs: var(--font-size-caption);
+	--font-size-display: var(--font-size-display-lg);
 
-	--ease-quiet: cubic-bezier(0.22, 1, 0.36, 1);
-	--ease-step: cubic-bezier(0.16, 1, 0.3, 1);
-	--ease-trace: cubic-bezier(0.65, 0, 0.35, 1);
+	/* Line-height tokens */
+	--line-height-display: 1.02; /* tight, for large display type */
+	--line-height-heading: 1.18;
+	--line-height-snug: 1.35;
+	--line-height-body: 1.65; /* generous, for running text */
+
+	/* Letter-spacing / tracking tokens */
+	--tracking-display: -0.03em; /* tighten big display */
+	--tracking-heading: -0.015em;
+	--tracking-normal: 0;
+	--tracking-wide: 0.02em;
+	--tracking-label: 0.04em; /* small UI labels */
+	--tracking-caps: 0.12em; /* eyebrow / all-caps */
+
+	/* Font weights */
+	--font-weight-regular: 400;
+	--font-weight-medium: 500;
+	--font-weight-semibold: 600;
+	--font-weight-bold: 700;
+	--font-weight-display: 800; /* Bricolage display headlines */
+
+	/* ---------------------------------------------------------------------------
+	   8. SPACING — 4px base. New --space-* names; legacy --spacing-* aliased.
+	   --------------------------------------------------------------------------- */
+	--space-2xs: 2px;
+	--space-xs: 4px;
+	--space-sm: 8px;
+	--space-md: 14px;
+	--space-lg: 20px;
+	--space-xl: 28px;
+	--space-2xl: 44px;
+	--space-3xl: 72px;
+	--space-4xl: 112px;
+
+	--spacing-xs: var(--space-xs);
+	--spacing-sm: var(--space-sm);
+	--spacing-md: var(--space-md);
+	--spacing-lg: var(--space-lg);
+	--spacing-xl: var(--space-xl);
+	--spacing-2xl: var(--space-2xl);
+	--spacing-3xl: var(--space-3xl);
+
+	/* ---------------------------------------------------------------------------
+	   9. RADII — new --radius-* names; legacy --border-radius-* aliased.
+	   --------------------------------------------------------------------------- */
+	--radius-sm: 4px;
+	--radius-md: 8px;
+	--radius-lg: 12px;
+	--radius-xl: 18px;
+	--radius-pill: 999px;
+
+	--border-radius-sm: var(--radius-sm);
+	--border-radius-md: var(--radius-md);
+	--border-radius-lg: var(--radius-lg);
+	--border-radius-xl: var(--radius-xl);
+	--border-radius-pill: var(--radius-pill);
+
+	/* ---------------------------------------------------------------------------
+	   10. ELEVATION / SHADOWS
+	   A consistent, mostly-neutral shadow ramp (umbra + ambient) plus a single
+	   restrained topic-tinted glow used sparingly for focus moments. The brand
+	   "lamp" is kept but softened and made neutral-leaning.
+	   --------------------------------------------------------------------------- */
+	--shadow-color: hsl(232 50% 2% / 0.5);
+	--shadow-glow: hsl(var(--topic-foundations-h) var(--topic-s) var(--topic-l) / 0.18);
+
+	--shadow-1: 0 1px 2px hsl(232 50% 2% / 0.4);
+	--shadow-2: 0 2px 4px hsl(232 50% 2% / 0.35),
+		0 4px 12px hsl(232 50% 2% / 0.3);
+	--shadow-3: 0 4px 8px hsl(232 50% 2% / 0.35),
+		0 12px 28px hsl(232 50% 2% / 0.4);
+	--shadow-4: 0 8px 16px hsl(232 50% 2% / 0.4),
+		0 24px 56px hsl(232 50% 2% / 0.5);
+
+	/* Topic-tinted accent glow — applied via --topic-accent where a page sets it */
+	--shadow-glow-accent: 0 0 0 1px hsl(var(--topic-foundations-h) var(--topic-s) var(--topic-l) / 0.25),
+		0 12px 40px hsl(var(--topic-foundations-h) var(--topic-s) var(--topic-l) / 0.18);
+
+	--shadow-focus: 0 0 0 3px hsl(var(--topic-foundations-h) var(--topic-s) var(--topic-l) / 0.4);
+	--shadow-canvas-lamp: 0 24px 80px -36px hsl(var(--topic-foundations-h) var(--topic-s) var(--topic-l) / 0.22);
+	--shadow-card-hover: var(--shadow-3);
+
+	/* ---------------------------------------------------------------------------
+	   11. MOTION — easings + durations. Reduced-motion overrides at file end.
+	   --------------------------------------------------------------------------- */
+	--ease-quiet: cubic-bezier(0.22, 1, 0.36, 1); /* gentle settle */
+	--ease-step: cubic-bezier(0.16, 1, 0.3, 1); /* crisp UI transition */
+	--ease-trace: cubic-bezier(0.65, 0, 0.35, 1); /* in-out for traces */
+	--ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1); /* slight overshoot */
+
 	--duration-instant: 120ms;
 	--duration-step: 320ms;
 	--duration-merge: 560ms;
 
 	--transition: var(--duration-instant) var(--ease-quiet);
+
+	/* ---------------------------------------------------------------------------
+	   12. COMPONENT-LEVEL TOKENS (shared primitives)
+	   --------------------------------------------------------------------------- */
+	--focus-ring: var(--shadow-focus);
 	--switch-width: 20px;
 	--switch-height: 10px;
+
+	/* ===========================================================================
+	   BACKWARD COMPATIBILITY
+	   Legacy token names still referenced by ~100 module files. Keep these
+	   working until downstream files are migrated in later phases. Do not remove.
+	   =========================================================================== */
+	--color-slight-grey: var(--surface-hover);
+	--color-light-grey: var(--surface-2);
+	--color-medium-grey: var(--color-border);
+	--color-dark-grey: var(--color-text-secondary);
+	--color-light-blue: var(--color-info-wash);
+	--color-lighter-blue: hsl(var(--topic-foundations-h) var(--topic-s) var(--topic-l) / 0.08);
+	--color-dark-blue: var(--surface-2);
+	--color-swapping-bar: var(--state-flight);
 }
 
 @media (prefers-reduced-motion: reduce) {
 	:root {
 		--duration-instant: 80ms;
-		--duration-step: 220ms;
-		--duration-merge: 360ms;
+		--duration-step: 200ms;
+		--duration-merge: 320ms;
+		--ease-spring: var(--ease-step);
 	}
 }

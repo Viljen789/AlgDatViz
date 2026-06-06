@@ -1,22 +1,25 @@
-import { useEffect, useMemo, useState } from 'react';
-import StrategiesHero from './StrategiesHero/StrategiesHero';
-import StepControlBar from '../../common/StepControlBar/StepControlBar';
-import PseudocodeRail from '../../common/PseudocodeRail/PseudocodeRail';
-import CoinChangeCanvas from './CoinChangeCanvas/CoinChangeCanvas';
-import ClimbingStairsCanvas from './ClimbingStairsCanvas/ClimbingStairsCanvas';
-import IntervalSchedulingCanvas from './IntervalSchedulingCanvas/IntervalSchedulingCanvas';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { ChevronDown, RotateCcw } from 'lucide-react';
+import { usePlayback, FrameTrace } from '../../common/PlaybackEngine/index.js';
+import StepControlBar from '../../common/StepControlBar/StepControlBar.jsx';
+import PseudocodeRail from '../../common/PseudocodeRail/PseudocodeRail.jsx';
+import CoinChangeCanvas from './CoinChangeCanvas/CoinChangeCanvas.jsx';
+import ClimbingStairsCanvas from './ClimbingStairsCanvas/ClimbingStairsCanvas.jsx';
+import IntervalSchedulingCanvas from './IntervalSchedulingCanvas/IntervalSchedulingCanvas.jsx';
+import StrategiesAlgorithmPicker from './StrategiesAlgorithmPicker/StrategiesAlgorithmPicker.jsx';
+import StrategiesReadMoreOverlay from './StrategiesReadMoreOverlay/StrategiesReadMoreOverlay.jsx';
 import {
 	STRATEGY_ALGORITHMS,
 	COIN_CHANGE_PRESETS,
 	COIN_CHANGE_PSEUDO,
 	CLIMBING_STAIRS_PSEUDO,
 	INTERVAL_SCHEDULING_PSEUDO,
-} from './strategiesMeta';
+} from './strategiesMeta.js';
 import {
 	buildCoinChangeFrames,
 	buildClimbingStairsFrames,
 	buildIntervalSchedulingFrames,
-} from './coinChangeFrames';
+} from './coinChangeFrames.js';
 import styles from './StrategiesDashboard.module.css';
 
 const STAIRS_N = 6;
@@ -29,22 +32,30 @@ const SCHEDULING_INTERVALS = [
 	{ id: 'E', start: 6, end: 8 },
 ];
 
+// Playback speed values map directly onto usePlayback's speed. Higher = faster.
 const SPEED_OPTIONS = [
-	{ value: 1300, label: '0.5×' },
-	{ value: 850, label: '1×' },
-	{ value: 450, label: '2×' },
-	{ value: 200, label: '5×' },
+	{ value: 120, label: '0.5×' },
+	{ value: 200, label: '1×' },
+	{ value: 360, label: '2×' },
+	{ value: 600, label: '5×' },
 ];
 
-const StrategiesDashboard = () => {
+const StrategiesDashboard = ({ onUserInteract }) => {
 	const [algorithmId, setAlgorithmId] = useState('coinChange');
 	const [presetId, setPresetId] = useState('trap');
-	const [stepIndex, setStepIndex] = useState(0);
-	const [isPlaying, setIsPlaying] = useState(false);
-	const [speed, setSpeed] = useState(850);
+	const [pickerOpen, setPickerOpen] = useState(false);
+	const [presetOpen, setPresetOpen] = useState(false);
+	const [readMoreOpen, setReadMoreOpen] = useState(false);
+
+	// Scope playback keys to this player so a second playground on the page
+	// (e.g. the embedded sorting sandbox) cannot react to the same keypress.
+	const playerRef = useRef(null);
+	const presetWrapRef = useRef(null);
 
 	const preset = useMemo(
-		() => COIN_CHANGE_PRESETS.find(p => p.id === presetId) || COIN_CHANGE_PRESETS[0],
+		() =>
+			COIN_CHANGE_PRESETS.find(p => p.id === presetId) ||
+			COIN_CHANGE_PRESETS[0],
 		[presetId]
 	);
 
@@ -64,85 +75,202 @@ const StrategiesDashboard = () => {
 		return { frames: built.frames, lines: INTERVAL_SCHEDULING_PSEUDO };
 	}, [algorithmId, preset]);
 
-	const totalSteps = frames.length;
-	const safeStepIndex = Math.min(stepIndex, totalSteps - 1);
-	const frame = frames[safeStepIndex];
-	const algo = STRATEGY_ALGORITHMS[algorithmId];
+	const player = usePlayback(frames, { speed: 200 });
+	const {
+		currentStep,
+		currentFrame,
+		totalSteps,
+		isPlaying,
+		toggle,
+		stepBack,
+		stepForward,
+		seek,
+		first,
+		last,
+		speed,
+		setSpeed,
+		reset,
+	} = player;
 
+	// Reset the cursor whenever the timeline identity changes (algorithm/preset).
 	useEffect(() => {
-		if (!isPlaying) return;
-		if (safeStepIndex >= totalSteps - 1) {
-			setIsPlaying(false);
-			return;
-		}
-		const t = window.setTimeout(() => {
-			setStepIndex(idx => Math.min(idx + 1, totalSteps - 1));
-		}, speed);
-		return () => window.clearTimeout(t);
-	}, [isPlaying, safeStepIndex, totalSteps, speed]);
+		reset();
+	}, [algorithmId, presetId, reset]);
+
+	const algo = STRATEGY_ALGORITHMS[algorithmId];
+	const frame = currentFrame;
+	const canStep = totalSteps > 1;
+	const activeLine = frame?.line ?? null;
+
+	const notifyInteract = () => onUserInteract?.();
 
 	const handleAlgorithmChange = id => {
+		notifyInteract();
 		setAlgorithmId(id);
-		setStepIndex(0);
-		setIsPlaying(false);
+		setPickerOpen(false);
 	};
 
 	const handlePresetChange = id => {
+		notifyInteract();
 		setPresetId(id);
-		setStepIndex(0);
-		setIsPlaying(false);
+		setPresetOpen(false);
 	};
 
 	const handleReset = () => {
-		setStepIndex(0);
-		setIsPlaying(false);
+		notifyInteract();
+		reset();
 	};
 
-	const handlePlayPause = () => {
-		if (safeStepIndex >= totalSteps - 1) {
-			setStepIndex(0);
-			setIsPlaying(true);
-			return;
+	// Close the preset menu on outside click / Escape.
+	useEffect(() => {
+		if (!presetOpen) return undefined;
+		const onDown = e => {
+			if (presetWrapRef.current && !presetWrapRef.current.contains(e.target)) {
+				setPresetOpen(false);
+			}
+		};
+		const onKey = e => {
+			if (e.key === 'Escape') setPresetOpen(false);
+		};
+		document.addEventListener('mousedown', onDown);
+		document.addEventListener('keydown', onKey);
+		return () => {
+			document.removeEventListener('mousedown', onDown);
+			document.removeEventListener('keydown', onKey);
+		};
+	}, [presetOpen]);
+
+	const showPreset = algorithmId === 'coinChange';
+
+	const narration = useMemo(() => {
+		if (!frame) {
+			return 'Pick a problem, then step or play to watch the strategy unfold.';
 		}
-		setIsPlaying(p => !p);
-	};
-
-	const canStep = totalSteps > 1;
-	const statusSuffix = !canStep
-		? 'ready'
-		: safeStepIndex >= totalSteps - 1
-			? 'done'
-			: isPlaying
-				? 'running'
-				: safeStepIndex === 0
-					? 'ready'
-					: 'paused';
-
-	const overlayTitle = frame?.title;
-	const activeLine = frame?.line ?? null;
+		return frame.verdict || frame.description || frame.title || ' ';
+	}, [frame]);
 
 	return (
-		<div className={styles.shell}>
-			<StrategiesHero
-				algorithmId={algorithmId}
-				onAlgorithmChange={handleAlgorithmChange}
-				presetId={presetId}
-				onPresetChange={handlePresetChange}
-				onReset={handleReset}
-				statusSuffix={statusSuffix}
-			/>
+		<div className={styles.shell} ref={playerRef}>
+			<header className={styles.header}>
+				<div className={styles.headLeft}>
+					<button
+						type="button"
+						className={styles.title}
+						onClick={() => setPickerOpen(true)}
+						aria-haspopup="dialog"
+						title="Choose strategy problem"
+					>
+						<span>{algo?.name || 'Strategies'}</span>
+						<ChevronDown
+							size={18}
+							strokeWidth={2}
+							className={styles.titleChevron}
+							aria-hidden="true"
+						/>
+					</button>
+					<p className={styles.oneLine}>{algo?.oneLine}</p>
+				</div>
 
-			<div className={styles.body}>
-				<section className={styles.canvas} aria-label={`${algo?.name} canvas`}>
-					<div className={styles.canvasOverlay}>
-						<span className={styles.notation}>{algo?.complexity}</span>
-						{overlayTitle && (
+				<div className={styles.headRight}>
+					<div className={styles.notation}>
+						<span className={styles.complexity}>{algo?.complexity}</span>
+						{showPreset && (
 							<>
-								<span className={styles.notationDot}>·</span>
-								<span className={styles.stat}>{overlayTitle}</span>
+								<span className={styles.notationDot} aria-hidden="true">
+									·
+								</span>
+								<div className={styles.presetWrap} ref={presetWrapRef}>
+									<button
+										type="button"
+										className={styles.presetBtn}
+										onClick={() => setPresetOpen(o => !o)}
+										aria-haspopup="listbox"
+										aria-expanded={presetOpen}
+										title="Pick a target and coin set"
+									>
+										<span>
+											target = {preset.target}¢ · coins [
+											{preset.coins.join(', ')}]
+										</span>
+										<ChevronDown
+											size={12}
+											strokeWidth={2}
+											aria-hidden="true"
+										/>
+									</button>
+									{presetOpen && (
+										<ul className={styles.presetMenu} role="listbox">
+											{COIN_CHANGE_PRESETS.map(p => (
+												<li
+													key={p.id}
+													role="option"
+													aria-selected={p.id === presetId}
+												>
+													<button
+														type="button"
+														className={`${styles.presetItem} ${
+															p.id === presetId
+																? styles.presetItemActive
+																: ''
+														}`}
+														onClick={() => handlePresetChange(p.id)}
+													>
+														<span className={styles.presetItemHead}>
+															{p.label}
+														</span>
+														<span className={styles.presetItemMath}>
+															target = {p.target}¢ · coins [
+															{p.coins.join(', ')}]
+														</span>
+														<span className={styles.presetItemIntent}>
+															{p.intent}
+														</span>
+													</button>
+												</li>
+											))}
+										</ul>
+									)}
+								</div>
 							</>
 						)}
 					</div>
+
+					<div className={styles.actions}>
+						<button
+							type="button"
+							className={styles.ghostBtn}
+							onClick={() => setReadMoreOpen(true)}
+						>
+							Read more
+						</button>
+						<button
+							type="button"
+							className={styles.ghostBtn}
+							onClick={handleReset}
+							title="Reset walkthrough"
+						>
+							<RotateCcw size={14} strokeWidth={2} aria-hidden="true" />
+							<span>Reset</span>
+						</button>
+					</div>
+				</div>
+			</header>
+
+			<div className={styles.body}>
+				<section
+					className={styles.canvas}
+					aria-label={`${algo?.name} visualization`}
+				>
+					<div className={styles.canvasOverlay} aria-hidden="true">
+						<span className={styles.overlayNotation}>{algo?.complexity}</span>
+						{frame?.title && (
+							<>
+								<span className={styles.overlayDot}>·</span>
+								<span className={styles.overlayStat}>{frame.title}</span>
+							</>
+						)}
+					</div>
+
 					<div className={styles.canvasStage}>
 						{algorithmId === 'coinChange' && (
 							<CoinChangeCanvas frame={frame} preset={preset} />
@@ -157,20 +285,20 @@ const StrategiesDashboard = () => {
 							/>
 						)}
 					</div>
-					{frame?.description && (
-						<div className={styles.frameNote} aria-live="polite">
-							<span className={styles.frameNoteLabel}>STEP</span>
-							<span className={styles.frameNoteText}>
-								{frame.description}
-							</span>
-						</div>
-					)}
+
+					<FrameTrace
+						className={styles.trace}
+						eyebrow="Step"
+						narration={narration}
+						step={currentStep}
+						totalSteps={totalSteps}
+					/>
 				</section>
 
 				<PseudocodeRail
 					lines={lines}
 					activeLine={activeLine}
-					isRunning={canStep && safeStepIndex > 0}
+					isRunning={canStep && currentStep > 0}
 				/>
 			</div>
 
@@ -178,32 +306,51 @@ const StrategiesDashboard = () => {
 				<StepControlBar
 					isPlaying={isPlaying}
 					canStep={canStep}
-					currentStep={safeStepIndex}
+					currentStep={currentStep}
 					totalSteps={totalSteps}
 					speed={speed}
 					speedOptions={SPEED_OPTIONS}
-					onPlayPause={handlePlayPause}
-					onStepBack={() =>
-						setStepIndex(idx => Math.max(idx - 1, 0))
-					}
-					onStepForward={() =>
-						setStepIndex(idx => Math.min(idx + 1, totalSteps - 1))
-					}
+					onPlayPause={() => {
+						notifyInteract();
+						toggle();
+					}}
+					onStepBack={() => {
+						notifyInteract();
+						stepBack();
+					}}
+					onStepForward={() => {
+						notifyInteract();
+						stepForward();
+					}}
 					onSeek={s => {
-						setStepIndex(Math.max(0, Math.min(s, totalSteps - 1)));
-						setIsPlaying(false);
+						notifyInteract();
+						seek(s);
 					}}
 					onFirst={() => {
-						setStepIndex(0);
-						setIsPlaying(false);
+						notifyInteract();
+						first();
 					}}
 					onLast={() => {
-						setStepIndex(totalSteps - 1);
-						setIsPlaying(false);
+						notifyInteract();
+						last();
 					}}
 					onSpeedChange={setSpeed}
+					scopeRef={playerRef}
 				/>
 			</div>
+
+			<StrategiesAlgorithmPicker
+				isOpen={pickerOpen}
+				onClose={() => setPickerOpen(false)}
+				value={algorithmId}
+				onChange={handleAlgorithmChange}
+			/>
+
+			<StrategiesReadMoreOverlay
+				isOpen={readMoreOpen}
+				onClose={() => setReadMoreOpen(false)}
+				algorithmId={algorithmId}
+			/>
 		</div>
 	);
 };

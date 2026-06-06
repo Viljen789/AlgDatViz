@@ -1,11 +1,8 @@
-import TopicRoute from '../common/TopicScrollytelling/TopicRoute.jsx';
-import GraphDashboard from '../components/Graph/GraphDashboard';
-import { TOPIC_STORIES } from '../data/topicStories.js';
+import GraphLesson from '../components/Graph/GraphLesson/GraphLesson.jsx';
 
-const GraphPage = () => (
-	<TopicRoute topic={TOPIC_STORIES.graph}>
-		<GraphDashboard />
-	</TopicRoute>
-);
+// The Graphs topic now renders on the canonical TopicTemplate (hero → concept
+// scrolly → stage → comprehension checks → playground → up-next). The full
+// multi-algorithm GraphDashboard is preserved as the playground.
+const GraphPage = () => <GraphLesson />;
 
 export default GraphPage;

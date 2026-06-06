@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
-import { ChevronDown, Shuffle } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { ChevronDown, ChevronRight, Shuffle } from 'lucide-react';
 import styles from './SortingHero.module.css';
 import { ALGORITHM_INFO } from '../../../utils/sorting';
 import {
@@ -21,6 +22,7 @@ const SortingHero = ({
 	isSorting,
 	statusSuffix,
 	onStoryRequest,
+	showBreadcrumb = true,
 }) => {
 	const [pickerOpen, setPickerOpen] = useState(false);
 	const [readMoreOpen, setReadMoreOpen] = useState(false);
@@ -51,6 +53,19 @@ const SortingHero = ({
 	return (
 		<header className={styles.hero}>
 			<div className={styles.left}>
+				{showBreadcrumb && (
+					<nav className={styles.crumbs} aria-label="Breadcrumb">
+						<Link to="/" className={styles.crumbLink}>
+							Path
+						</Link>
+						<ChevronRight size={12} strokeWidth={2} aria-hidden="true" />
+						<Link to="/lessons/merge-sort" className={styles.crumbLink}>
+							Sorting
+						</Link>
+						<ChevronRight size={12} strokeWidth={2} aria-hidden="true" />
+						<span className={styles.crumbCurrent}>Sandbox</span>
+					</nav>
+				)}
 				<button
 					type="button"
 					className={styles.title}

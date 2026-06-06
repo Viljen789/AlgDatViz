@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Network, ListTree, Grid3x3 } from 'lucide-react';
 import GraphVisualizer from './GraphVisualizer/GraphVisualizer';
 import AdjacencyMatrix from './AdjacencyMatrix/AdjacencyMatrix';
@@ -14,6 +14,7 @@ import { GRAPH_ALGORITHM_META } from '../../utils/graphAlgorithmMeta.js';
 import { GRAPH_PRESETS } from '../../data/graphPresets.js';
 import PseudocodeRail from '../../common/PseudocodeRail/PseudocodeRail';
 import StepControlBar from '../../common/StepControlBar/StepControlBar';
+import { usePlayback } from '../../common/PlaybackEngine';
 
 const cloneGraph = graph => JSON.parse(JSON.stringify(graph));
 
@@ -30,7 +31,11 @@ const VIEW_OPTIONS = [
 	{ value: 'matrix', label: 'Matrix', icon: Grid3x3 },
 ];
 
-const GraphDashboard = () => {
+// The graph SPEED_OPTIONS are per-frame delays in ms (lower = faster), so we map
+// the speed value straight through to the engine's delay.
+const speedToDelay = speed => speed;
+
+const GraphDashboard = ({ onUserInteract }) => {
 	const initialPreset = GRAPH_PRESETS.traversal;
 	const [graph, setGraph] = useState(() => cloneGraph(initialPreset.graph));
 	const [selectedNodeId, setSelectedNodeId] = useState(null);
@@ -41,10 +46,11 @@ const GraphDashboard = () => {
 	const [algorithmId, setAlgorithmId] = useState('bfs');
 	const [startNodeId, setStartNodeId] = useState(initialPreset.startNodeId);
 	const [targetNodeId, setTargetNodeId] = useState('');
-	const [stepIndex, setStepIndex] = useState(0);
-	const [isPlaying, setIsPlaying] = useState(false);
-	const [speed, setSpeed] = useState(950);
 	const [viewMode, setViewMode] = useState('graph');
+
+	// Scopes playback keyboard control (space / ← / →) to this playground so a
+	// second mounted player on the page can't react to the same keypress.
+	const playerRef = useRef(null);
 
 	const algorithmSteps = useMemo(
 		() =>
@@ -57,20 +63,17 @@ const GraphDashboard = () => {
 		[graph, algorithmId, startNodeId, targetNodeId, isDirected, isWeighted]
 	);
 
+	const player = usePlayback(algorithmSteps, { speed: 950, speedToDelay });
+	const { currentStep: stepIndex, isPlaying, reset, seek } = player;
+
 	const currentStep = algorithmSteps[stepIndex] ?? algorithmSteps[0];
 	const totalSteps = algorithmSteps.length;
 	const canStep = totalSteps > 1;
 
+	// A fresh timeline (new algorithm, endpoints, graph) should start at step 0.
 	useEffect(() => {
-		setStepIndex(0);
-		setIsPlaying(false);
-	}, [algorithmId, startNodeId, targetNodeId, isDirected, isWeighted, graph]);
-
-	useEffect(() => {
-		setStepIndex(index =>
-			Math.min(index, Math.max(algorithmSteps.length - 1, 0))
-		);
-	}, [algorithmSteps.length]);
+		reset();
+	}, [algorithmId, startNodeId, targetNodeId, isDirected, isWeighted, graph, reset]);
 
 	useEffect(() => {
 		if (!graph.nodes.some(node => node.id === startNodeId)) {
@@ -80,18 +83,6 @@ const GraphDashboard = () => {
 			setTargetNodeId('');
 		}
 	}, [graph.nodes, startNodeId, targetNodeId]);
-
-	useEffect(() => {
-		if (!isPlaying) return;
-		if (stepIndex >= algorithmSteps.length - 1) {
-			setIsPlaying(false);
-			return;
-		}
-		const timer = window.setTimeout(() => {
-			setStepIndex(index => Math.min(index + 1, algorithmSteps.length - 1));
-		}, speed);
-		return () => window.clearTimeout(timer);
-	}, [isPlaying, stepIndex, algorithmSteps.length, speed]);
 
 	useEffect(() => {
 		if (isDirected) return;
@@ -148,14 +139,18 @@ const GraphDashboard = () => {
 		[graph.nodes, startNodeId, targetNodeId]
 	);
 
-	const handleNodeClick = useCallback((nodeId, modifiers = {}) => {
-		if (modifiers.shift) {
-			setTargetNodeId(prev => (prev === nodeId ? '' : nodeId));
-		} else {
-			setSelectedNodeId(prev => (prev === nodeId ? null : nodeId));
-			setStartNodeId(nodeId);
-		}
-	}, []);
+	const handleNodeClick = useCallback(
+		(nodeId, modifiers = {}) => {
+			onUserInteract?.();
+			if (modifiers.shift) {
+				setTargetNodeId(prev => (prev === nodeId ? '' : nodeId));
+			} else {
+				setSelectedNodeId(prev => (prev === nodeId ? null : nodeId));
+				setStartNodeId(nodeId);
+			}
+		},
+		[onUserInteract]
+	);
 
 	const handleNodePositionChange = useCallback((nodeId, position) => {
 		setGraph(currentGraph => ({
@@ -267,18 +262,38 @@ const GraphDashboard = () => {
 	);
 
 	const handlePlayPause = () => {
-		if (stepIndex >= algorithmSteps.length - 1) {
-			setStepIndex(0);
-			setIsPlaying(true);
+		onUserInteract?.();
+		// Pressing play at the very end replays from the start.
+		if (!isPlaying && stepIndex >= totalSteps - 1) {
+			player.replay();
 			return;
 		}
-		setIsPlaying(p => !p);
+		player.toggle();
+	};
+
+	const handleStepBack = () => {
+		onUserInteract?.();
+		player.stepBack();
+	};
+
+	const handleStepForward = () => {
+		onUserInteract?.();
+		player.stepForward();
 	};
 
 	const handleSeek = step => {
-		const clamped = Math.max(0, Math.min(step, algorithmSteps.length - 1));
-		setStepIndex(clamped);
-		setIsPlaying(false);
+		onUserInteract?.();
+		seek(step);
+	};
+
+	const handleFirst = () => {
+		onUserInteract?.();
+		player.first();
+	};
+
+	const handleLast = () => {
+		onUserInteract?.();
+		player.last();
 	};
 
 	const statusSuffix = useMemo(() => {
@@ -365,7 +380,7 @@ const GraphDashboard = () => {
 	})();
 
 	return (
-		<div className={styles.shell}>
+		<div className={styles.shell} ref={playerRef}>
 			<GraphHero
 				algorithmId={algorithmId}
 				onAlgorithmChange={handleAlgorithmChange}
@@ -427,21 +442,16 @@ const GraphDashboard = () => {
 					canStep={canStep}
 					currentStep={stepIndex}
 					totalSteps={totalSteps}
-					speed={speed}
+					speed={player.speed}
 					speedOptions={SPEED_OPTIONS}
 					onPlayPause={handlePlayPause}
-					onStepBack={() =>
-						setStepIndex(index => Math.max(index - 1, 0))
-					}
-					onStepForward={() =>
-						setStepIndex(index =>
-							Math.min(index + 1, algorithmSteps.length - 1)
-						)
-					}
+					onStepBack={handleStepBack}
+					onStepForward={handleStepForward}
 					onSeek={handleSeek}
-					onFirst={() => handleSeek(0)}
-					onLast={() => handleSeek(algorithmSteps.length - 1)}
-					onSpeedChange={setSpeed}
+					onFirst={handleFirst}
+					onLast={handleLast}
+					onSpeedChange={player.setSpeed}
+					scopeRef={playerRef}
 					rightSlot={viewToggle}
 				/>
 			</div>

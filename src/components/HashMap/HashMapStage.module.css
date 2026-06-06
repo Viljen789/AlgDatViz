@@ -1,0 +1,267 @@
+/* =============================================================================
+   HashMapStage — synchronized bucket-table visualization for the scrolly.
+   Canonical tokens only. Tinted by --topic-accent inherited from TopicTemplate.
+   ============================================================================ */
+
+.wrap {
+	position: relative;
+	width: 100%;
+	height: 100%;
+	display: flex;
+	flex-direction: column;
+	justify-content: center;
+	gap: var(--space-lg);
+	padding: clamp(var(--space-lg), 3vw, var(--space-2xl));
+	box-sizing: border-box;
+	background: var(--surface-1);
+	border: 1px solid var(--color-border);
+	border-radius: var(--radius-lg);
+	box-shadow: var(--shadow-2);
+	overflow: hidden;
+}
+
+.notation {
+	position: absolute;
+	top: clamp(var(--space-md), 2.2vw, var(--space-lg));
+	right: clamp(var(--space-md), 2.5vw, var(--space-lg));
+	font-family: var(--font-family-mono);
+	font-size: var(--font-size-caption);
+	letter-spacing: var(--tracking-wide);
+	color: var(--color-text-secondary);
+	pointer-events: none;
+}
+
+/* ---------- The bucket table ---------- */
+
+.table {
+	display: flex;
+	flex-direction: column;
+	gap: var(--space-2xs);
+	width: 100%;
+	max-width: 420px;
+	margin: 0 auto;
+}
+
+.tableResize {
+	max-width: 460px;
+	gap: 1px;
+}
+
+.bucket {
+	display: grid;
+	grid-template-columns: 28px 1fr;
+	align-items: center;
+	gap: var(--space-sm);
+	padding: var(--space-2xs) var(--space-xs);
+	border-radius: var(--radius-md);
+	transition: background-color var(--duration-step) var(--ease-step);
+	/* Per-row entrance stagger when the table (re)mounts. */
+	opacity: 0;
+	transform: translateY(-4px);
+	animation: rowEnter 360ms var(--ease-quiet) forwards;
+	animation-delay: calc(var(--row) * 36ms);
+}
+
+@keyframes rowEnter {
+	to {
+		opacity: 1;
+		transform: translateY(0);
+	}
+}
+
+.bucketSpotlight {
+	background: color-mix(in srgb, var(--topic-accent) 10%, transparent);
+}
+
+.bucketCollision {
+	background: var(--color-warning-wash);
+}
+
+.bucketIndex {
+	font-family: var(--font-family-mono);
+	font-size: var(--font-size-caption);
+	color: var(--color-text-muted);
+	text-align: right;
+	letter-spacing: var(--tracking-wide);
+}
+
+.bucketSpotlight .bucketIndex {
+	color: var(--topic-accent);
+}
+
+.bucketCollision .bucketIndex {
+	color: var(--color-warning);
+}
+
+.chain {
+	display: flex;
+	flex-wrap: wrap;
+	gap: var(--space-xs);
+	align-items: center;
+	min-height: 26px;
+}
+
+.empty {
+	font-family: var(--font-family-mono);
+	font-size: var(--font-size-caption);
+	color: var(--color-text-dim);
+}
+
+.cell {
+	display: inline-flex;
+	align-items: center;
+	padding: var(--space-2xs) var(--space-sm);
+	background: var(--surface-2);
+	border: 1px solid var(--color-border);
+	border-radius: var(--radius-sm);
+	font-family: var(--font-family-mono);
+	font-size: var(--font-size-label);
+	color: var(--color-text-primary);
+	/* Chain growth: each cell slides in from the left, staggered by position. */
+	opacity: 0;
+	transform: translateX(-6px);
+	animation: cellEnter 320ms var(--ease-spring) forwards;
+	animation-delay: calc(var(--chain-pos) * 80ms);
+	transition: border-color var(--duration-step) var(--ease-step),
+		background-color var(--duration-step) var(--ease-step);
+}
+
+@keyframes cellEnter {
+	to {
+		opacity: 1;
+		transform: translateX(0);
+	}
+}
+
+.cellCollide {
+	border-color: var(--color-warning);
+	background: var(--color-warning-wash);
+}
+
+.cellKey {
+	color: inherit;
+}
+
+.cellCollide .cellKey {
+	color: var(--color-warning);
+}
+
+/* ---------- Load-factor gauge (scenes 3+) ---------- */
+
+.gauge {
+	width: 100%;
+	max-width: 420px;
+	margin: 0 auto;
+	display: flex;
+	flex-direction: column;
+	gap: var(--space-xs);
+	opacity: 0;
+	transform: translateY(6px);
+	animation: gaugeIn 420ms var(--ease-quiet) forwards;
+}
+
+@keyframes gaugeIn {
+	to {
+		opacity: 1;
+		transform: translateY(0);
+	}
+}
+
+.gaugeHead {
+	display: flex;
+	align-items: baseline;
+	justify-content: space-between;
+}
+
+.gaugeLabel {
+	font-family: var(--font-family-mono);
+	font-size: var(--font-size-caption);
+	letter-spacing: var(--tracking-wide);
+	color: var(--color-text-muted);
+}
+
+.gaugeValue {
+	font-family: var(--font-family-mono);
+	font-size: var(--font-size-label);
+	font-weight: var(--font-weight-medium);
+	color: var(--color-text-primary);
+}
+
+.gaugeWarn .gaugeValue {
+	color: var(--color-warning);
+}
+
+.gaugeTrack {
+	position: relative;
+	height: 8px;
+	border-radius: var(--radius-pill);
+	background: var(--color-bg-sunken);
+	border: 1px solid var(--color-border);
+	overflow: hidden;
+}
+
+.gaugeFill {
+	position: absolute;
+	inset: 0 auto 0 0;
+	width: var(--pct, 0%);
+	border-radius: var(--radius-pill);
+	background: var(--topic-accent);
+	transition: width var(--duration-merge) var(--ease-quiet),
+		background-color var(--duration-step) var(--ease-step);
+}
+
+.gaugeWarn .gaugeFill {
+	background: var(--color-warning);
+}
+
+/* The 0.75 resize threshold marker. */
+.gaugeThreshold {
+	position: absolute;
+	top: 0;
+	bottom: 0;
+	left: 75%;
+	width: 1px;
+	background: var(--color-border-strong);
+}
+
+.gaugeNote {
+	font-family: var(--font-family-mono);
+	font-size: var(--font-size-caption);
+	color: var(--color-text-muted);
+}
+
+.gaugeWarn .gaugeNote {
+	color: var(--color-warning);
+}
+
+/* ---------- Reduced motion ---------- */
+
+@media (prefers-reduced-motion: reduce) {
+	.bucket,
+	.cell,
+	.gauge {
+		animation-duration: 1ms;
+		animation-delay: 0ms;
+	}
+	.gaugeFill {
+		transition-duration: 1ms;
+	}
+}
+
+/* ---------- Responsive ---------- */
+
+@media (max-width: 720px) {
+	.wrap {
+		justify-content: flex-start;
+		gap: var(--space-md);
+		padding: var(--space-lg) var(--space-md);
+	}
+	.notation {
+		position: static;
+		text-align: right;
+	}
+	.table,
+	.gauge {
+		max-width: 100%;
+	}
+}

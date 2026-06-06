@@ -4,12 +4,20 @@
 	gap: var(--spacing-md);
 	cursor: pointer;
 	user-select: none;
-	font-weight: 500;
+	font-family: var(--font-family-sans);
+	font-weight: var(--font-weight-medium);
+	font-size: var(--font-size-label);
 	color: var(--color-text-primary);
+}
+
+.switchLabel.disabled {
+	cursor: not-allowed;
+	opacity: 0.45;
 }
 
 .switchContainer {
 	position: relative;
+	flex-shrink: 0;
 }
 
 .hiddenCheckbox {
@@ -22,46 +30,58 @@
 .switchTrack {
 	width: 44px;
 	height: 24px;
-	background-color: var(--color-medium-grey);
-	border-radius: 12px;
-	transition: background-color 0.3s ease;
+	background-color: var(--color-border);
+	border: 1px solid var(--color-border-strong);
+	border-radius: var(--radius-pill);
+	transition: background-color var(--duration-step) var(--ease-step),
+		border-color var(--duration-step) var(--ease-step);
 	position: relative;
-
-	box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
 .switchThumb {
 	position: absolute;
-	top: 3px;
-	left: 3px;
+	top: 2px;
+	left: 2px;
 	width: 18px;
 	height: 18px;
-	background-color: var(--color-surface);
+	background-color: var(--color-text-primary);
 	border-radius: 50%;
-
-	box-shadow:
-		0 1px 3px rgba(0, 0, 0, 0.2),
-		0 1px 2px rgba(0, 0, 0, 0.1);
-
-	transition: transform 0.3s cubic-bezier(0.25, 1, 0.5, 1);
+	box-shadow: var(--shadow-2);
+	transition: transform var(--duration-step) var(--ease-spring),
+		background-color var(--duration-step) var(--ease-step);
 }
 
 .hiddenCheckbox:checked + .switchTrack {
 	background-color: var(--color-primary);
+	border-color: var(--color-primary);
 }
 
 .hiddenCheckbox:checked + .switchTrack .switchThumb {
 	transform: translateX(20px);
+	background-color: var(--color-text-on-accent);
 }
 
-.switchLabel:hover .switchTrack {
-	background-color: var(--color-dark-grey);
+.switchLabel:not(.disabled):hover .switchTrack {
+	border-color: var(--color-border-strong);
+	background-color: var(--surface-hover);
 }
 
-.hiddenCheckbox:checked + .switchTrack {
+.switchLabel:not(.disabled):hover .hiddenCheckbox:checked + .switchTrack {
 	background-color: var(--color-primary);
+	filter: brightness(1.08);
+}
+
+.hiddenCheckbox:active:not(:disabled) + .switchTrack .switchThumb {
+	width: 22px;
 }
 
 .hiddenCheckbox:focus-visible + .switchTrack {
-	box-shadow: 0 0 0 3px var(--color-lighter-blue);
+	box-shadow: var(--shadow-focus);
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.switchTrack,
+	.switchThumb {
+		transition-duration: 0ms;
+	}
 }

@@ -1,0 +1,335 @@
+/* =============================================================================
+   StrategiesStage — synchronized concept stage. Canonical tokens only.
+   Tinted by --topic-accent inherited from TopicTemplate.
+   ============================================================================ */
+
+.wrap {
+	position: relative;
+	width: 100%;
+	height: 100%;
+	display: flex;
+	flex-direction: column;
+	align-items: stretch;
+	justify-content: center;
+	gap: var(--space-xl);
+	padding: clamp(var(--space-lg), 3vw, var(--space-2xl));
+	box-sizing: border-box;
+	background: var(--surface-1);
+	border-radius: var(--radius-lg);
+	border: 1px solid var(--color-border);
+	overflow: hidden;
+	box-shadow: var(--shadow-2);
+}
+
+.notation {
+	position: absolute;
+	top: clamp(var(--space-md), 2.2vw, var(--space-xl));
+	right: clamp(var(--space-md), 2.5vw, var(--space-xl));
+	font-family: var(--font-family-mono);
+	font-size: var(--font-size-caption);
+	color: var(--color-text-secondary);
+	letter-spacing: var(--tracking-wide);
+}
+
+/* ---------- Coin board (greedy vs DP) ---------- */
+
+.coinBoard {
+	display: flex;
+	flex-direction: column;
+	gap: var(--space-xl);
+	width: 100%;
+}
+
+.lane {
+	display: flex;
+	flex-direction: column;
+	gap: var(--space-sm);
+}
+
+.laneHead {
+	display: flex;
+	flex-direction: column;
+	gap: var(--space-2xs);
+}
+
+.laneTag {
+	font-family: var(--font-family-mono);
+	font-size: var(--font-size-caption);
+	font-weight: var(--font-weight-bold);
+	letter-spacing: var(--tracking-caps);
+	text-transform: uppercase;
+	color: var(--color-text-muted);
+}
+
+.laneTagDp,
+.laneTagSafe {
+	color: var(--topic-accent);
+}
+
+.laneSub {
+	font-family: var(--font-family-mono);
+	font-size: var(--font-size-caption);
+	color: var(--color-text-dim);
+	letter-spacing: var(--tracking-wide);
+}
+
+/* Greedy coins */
+
+.coinRow {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: var(--space-sm);
+	min-height: 40px;
+}
+
+.coinPlaceholder {
+	font-family: var(--font-family-mono);
+	font-size: var(--font-size-body);
+	color: var(--color-text-muted);
+	letter-spacing: var(--tracking-wide);
+}
+
+.coin {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	min-width: 40px;
+	height: 36px;
+	padding: 0 var(--space-md);
+	border-radius: var(--radius-pill);
+	font-family: var(--font-family-mono);
+	font-size: var(--font-size-label);
+	font-weight: var(--font-weight-bold);
+	border: 1px solid transparent;
+	opacity: 0;
+	transform: translateY(6px);
+	animation: tokenIn var(--duration-step) var(--ease-quiet) forwards;
+	animation-delay: var(--coin-delay, 0ms);
+}
+
+.coinTake {
+	color: var(--color-warning);
+	background: var(--color-warning-wash);
+	border-color: color-mix(in srgb, var(--color-warning) 45%, transparent);
+}
+
+.coinWaste {
+	color: var(--color-error);
+	background: var(--color-error-wash);
+	border-color: color-mix(in srgb, var(--color-error) 40%, transparent);
+}
+
+@keyframes tokenIn {
+	to {
+		opacity: 1;
+		transform: translateY(0);
+	}
+}
+
+/* DP table */
+
+.dpRow {
+	list-style: none;
+	margin: 0;
+	padding: 0;
+	display: grid;
+	grid-template-columns: repeat(11, minmax(0, 1fr));
+	gap: var(--space-xs);
+}
+
+.dpCell {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	gap: 1px;
+	aspect-ratio: 3 / 4;
+	min-width: 0;
+	border-radius: var(--radius-sm);
+	border: 1px solid var(--color-border);
+	background: var(--surface-input);
+	transition:
+		border-color var(--duration-step) var(--ease-step),
+		background var(--duration-step) var(--ease-step);
+}
+
+.dpCellFilled {
+	border-color: color-mix(in srgb, var(--topic-accent) 40%, transparent);
+	background: var(--topic-strategies-wash);
+	animation: cellFill var(--duration-step) var(--ease-quiet) backwards;
+	animation-delay: var(--cell-delay, 0ms);
+}
+
+.dpCellAnswer {
+	border-color: var(--topic-accent);
+	box-shadow: 0 0 0 1px color-mix(in srgb, var(--topic-accent) 35%, transparent);
+}
+
+@keyframes cellFill {
+	from {
+		opacity: 0.4;
+		transform: scale(0.9);
+	}
+	to {
+		opacity: 1;
+		transform: scale(1);
+	}
+}
+
+.dpIndex {
+	font-family: var(--font-family-mono);
+	font-size: 9px;
+	color: var(--color-text-muted);
+	letter-spacing: var(--tracking-wide);
+}
+
+.dpValue {
+	font-family: var(--font-family-mono);
+	font-size: var(--font-size-label);
+	font-weight: var(--font-weight-bold);
+	color: var(--color-text-secondary);
+}
+
+.dpCellFilled .dpValue {
+	color: var(--topic-accent);
+}
+
+/* Verdict lines */
+
+.laneVerdict {
+	margin: 0;
+	font-size: var(--font-size-label);
+	line-height: var(--line-height-snug);
+	color: var(--color-text-muted);
+}
+
+.laneVerdictBad {
+	color: var(--color-error);
+}
+
+.laneVerdictGood {
+	color: var(--color-success);
+}
+
+/* ---------- Interval board ---------- */
+
+.intervalBoard {
+	display: flex;
+	flex-direction: column;
+	gap: var(--space-md);
+	width: 100%;
+}
+
+.intervalHead {
+	display: flex;
+	flex-direction: column;
+	gap: var(--space-2xs);
+}
+
+.intervalRows {
+	list-style: none;
+	margin: 0;
+	padding: 0;
+	display: flex;
+	flex-direction: column;
+	gap: var(--space-sm);
+}
+
+.intervalRow {
+	display: grid;
+	grid-template-columns: 22px 1fr;
+	align-items: center;
+	gap: var(--space-sm);
+}
+
+.intervalLabel {
+	font-family: var(--font-family-mono);
+	font-size: var(--font-size-label);
+	font-weight: var(--font-weight-bold);
+	color: var(--color-text-secondary);
+	text-align: center;
+}
+
+.intervalTrack {
+	position: relative;
+	height: 30px;
+	border-radius: var(--radius-md);
+	background: var(--surface-input);
+	border: 1px solid var(--color-border);
+	overflow: hidden;
+}
+
+.intervalBar {
+	position: absolute;
+	top: 4px;
+	bottom: 4px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	border-radius: var(--radius-sm);
+	border: 1px solid transparent;
+	font-family: var(--font-family-mono);
+	font-size: var(--font-size-caption);
+	font-weight: var(--font-weight-bold);
+	opacity: 0;
+	transform: scaleX(0.85);
+	transform-origin: left center;
+	animation: barIn var(--duration-step) var(--ease-quiet) forwards;
+	animation-delay: var(--bar-delay, 0ms);
+}
+
+.intervalChosen {
+	color: var(--color-success);
+	background: var(--color-success-wash);
+	border-color: color-mix(in srgb, var(--color-success) 50%, transparent);
+}
+
+.intervalSkipped {
+	color: var(--color-text-muted);
+	background: var(--surface-hover);
+	border-color: var(--color-border);
+	text-decoration: line-through;
+	text-decoration-color: var(--color-text-dim);
+	opacity: 0.7;
+}
+
+@keyframes barIn {
+	to {
+		opacity: 1;
+		transform: scaleX(1);
+	}
+}
+
+.intervalSkipped {
+	animation-name: barInSkipped;
+}
+
+@keyframes barInSkipped {
+	to {
+		opacity: 0.7;
+		transform: scaleX(1);
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.coin,
+	.dpCellFilled,
+	.intervalBar {
+		animation-duration: 200ms;
+		animation-delay: 0ms;
+	}
+}
+
+@media (max-width: 720px) {
+	.wrap {
+		gap: var(--space-lg);
+		padding: var(--space-lg);
+	}
+	.dpIndex {
+		font-size: 8px;
+	}
+	.dpValue {
+		font-size: var(--font-size-caption);
+	}
+}

@@ -1,0 +1,105 @@
+.shell {
+	width: 100%;
+	display: flex;
+	flex-direction: column;
+	gap: var(--space-xl);
+}
+
+.canvasWrap {
+	position: relative;
+	display: flex;
+	flex-direction: column;
+	gap: var(--space-xl);
+	min-height: 520px;
+}
+
+.canvas {
+	flex: 1;
+	position: relative;
+	background: var(--surface-1);
+	border: 1px solid var(--color-border);
+	border-radius: var(--radius-lg);
+	padding: clamp(var(--space-lg), 3vw, var(--space-2xl));
+	display: flex;
+	flex-direction: column;
+	min-height: 460px;
+	box-shadow: var(--shadow-2);
+	overflow: hidden;
+}
+
+.notation {
+	position: absolute;
+	top: clamp(var(--space-lg), 2vw, var(--space-xl));
+	right: clamp(var(--space-lg), 2.4vw, var(--space-xl));
+	font-family: var(--font-family-mono);
+	font-size: var(--font-size-label);
+	color: var(--color-text-secondary);
+	letter-spacing: var(--tracking-wide);
+	z-index: 1;
+}
+
+.canvasStage {
+	flex: 1;
+	display: flex;
+	align-items: stretch;
+	justify-content: center;
+	min-height: 0;
+}
+
+.narration {
+	margin: var(--space-lg) 0 0;
+	font-size: var(--font-size-label);
+	line-height: var(--line-height-body);
+	color: var(--color-text-secondary);
+	max-width: 65ch;
+	min-height: 1.6em;
+}
+
+.controlsDock {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	gap: var(--space-md);
+	flex-wrap: wrap;
+}
+
+.shuffleBtn {
+	display: inline-flex;
+	align-items: center;
+	gap: 7px;
+	padding: var(--space-sm) var(--space-md);
+	background: var(--surface-hover);
+	border: 1px solid var(--color-border);
+	border-radius: var(--radius-md);
+	color: var(--color-text-secondary);
+	font-family: var(--font-family-sans);
+	font-size: var(--font-size-label);
+	font-weight: var(--font-weight-medium);
+	cursor: pointer;
+	transition: color var(--transition), border-color var(--transition),
+		background-color var(--transition);
+}
+
+.shuffleBtn:hover {
+	color: var(--color-text-primary);
+	border-color: var(--color-border-strong);
+	background: var(--surface-2);
+}
+
+.shuffleBtn:focus-visible {
+	outline: none;
+	box-shadow: var(--shadow-focus);
+}
+
+@media (max-width: 720px) {
+	.canvas {
+		padding: 18px;
+		min-height: 360px;
+	}
+	.canvasWrap {
+		min-height: 420px;
+	}
+	.notation {
+		font-size: 11px;
+	}
+}

@@ -14,9 +14,11 @@ body,
 	background-color: var(--color-bg-app);
 	color: var(--color-text-primary);
 	font-family: var(--font-family-sans);
-	font-size: var(--font-size-base);
+	font-size: var(--font-size-body);
+	line-height: var(--line-height-body);
 	-webkit-font-smoothing: antialiased;
 	-moz-osx-font-smoothing: grayscale;
+	text-rendering: optimizeLegibility;
 }
 
 body {
@@ -28,38 +30,70 @@ body {
 }
 
 ::-webkit-scrollbar {
-	width: 6px;
-	height: 6px;
+	width: 8px;
+	height: 8px;
 }
 ::-webkit-scrollbar-track {
-	background: var(--color-bg-elevated);
+	background: var(--color-bg-sunken);
 }
 ::-webkit-scrollbar-thumb {
 	background: var(--color-border);
-	border-radius: 3px;
+	border-radius: var(--radius-pill);
+	border: 2px solid var(--color-bg-sunken);
 }
 ::-webkit-scrollbar-thumb:hover {
 	background: var(--color-border-strong);
 }
 
+* {
+	scrollbar-width: thin;
+	scrollbar-color: var(--color-border) var(--color-bg-sunken);
+}
+
+/* Range inputs ----------------------------------------------------------- */
 input[type='range'] {
 	appearance: none;
 	height: 4px;
-	border-radius: 2px;
+	border-radius: var(--radius-pill);
 	background: var(--color-border);
 	accent-color: var(--color-accent-blue);
+	cursor: pointer;
 }
 input[type='range']::-webkit-slider-thumb {
 	appearance: none;
-	width: 12px;
-	height: 12px;
+	width: 14px;
+	height: 14px;
 	border-radius: 50%;
 	background: var(--color-accent-blue);
+	border: none;
+	cursor: pointer;
+	transition: transform var(--transition), box-shadow var(--transition);
+}
+input[type='range']::-moz-range-thumb {
+	width: 14px;
+	height: 14px;
+	border-radius: 50%;
+	background: var(--color-accent-blue);
+	border: none;
 	cursor: pointer;
 }
+input[type='range']:hover::-webkit-slider-thumb {
+	transform: scale(1.12);
+}
+input[type='range']:focus-visible {
+	outline: none;
+}
+input[type='range']:focus-visible::-webkit-slider-thumb {
+	box-shadow: var(--shadow-focus);
+}
+input[type='range']:focus-visible::-moz-range-thumb {
+	box-shadow: var(--shadow-focus);
+}
 
+/* Text inputs ------------------------------------------------------------ */
 input[type='text'],
 input[type='number'],
+input[type='search'],
 input:not([type]) {
 	background: var(--color-bg-input);
 	border: 1px solid var(--color-border);
@@ -67,30 +101,69 @@ input:not([type]) {
 	color: var(--color-text-primary);
 	padding: 7px 10px;
 	font-family: var(--font-family-mono);
-	font-size: 13px;
+	font-size: var(--font-size-label);
 	outline: none;
-	transition: border-color var(--transition);
+	transition: border-color var(--transition), box-shadow var(--transition);
 }
 
-input:focus {
+input[type='text']:hover:not(:disabled),
+input[type='number']:hover:not(:disabled),
+input[type='search']:hover:not(:disabled),
+input:not([type]):hover:not(:disabled) {
+	border-color: var(--color-border-strong);
+}
+
+input:focus-visible {
 	border-color: var(--color-accent-blue) !important;
+	box-shadow: var(--shadow-focus);
 }
 
+/* Keyboard focus visibility for any interactive element ------------------- */
+:focus-visible {
+	outline: none;
+}
+a:focus-visible {
+	outline: 2px solid var(--color-accent-blue);
+	outline-offset: 2px;
+	border-radius: var(--radius-sm);
+}
+/* Global fallback so EVERY keyboard-focused control has a visible ring, even
+   bare <button>s without a component-level focus rule (WCAG 2.4.7). Component
+   `.class:focus-visible` rules have higher specificity and still win where they
+   set their own ring; this only fills the gaps. */
+button:focus-visible,
+[role='button']:focus-visible,
+summary:focus-visible {
+	outline: none;
+	box-shadow: var(--shadow-focus);
+}
+
+/* Buttons ----------------------------------------------------------------
+   The previous crude global `button:hover { opacity: .85 }` washed out the
+   whole element (text + border included). We replace it with a gentler
+   brightness shift so bare buttons still get hover/active feedback, while
+   component-level button styles (the dozens of `.fooButton:hover` rules)
+   continue to take precedence and read as proper states. */
 button {
 	font-family: var(--font-family-sans);
+	transition: filter var(--transition), background-color var(--transition),
+		border-color var(--transition), color var(--transition),
+		box-shadow var(--transition);
 }
 
-button:hover:not(:disabled) {
-	opacity: 0.85;
+button:not(:disabled):hover {
+	filter: brightness(1.08);
 }
-button:active:not(:disabled) {
-	opacity: 0.7;
+button:not(:disabled):active {
+	filter: brightness(0.94);
 }
+
 button:disabled {
-	opacity: 0.35;
+	opacity: 0.4;
 	cursor: not-allowed !important;
 }
 
+/* Typography ------------------------------------------------------------- */
 h1,
 h2,
 h3,
@@ -99,28 +172,54 @@ h5,
 h6 {
 	margin-top: 0;
 	margin-bottom: var(--spacing-md);
-	font-weight: 700;
+	font-family: var(--font-family-display);
+	font-weight: var(--font-weight-bold);
 	color: var(--color-text-primary);
-	letter-spacing: -0.02em;
+	line-height: var(--line-height-heading);
+	letter-spacing: var(--tracking-heading);
+}
+
+h1 {
+	font-size: var(--font-size-display-lg);
+	font-weight: var(--font-weight-display);
+	line-height: var(--line-height-display);
+	letter-spacing: var(--tracking-display);
+}
+h2 {
+	font-size: var(--font-size-heading-lg);
+}
+h3 {
+	font-size: var(--font-size-heading-md);
+}
+h4 {
+	font-size: var(--font-size-heading-sm);
 }
 
 p {
 	margin: 0 0 var(--spacing-md);
-	line-height: 1.6;
+	line-height: var(--line-height-body);
 	color: var(--color-text-secondary);
 }
 
+code,
+kbd,
+pre,
+samp {
+	font-family: var(--font-family-mono);
+}
+
+/* Utility classes (kept for existing markup) ----------------------------- */
 .button {
 	display: inline-block;
 	padding: 7px 14px;
 	background-color: var(--color-accent-blue);
-	color: #fff;
+	color: var(--color-text-on-accent);
 	text-decoration: none;
 	border-radius: var(--border-radius-md);
 	border: 1px solid transparent;
 	transition: opacity var(--transition);
 	font-size: var(--font-size-sm);
-	font-weight: 600;
+	font-weight: var(--font-weight-semibold);
 	cursor: pointer;
 }
 
@@ -136,19 +235,30 @@ p {
 
 @keyframes pulse-hint {
 	0% {
-		box-shadow: 0 0 0 0 rgba(79, 124, 248, 0.4);
+		box-shadow: 0 0 0 0 var(--color-info-wash);
 		transform: scale(1);
 	}
 	70% {
-		box-shadow: 0 0 0 10px rgba(79, 124, 248, 0);
+		box-shadow: 0 0 0 10px hsl(var(--topic-foundations-h) var(--topic-s) var(--topic-l) / 0);
 		transform: scale(1.02);
 	}
 	100% {
-		box-shadow: 0 0 0 0 rgba(79, 124, 248, 0);
+		box-shadow: 0 0 0 0 hsl(var(--topic-foundations-h) var(--topic-s) var(--topic-l) / 0);
 		transform: scale(1);
 	}
 }
 
 .pulse-hint {
 	animation: pulse-hint 2s infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.pulse-hint {
+		animation: none;
+	}
+	*,
+	*::before,
+	*::after {
+		scroll-behavior: auto !important;
+	}
 }

@@ -1,0 +1,276 @@
+/* =============================================================================
+   TreeStage — the scrolly visualization. Canonical tokens only; tinted by the
+   inherited --topic-accent (trees = violet). Mirrors MergeSortStage in spirit.
+   ============================================================================ */
+
+.wrap {
+	position: relative;
+	width: 100%;
+	height: 100%;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	padding: clamp(var(--space-lg), 3vw, var(--space-2xl));
+	box-sizing: border-box;
+	background: var(--surface-1);
+	border-radius: var(--radius-lg);
+	border: 1px solid var(--color-border);
+	overflow: hidden;
+	box-shadow: var(--shadow-2);
+}
+
+.svg {
+	width: 100%;
+	height: 100%;
+	max-width: 520px;
+	display: block;
+}
+
+/* ---------- Edges ---------- */
+
+.edge,
+.edgeActive {
+	stroke-width: 2.5;
+	stroke-linecap: round;
+	transition: stroke var(--duration-step) var(--ease-quiet);
+}
+
+.edge {
+	stroke: var(--color-border-strong);
+}
+
+.edgeActive {
+	stroke: var(--topic-accent);
+}
+
+.edgeGhost {
+	stroke: var(--topic-accent);
+	stroke-width: 2.5;
+	stroke-linecap: round;
+	stroke-dasharray: 4 5;
+	opacity: 0.7;
+}
+
+/* ---------- Nodes ---------- */
+
+.nodeCircle {
+	fill: var(--surface-2);
+	stroke: var(--color-text-muted);
+	stroke-width: 2.5;
+	transition:
+		fill var(--duration-step) var(--ease-quiet),
+		stroke var(--duration-step) var(--ease-quiet),
+		stroke-width var(--duration-step) var(--ease-quiet);
+}
+
+/* Invariant scene: smaller (left) vs larger (right) tint, plus root marker. */
+.nodeSmaller {
+	fill: color-mix(in srgb, var(--color-info) 16%, var(--surface-2));
+	stroke: color-mix(in srgb, var(--color-info) 60%, var(--color-border-strong));
+}
+
+.nodeLarger {
+	fill: color-mix(in srgb, var(--color-warning) 16%, var(--surface-2));
+	stroke: color-mix(
+		in srgb,
+		var(--color-warning) 60%,
+		var(--color-border-strong)
+	);
+}
+
+.nodeRootMark {
+	fill: var(--surface-3);
+	stroke: var(--color-text-secondary);
+	stroke-width: 3;
+}
+
+/* Search / insert path lighting (topic accent). */
+.nodePath {
+	fill: color-mix(in srgb, var(--topic-accent) 18%, var(--surface-2));
+	stroke: var(--topic-accent);
+}
+
+.nodeHead {
+	fill: var(--topic-accent);
+	stroke: var(--topic-accent);
+	stroke-width: 3.5;
+}
+
+.nodeFound {
+	fill: var(--color-success);
+	stroke: var(--color-success);
+	stroke-width: 3.5;
+}
+
+.nodeGhost {
+	fill: color-mix(in srgb, var(--topic-accent) 12%, var(--surface-2));
+	stroke: var(--topic-accent);
+	stroke-width: 2.5;
+	stroke-dasharray: 4 5;
+}
+
+.ghostGroup {
+	animation: ghostIn 480ms var(--ease-spring) forwards;
+	opacity: 0;
+	transform-box: fill-box;
+	transform-origin: center;
+}
+
+@keyframes ghostIn {
+	from {
+		opacity: 0;
+	}
+	to {
+		opacity: 1;
+	}
+}
+
+/* Traversal scene: visited nodes glow in inorder sequence. */
+.nodeVisited {
+	fill: color-mix(in srgb, var(--topic-accent) 22%, var(--surface-2));
+	stroke: var(--topic-accent);
+	animation: visitPulse 520ms var(--ease-quiet) both;
+	animation-delay: var(--delay, 0ms);
+}
+
+@keyframes visitPulse {
+	0% {
+		stroke-width: 2.5;
+	}
+	45% {
+		stroke-width: 4.5;
+	}
+	100% {
+		stroke-width: 2.5;
+	}
+}
+
+.nodeText {
+	font-family: var(--font-family-mono);
+	font-size: 14px;
+	font-weight: var(--font-weight-bold);
+	fill: var(--color-text-primary);
+	pointer-events: none;
+	user-select: none;
+}
+
+/* ---------- Reveal (hierarchy scene) ---------- */
+
+.revealGroup {
+	opacity: 0;
+	animation: nodeEnter 480ms var(--ease-quiet) forwards;
+	animation-delay: var(--delay, 0ms);
+}
+
+@keyframes nodeEnter {
+	from {
+		opacity: 0;
+	}
+	to {
+		opacity: 1;
+	}
+}
+
+/* ---------- Invariant washes ---------- */
+
+.washLeft {
+	fill: color-mix(in srgb, var(--color-info) 7%, transparent);
+}
+
+.washRight {
+	fill: color-mix(in srgb, var(--color-warning) 7%, transparent);
+}
+
+/* ---------- Inorder output strip (traversal scene) ---------- */
+
+.outputStrip {
+	position: absolute;
+	left: clamp(16px, 2.5vw, 28px);
+	bottom: clamp(48px, 7vh, 64px);
+	display: flex;
+	align-items: center;
+	gap: var(--space-sm);
+	max-width: calc(100% - 2 * clamp(16px, 2.5vw, 28px));
+	flex-wrap: wrap;
+}
+
+.outputLabel {
+	font-family: var(--font-family-mono);
+	font-size: var(--font-size-caption);
+	font-weight: var(--font-weight-bold);
+	letter-spacing: var(--tracking-caps);
+	text-transform: uppercase;
+	color: var(--color-text-muted);
+	flex-shrink: 0;
+}
+
+.outputItems {
+	display: inline-flex;
+	flex-wrap: wrap;
+	gap: var(--space-xs);
+}
+
+.outputItem {
+	display: inline-block;
+	padding: 2px var(--space-sm);
+	background: color-mix(in srgb, var(--topic-accent) 12%, transparent);
+	color: var(--topic-accent);
+	border-radius: var(--radius-pill);
+	font-family: var(--font-family-mono);
+	font-size: var(--font-size-caption);
+	letter-spacing: var(--tracking-wide);
+	opacity: 0;
+	animation: chipIn 360ms var(--ease-quiet) forwards;
+	animation-delay: var(--delay, 0ms);
+}
+
+@keyframes chipIn {
+	from {
+		opacity: 0;
+		transform: translateY(4px);
+	}
+	to {
+		opacity: 1;
+		transform: translateY(0);
+	}
+}
+
+/* ---------- Caption ---------- */
+
+.caption {
+	position: absolute;
+	top: clamp(16px, 2.2vw, 26px);
+	right: clamp(16px, 2.5vw, 28px);
+	margin: 0;
+	max-width: 58%;
+	text-align: right;
+	font-family: var(--font-family-mono);
+	font-size: var(--font-size-label);
+	color: var(--color-text-secondary);
+	letter-spacing: var(--tracking-wide);
+	line-height: var(--line-height-snug);
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.revealGroup,
+	.ghostGroup,
+	.nodeVisited,
+	.outputItem {
+		animation: none;
+		opacity: 1;
+	}
+}
+
+@media (max-width: 720px) {
+	.svg {
+		max-width: 100%;
+	}
+	.caption {
+		max-width: 70%;
+		font-size: var(--font-size-caption);
+	}
+	.outputStrip {
+		bottom: clamp(40px, 6vh, 52px);
+	}
+}

@@ -73,7 +73,7 @@
 .equationTermWinning {
 	color: var(--state-special);
 	font-weight: 700;
-	text-shadow: 0 0 10px rgba(201, 122, 248, 0.4);
+	text-shadow: 0 0 10px color-mix(in srgb, var(--state-special) 40%, transparent);
 }
 
 .equationInfinity {
@@ -167,7 +167,9 @@
 .arrowGroupWinning .arrowPath {
 	stroke: var(--state-special);
 	stroke-width: 2;
-	filter: drop-shadow(0 0 6px rgba(201, 122, 248, 0.45));
+	filter: drop-shadow(
+		0 0 6px color-mix(in srgb, var(--state-special) 45%, transparent)
+	);
 }
 
 .arrowGroupWinning .arrowHead,
@@ -252,8 +254,8 @@
 }
 
 .cell-done {
-	border-color: rgba(56, 201, 160, 0.35);
-	background: rgba(56, 201, 160, 0.06);
+	border-color: color-mix(in srgb, var(--state-done) 35%, transparent);
+	background: color-mix(in srgb, var(--state-done) 6%, transparent);
 }
 
 .cell-done .cellValue {
@@ -262,8 +264,8 @@
 
 .cell-flight {
 	border-color: var(--state-flight);
-	background: rgba(248, 167, 79, 0.1);
-	box-shadow: 0 0 0 1px rgba(248, 167, 79, 0.15);
+	background: color-mix(in srgb, var(--state-flight) 10%, transparent);
+	box-shadow: 0 0 0 1px color-mix(in srgb, var(--state-flight) 15%, transparent);
 }
 
 .cell-flight .cellValue {
@@ -272,8 +274,8 @@
 
 .cell-winning {
 	border-color: var(--state-special);
-	background: rgba(201, 122, 248, 0.12);
-	box-shadow: 0 0 0 1px rgba(201, 122, 248, 0.25);
+	background: color-mix(in srgb, var(--state-special) 12%, transparent);
+	box-shadow: 0 0 0 1px color-mix(in srgb, var(--state-special) 25%, transparent);
 }
 
 .cell-winning .cellValue {
@@ -282,10 +284,10 @@
 
 .cell-active {
 	border-color: var(--state-active);
-	background: rgba(79, 124, 248, 0.12);
+	background: color-mix(in srgb, var(--state-active) 12%, transparent);
 	box-shadow:
-		0 0 0 1px rgba(79, 124, 248, 0.25),
-		0 0 24px -4px rgba(79, 124, 248, 0.4);
+		0 0 0 1px color-mix(in srgb, var(--state-active) 25%, transparent),
+		0 0 24px -4px color-mix(in srgb, var(--state-active) 40%, transparent);
 	animation: cellPulse 1.6s var(--ease-quiet) infinite;
 }
 
@@ -297,13 +299,13 @@
 	0%,
 	100% {
 		box-shadow:
-			0 0 0 1px rgba(79, 124, 248, 0.25),
-			0 0 24px -4px rgba(79, 124, 248, 0.4);
+			0 0 0 1px color-mix(in srgb, var(--state-active) 25%, transparent),
+			0 0 24px -4px color-mix(in srgb, var(--state-active) 40%, transparent);
 	}
 	50% {
 		box-shadow:
-			0 0 0 1px rgba(79, 124, 248, 0.45),
-			0 0 32px -2px rgba(79, 124, 248, 0.65);
+			0 0 0 1px color-mix(in srgb, var(--state-active) 45%, transparent),
+			0 0 32px -2px color-mix(in srgb, var(--state-active) 65%, transparent);
 	}
 }
 
@@ -322,7 +324,7 @@
 	padding: 14px 18px 12px;
 	border-radius: var(--border-radius-lg);
 	border: 1px solid var(--color-border);
-	background: rgba(15, 17, 32, 0.6);
+	background: var(--surface-0);
 	transition:
 		opacity var(--duration-step) var(--ease-step),
 		border-color var(--duration-step) var(--ease-step);
@@ -385,8 +387,8 @@
 	height: 32px;
 	padding: 0 10px;
 	border-radius: var(--border-radius-pill);
-	background: rgba(248, 167, 79, 0.12);
-	border: 1px solid rgba(248, 167, 79, 0.4);
+	background: color-mix(in srgb, var(--state-flight) 12%, transparent);
+	border: 1px solid color-mix(in srgb, var(--state-flight) 40%, transparent);
 	color: var(--state-flight);
 	font-family: var(--font-family-mono);
 	font-size: 13px;

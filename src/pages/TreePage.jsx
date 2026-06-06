@@ -1,11 +1,5 @@
-import TopicRoute from '../common/TopicScrollytelling/TopicRoute.jsx';
-import Tree from '../components/Tree/Tree.jsx';
-import { TOPIC_STORIES } from '../data/topicStories.js';
+import TreeLesson from '../components/Tree/TreeLesson.jsx';
 
-const TreePage = () => (
-	<TopicRoute topic={TOPIC_STORIES.tree}>
-		<Tree />
-	</TopicRoute>
-);
+const TreePage = () => <TreeLesson />;
 
 export default TreePage;

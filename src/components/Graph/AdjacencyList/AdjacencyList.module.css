@@ -8,9 +8,9 @@
 	align-items: center;
 	gap: 0.75rem;
 	padding: 0.5rem;
-	border-radius: 4px;
+	border-radius: var(--radius-sm);
 	border-bottom: 1px solid var(--color-border);
-	transition: background-color 0.2s;
+	transition: background-color var(--duration-step) var(--ease-quiet);
 }
 
 .row:last-child {
@@ -43,7 +43,7 @@
 
 .inputInvalid {
 	color: var(--color-error);
-	background-color: rgba(255, 77, 77, 0.05);
+	background-color: var(--color-error-wash);
 }
 
 .deleteButton {
@@ -71,7 +71,7 @@
 }
 
 .selected {
-	background-color: rgba(79, 124, 248, 0.18) !important;
+	background-color: var(--color-info-wash) !important;
 }
 
 .addRow {
@@ -92,13 +92,13 @@
 	color: var(--color-text-secondary);
 	border-radius: var(--border-radius-md);
 	transition:
-		background-color 0.2s,
-		color 0.2s;
+		background-color var(--duration-step) var(--ease-quiet),
+		color var(--duration-step) var(--ease-quiet);
 }
 
 .addButton:hover {
 	color: var(--color-primary);
-	background-color: var(--color-light-grey);
+	background-color: var(--surface-hover);
 }
 
 .plusIcon {

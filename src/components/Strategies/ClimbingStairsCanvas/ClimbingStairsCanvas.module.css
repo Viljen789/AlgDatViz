@@ -188,8 +188,8 @@
 }
 
 .cell-done {
-	border-color: rgba(56, 201, 160, 0.35);
-	background: rgba(56, 201, 160, 0.06);
+	border-color: color-mix(in srgb, var(--state-done) 35%, transparent);
+	background: color-mix(in srgb, var(--state-done) 6%, transparent);
 }
 
 .cell-done .cellValue {
@@ -198,8 +198,8 @@
 
 .cell-flight {
 	border-color: var(--state-flight);
-	background: rgba(248, 167, 79, 0.1);
-	box-shadow: 0 0 0 1px rgba(248, 167, 79, 0.15);
+	background: color-mix(in srgb, var(--state-flight) 10%, transparent);
+	box-shadow: 0 0 0 1px color-mix(in srgb, var(--state-flight) 15%, transparent);
 }
 
 .cell-flight .cellValue {
@@ -208,10 +208,10 @@
 
 .cell-active {
 	border-color: var(--state-active);
-	background: rgba(79, 124, 248, 0.12);
+	background: color-mix(in srgb, var(--state-active) 12%, transparent);
 	box-shadow:
-		0 0 0 1px rgba(79, 124, 248, 0.25),
-		0 0 24px -4px rgba(79, 124, 248, 0.4);
+		0 0 0 1px color-mix(in srgb, var(--state-active) 25%, transparent),
+		0 0 24px -4px color-mix(in srgb, var(--state-active) 40%, transparent);
 	animation: cellPulse 1.6s var(--ease-quiet) infinite;
 }
 
@@ -223,13 +223,13 @@
 	0%,
 	100% {
 		box-shadow:
-			0 0 0 1px rgba(79, 124, 248, 0.25),
-			0 0 24px -4px rgba(79, 124, 248, 0.4);
+			0 0 0 1px color-mix(in srgb, var(--state-active) 25%, transparent),
+			0 0 24px -4px color-mix(in srgb, var(--state-active) 40%, transparent);
 	}
 	50% {
 		box-shadow:
-			0 0 0 1px rgba(79, 124, 248, 0.45),
-			0 0 32px -2px rgba(79, 124, 248, 0.65);
+			0 0 0 1px color-mix(in srgb, var(--state-active) 45%, transparent),
+			0 0 32px -2px color-mix(in srgb, var(--state-active) 65%, transparent);
 	}
 }
 

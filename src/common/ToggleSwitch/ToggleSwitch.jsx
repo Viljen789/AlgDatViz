@@ -1,13 +1,20 @@
 import styles from './ToggleSwitch.module.css';
 
-const ToggleSwitch = ({ label, checked, onChange }) => (
-	<label className={styles.switchLabel}>
-		<span>{label}</span>
+/**
+ * ToggleSwitch — token-wired primitive.
+ * States: hover / focus-visible (on the hidden checkbox) / active / disabled.
+ */
+const ToggleSwitch = ({ label, checked, onChange, disabled = false }) => (
+	<label
+		className={`${styles.switchLabel} ${disabled ? styles.disabled : ''}`}
+	>
+		{label && <span>{label}</span>}
 		<div className={styles.switchContainer}>
 			<input
 				type="checkbox"
 				checked={checked}
 				onChange={onChange}
+				disabled={disabled}
 				className={styles.hiddenCheckbox}
 			/>
 			<div className={styles.switchTrack}>
@@ -16,4 +23,5 @@ const ToggleSwitch = ({ label, checked, onChange }) => (
 		</div>
 	</label>
 );
+
 export default ToggleSwitch;

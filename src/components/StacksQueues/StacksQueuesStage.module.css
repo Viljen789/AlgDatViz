@@ -1,0 +1,333 @@
+/* =============================================================================
+   StacksQueuesStage — the scrolly concept stage. Canonical tokens only; tinted
+   by --topic-accent inherited from TopicTemplate. Pedagogical motion: stack
+   cells drop in from the top, queue cells slide in from the rear.
+   ============================================================================ */
+
+.wrap {
+	position: relative;
+	width: 100%;
+	height: 100%;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	padding: clamp(var(--space-lg), 3vw, var(--space-2xl));
+	box-sizing: border-box;
+	background: var(--surface-1);
+	border: 1px solid var(--color-border);
+	border-radius: var(--radius-lg);
+	box-shadow: var(--shadow-2);
+	overflow: hidden;
+}
+
+.notation {
+	position: absolute;
+	top: clamp(16px, 2.2vw, 28px);
+	right: clamp(16px, 2.5vw, 32px);
+	font-family: var(--font-family-mono);
+	font-size: var(--font-size-caption);
+	color: var(--color-text-secondary);
+	letter-spacing: var(--tracking-wide);
+	pointer-events: none;
+}
+
+/* ---------- Discipline grid (scenes 0–2) ---------- */
+
+.disciplineGrid {
+	display: grid;
+	grid-template-columns: 1fr;
+	gap: var(--space-xl);
+	width: 100%;
+	max-width: 480px;
+	align-items: stretch;
+}
+
+.disciplineGridBoth {
+	grid-template-columns: 1fr 1fr;
+	max-width: 560px;
+}
+
+.discipline {
+	display: flex;
+	flex-direction: column;
+	gap: var(--space-md);
+	padding: var(--space-lg);
+	border: 1px solid var(--color-border);
+	border-radius: var(--radius-md);
+	background: var(--surface-0);
+	min-width: 0;
+	transition: border-color var(--duration-step) var(--ease-step),
+		background-color var(--duration-step) var(--ease-step);
+}
+
+.disciplineActive {
+	border-color: color-mix(in srgb, var(--topic-accent) 50%, transparent);
+	background: color-mix(in srgb, var(--topic-accent) 6%, var(--surface-0));
+}
+
+.disciplineHead {
+	display: flex;
+	align-items: baseline;
+	justify-content: space-between;
+	gap: var(--space-sm);
+}
+
+.disciplineName {
+	font-family: var(--font-family-display);
+	font-size: var(--font-size-heading-sm);
+	font-weight: var(--font-weight-display);
+	letter-spacing: var(--tracking-heading);
+	color: var(--color-text-primary);
+}
+
+.disciplineAcronym {
+	font-family: var(--font-family-mono);
+	font-size: var(--font-size-caption);
+	letter-spacing: var(--tracking-caps);
+	font-weight: var(--font-weight-bold);
+	color: var(--color-text-muted);
+}
+
+.flow {
+	margin: 0;
+	font-size: var(--font-size-caption);
+	line-height: var(--line-height-snug);
+	color: var(--color-text-muted);
+}
+
+.flow strong {
+	color: var(--color-text-secondary);
+	font-weight: var(--font-weight-semibold);
+}
+
+/* ---------- Cells (shared) ---------- */
+
+.cell {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: var(--space-sm);
+	padding: var(--space-sm) var(--space-md);
+	background: var(--surface-2);
+	border: 1px solid var(--color-border);
+	border-radius: var(--radius-sm);
+	font-family: var(--font-family-mono);
+	font-size: var(--font-size-label);
+	color: var(--color-text-primary);
+}
+
+.cellLabel {
+	font-weight: var(--font-weight-medium);
+	color: var(--color-text-primary);
+}
+
+.anchor {
+	font-family: var(--font-family-sans);
+	font-size: var(--font-size-caption);
+	letter-spacing: var(--tracking-label);
+	text-transform: uppercase;
+	font-weight: var(--font-weight-bold);
+	color: var(--color-text-muted);
+}
+
+/* ---------- Stack pile ---------- */
+
+.stackPile {
+	display: flex;
+	flex-direction: column;
+	gap: var(--space-xs);
+	align-items: stretch;
+}
+
+.stackCell {
+	animation: stackDrop var(--duration-step) var(--ease-spring) both;
+	animation-delay: var(--enter-delay, 0ms);
+}
+
+.cellTop {
+	border-color: color-mix(in srgb, var(--topic-accent) 55%, transparent);
+	background: var(--topic-stacks-wash);
+}
+
+.cellTop .anchor {
+	color: var(--topic-accent);
+}
+
+.stackFloor {
+	margin-top: var(--space-xs);
+	padding-top: var(--space-xs);
+	border-top: 1px dashed var(--color-border-strong);
+	font-family: var(--font-family-mono);
+	font-size: var(--font-size-caption);
+	letter-spacing: var(--tracking-caps);
+	color: var(--color-text-dim);
+	text-align: center;
+}
+
+@keyframes stackDrop {
+	from {
+		opacity: 0;
+		transform: translateY(-14px);
+	}
+	to {
+		opacity: 1;
+		transform: translateY(0);
+	}
+}
+
+/* ---------- Queue lane ---------- */
+
+.queueLane {
+	display: flex;
+	align-items: center;
+	gap: var(--space-sm);
+}
+
+.endLabel {
+	font-family: var(--font-family-mono);
+	font-size: var(--font-size-caption);
+	letter-spacing: var(--tracking-caps);
+	font-weight: var(--font-weight-bold);
+	color: var(--color-text-muted);
+	flex-shrink: 0;
+}
+
+.queueTrack {
+	display: flex;
+	flex-direction: row;
+	gap: var(--space-xs);
+	flex: 1;
+	min-width: 0;
+	overflow-x: auto;
+	padding: var(--space-2xs) 0;
+}
+
+.queueCell {
+	flex-direction: column;
+	gap: var(--space-2xs);
+	min-width: 48px;
+	flex-shrink: 0;
+	animation: queueSlide var(--duration-step) var(--ease-quiet) both;
+	animation-delay: var(--enter-delay, 0ms);
+}
+
+.cellFront {
+	border-color: color-mix(in srgb, var(--topic-accent) 55%, transparent);
+	background: var(--topic-stacks-wash);
+}
+
+.cellFront .anchor {
+	color: var(--topic-accent);
+}
+
+.cellRear {
+	border-color: var(--color-border-strong);
+}
+
+@keyframes queueSlide {
+	from {
+		opacity: 0;
+		transform: translateX(16px);
+	}
+	to {
+		opacity: 1;
+		transform: translateX(0);
+	}
+}
+
+/* ---------- Traversal comparison (scene 3) ---------- */
+
+.traversalGrid {
+	display: grid;
+	grid-template-columns: 1fr 1fr;
+	gap: var(--space-lg);
+	width: 100%;
+	max-width: 560px;
+}
+
+.traversalCard {
+	display: flex;
+	flex-direction: column;
+	gap: var(--space-sm);
+	padding: var(--space-lg);
+	border: 1px solid var(--color-border);
+	border-radius: var(--radius-md);
+	background: var(--surface-0);
+	min-width: 0;
+	animation: cardFade var(--duration-step) var(--ease-quiet) both;
+}
+
+.graphSvg {
+	width: 100%;
+	height: auto;
+	display: block;
+}
+
+.graphEdge {
+	stroke: var(--color-border-strong);
+	stroke-width: 1.4;
+}
+
+.graphNode {
+	fill: var(--surface-2);
+	stroke: color-mix(in srgb, var(--topic-accent) 55%, transparent);
+	stroke-width: 1.4;
+}
+
+.graphStep {
+	fill: var(--color-text-primary);
+	font-family: var(--font-family-mono);
+	font-size: 11px;
+	font-weight: var(--font-weight-bold);
+	text-anchor: middle;
+	dominant-baseline: central;
+}
+
+.traversalOrder {
+	margin: 0;
+	font-family: var(--font-family-mono);
+	font-size: var(--font-size-caption);
+	line-height: var(--line-height-snug);
+	color: var(--color-text-secondary);
+}
+
+.traversalOrderLabel {
+	color: var(--color-text-muted);
+}
+
+@keyframes cardFade {
+	from {
+		opacity: 0;
+		transform: translateY(8px);
+	}
+	to {
+		opacity: 1;
+		transform: translateY(0);
+	}
+}
+
+/* ---------- Reduced motion ---------- */
+
+@media (prefers-reduced-motion: reduce) {
+	.stackCell,
+	.queueCell,
+	.traversalCard {
+		animation-duration: var(--duration-instant);
+		animation-delay: 0ms;
+	}
+}
+
+/* ---------- Responsive ---------- */
+
+@media (max-width: 720px) {
+	.disciplineGridBoth,
+	.traversalGrid {
+		grid-template-columns: 1fr;
+	}
+
+	.disciplineGrid,
+	.disciplineGridBoth,
+	.traversalGrid {
+		max-width: 100%;
+	}
+}

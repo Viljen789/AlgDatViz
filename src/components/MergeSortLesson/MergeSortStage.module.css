@@ -1,0 +1,248 @@
+.wrap {
+	position: relative;
+	width: 100%;
+	height: 100%;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	padding: clamp(var(--space-lg), 3vw, var(--space-2xl));
+	box-sizing: border-box;
+	background: var(--surface-1);
+	border-radius: var(--radius-lg);
+	border: 1px solid var(--color-border);
+	overflow: hidden;
+	box-shadow: var(--shadow-2);
+}
+
+.svg {
+	width: 100%;
+	height: 100%;
+	max-width: 480px;
+	display: block;
+	transition: opacity 400ms var(--ease-quiet);
+}
+
+.levelGroup {
+	opacity: 0;
+	transform: translateY(-8px);
+	transform-origin: center top;
+	transform-box: fill-box;
+	animation: levelEnter 540ms var(--ease-quiet) forwards;
+	animation-delay: var(--delay, 0ms);
+}
+
+@keyframes levelEnter {
+	to {
+		opacity: 1;
+		transform: translateY(0);
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.levelGroup {
+		animation-duration: 200ms;
+	}
+}
+
+/* Bar fills */
+
+.barDefault {
+	fill: var(--color-text-muted);
+	transition:
+		fill var(--duration-step) var(--ease-quiet),
+		x var(--duration-step) var(--ease-quiet),
+		y var(--duration-step) var(--ease-quiet),
+		height var(--duration-step) var(--ease-quiet);
+}
+
+.barDone {
+	fill: var(--state-done);
+	transition: fill var(--duration-step) var(--ease-quiet);
+	animation: pulseDone 1.6s ease-in-out infinite;
+}
+
+.barDoneFaint {
+	fill: var(--state-done);
+	opacity: 0.62;
+	transition:
+		fill var(--duration-step) var(--ease-quiet),
+		x var(--duration-merge) var(--ease-quiet),
+		y var(--duration-merge) var(--ease-quiet),
+		height var(--duration-merge) var(--ease-quiet);
+}
+
+.barFlight {
+	fill: var(--state-flight);
+	transition:
+		fill var(--duration-step) var(--ease-quiet),
+		x var(--duration-merge) var(--ease-quiet),
+		y var(--duration-merge) var(--ease-quiet),
+		height var(--duration-merge) var(--ease-quiet);
+}
+
+.barSelected {
+	fill: var(--topic-accent);
+	transition: fill var(--duration-step) var(--ease-quiet);
+}
+
+.hitTarget {
+	fill: transparent;
+	cursor: pointer;
+	transition: fill var(--duration-instant) var(--ease-quiet);
+}
+
+.hitTarget:hover {
+	fill: color-mix(in srgb, var(--topic-accent) 6%, transparent);
+}
+
+.hitTarget:focus-visible {
+	outline: none;
+	fill: color-mix(in srgb, var(--topic-accent) 12%, transparent);
+	stroke: var(--topic-accent);
+	stroke-width: 1;
+	stroke-dasharray: 2 2;
+}
+
+@keyframes pulseDone {
+	0%,
+	100% {
+		opacity: 1;
+	}
+	50% {
+		opacity: 0.6;
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.barDone {
+		animation: none;
+	}
+	.barDefault,
+	.barDoneFaint,
+	.barFlight {
+		transition-duration: 200ms;
+	}
+}
+
+/* Connectors */
+
+.connectorGroup {
+	transition: opacity 360ms var(--ease-quiet);
+}
+
+.connector {
+	stroke: var(--color-border-strong);
+	stroke-width: 0.6;
+	opacity: 0.55;
+	transition: opacity 360ms var(--ease-quiet);
+}
+
+/* Recurrence overlay (scene 4) */
+
+.recurrence {
+	position: absolute;
+	right: clamp(16px, 2.5vw, 32px);
+	bottom: clamp(16px, 2.5vw, 32px);
+	display: flex;
+	flex-direction: column;
+	gap: 12px;
+	max-width: 240px;
+	opacity: 0;
+	transform: translateY(8px);
+	transition:
+		opacity 360ms var(--ease-quiet),
+		transform 360ms var(--ease-quiet);
+	pointer-events: none;
+}
+
+.recurrenceShow {
+	opacity: 1;
+	transform: translateY(0);
+}
+
+.recurrenceList {
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+	font-family: var(--font-family-mono);
+	font-size: 11.5px;
+	color: var(--color-text-muted);
+	line-height: 1.5;
+}
+
+.recurrenceTotal {
+	display: flex;
+	flex-direction: column;
+	gap: 2px;
+	padding-top: 8px;
+	border-top: 1px solid var(--color-border);
+}
+
+.recurrenceMath {
+	font-family: var(--font-family-mono);
+	font-size: 14px;
+	font-weight: 500;
+	color: var(--color-text-primary);
+}
+
+.recurrenceMath sub {
+	font-size: 9px;
+	vertical-align: -2px;
+	margin: 0 1px;
+}
+
+.recurrenceLabel {
+	font-family: var(--font-family-mono);
+	font-size: var(--font-size-label);
+	color: var(--topic-accent);
+}
+
+/* Top-right notation */
+
+.notation {
+	position: absolute;
+	top: clamp(16px, 2.2vw, 28px);
+	right: clamp(16px, 2.5vw, 32px);
+	font-family: var(--font-family-mono);
+	font-size: 12.5px;
+	color: var(--color-text-secondary);
+	letter-spacing: 0.02em;
+}
+
+@media (max-width: 720px) {
+	.wrap {
+		flex-direction: column;
+		justify-content: flex-start;
+		gap: 12px;
+		padding: 18px 18px 14px;
+	}
+	.svg {
+		max-width: 100%;
+	}
+	.recurrence {
+		position: static;
+		right: auto;
+		bottom: auto;
+		max-width: 100%;
+		flex-direction: row;
+		align-items: flex-end;
+		justify-content: space-between;
+		gap: 16px;
+		padding-top: 8px;
+		border-top: 1px solid var(--color-border);
+		width: 100%;
+	}
+	.recurrenceList {
+		font-size: 10.5px;
+		flex: 1;
+	}
+	.recurrenceTotal {
+		padding-top: 0;
+		border-top: none;
+		text-align: right;
+		align-items: flex-end;
+	}
+	.notation {
+		font-size: 11px;
+	}
+}

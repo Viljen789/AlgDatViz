@@ -7,15 +7,6 @@ export const PAGE_HELP = {
 			'Check the complexity stats to understand performance tradeoffs.',
 		],
 	},
-	'/sorting': {
-		title: 'Sorting Guide',
-		tips: [
-			'Use the "Algorithm" dropdown to switch between different sorting methods.',
-			'Adjust the "Speed" slider to slow down complex operations like Quick Sort pivots.',
-			'Toggle between "Bar View" and "Box View" to see data in different formats.',
-			'The pseudocode on the right highlights the exact line being executed.',
-		],
-	},
 	'/graph': {
 		title: 'Graph Lab Tips',
 		tips: [

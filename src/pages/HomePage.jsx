@@ -1,226 +1,393 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { ArrowRight, Check, RotateCcw } from 'lucide-react';
+import { CURRICULUM, FIRST_TOPIC, TOPIC_BY_ID } from '../data/curriculum.js';
+import useProgress from '../hooks/useProgress.js';
+import useReducedMotion from '../hooks/useReducedMotion.js';
 import styles from './HomePage.module.css';
 
-const HOME_CARDS = [
-	{
-		id: 'sorting',
-		to: '/sorting',
-		title: 'Sorting Algorithms',
-		description:
-			'Watch Bubble, Selection, Insertion, Quick, Merge, Heap, Counting, Radix and Bucket Sort organize data step-by-step with synchronized pseudocode.',
-		algorithms: ['Bubble', 'Selection', 'Insertion', 'Quick', 'Merge', 'Heap'],
-		accent: '#4f7cf8',
-		symbol: (
-			<svg width="32" height="32" viewBox="0 0 32 32" fill="none">
-				<rect x="4" y="20" width="4" height="8" rx="1" fill="#4f7cf8" opacity="0.9" />
-				<rect x="10" y="14" width="4" height="14" rx="1" fill="#4f7cf8" opacity="0.75" />
-				<rect x="16" y="8" width="4" height="20" rx="1" fill="#4f7cf8" opacity="0.6" />
-				<rect x="22" y="4" width="4" height="24" rx="1" fill="#4f7cf8" opacity="0.45" />
-			</svg>
-		),
-	},
-	{
-		id: 'graph',
-		to: '/graph',
-		title: 'Graph Visualizer',
-		description:
-			'Build graphs, edit representations, and step through BFS, DFS, Dijkstra, spanning trees, topological sorting, and max flow.',
-		algorithms: ['BFS', 'DFS', 'Dijkstra', 'MST', 'Topo', 'Flow'],
-		accent: '#38c9a0',
-		symbol: (
-			<svg width="32" height="32" viewBox="0 0 32 32" fill="none">
-				<circle cx="6" cy="6" r="4" fill="#38c9a0" opacity="0.9" />
-				<circle cx="26" cy="8" r="4" fill="#38c9a0" opacity="0.75" />
-				<circle cx="16" cy="24" r="4" fill="#38c9a0" opacity="0.6" />
-				<line x1="6" y1="6" x2="26" y2="8" stroke="#38c9a0" strokeWidth="1.5" opacity="0.5" />
-				<line x1="6" y1="6" x2="16" y2="24" stroke="#38c9a0" strokeWidth="1.5" opacity="0.5" />
-				<line x1="26" y1="8" x2="16" y2="24" stroke="#38c9a0" strokeWidth="1.5" opacity="0.5" />
-			</svg>
-		),
-	},
-	{
-		id: 'hashmap',
-		to: '/hashmap',
-		title: 'Hash Maps',
-		description:
-			'Practice put, get, delete, collisions, chaining, load factor, and resizing with a bucket-level visualizer.',
-		algorithms: ['Hashing', 'Chaining', 'Collisions', 'Resize'],
-		accent: '#f8a74f',
-		symbol: (
-			<svg width="32" height="32" viewBox="0 0 32 32" fill="none">
-				<rect x="4" y="5" width="24" height="5" rx="1" fill="#f8a74f" opacity="0.9" />
-				<rect x="4" y="13.5" width="24" height="5" rx="1" fill="#f8a74f" opacity="0.65" />
-				<rect x="4" y="22" width="24" height="5" rx="1" fill="#f8a74f" opacity="0.42" />
-				<circle cx="10" cy="16" r="2.5" fill="#38c9a0" />
-				<circle cx="17" cy="16" r="2.5" fill="#38c9a0" opacity="0.72" />
-			</svg>
-		),
-	},
-	{
-		id: 'stacks-queues',
-		to: '/stacks-queues',
-		title: 'Stacks & Queues',
-		description:
-			'Compare LIFO and FIFO behavior with push, pop, enqueue, dequeue, peek, and guided operation traces.',
-		algorithms: ['Stack', 'Queue', 'LIFO', 'FIFO', 'BFS', 'DFS'],
-		accent: '#7fa4fc',
-		symbol: (
-			<svg width="32" height="32" viewBox="0 0 32 32" fill="none">
-				<rect x="5" y="20" width="10" height="5" rx="1.2" fill="#7fa4fc" opacity="0.95" />
-				<rect x="5" y="14" width="10" height="5" rx="1.2" fill="#7fa4fc" opacity="0.72" />
-				<rect x="5" y="8" width="10" height="5" rx="1.2" fill="#7fa4fc" opacity="0.5" />
-				<path d="M20 10h6M20 16h6M20 22h6" stroke="#38c9a0" strokeWidth="2.2" strokeLinecap="round" />
-				<path d="M23 7v18" stroke="#38c9a0" strokeWidth="1.5" opacity="0.45" strokeLinecap="round" />
-			</svg>
-		),
-	},
-	{
-		id: 'tree',
-		to: '/tree',
-		title: 'Trees',
-		description:
-			'Use a binary search tree to see comparisons, branching, insert/search/delete behavior, and traversal orders.',
-		algorithms: ['BST', 'Search', 'Insert', 'Delete', 'Traversal'],
-		accent: '#c97af8',
-		symbol: (
-			<svg width="32" height="32" viewBox="0 0 32 32" fill="none">
-				<circle cx="16" cy="6" r="4" fill="#c97af8" opacity="0.95" />
-				<circle cx="9" cy="18" r="4" fill="#c97af8" opacity="0.7" />
-				<circle cx="23" cy="18" r="4" fill="#c97af8" opacity="0.7" />
-				<circle cx="5" cy="28" r="3" fill="#c97af8" opacity="0.48" />
-				<circle cx="13" cy="28" r="3" fill="#c97af8" opacity="0.48" />
-				<line x1="16" y1="10" x2="9" y2="14" stroke="#c97af8" strokeWidth="1.5" opacity="0.55" />
-				<line x1="16" y1="10" x2="23" y2="14" stroke="#c97af8" strokeWidth="1.5" opacity="0.55" />
-				<line x1="9" y1="22" x2="5" y2="25" stroke="#c97af8" strokeWidth="1.5" opacity="0.4" />
-				<line x1="9" y1="22" x2="13" y2="25" stroke="#c97af8" strokeWidth="1.5" opacity="0.4" />
-			</svg>
-		),
-	},
-	{
-		id: 'strategies',
-		to: '/strategies',
-		title: 'Algorithm Strategies',
-		description:
-			'Learn dynamic programming and greedy thinking with small guided examples, tables, local choices, and proof cues.',
-		algorithms: ['DP', 'Greedy', 'State', 'Recurrence', 'Exchange'],
-		accent: '#38c9a0',
-		symbol: (
-			<svg width="32" height="32" viewBox="0 0 32 32" fill="none">
-				<rect x="4" y="5" width="6" height="6" rx="1.2" fill="#4f7cf8" opacity="0.95" />
-				<rect x="13" y="5" width="6" height="6" rx="1.2" fill="#4f7cf8" opacity="0.75" />
-				<rect x="22" y="5" width="6" height="6" rx="1.2" fill="#4f7cf8" opacity="0.55" />
-				<path d="M6 23c5-8 10-8 20-8" stroke="#38c9a0" strokeWidth="2.2" strokeLinecap="round" />
-				<circle cx="7" cy="23" r="2.5" fill="#38c9a0" />
-				<circle cx="18" cy="17" r="2.5" fill="#38c9a0" opacity="0.72" />
-				<circle cx="26" cy="15" r="2.5" fill="#38c9a0" opacity="0.52" />
-			</svg>
-		),
-	},
-	{
-		id: 'master',
-		to: '/master-theorem',
-		title: 'Master Theorem',
-		description:
-			'Compare recursion leaves against combine work with sliders, examples, and a level-by-level recursion tree.',
-		algorithms: ['Recurrences', 'Cases', 'Theta', 'Recursion Tree'],
-		accent: '#f8c040',
-		symbol: (
-			<svg width="32" height="32" viewBox="0 0 32 32" fill="none">
-				<path d="M8 6h16M8 26h16M22 6 11 16l11 10" stroke="#f8c040" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" />
-				<circle cx="10" cy="16" r="2.5" fill="#38c9a0" />
-				<rect x="20" y="13" width="6" height="6" rx="1.5" fill="#4f7cf8" opacity="0.78" />
-			</svg>
-		),
-	},
-];
+const PreviewBars = () => (
+	<svg
+		viewBox="0 0 120 56"
+		className={styles.preview}
+		aria-hidden="true"
+		preserveAspectRatio="none"
+	>
+		{[28, 12, 22, 8, 36, 16, 30, 20].map((h, i) => (
+			<rect
+				key={i}
+				x={i * 14 + 4}
+				y={48 - h}
+				width="8"
+				height={h}
+				rx="1.5"
+				fill="currentColor"
+				opacity={0.35 + (i % 3) * 0.18}
+			/>
+		))}
+	</svg>
+);
 
-const LEGEND = [
-	{ color: '#4f7cf8', label: 'Comparing' },
-	{ color: '#f8a74f', label: 'Swapping / Writing' },
-	{ color: '#38c9a0', label: 'Sorted / Found' },
-	{ color: '#f86060', label: 'Pivot / Target' },
-	{ color: '#f8c040', label: 'Path' },
-];
+const PreviewSplit = () => (
+	<svg
+		viewBox="0 0 120 56"
+		className={styles.preview}
+		aria-hidden="true"
+		preserveAspectRatio="none"
+	>
+		<g stroke="currentColor" strokeWidth="1" fill="none" opacity="0.55">
+			<line x1="60" y1="6" x2="28" y2="22" />
+			<line x1="60" y1="6" x2="92" y2="22" />
+			<line x1="28" y1="22" x2="14" y2="38" />
+			<line x1="28" y1="22" x2="42" y2="38" />
+			<line x1="92" y1="22" x2="78" y2="38" />
+			<line x1="92" y1="22" x2="106" y2="38" />
+		</g>
+		<g fill="currentColor">
+			<circle cx="60" cy="6" r="3" />
+			<circle cx="28" cy="22" r="3" opacity="0.85" />
+			<circle cx="92" cy="22" r="3" opacity="0.85" />
+			<circle cx="14" cy="38" r="2.5" opacity="0.7" />
+			<circle cx="42" cy="38" r="2.5" opacity="0.7" />
+			<circle cx="78" cy="38" r="2.5" opacity="0.7" />
+			<circle cx="106" cy="38" r="2.5" opacity="0.7" />
+		</g>
+	</svg>
+);
+
+const PreviewNetwork = () => (
+	<svg
+		viewBox="0 0 120 56"
+		className={styles.preview}
+		aria-hidden="true"
+		preserveAspectRatio="none"
+	>
+		<g stroke="currentColor" strokeWidth="1" fill="none" opacity="0.5">
+			<line x1="20" y1="14" x2="56" y2="28" />
+			<line x1="56" y1="28" x2="98" y2="14" />
+			<line x1="20" y1="14" x2="36" y2="44" />
+			<line x1="56" y1="28" x2="36" y2="44" />
+			<line x1="56" y1="28" x2="84" y2="44" />
+			<line x1="98" y1="14" x2="84" y2="44" />
+		</g>
+		<g fill="currentColor">
+			<circle cx="20" cy="14" r="3.5" />
+			<circle cx="56" cy="28" r="4" />
+			<circle cx="98" cy="14" r="3.5" />
+			<circle cx="36" cy="44" r="3" opacity="0.85" />
+			<circle cx="84" cy="44" r="3" opacity="0.85" />
+		</g>
+	</svg>
+);
+
+const PreviewBuckets = () => (
+	<svg
+		viewBox="0 0 120 56"
+		className={styles.preview}
+		aria-hidden="true"
+		preserveAspectRatio="none"
+	>
+		{[0, 1, 2, 3].map(i => (
+			<g key={i} transform={`translate(${4 + i * 30}, 6)`}>
+				<rect
+					width="22"
+					height="44"
+					rx="3"
+					fill="none"
+					stroke="currentColor"
+					strokeWidth="1"
+					opacity="0.45"
+				/>
+				{Array.from({ length: [2, 3, 1, 2][i] }).map((_, j) => (
+					<rect
+						key={j}
+						x="3"
+						y={37 - j * 11}
+						width="16"
+						height="8"
+						rx="1.5"
+						fill="currentColor"
+						opacity={0.55 + j * 0.15}
+					/>
+				))}
+			</g>
+		))}
+	</svg>
+);
+
+const PREVIEW_BY_ID = {
+	sorting: PreviewBars,
+	graphs: PreviewNetwork,
+	'master-theorem': PreviewSplit,
+	hashing: PreviewBuckets,
+};
 
 const HomePage = () => {
 	const navigate = useNavigate();
-	const [hovered, setHovered] = useState(null);
+	const reducedMotion = useReducedMotion();
+	const { lastVisited, markVisited, reset, isCompleted, isVisited, overall } =
+		useProgress();
+	const [pathIndex, setPathIndex] = useState(-1);
+	const nodeRefs = useRef([]);
+
+	const allComplete = overall.allComplete;
+	const started = overall.visited > 0;
+
+	const lastTopic = lastVisited ? TOPIC_BY_ID[lastVisited] : null;
+	const nextTopic = useMemo(() => {
+		if (allComplete) return null;
+		// First not-yet-completed topic in teaching order.
+		const firstOpen = CURRICULUM.find(topic => !isCompleted(topic.id));
+		return firstOpen || FIRST_TOPIC;
+	}, [allComplete, isCompleted]);
+
+	const heroState = useMemo(() => {
+		if (allComplete) {
+			return {
+				title: 'Reviewing?',
+				subtitle: 'Every topic is complete. Start anywhere on the path.',
+				ctaLabel: 'Open the path',
+				ctaTopic: FIRST_TOPIC,
+			};
+		}
+		if (lastTopic && lastTopic.id !== nextTopic?.id) {
+			return {
+				title: 'Welcome back.',
+				subtitle: `You stopped at ${lastTopic.name.toLowerCase()}. Pick it back up, or jump ahead.`,
+				ctaLabel: `Continue with ${nextTopic.name.toLowerCase()}`,
+				ctaTopic: nextTopic,
+			};
+		}
+		return {
+			title: 'Algorithms, in motion.',
+			subtitle:
+				'A guided path through the TDT4120 curriculum. Built to make the why click — not just the what.',
+			ctaLabel: `Begin with ${FIRST_TOPIC.name.toLowerCase()}`,
+			ctaTopic: FIRST_TOPIC,
+		};
+	}, [allComplete, lastTopic, nextTopic]);
+
+	const visit = topic => {
+		markVisited(topic.id);
+		navigate(topic.to);
+	};
+
+	useEffect(() => {
+		if (reducedMotion) return undefined;
+		const observer = new IntersectionObserver(
+			entries => {
+				entries.forEach(entry => {
+					if (!entry.isIntersecting) return;
+					const idx = Number(entry.target.dataset.idx);
+					setPathIndex(prev => (idx > prev ? idx : prev));
+				});
+			},
+			{ rootMargin: '-30% 0px -45% 0px', threshold: 0 }
+		);
+		nodeRefs.current.forEach(node => {
+			if (node) observer.observe(node);
+		});
+		return () => observer.disconnect();
+	}, [reducedMotion]);
+
+	const onKeyNavigate = (event, idx) => {
+		if (event.key === 'ArrowDown') {
+			event.preventDefault();
+			const next = nodeRefs.current[idx + 1];
+			if (next) next.focus();
+		} else if (event.key === 'ArrowUp') {
+			event.preventDefault();
+			const prev = nodeRefs.current[idx - 1];
+			if (prev) prev.focus();
+		}
+	};
 
 	return (
-		<div className={styles.container}>
-			<div className={styles.intro}>
-				<p className={styles.introText}>
-					Interactive step-by-step visualizations with synchronized state,
-					pseudocode, and short explanations. Choose a concept to begin
-					exploring.
-				</p>
-			</div>
-
-			<div className={styles.grid}>
-				{HOME_CARDS.map(card => {
-					const isHovered = hovered === card.id;
-					return (
+		<div className={styles.page}>
+			<section
+				className={styles.hero}
+				aria-labelledby="home-hero-title"
+			>
+				<div className={styles.lamp} aria-hidden="true" />
+				<div className={styles.heroInner}>
+					<p className={styles.eyebrow}>
+						AlgDatViz · TDT4120
+					</p>
+					<h1 id="home-hero-title" className={styles.heroTitle}>
+						{heroState.title}
+					</h1>
+					<p className={styles.heroSubtitle}>{heroState.subtitle}</p>
+					<div className={styles.heroActions}>
 						<button
-							key={card.id}
-							onClick={() => navigate(card.to)}
-							onMouseEnter={() => setHovered(card.id)}
-							onMouseLeave={() => setHovered(null)}
-							className={styles.card}
-							style={{
-								borderColor: isHovered ? `${card.accent}aa` : undefined,
-								background: isHovered ? `${card.accent}09` : undefined,
-								transform: isHovered ? 'translateY(-3px)' : 'translateY(0)',
-								boxShadow: isHovered
-									? `0 8px 32px ${card.accent}28`
-									: 'none',
-							}}
+							type="button"
+							className={styles.primaryCta}
+							onClick={() => visit(heroState.ctaTopic)}
 						>
-							<div className={styles.cardHead}>
-								{card.symbol}
-								<span
-									className={styles.arrow}
-									style={{
-										opacity: isHovered ? 1 : 0,
-										color: card.accent,
-										transform: isHovered
-											? 'translateX(0)'
-											: 'translateX(-6px)',
-									}}
-								>
-									→
-								</span>
-							</div>
-							<div className={styles.cardTitle}>{card.title}</div>
-							<div className={styles.cardDesc}>{card.description}</div>
-							<div className={styles.tagRow}>
-								{card.algorithms.map(a => (
-									<span
-										key={a}
-										className={styles.tag}
-										style={{
-											borderColor: `${card.accent}55`,
-											color: `${card.accent}cc`,
-										}}
-									>
-										{a}
-									</span>
-								))}
-							</div>
+							<span>{heroState.ctaLabel}</span>
+							<ArrowRight size={16} strokeWidth={2} />
 						</button>
-					);
-				})}
-			</div>
-
-			<div className={styles.legend}>
-				<span className={styles.legendTitle}>LEGEND</span>
-				{LEGEND.map(({ color, label }) => (
-					<div key={label} className={styles.legendItem}>
-						<div className={styles.dot} style={{ background: color }} />
-						<span className={styles.legendLabel}>{label}</span>
+						{started && !allComplete && (
+							<button
+								type="button"
+								className={styles.ghostCta}
+								onClick={reset}
+								title="Clear progress and start over"
+							>
+								<RotateCcw size={13} strokeWidth={2} />
+								<span>Reset progress</span>
+							</button>
+						)}
 					</div>
-				))}
-			</div>
+					{started && (
+						<div
+							className={styles.heroProgress}
+							role="group"
+							aria-label={`Overall progress: ${overall.completed} of ${overall.total} topics completed`}
+						>
+							<div
+								className={styles.heroProgressTrack}
+								role="progressbar"
+								aria-valuenow={overall.completed}
+								aria-valuemin={0}
+								aria-valuemax={overall.total}
+							>
+								<span
+									className={styles.heroProgressFill}
+									style={{ width: `${overall.percent}%` }}
+								/>
+							</div>
+							<p className={styles.heroMeta}>
+								{overall.completed} of {overall.total} topics completed
+								{overall.visited > overall.completed &&
+									` · ${overall.visited - overall.completed} in progress`}
+							</p>
+						</div>
+					)}
+				</div>
+				<div className={styles.heroDivider} aria-hidden="true">
+					<svg viewBox="0 0 24 32" preserveAspectRatio="none">
+						<path
+							d="M12 2 V30"
+							stroke="currentColor"
+							strokeWidth="1"
+							strokeLinecap="round"
+						/>
+						<circle cx="12" cy="30" r="2" fill="currentColor" />
+					</svg>
+				</div>
+			</section>
+
+			<section
+				className={styles.pathSection}
+				aria-labelledby="path-heading"
+			>
+				<header className={styles.pathHeader}>
+					<p className={styles.label}>The path</p>
+					<h2 id="path-heading" className={styles.pathHeading}>
+						Eight topics, in the order they teach themselves.
+					</h2>
+				</header>
+
+				<ol className={styles.spine} aria-label="Learning path">
+					{CURRICULUM.map((topic, idx) => {
+						const completed = isCompleted(topic.id);
+						const visited = !completed && isVisited(topic.id);
+						const isNext = !completed && topic.id === nextTopic?.id;
+						const Preview = PREVIEW_BY_ID[topic.id];
+						const reached = idx <= pathIndex || reducedMotion;
+						const statusText = completed
+							? 'Completed'
+							: isNext
+								? 'Next up'
+								: visited
+									? 'In progress'
+									: '';
+						return (
+							<li
+								key={topic.id}
+								data-idx={idx}
+								ref={node => {
+									nodeRefs.current[idx] = node;
+								}}
+								tabIndex={-1}
+								className={`${styles.node} ${reached ? styles.nodeReached : ''} ${
+									completed ? styles.nodeComplete : ''
+								} ${visited ? styles.nodeVisited : ''} ${
+									isNext ? styles.nodeNext : ''
+								}`}
+								style={{ '--accent': topic.accent }}
+							>
+								<div className={styles.nodeMarker} aria-hidden="true">
+									<span className={styles.nodeDot}>
+										{completed && (
+											<Check size={11} strokeWidth={3.2} />
+										)}
+									</span>
+									{isNext && <span className={styles.nodeRing} />}
+								</div>
+
+								<button
+									type="button"
+									className={styles.nodeBody}
+									onClick={() => visit(topic)}
+									onKeyDown={event => onKeyNavigate(event, idx)}
+									aria-describedby={`node-quote-${topic.id}`}
+								>
+									<div className={styles.nodeHead}>
+										<span className={styles.nodeNumber}>
+											{topic.number}
+										</span>
+										{statusText && (
+											<span className={styles.nodeStatus}>
+												{statusText}
+											</span>
+										)}
+									</div>
+									<h3 className={styles.nodeName}>{topic.name}</h3>
+									<p
+										id={`node-quote-${topic.id}`}
+										className={styles.nodeQuote}
+									>
+										{topic.pullQuote}
+									</p>
+									<div className={styles.nodeFoot}>
+										<span className={styles.nodeComplexity}>
+											{topic.complexity}
+										</span>
+										<span className={styles.nodeArrow} aria-hidden="true">
+											Open
+											<ArrowRight size={13} strokeWidth={2} />
+										</span>
+									</div>
+								</button>
+
+								{Preview && (
+									<div className={styles.nodePreview} aria-hidden="true">
+										<Preview />
+									</div>
+								)}
+							</li>
+						);
+					})}
+				</ol>
+
+				<footer className={styles.pathFooter}>
+					<p>
+						The path is a guide, not a gate. Skip ahead, return, replay — every
+						topic stays open.
+					</p>
+					{!allComplete && nextTopic && (
+						<Link
+							className={styles.footerLink}
+							to={nextTopic.to}
+							onClick={() => markVisited(nextTopic.id)}
+						>
+							Begin with {nextTopic.name.toLowerCase()}
+							<ArrowRight size={13} strokeWidth={2} />
+						</Link>
+					)}
+				</footer>
+			</section>
 		</div>
 	);
 };

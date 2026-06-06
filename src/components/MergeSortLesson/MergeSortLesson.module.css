@@ -1,0 +1,166 @@
+/* =============================================================================
+   MergeSortLesson — content-specific styles only. All page structure (hero,
+   scrolly, playground, breadcrumbs, up-next) lives in TopicTemplate. What
+   remains here is the link-out to the full multi-algorithm sandbox.
+   Canonical tokens only; tinted by --topic-accent from TopicTemplate.
+   ============================================================================ */
+
+.sandboxCallout {
+	max-width: 1280px;
+	margin: 0 auto;
+	padding: 0 clamp(var(--space-xl), 6vw, var(--space-4xl))
+		clamp(var(--space-2xl), 6vw, var(--space-3xl));
+}
+
+.sandboxCard {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: var(--space-2xl);
+	flex-wrap: wrap;
+	padding: clamp(var(--space-xl), 4vw, var(--space-2xl));
+	background: var(--surface-1);
+	border: 1px solid var(--color-border);
+	border-radius: var(--radius-xl);
+	box-shadow: var(--shadow-2);
+	position: relative;
+	overflow: hidden;
+}
+
+.sandboxCard::before {
+	content: '';
+	position: absolute;
+	inset: 0 auto 0 0;
+	width: 3px;
+	background: var(--topic-accent);
+	opacity: 0.9;
+}
+
+.sandboxText {
+	display: flex;
+	flex-direction: column;
+	gap: var(--space-sm);
+	max-width: 62ch;
+}
+
+.sandboxEyebrow {
+	margin: 0;
+	font-family: var(--font-family-mono);
+	font-size: var(--font-size-caption);
+	font-weight: var(--font-weight-bold);
+	letter-spacing: var(--tracking-caps);
+	text-transform: uppercase;
+	color: var(--color-text-muted);
+}
+
+.sandboxTitle {
+	margin: 0;
+	font-family: var(--font-family-display);
+	font-size: var(--font-size-heading-lg);
+	font-weight: var(--font-weight-display);
+	line-height: var(--line-height-heading);
+	letter-spacing: var(--tracking-heading);
+	color: var(--color-text-primary);
+	text-wrap: balance;
+}
+
+.sandboxBody {
+	margin: 0;
+	font-size: var(--font-size-body);
+	line-height: var(--line-height-body);
+	color: var(--color-text-secondary);
+}
+
+.sandboxLink {
+	display: inline-flex;
+	align-items: center;
+	gap: var(--space-sm);
+	flex-shrink: 0;
+	padding: var(--space-md) var(--space-lg);
+	background: var(--topic-accent);
+	color: var(--color-text-on-accent);
+	border-radius: var(--radius-pill);
+	font-family: var(--font-family-sans);
+	font-size: var(--font-size-label);
+	font-weight: var(--font-weight-semibold);
+	text-decoration: none;
+	transition: transform var(--transition), box-shadow var(--transition),
+		filter var(--transition);
+}
+
+.sandboxLink:hover {
+	transform: translateY(-1px);
+	filter: brightness(1.06);
+	box-shadow: var(--shadow-3);
+}
+
+.sandboxLink:active {
+	transform: translateY(0);
+}
+
+.sandboxLink:focus-visible {
+	outline: none;
+	box-shadow: var(--shadow-focus);
+}
+
+.sandboxChevron {
+	transition: transform var(--transition);
+}
+
+.sandboxChevronOpen {
+	transform: rotate(180deg);
+}
+
+.sandboxEmbed {
+	margin-top: var(--space-lg);
+	height: clamp(560px, 82vh, 920px);
+	border: 1px solid var(--color-border);
+	border-radius: var(--radius-xl);
+	overflow: hidden;
+	box-shadow: var(--shadow-2);
+	animation: sandboxIn var(--duration-step) var(--ease-quiet) both;
+}
+
+.sandboxLoading {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 100%;
+	height: 100%;
+	background: var(--surface-0);
+	color: var(--color-text-muted);
+	font-family: var(--font-family-mono);
+	font-size: var(--font-size-label);
+}
+
+@keyframes sandboxIn {
+	from {
+		opacity: 0;
+		transform: translateY(6px);
+	}
+	to {
+		opacity: 1;
+		transform: translateY(0);
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.sandboxLink:hover,
+	.sandboxLink:active {
+		transform: none;
+	}
+	.sandboxChevron {
+		transition: none;
+	}
+	.sandboxEmbed {
+		animation-duration: var(--duration-instant);
+	}
+}
+
+@media (max-width: 720px) {
+	.sandboxCard {
+		flex-direction: column;
+		align-items: flex-start;
+		gap: var(--space-lg);
+	}
+}

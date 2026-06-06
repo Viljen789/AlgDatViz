@@ -1,4 +1,4 @@
-import { Component, useEffect, useMemo, useState } from 'react';
+import { Component, useEffect, useMemo, useRef, useState } from 'react';
 import { LayoutGrid, ListOrdered, Squircle } from 'lucide-react';
 import styles from './SortingDashboard.module.css';
 import { useSortingVisualizer } from '../../../hooks/useSortingVisualizer';
@@ -271,6 +271,7 @@ const getFrameNarration = (algorithm, currentFrame, canStep) => {
 const SortingDashboard = ({
 	initialAlgorithm = 'bubbleSort',
 	onStoryRequest,
+	embedded = false,
 }) => {
 	const {
 		array,
@@ -302,6 +303,9 @@ const SortingDashboard = ({
 		sortingAlgorithm === 'mergeSort' ? 'recursive' : 'bars'
 	);
 	const [comparisonRows, setComparisonRows] = useState(null);
+	// Scopes playback keyboard control to this dashboard so it doesn't double-fire
+	// with the lesson playground when both are mounted (the merge-sort lesson).
+	const playerRef = useRef(null);
 
 	useEffect(() => {
 		setViewMode(VIEW_MODES_FOR(sortingAlgorithm)[0]);
@@ -447,7 +451,10 @@ const SortingDashboard = ({
 	);
 
 	return (
-		<div className={styles.shell}>
+		<div
+			className={`${styles.shell} ${embedded ? styles.embedded : ''}`}
+			ref={playerRef}
+		>
 			<SortingHero
 				sortingAlgorithm={sortingAlgorithm}
 				setSortingAlgorithm={setSortingAlgorithm}
@@ -459,6 +466,7 @@ const SortingDashboard = ({
 				isSorting={isSorting}
 				statusSuffix={statusSuffix}
 				onStoryRequest={onStoryRequest}
+				showBreadcrumb={!embedded}
 			/>
 
 			<div className={styles.body}>
@@ -608,6 +616,7 @@ const SortingDashboard = ({
 								onSpeedChange={setAnimationSpeed}
 								rightSlot={viewToggle}
 								layout="panel"
+								scopeRef={playerRef}
 							/>
 						</div>
 					</section>

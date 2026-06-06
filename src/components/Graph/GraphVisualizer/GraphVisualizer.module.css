@@ -4,8 +4,8 @@
 	min-height: 400px;
 	flex: 1;
 	background:
-		linear-gradient(rgba(255, 255, 255, 0.025) 1px, transparent 1px),
-		linear-gradient(90deg, rgba(255, 255, 255, 0.025) 1px, transparent 1px),
+		linear-gradient(var(--color-border-subtle) 1px, transparent 1px),
+		linear-gradient(90deg, var(--color-border-subtle) 1px, transparent 1px),
 		var(--color-bg-elevated);
 	background-size: 36px 36px;
 	border-radius: var(--border-radius-lg);
@@ -29,9 +29,9 @@
 	stroke-linecap: round;
 	stroke-linejoin: round;
 	transition:
-		stroke 0.18s ease,
-		stroke-width 0.18s ease,
-		opacity 0.18s ease;
+		stroke var(--duration-step) var(--ease-quiet),
+		stroke-width var(--duration-step) var(--ease-quiet),
+		opacity var(--duration-step) var(--ease-quiet);
 }
 
 .edgePathSelected {
@@ -96,40 +96,40 @@
 }
 
 .nodeCircle {
-	fill: #141828;
+	fill: var(--surface-3);
 	stroke: var(--viz-node-stroke);
 	stroke-width: 3;
-	filter: drop-shadow(0 8px 18px rgba(0, 0, 0, 0.22));
+	filter: drop-shadow(0 8px 18px var(--shadow-color));
 	transition:
-		fill 0.18s ease,
-		stroke 0.18s ease,
-		stroke-width 0.18s ease;
+		fill var(--duration-step) var(--ease-quiet),
+		stroke var(--duration-step) var(--ease-quiet),
+		stroke-width var(--duration-step) var(--ease-quiet);
 }
 
 .nodeVisited {
-	fill: rgba(56, 201, 160, 0.18);
+	fill: color-mix(in srgb, var(--state-done) 18%, transparent);
 	stroke: var(--state-done);
 }
 
 .nodeQueued {
-	fill: rgba(79, 124, 248, 0.2);
+	fill: color-mix(in srgb, var(--state-active) 20%, transparent);
 	stroke: var(--state-active);
 }
 
 .nodeSettled {
-	fill: rgba(56, 201, 160, 0.32);
+	fill: color-mix(in srgb, var(--state-done) 32%, transparent);
 	stroke: var(--state-done);
 	stroke-width: 4;
 }
 
 .nodeSelected {
-	fill: rgba(201, 122, 248, 0.18);
+	fill: color-mix(in srgb, var(--state-special) 18%, transparent);
 	stroke: var(--state-special);
 	stroke-width: 4;
 }
 
 .nodeActive {
-	fill: rgba(248, 167, 79, 0.7);
+	fill: var(--state-flight);
 	stroke: var(--state-flight);
 	stroke-width: 5;
 }
@@ -144,5 +144,12 @@
 }
 
 .nodeActive + .nodeText {
-	fill: #070811;
+	fill: var(--color-text-on-node);
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.edgePath,
+	.nodeCircle {
+		transition-duration: var(--duration-instant);
+	}
 }

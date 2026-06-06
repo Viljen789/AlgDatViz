@@ -5,16 +5,18 @@ import { lazy, Suspense, useState } from 'react';
 import Sidebar from './common/Sidebar/Sidebar.jsx';
 import HelpOverlay from './common/HelpOverlay/HelpOverlay.jsx';
 import { PAGE_HELP } from './data/pageHelpContent';
+import { TOPIC_BY_ROUTE } from './data/curriculum.js';
 import styles from './App.module.css';
 
 const HomePage = lazy(() => import('./pages/HomePage.jsx'));
 const GraphPage = lazy(() => import('./pages/GraphPage.jsx'));
-const SortingPage = lazy(() => import('./pages/SortingPage.jsx'));
 const HashMapPage = lazy(() => import('./pages/HashMapPage.jsx'));
 const TreePage = lazy(() => import('./pages/TreePage.jsx'));
 const MasterTheoremPage = lazy(() => import('./pages/MasterTheoremPage.jsx'));
 const StacksQueuesPage = lazy(() => import('./pages/StacksQueuesPage.jsx'));
 const StrategiesPage = lazy(() => import('./pages/StrategiesPage.jsx'));
+const MergeSortLessonPage = lazy(() => import('./pages/MergeSortLessonPage.jsx'));
+const StyleGuide = lazy(() => import('./styles/styleguide/StyleGuide.jsx'));
 
 const RouteFallback = () => (
 	<div className={styles.routeFallback} role="status" aria-live="polite">
@@ -34,62 +36,49 @@ const RouteFallback = () => (
 	</div>
 );
 
-const PAGE_META = {
-	'/': {
-		title: 'Algorithm Visualizer',
-		sub: 'Interactive step-by-step visualizations with synchronized pseudocode',
-		accent: '#4f7cf8',
-	},
-	'/sorting': {
-		title: 'Sorting Algorithms',
-		sub: 'Watch sorting algorithms organize data - step by step',
-		accent: '#4f7cf8',
-	},
-	'/graph': {
-		title: 'Graph Visualizer',
-		sub: 'Explore traversals, shortest paths, spanning trees, max flow, and graph representations',
-		accent: '#38c9a0',
-	},
-	'/hashmap': {
-		title: 'Hash Maps',
-		sub: 'See hashing, collisions, chaining, load factor, and resizing in action',
-		accent: '#f8a74f',
-	},
-	'/stacks-queues': {
-		title: 'Stacks & Queues',
-		sub: 'Compare LIFO and FIFO behavior through push, pop, enqueue, and dequeue',
-		accent: '#7fa4fc',
-	},
-	'/tree': {
-		title: 'Trees',
-		sub: 'Practice binary search tree operations and traversal orders',
-		accent: '#c97af8',
-	},
-	'/strategies': {
-		title: 'Algorithm Strategies',
-		sub: 'Learn when to use dynamic programming and when greedy choices are safe',
-		accent: '#38c9a0',
-	},
-	'/master-theorem': {
-		title: 'Master Theorem',
-		sub: 'Compare recursion leaves, per-level work, and asymptotic cases',
-		accent: '#f8c040',
-	},
+// Title + accent come from the single topic model (curriculum.js). Only the
+// descriptive subtitle (page-level help copy, not topic identity) and the
+// non-topic home entry live here.
+const ROUTE_SUBTITLES = {
+	'/': 'Interactive step-by-step visualizations with synchronized pseudocode',
+	'/graph':
+		'Explore traversals, shortest paths, spanning trees, max flow, and graph representations',
+	'/hashmap':
+		'See hashing, collisions, chaining, load factor, and resizing in action',
+	'/stacks-queues':
+		'Compare LIFO and FIFO behavior through push, pop, enqueue, and dequeue',
+	'/tree': 'Practice binary search tree operations and traversal orders',
+	'/strategies':
+		'Learn when to use dynamic programming and when greedy choices are safe',
+	'/master-theorem':
+		'Compare recursion leaves, per-level work, and asymptotic cases',
+	'/lessons/merge-sort':
+		'Splits all the way down, then merges back up — guided by scroll, then by you.',
 };
 
+const HOME_META = {
+	title: 'Algorithm Visualizer',
+	accent: 'var(--color-accent-blue)',
+};
+
+const getPageMeta = pathname => {
+	const topic = TOPIC_BY_ROUTE[pathname];
+	const title = topic ? topic.name : HOME_META.title;
+	const accent = topic ? topic.accent : HOME_META.accent;
+	const sub = ROUTE_SUBTITLES[pathname] || ROUTE_SUBTITLES['/'];
+	return { title, accent, sub };
+};
+
+// Routes that render their own hero/scrolly and therefore suppress the
+// generic app header. Derived from the topic model plus home + the lesson.
 const ROUTES_WITH_HERO = new Set([
-	'/sorting',
-	'/graph',
-	'/tree',
-	'/hashmap',
-	'/stacks-queues',
-	'/strategies',
-	'/master-theorem',
+	'/',
+	...Object.keys(TOPIC_BY_ROUTE),
 ]);
 
 const AppLayout = () => {
 	const location = useLocation();
-	const meta = PAGE_META[location.pathname] || PAGE_META['/'];
+	const meta = getPageMeta(location.pathname);
 	const [isHelpOpen, setIsHelpOpen] = useState(false);
 
 	const helpContent = PAGE_HELP[location.pathname] || PAGE_HELP['/'];
@@ -134,13 +123,17 @@ const AppLayout = () => {
 							<Suspense fallback={<RouteFallback />}>
 								<Routes location={location}>
 									<Route path="/" element={<HomePage />} />
-									<Route path="/sorting" element={<SortingPage />} />
 									<Route path="/graph" element={<GraphPage />} />
 									<Route path="/hashmap" element={<HashMapPage />} />
 									<Route path="/stacks-queues" element={<StacksQueuesPage />} />
 									<Route path="/tree" element={<TreePage />} />
 									<Route path="/strategies" element={<StrategiesPage />} />
 									<Route path="/master-theorem" element={<MasterTheoremPage />} />
+									<Route
+										path="/lessons/merge-sort"
+										element={<MergeSortLessonPage />}
+									/>
+									<Route path="/styleguide" element={<StyleGuide />} />
 								</Routes>
 							</Suspense>
 						</Motion.div>

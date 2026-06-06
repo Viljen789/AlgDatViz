@@ -1,11 +1,8 @@
-import TopicRoute from '../common/TopicScrollytelling/TopicRoute.jsx';
-import MasterTheoremDashboard from '../components/MasterTheorem/MasterTheoremDashboard.jsx';
-import { TOPIC_STORIES } from '../data/topicStories.js';
+import MasterTheoremLesson from '../components/MasterTheorem/MasterTheoremLesson.jsx';
 
-const MasterTheoremPage = () => (
-	<TopicRoute topic={TOPIC_STORIES.masterTheorem}>
-		<MasterTheoremDashboard />
-	</TopicRoute>
-);
+// The Master Theorem topic is now built on the canonical TopicTemplate
+// (hero → concept scrolly → recursion-tree stage → comprehension checks →
+// engine-driven playground → up-next), matching the Sorting gold standard.
+const MasterTheoremPage = () => <MasterTheoremLesson />;
 
 export default MasterTheoremPage;

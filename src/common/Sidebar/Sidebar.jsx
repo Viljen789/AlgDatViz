@@ -1,110 +1,144 @@
-import { NavLink } from 'react-router-dom';
+import { NavLink, useLocation } from 'react-router-dom';
 import {
 	BarChart3,
 	Brain,
+	Check,
 	GitBranch,
 	Hash,
 	House,
+	Layers,
 	List,
 	Network,
 	Sigma,
 } from 'lucide-react';
+import { CURRICULUM, TOPIC_BY_ROUTE } from '../../data/curriculum.js';
+import useProgress from '../../hooks/useProgress.js';
 import styles from './Sidebar.module.css';
 
-const NAV_ITEMS = [
-	{
-		to: '/',
-		label: 'Home',
-		accent: '#4f7cf8',
-		Icon: House,
-	},
-	{
-		to: '/sorting',
-		label: 'Sorting',
-		accent: '#4f7cf8',
-		Icon: BarChart3,
-	},
-	{
-		to: '/graph',
-		label: 'Graphs',
-		accent: '#38c9a0',
-		Icon: Network,
-	},
-	{
-		to: '/hashmap',
-		label: 'Hash Maps',
-		accent: '#f8a74f',
-		Icon: Hash,
-	},
-	{
-		to: '/stacks-queues',
-		label: 'Stacks/Queues',
-		accent: '#7fa4fc',
-		Icon: List,
-	},
-	{
-		to: '/tree',
-		label: 'Trees',
-		accent: '#c97af8',
-		Icon: GitBranch,
-	},
-	{
-		to: '/strategies',
-		label: 'Strategies',
-		accent: '#38c9a0',
-		Icon: Brain,
-	},
-	{
-		to: '/master-theorem',
-		label: 'Master',
-		accent: '#f8c040',
-		Icon: Sigma,
-	},
-];
+// Maps the `icon` name stored on each curriculum topic to a lucide component.
+// (Icons can't be serialized in the data module, so the mapping lives here.)
+const ICONS = {
+	BarChart3,
+	Brain,
+	GitBranch,
+	Hash,
+	Layers,
+	List,
+	Network,
+	Sigma,
+};
 
 const Sidebar = () => {
+	const { isVisited, isCompleted, overall } = useProgress();
+	const { pathname } = useLocation();
+
 	return (
-		<nav className={styles.sidebar}>
+		<nav className={styles.sidebar} aria-label="Primary">
 			<div className={styles.logo}>
-				<svg width="22" height="22" viewBox="0 0 22 22" fill="none">
-					<rect x="1" y="1" width="8" height="8" rx="1.5" fill="#4f7cf8" opacity="0.9" />
-					<rect x="13" y="1" width="8" height="8" rx="1.5" fill="#38c9a0" opacity="0.9" />
-					<rect x="1" y="13" width="8" height="8" rx="1.5" fill="#f8a74f" opacity="0.9" />
-					<rect x="13" y="13" width="8" height="8" rx="1.5" fill="#c97af8" opacity="0.9" />
+				<svg width="22" height="22" viewBox="0 0 22 22" fill="none" aria-hidden="true">
+					<rect x="1" y="1" width="8" height="8" rx="1.5" fill="var(--topic-sorting)" opacity="0.9" />
+					<rect x="13" y="1" width="8" height="8" rx="1.5" fill="var(--topic-graphs)" opacity="0.9" />
+					<rect x="1" y="13" width="8" height="8" rx="1.5" fill="var(--topic-hashing)" opacity="0.9" />
+					<rect x="13" y="13" width="8" height="8" rx="1.5" fill="var(--topic-trees)" opacity="0.9" />
 				</svg>
 				<span className={styles.logoText}>AlgDatViz</span>
 			</div>
 
-			<div className={styles.navList}>
-				{NAV_ITEMS.map(item => (
+			<ul className={styles.navList}>
+				<li>
 					<NavLink
-						key={item.to}
-						to={item.to}
-						end={item.to === '/'}
+						to="/"
+						end
 						className={({ isActive }) =>
 							`${styles.navLink} ${isActive ? styles.activeLink : ''}`
 						}
-						style={({ isActive }) => ({
-							'--accent': item.accent,
-							color: isActive ? item.accent : undefined,
-							background: isActive ? `${item.accent}14` : undefined,
-						})}
 					>
-						<span
-							className={styles.navBar}
-							style={{ background: 'currentColor' }}
-						/>
-						<span className={styles.icon}>
-							<item.Icon size={16} strokeWidth={2.2} />
+						<span className={styles.navBar} aria-hidden="true" />
+						<span className={styles.icon} aria-hidden="true">
+							<House size={16} strokeWidth={2.2} />
 						</span>
-						<span className={styles.label}>{item.label}</span>
+						<span className={styles.label}>Home</span>
 					</NavLink>
-				))}
-			</div>
+				</li>
+
+				{CURRICULUM.map(topic => {
+					const Icon = ICONS[topic.icon] ?? List;
+					const completed = isCompleted(topic.id);
+					const visited = !completed && isVisited(topic.id);
+					const statusLabel = completed
+						? 'completed'
+						: visited
+							? 'visited'
+							: 'not started';
+					// A route can be shared (e.g. the `foundations` preview aliases
+					// `/stacks-queues`). Only the topic that actually owns the route in
+					// the topic model (TOPIC_BY_ROUTE — the real `ready` topic) may show
+					// active, so exactly one nav item lights up per route. We compute
+					// active explicitly (rather than via NavLink's render prop) so the
+					// preview alias also drops its automatic aria-current.
+					const ownsRoute = TOPIC_BY_ROUTE[topic.to]?.id === topic.id;
+					const active = ownsRoute && pathname === topic.to;
+					return (
+						<li key={topic.id}>
+							<NavLink
+								to={topic.to}
+								className={`${styles.navLink} ${
+									active ? styles.activeLink : ''
+								} ${completed ? styles.completed : ''} ${
+									visited ? styles.visited : ''
+								}`}
+								aria-current={active ? 'page' : undefined}
+								style={{ '--accent': topic.accent }}
+								aria-label={`${topic.name} — ${statusLabel}`}
+							>
+								<span className={styles.navBar} aria-hidden="true" />
+								<span className={styles.icon} aria-hidden="true">
+									<Icon size={16} strokeWidth={2.2} />
+								</span>
+								<span className={styles.label}>{topic.navLabel}</span>
+								<span
+									className={styles.status}
+									aria-hidden="true"
+									title={statusLabel}
+								>
+									{completed ? (
+										<Check size={12} strokeWidth={3} className={styles.statusCheck} />
+									) : (
+										<span className={styles.statusDot} />
+									)}
+								</span>
+							</NavLink>
+						</li>
+					);
+				})}
+			</ul>
 
 			<div className={styles.footer}>
-				<div className={styles.footerDot} />
-				<span className={styles.footerText}>Educational · Open Source</span>
+				<div
+					className={styles.progress}
+					role="group"
+					aria-label={`Overall progress: ${overall.completed} of ${overall.total} topics completed`}
+				>
+					<div className={styles.progressHead}>
+						<span className={styles.progressLabel}>Progress</span>
+						<span className={styles.progressCount}>
+							{overall.completed}/{overall.total}
+						</span>
+					</div>
+					<div
+						className={styles.progressTrack}
+						role="progressbar"
+						aria-valuenow={overall.completed}
+						aria-valuemin={0}
+						aria-valuemax={overall.total}
+						aria-label="Topics completed"
+					>
+						<span
+							className={styles.progressFill}
+							style={{ width: `${overall.percent}%` }}
+						/>
+					</div>
+				</div>
 			</div>
 		</nav>
 	);

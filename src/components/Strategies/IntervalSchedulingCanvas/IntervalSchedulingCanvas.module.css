@@ -16,7 +16,7 @@
 	padding: 10px 16px;
 	border-radius: var(--border-radius-md);
 	border: 1px solid var(--color-border);
-	background: rgba(15, 17, 32, 0.6);
+	background: var(--surface-0);
 }
 
 .summaryItem {
@@ -157,23 +157,23 @@
 }
 
 .bar-active {
-	background: rgba(79, 124, 248, 0.18);
+	background: color-mix(in srgb, var(--state-active) 18%, transparent);
 	color: var(--state-active);
 	border-color: var(--state-active);
 	box-shadow:
-		0 0 0 1px rgba(79, 124, 248, 0.25),
-		0 0 24px -6px rgba(79, 124, 248, 0.45);
+		0 0 0 1px color-mix(in srgb, var(--state-active) 25%, transparent),
+		0 0 24px -6px color-mix(in srgb, var(--state-active) 45%, transparent);
 	animation: barPulse 1.6s var(--ease-quiet) infinite;
 }
 
 .bar-chosen {
-	background: rgba(56, 201, 160, 0.18);
+	background: color-mix(in srgb, var(--state-done) 18%, transparent);
 	color: var(--state-done);
-	border-color: rgba(56, 201, 160, 0.5);
+	border-color: color-mix(in srgb, var(--state-done) 50%, transparent);
 }
 
 .bar-rejected {
-	background: rgba(15, 17, 32, 0.6);
+	background: var(--surface-0);
 	color: var(--color-text-muted);
 	border-color: var(--color-border);
 	text-decoration: line-through;
@@ -185,13 +185,13 @@
 	0%,
 	100% {
 		box-shadow:
-			0 0 0 1px rgba(79, 124, 248, 0.25),
-			0 0 24px -6px rgba(79, 124, 248, 0.45);
+			0 0 0 1px color-mix(in srgb, var(--state-active) 25%, transparent),
+			0 0 24px -6px color-mix(in srgb, var(--state-active) 45%, transparent);
 	}
 	50% {
 		box-shadow:
-			0 0 0 1px rgba(79, 124, 248, 0.45),
-			0 0 32px -4px rgba(79, 124, 248, 0.65);
+			0 0 0 1px color-mix(in srgb, var(--state-active) 45%, transparent),
+			0 0 32px -4px color-mix(in srgb, var(--state-active) 65%, transparent);
 	}
 }
 

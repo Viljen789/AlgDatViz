@@ -6,20 +6,20 @@
 
 .tooltip {
 	position: absolute;
-	background: #1a1e2e;
-	color: white;
+	background: var(--surface-3);
+	color: var(--color-text-primary);
 	padding: 8px 12px;
 	border-radius: var(--border-radius-md);
-	font-size: 12px;
+	font-size: var(--font-size-caption);
 	white-space: normal;
 	width: max-content;
 	max-width: 200px;
 	z-index: 3000;
-	box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+	box-shadow: var(--shadow-3);
 	border: 1px solid var(--color-border);
 	pointer-events: none;
 	line-height: 1.4;
-	font-weight: 400;
+	font-weight: var(--font-weight-regular);
 }
 
 .top {
@@ -46,12 +46,12 @@
 	top: 100%;
 	left: 50%;
 	transform: translateX(-50%);
-	border-top: 6px solid #1a1e2e;
+	border-top: 6px solid var(--surface-3);
 }
 
 .bottom .arrow {
 	bottom: 100%;
 	left: 50%;
 	transform: translateX(-50%);
-	border-bottom: 6px solid #1a1e2e;
+	border-bottom: 6px solid var(--surface-3);
 }

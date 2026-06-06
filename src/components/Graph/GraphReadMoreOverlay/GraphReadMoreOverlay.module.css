@@ -52,7 +52,7 @@
 	font-family: var(--font-family-mono);
 	font-size: 11px;
 	color: var(--state-done);
-	background: rgba(56, 201, 160, 0.1);
+	background: var(--topic-graphs-wash);
 	border-radius: var(--border-radius-sm);
 	font-weight: 700;
 }

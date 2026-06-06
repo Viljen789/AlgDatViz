@@ -1,11 +1,5 @@
-import TopicRoute from '../common/TopicScrollytelling/TopicRoute.jsx';
-import StacksQueuesDashboard from '../components/StacksQueues/StacksQueuesDashboard.jsx';
-import { TOPIC_STORIES } from '../data/topicStories.js';
+import StacksQueuesLesson from '../components/StacksQueues/StacksQueuesLesson.jsx';
 
-const StacksQueuesPage = () => (
-	<TopicRoute topic={TOPIC_STORIES.stacksQueues}>
-		<StacksQueuesDashboard />
-	</TopicRoute>
-);
+const StacksQueuesPage = () => <StacksQueuesLesson />;
 
 export default StacksQueuesPage;

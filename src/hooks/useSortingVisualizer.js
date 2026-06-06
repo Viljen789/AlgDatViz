@@ -1,6 +1,27 @@
-// Sorting timeline state and playback orchestration.
+// Sorting timeline state + playback orchestration.
+//
+// This hook is sorting-specific (it owns the array, the algorithm, the data
+// profile and the operation-stats history), but the generic step / scrub /
+// replay / speed machinery now lives in the topic-agnostic PlaybackEngine
+// (`common/PlaybackEngine/usePlayback`). useSortingVisualizer wraps that engine
+// and adapts its API to the legacy public shape its consumers already expect,
+// so SortingDashboard, MergeSortPlayground and the sorting controls keep
+// working unchanged.
+//
+// Legacy ↔ engine mapping
+//   animationSteps   ← the frames array passed to usePlayback
+//   currentStep      = player.currentStep
+//   currentFrame     = player.currentFrame
+//   animationSpeed   = player.speed   (setAnimationSpeed = player.setSpeed)
+//   isSorting        = a run exists and the cursor isn't parked on the last step
+//   isPaused         = !player.isPlaying
+//   onPlayPause      = player.toggle (no-op until a run is primed)
+//   onStepForward/Back = player.stepForward / stepBack
+//   seekToStep       = player.seek
+//   resetAnimation   = clears the run (engine resets when frames empty)
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { usePlayback } from '../common/PlaybackEngine/usePlayback.js';
 import { SORTING_FUNCTIONS } from '../utils/sorting';
 import {
 	createValuesForProfile,
@@ -13,7 +34,6 @@ export const useSortingVisualizer = (
 ) => {
 	const [array, setArray] = useState([]);
 	const [arraySize, setArraySizeState] = useState(initialSize);
-	const [animationSpeed, setAnimationSpeedState] = useState(100);
 	const [sortingAlgorithm, setSortingAlgorithmState] =
 		useState(initialAlgorithm);
 	const [dataProfile, setDataProfileState] = useState(() =>
@@ -21,19 +41,44 @@ export const useSortingVisualizer = (
 	);
 	const [viewMode, setViewMode] = useState('bars');
 	const [animationSteps, setAnimationSteps] = useState([]);
-	const [currentStep, setCurrentStep] = useState(0);
-	const [isSorting, setIsSorting] = useState(false);
-	const [isPaused, setIsPaused] = useState(true);
 	const [operationStats, setOperationStats] = useState(null);
 	const [throttledOperationStats, setThrottledOperationStats] = useState(null);
 
 	const throttleTimerRef = useRef(null);
-	const animationTimerRef = useRef(null);
+	// When startSort loads a fresh timeline, the engine won't see the new frames
+	// until the next render, so we defer the auto-play kick to an effect. The
+	// token bumps on every run so the effect re-fires even when a re-run
+	// produces a timeline of identical length; the ref dedupes within a render.
+	const [primeToken, setPrimeToken] = useState(0);
+	const handledPrimeRef = useRef(0);
+
+	// Generic playback engine drives the cursor / play loop / speed / scrub.
+	const player = usePlayback(animationSteps, { speed: 100 });
+	const {
+		currentStep,
+		currentFrame,
+		totalSteps,
+		isPlaying,
+		toggle,
+		stepForward,
+		stepBack,
+		advance,
+		seek,
+		replay,
+		setSpeed,
+		reset: resetPlayer,
+		speed: animationSpeed,
+	} = player;
+
+	const setAnimationSpeed = setSpeed;
+
+	// A run "exists" once steps are loaded; it's still sorting until the cursor
+	// is parked on the final step. Mirrors the legacy isSorting/isPaused pair.
+	const isSorting = totalSteps > 0 && currentStep < totalSteps - 1;
+	const isPaused = !isPlaying;
 
 	const resetAnimation = useCallback(() => {
-		setIsSorting(false);
-		setIsPaused(true);
-		setCurrentStep(0);
+		resetPlayer();
 		setAnimationSteps([]);
 		setOperationStats(null);
 		setThrottledOperationStats(null);
@@ -42,11 +87,7 @@ export const useSortingVisualizer = (
 			clearTimeout(throttleTimerRef.current);
 			throttleTimerRef.current = null;
 		}
-		if (animationTimerRef.current) {
-			clearTimeout(animationTimerRef.current);
-			animationTimerRef.current = null;
-		}
-	}, []);
+	}, [resetPlayer]);
 
 	const setSortingAlgorithm = useCallback(
 		nextAlgorithm => {
@@ -70,12 +111,6 @@ export const useSortingVisualizer = (
 		},
 		[resetAnimation]
 	);
-
-	const setAnimationSpeed = useCallback(nextSpeed => {
-		setAnimationSpeedState(prev =>
-			typeof nextSpeed === 'function' ? nextSpeed(prev) : nextSpeed
-		);
-	}, []);
 
 	const setDataProfile = useCallback(
 		nextProfile => {
@@ -139,95 +174,53 @@ export const useSortingVisualizer = (
 		setAnimationSteps(steps);
 		setOperationStats(statsHistory);
 		setThrottledOperationStats(statsHistory[0]);
-		setCurrentStep(0);
-		setIsSorting(true);
-		setIsPaused(false);
+		// The engine only sees these frames next render; arm auto-play then.
+		setPrimeToken(token => token + 1);
 	}, [isSorting, array, sortingAlgorithm, resetAnimation, shuffleArray]);
 
-	// Auto-play functionality for all views
+	// Start the freshly loaded run from step 0 once the timeline reaches the
+	// engine (replay = seek(0) + play), matching the legacy startSort behaviour.
+	// Keyed on primeToken so a re-run with an identical-length timeline re-fires;
+	// handledPrimeRef ensures we replay exactly once per prime.
 	useEffect(() => {
-		if (!isSorting || isPaused || !animationSteps.length) {
-			if (animationTimerRef.current) {
-				clearTimeout(animationTimerRef.current);
-			}
-			return;
-		}
+		if (primeToken === 0 || handledPrimeRef.current === primeToken) return;
+		if (totalSteps === 0) return;
+		handledPrimeRef.current = primeToken;
+		replay();
+	}, [primeToken, totalSteps, replay]);
 
-		// Calculate speed based on animationSpeed slider
-		// animationSpeed typically ranges from 25 to 500 (from SortingControls)
-		// We want a delay between 1000ms and 10ms
-		const delay = Math.max(1050 - animationSpeed * 2, 10);
-
-		animationTimerRef.current = setTimeout(() => {
-			setCurrentStep(prev => {
-				const next = Math.min(prev + 1, animationSteps.length - 1);
-				if (next >= animationSteps.length - 1) {
-					setIsSorting(false);
-					setIsPaused(true);
-				}
-				return next;
-			});
-		}, delay);
-
-		return () => {
-			if (animationTimerRef.current) {
-				clearTimeout(animationTimerRef.current);
-			}
-		};
-	}, [currentStep, isSorting, isPaused, animationSteps.length, animationSpeed]);
-
-	// Function to advance to the next step manually
+	// Advance one step without pausing — used by view onAnimationComplete hooks
+	// to drive the in-canvas transition cadence.
 	const goToNextStep = useCallback(() => {
-		if (!animationSteps.length) return;
-		const next = Math.min(currentStep + 1, animationSteps.length - 1);
-		setCurrentStep(next);
-		if (next >= animationSteps.length - 1) {
-			setIsSorting(false);
-			setIsPaused(true);
-		}
-	}, [currentStep, animationSteps.length]);
+		advance();
+	}, [advance]);
 
-	const onPlayPause = () => {
-		if (!isSorting) return;
-		setIsPaused(prev => !prev);
-	};
-
-	const onStepForward = () => {
+	const onPlayPause = useCallback(() => {
 		if (!animationSteps.length) return;
-		const next = Math.min(currentStep + 1, animationSteps.length - 1);
-		setIsPaused(true);
-		setCurrentStep(next);
-		setIsSorting(next < animationSteps.length - 1);
-	};
+		toggle();
+	}, [animationSteps.length, toggle]);
 
-	const onStepBack = () => {
-		if (!animationSteps.length) return;
-		const next = Math.max(currentStep - 1, 0);
-		setIsPaused(true);
-		setCurrentStep(next);
-		setIsSorting(next < animationSteps.length - 1);
-	};
+	const onStepForward = useCallback(() => {
+		stepForward();
+	}, [stepForward]);
+
+	const onStepBack = useCallback(() => {
+		stepBack();
+	}, [stepBack]);
 
 	const seekToStep = useCallback(
 		step => {
-			if (!animationSteps.length) return;
-			const clamped = Math.max(0, Math.min(step, animationSteps.length - 1));
-			setCurrentStep(clamped);
-			setIsPaused(true);
-			setIsSorting(clamped < animationSteps.length - 1);
+			seek(step);
 		},
-		[animationSteps.length]
+		[seek]
 	);
-
-	const currentFrame = useMemo(() => {
-		return animationSteps[currentStep];
-	}, [animationSteps, currentStep]);
 
 	const isFastMode = useMemo(() => {
 		return animationSpeed > 250;
 	}, [animationSpeed]);
 
-	// Throttled stats update effect
+	// Throttled stats update effect — accumulates the stats history up to the
+	// current step while running, for the live operation counters.
 	useEffect(() => {
 		if (!isSorting || isPaused || !operationStats) return;
 
@@ -247,7 +240,7 @@ export const useSortingVisualizer = (
 		};
 	}, [currentStep, isSorting, isPaused, operationStats]);
 
-	// Finalize stats when sorting completes
+	// Finalize stats when sorting completes.
 	useEffect(() => {
 		if (!isSorting && operationStats) {
 			setThrottledOperationStats(operationStats);

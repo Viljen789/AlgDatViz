@@ -27,3 +27,6 @@ playwright-report
 .prettierignore
 .prettierrc
 .claude/
+
+# graphify output artifacts
+graphify-out/

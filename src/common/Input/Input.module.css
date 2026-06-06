@@ -1,0 +1,100 @@
+.wrapper {
+	display: flex;
+	flex-direction: column;
+	gap: var(--space-xs);
+}
+
+.label {
+	font-family: var(--font-family-sans);
+	font-size: var(--font-size-label);
+	font-weight: var(--font-weight-medium);
+	letter-spacing: var(--tracking-label);
+	color: var(--color-text-secondary);
+}
+
+.field {
+	display: flex;
+	align-items: center;
+	gap: var(--space-sm);
+	background-color: var(--surface-input);
+	border: 1px solid var(--color-border);
+	border-radius: var(--border-radius-md);
+	transition: border-color var(--transition), box-shadow var(--transition),
+		background-color var(--transition);
+}
+
+.sm {
+	padding: var(--space-xs) var(--space-sm);
+}
+.md {
+	padding: var(--space-sm) var(--space-md);
+}
+
+.field:hover:not(.disabled) {
+	border-color: var(--color-border-strong);
+}
+
+/* focus-within drives the focus ring (input itself has no border) */
+.field:focus-within {
+	border-color: var(--color-accent-blue);
+	box-shadow: var(--shadow-focus);
+}
+
+.field.hasError {
+	border-color: var(--color-error);
+}
+.field.hasError:focus-within {
+	box-shadow: 0 0 0 3px var(--color-error-wash);
+}
+
+.field.disabled {
+	opacity: 0.5;
+	cursor: not-allowed;
+}
+
+.input {
+	flex: 1;
+	min-width: 0;
+	background: transparent;
+	border: none;
+	outline: none;
+	color: var(--color-text-primary);
+	font-family: var(--font-family-mono);
+	font-size: var(--font-size-label);
+	padding: 0;
+}
+
+/* Override the global input chrome so the wrapper owns the look */
+.input:focus-visible {
+	border-color: transparent !important;
+	box-shadow: none;
+}
+
+.input::placeholder {
+	color: var(--color-text-dim);
+}
+
+.input:disabled {
+	cursor: not-allowed;
+}
+
+.adornment {
+	display: inline-flex;
+	align-items: center;
+	color: var(--color-text-muted);
+	flex-shrink: 0;
+}
+
+.hint {
+	margin: 0;
+	font-size: var(--font-size-caption);
+	color: var(--color-text-muted);
+	line-height: var(--line-height-snug);
+}
+
+.error {
+	margin: 0;
+	font-size: var(--font-size-caption);
+	color: var(--color-error);
+	line-height: var(--line-height-snug);
+}

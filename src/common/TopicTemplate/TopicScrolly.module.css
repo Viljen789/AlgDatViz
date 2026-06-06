@@ -1,0 +1,143 @@
+/* =============================================================================
+   TopicScrolly — sticky-stage + scrolly-prose engine. Canonical tokens only.
+   Tinted by --topic-accent inherited from TopicTemplate.
+   ============================================================================ */
+
+.scrolly {
+	max-width: 1280px;
+	margin: 0 auto;
+	padding: 0 clamp(var(--space-xl), 6vw, var(--space-4xl))
+		clamp(var(--space-2xl), 6vw, var(--space-4xl));
+	display: grid;
+	grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
+	gap: clamp(var(--space-2xl), 6vw, var(--space-4xl));
+	align-items: start;
+}
+
+.stageColumn {
+	position: relative;
+	height: 100%;
+}
+
+.stageSticky {
+	position: sticky;
+	top: 88px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	height: min(72vh, 580px);
+}
+
+.proseColumn {
+	display: flex;
+	flex-direction: column;
+}
+
+.scene {
+	position: relative;
+	min-height: 80vh;
+	padding: clamp(var(--space-2xl), 8vh, var(--space-4xl)) 0;
+	display: flex;
+	flex-direction: column;
+	gap: var(--space-md);
+	justify-content: center;
+	max-width: 52ch;
+	opacity: 0.36;
+	transform: translateY(0);
+	transition: opacity var(--duration-step) var(--ease-quiet),
+		transform var(--duration-step) var(--ease-quiet);
+}
+
+.sceneActive {
+	opacity: 1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.scene {
+		opacity: 1;
+		transition: none;
+	}
+}
+
+.sceneIndex {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 32px;
+	height: 32px;
+	border-radius: var(--radius-md);
+	background: var(--surface-hover);
+	border: 1px solid var(--color-border);
+	color: var(--color-text-secondary);
+	font-family: var(--font-family-mono);
+	font-size: var(--font-size-label);
+	font-weight: var(--font-weight-medium);
+	letter-spacing: var(--tracking-wide);
+	margin-bottom: var(--space-xs);
+	transition: color var(--transition), border-color var(--transition),
+		background-color var(--transition);
+}
+
+.sceneActive .sceneIndex {
+	color: var(--topic-accent);
+	border-color: color-mix(in srgb, var(--topic-accent) 50%, transparent);
+	background: color-mix(in srgb, var(--topic-accent) 8%, transparent);
+}
+
+.sceneEyebrow {
+	margin: 0;
+	font-family: var(--font-family-mono);
+	font-size: var(--font-size-caption);
+	font-weight: var(--font-weight-bold);
+	letter-spacing: var(--tracking-caps);
+	text-transform: uppercase;
+	color: var(--color-text-muted);
+}
+
+.sceneTitle {
+	margin: 0;
+	font-family: var(--font-family-display);
+	font-size: var(--font-size-display-lg);
+	font-weight: var(--font-weight-display);
+	line-height: var(--line-height-heading);
+	letter-spacing: var(--tracking-heading);
+	color: var(--color-text-primary);
+	text-wrap: balance;
+}
+
+.sceneBody {
+	margin: 0;
+	font-size: var(--font-size-body);
+	line-height: var(--line-height-body);
+	color: var(--color-text-secondary);
+}
+
+/* ---------- Responsive ---------- */
+
+@media (max-width: 960px) {
+	.scrolly {
+		grid-template-columns: 1fr;
+		gap: var(--space-lg);
+	}
+
+	.stageColumn {
+		position: sticky;
+		top: 72px;
+		z-index: 1;
+		background: var(--color-bg-app);
+		padding-bottom: var(--space-sm);
+		margin-bottom: var(--space-sm);
+		height: auto;
+	}
+
+	.stageSticky {
+		position: static;
+		height: 50vh;
+		max-height: 420px;
+	}
+
+	.scene {
+		min-height: 56vh;
+		padding: var(--space-lg) 0;
+	}
+}

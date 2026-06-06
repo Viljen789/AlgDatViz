@@ -15,6 +15,36 @@
 	flex: 1 1 360px;
 }
 
+.crumbs {
+	display: inline-flex;
+	align-items: center;
+	gap: 7px;
+	margin-bottom: 4px;
+	font-family: var(--font-family-mono);
+	font-size: var(--font-size-caption);
+	color: var(--color-text-muted);
+}
+
+.crumbLink {
+	color: var(--color-text-secondary);
+	text-decoration: none;
+	border-radius: var(--radius-sm);
+	transition: color var(--duration-instant) var(--ease-quiet);
+}
+
+.crumbLink:hover {
+	color: var(--color-text-primary);
+}
+
+.crumbLink:focus-visible {
+	outline: none;
+	box-shadow: var(--shadow-focus);
+}
+
+.crumbCurrent {
+	color: var(--color-text-secondary);
+}
+
 .title {
 	display: inline-flex;
 	align-items: baseline;

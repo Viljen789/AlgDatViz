@@ -7,6 +7,7 @@ import {
 	Pause,
 	Play,
 } from 'lucide-react';
+import { usePlaybackKeys } from '../PlaybackEngine/usePlaybackKeys.js';
 import styles from './StepControlBar.module.css';
 
 const StepControlBar = ({
@@ -25,9 +26,27 @@ const StepControlBar = ({
 	onSpeedChange,
 	rightSlot = null,
 	layout = 'dock',
+	// Optional ref to the *player container* keyboard control should be scoped
+	// to (so space / ← / → only fire when that player is hovered or focused).
+	// Falls back to the bar's own element when not provided — still scoped,
+	// never global, so two mounted playgrounds can't double-fire.
+	scopeRef = null,
+	keyboard = true,
 }) => {
 	const [speedOpen, setSpeedOpen] = useState(false);
 	const speedRef = useRef(null);
+	const barRef = useRef(null);
+
+	// Scope playback keys to the given player container, or to this bar itself.
+	const keyScopeRef = scopeRef || barRef;
+	usePlaybackKeys(keyScopeRef, {
+		enabled: keyboard && canStep,
+		onPlayPause,
+		onStepBack,
+		onStepForward,
+		onFirst,
+		onLast,
+	});
 
 	useEffect(() => {
 		if (!speedOpen) return;
@@ -47,25 +66,6 @@ const StepControlBar = ({
 		};
 	}, [speedOpen]);
 
-	useEffect(() => {
-		const onKey = e => {
-			if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA')
-				return;
-			if (e.key === ' ') {
-				e.preventDefault();
-				onPlayPause?.();
-			} else if (e.key === 'ArrowLeft') {
-				e.preventDefault();
-				onStepBack?.();
-			} else if (e.key === 'ArrowRight') {
-				e.preventDefault();
-				onStepForward?.();
-			}
-		};
-		window.addEventListener('keydown', onKey);
-		return () => window.removeEventListener('keydown', onKey);
-	}, [onPlayPause, onStepBack, onStepForward]);
-
 	const currentSpeedLabel =
 		speedOptions?.find(opt => opt.value === speed)?.label || `${speed}×`;
 	const max = Math.max((totalSteps || 1) - 1, 0);
@@ -73,6 +73,7 @@ const StepControlBar = ({
 
 	return (
 		<div
+			ref={barRef}
 			className={`${styles.bar} ${layout === 'panel' ? styles.panel : ''}`}
 			role="toolbar"
 			aria-label="Playback"
