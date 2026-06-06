@@ -120,6 +120,14 @@
 	line-height: var(--line-height-snug);
 }
 
+/* Synced pseudocode + live-state panel (BFS / DFS). Matches the pseudocode
+   rail's fixed column width so the body layout stays identical between
+   algorithms with and without a live-state projection. */
+.pseudoState {
+	width: 220px;
+	flex-shrink: 0;
+}
+
 .bar {
 	display: flex;
 	flex-direction: column;
@@ -175,5 +183,8 @@
 	}
 	.canvas {
 		min-height: 360px;
+	}
+	.pseudoState {
+		width: 100%;
 	}
 }

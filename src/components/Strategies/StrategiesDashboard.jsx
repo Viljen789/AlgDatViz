@@ -1,8 +1,11 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { ChevronDown, RotateCcw } from 'lucide-react';
-import { usePlayback, FrameTrace } from '../../common/PlaybackEngine/index.js';
+import {
+	usePlayback,
+	FrameTrace,
+	PseudoState,
+} from '../../common/PlaybackEngine/index.js';
 import StepControlBar from '../../common/StepControlBar/StepControlBar.jsx';
-import PseudocodeRail from '../../common/PseudocodeRail/PseudocodeRail.jsx';
 import CoinChangeCanvas from './CoinChangeCanvas/CoinChangeCanvas.jsx';
 import ClimbingStairsCanvas from './ClimbingStairsCanvas/ClimbingStairsCanvas.jsx';
 import IntervalSchedulingCanvas from './IntervalSchedulingCanvas/IntervalSchedulingCanvas.jsx';
@@ -100,7 +103,6 @@ const StrategiesDashboard = ({ onUserInteract }) => {
 	const algo = STRATEGY_ALGORITHMS[algorithmId];
 	const frame = currentFrame;
 	const canStep = totalSteps > 1;
-	const activeLine = frame?.line ?? null;
 
 	const notifyInteract = () => onUserInteract?.();
 
@@ -295,9 +297,12 @@ const StrategiesDashboard = ({ onUserInteract }) => {
 					/>
 				</section>
 
-				<PseudocodeRail
+				<PseudoState
+					className={styles.pseudo}
 					lines={lines}
-					activeLine={activeLine}
+					frame={frame}
+					step={currentStep}
+					totalSteps={totalSteps}
 					isRunning={canStep && currentStep > 0}
 				/>
 			</div>

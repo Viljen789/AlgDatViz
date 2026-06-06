@@ -9,6 +9,8 @@
 // The stage (GraphStage) reads `activeScene` and renders a matching view of the
 // SAME small graph defined below, so the prose and the picture stay in lockstep.
 
+import { createGraphAlgorithmSteps } from '../../../utils/graphAlgorithms.js';
+
 // A compact 6-node teaching graph. Positions are chosen so the BFS layers from
 // A read cleanly left-to-right: layer 0 = A, layer 1 = {B, C}, layer 2 = {D, E},
 // layer 3 = {F}. Adjacency is sorted alphabetically, which fixes a deterministic
@@ -32,14 +34,36 @@ export const LESSON_GRAPH = {
 	],
 };
 
+// Derive the true visit order straight from the algorithm's step output, so the
+// retrieval check below is graded against what BFS/DFS actually do — nothing is
+// hand-fabricated. We read the first time each node becomes "active" across the
+// real steps (createGraphAlgorithmSteps from utils/graphAlgorithms.js).
+const visitOrderFromSteps = algorithmId => {
+	const steps = createGraphAlgorithmSteps(LESSON_GRAPH, algorithmId, {
+		startNodeId: 'A',
+	});
+	const order = [];
+	const seen = new Set();
+	steps.forEach(step => {
+		// A node is "visited" the first time it appears in the visited set.
+		(step.visitedNodes || []).forEach(id => {
+			if (!seen.has(id)) {
+				seen.add(id);
+				order.push(id);
+			}
+		});
+	});
+	return order;
+};
+
 // BFS from A, neighbours visited in alphabetical order:
 //   A → B → C → D → E → F  (layer by layer)
-export const BFS_ORDER = ['A', 'B', 'C', 'D', 'E', 'F'];
+export const BFS_ORDER = visitOrderFromSteps('bfs');
 
 // DFS from A, newest-first, neighbours pushed in alphabetical order so the
 // alphabetically-later neighbour is popped first; with this graph the run is:
 //   A → B → D → F → E → C
-export const DFS_ORDER = ['A', 'B', 'D', 'F', 'E', 'C'];
+export const DFS_ORDER = visitOrderFromSteps('dfs');
 
 export const SCENES = [
 	{
@@ -102,6 +126,23 @@ export const SCENES = [
 		},
 	},
 	{
+		id: 'bfs-order',
+		eyebrow: 'Recall',
+		title: 'Now you place the order.',
+		body: 'You have seen the queue spread A outward in layers. Reconstruct it yourself: arrange the six nodes into the exact sequence BFS visits them, starting from A with neighbours taken alphabetically.',
+		check: {
+			kind: 'order',
+			prompt:
+				'Drag the nodes into the order BFS visits them, starting at A (alphabetical neighbours).',
+			// `items` is the shuffled pool the learner reorders; `answer` is the
+			// true BFS visit order, derived above from the real algorithm steps.
+			items: ['C', 'A', 'E', 'B', 'F', 'D'],
+			answer: BFS_ORDER,
+			explanation:
+				'BFS pulls nodes from a FIFO queue, so it finishes an entire distance layer before the next one: A (layer 0), then B and C (layer 1), then D and E (layer 2), then F (layer 3). The sequence is A, B, C, D, E, F — strictly by distance from the start.',
+		},
+	},
+	{
 		id: 'dfs',
 		eyebrow: 'Depth-first',
 		title: 'DFS uses a stack — newest out first — so it plunges deep.',
@@ -117,3 +158,48 @@ export const SCENES = [
 		},
 	},
 ];
+
+// The collapsible cheat-sheet shown in the hero (TopicTemplate `cheatSheet`).
+// One key idea, then the two pairs students actually mix up: the storage choice
+// (list vs matrix) and the traversal choice (BFS vs DFS). Runtimes are the same
+// notation students must recall on the exam.
+export const CHEAT_SHEET = {
+	keyIdea:
+		'A graph is just things and the links between them. The whole craft is choosing what to explore next — the frontier’s data structure (queue vs stack) is the entire difference between BFS and DFS.',
+	sections: [
+		{
+			title: 'Representation',
+			items: [
+				{
+					term: 'Adjacency list',
+					def: 'Per node, store only its neighbours. O(V + E) space — compact for sparse graphs. Listing a node’s neighbours is O(degree).',
+				},
+				{
+					term: 'Adjacency matrix',
+					def: 'A V×V grid marking every possible pair. O(V²) space whether or not edges exist, but O(1) “is there an edge u–v?” lookups.',
+				},
+				{
+					term: 'Which to pick',
+					def: 'List for sparse graphs (E ≪ V²); matrix for dense graphs or when you need constant-time edge queries.',
+				},
+			],
+		},
+		{
+			title: 'Traversal',
+			items: [
+				{
+					term: 'BFS — queue (FIFO)',
+					def: 'Oldest out first, so it fans out in layers. Finds shortest paths in unweighted graphs. O(V + E) time, O(V) space.',
+				},
+				{
+					term: 'DFS — stack / recursion (LIFO)',
+					def: 'Newest out first, so it plunges down one branch then backtracks. Reveals reachability, components, cycles, and edge types. O(V + E) time, O(V) space.',
+				},
+				{
+					term: 'Both are O(V + E)',
+					def: 'Each vertex is processed once and each edge inspected once. The frontier (queue or stack) holds up to V nodes.',
+				},
+			],
+		},
+	],
+};

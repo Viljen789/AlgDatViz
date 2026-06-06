@@ -46,6 +46,16 @@ export const containsValue = (root, value) => {
 	return false;
 };
 
+// Live-state rows for a search/insert/delete frame. Pure: it only reads the
+// numbers passed in, so PseudoState gets a real {current, target, compare, path}
+// readout that stays in lockstep with the highlighted pseudocode line.
+const searchStateRows = ({ target, current, compare, path }) => [
+	{ id: 'target', label: 'target', value: target },
+	{ id: 'current', label: 'current', value: current ?? 'NIL', active: true },
+	{ id: 'compare', label: 'compare', value: compare ?? '—' },
+	{ id: 'path', label: 'path', value: path.length ? path.join(' → ') : '—' },
+];
+
 export const getSearchSteps = (root, value) => {
 	const steps = [];
 	const path = [];
@@ -61,6 +71,12 @@ export const getSearchSteps = (root, value) => {
 				pathNodes: [...path],
 				output: [...path],
 				line: 1,
+				state: searchStateRows({
+					target: value,
+					current: current.value,
+					compare: `${value} == ${current.value}`,
+					path,
+				}),
 			});
 			return steps;
 		}
@@ -75,6 +91,14 @@ export const getSearchSteps = (root, value) => {
 			pathNodes: [...path],
 			output: [...path],
 			line: goLeft ? 2 : 4,
+			state: searchStateRows({
+				target: value,
+				current: current.value,
+				compare: `${value} ${goLeft ? '<' : '>'} ${current.value} → ${
+					goLeft ? 'left' : 'right'
+				}`,
+				path,
+			}),
 		});
 		current = goLeft ? current.left : current.right;
 	}
@@ -86,6 +110,12 @@ export const getSearchSteps = (root, value) => {
 		pathNodes: [...path],
 		output: [...path],
 		line: 0,
+		state: searchStateRows({
+			target: value,
+			current: 'NIL',
+			compare: 'fell off the tree',
+			path,
+		}),
 	});
 	return steps;
 };
@@ -102,14 +132,21 @@ export const getTraversalSteps = (root, traversalType) => {
 			activeNodes: [String(node.value)],
 			pathNodes: [...output],
 			output: [...output],
+			// Index of the `visit(node)` line in each TREE_PSEUDO traversal block,
+			// so the highlighted line is the one actually executing on this frame.
 			line:
 				traversalType === 'inorder'
-					? 1
+					? 3
 					: traversalType === 'preorder'
-						? 0
+						? 2
 						: traversalType === 'postorder'
-							? 2
+							? 4
 							: 3,
+			state: [
+				{ id: 'visit', label: 'visit', value: node.value, active: true },
+				{ id: 'order', label: 'order', value: traversalType },
+				{ id: 'output', label: 'output', value: output.join(' ') },
+			],
 		});
 	};
 
@@ -160,6 +197,21 @@ export const getTraversalSteps = (root, traversalType) => {
 					line: 0,
 				},
 			];
+};
+
+// Pure in-order value sequence (left, self, right) of a BST. By the BST
+// invariant this is the values in sorted order, so the scrolly `order` check can
+// be graded against a real traversal instead of a hand-typed answer.
+export const inorderValues = root => {
+	const out = [];
+	const walk = node => {
+		if (!node) return;
+		walk(node.left);
+		out.push(node.value);
+		walk(node.right);
+	};
+	walk(root);
+	return out;
 };
 
 export const getTreeStats = root => {

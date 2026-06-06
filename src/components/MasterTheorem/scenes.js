@@ -87,4 +87,49 @@ export const SCENES = [
 				'There are about log_b(n) levels, each costing the same n^d. Multiply shared per-level work by the number of levels and you get the Θ(n^d log n) of Case 2 — the merge-sort O(n log n).',
 		},
 	},
+	{
+		id: 'compute-c',
+		eyebrow: 'Do the comparison',
+		title: 'Compute the exponent yourself.',
+		body: 'Everything hinges on c = log_b(a): the exponent on n that the leaves grow by. For a = 8, b = 2 you are asking "2 to what power is 8?" — count the doublings.',
+		check: {
+			kind: 'numeric',
+			// analyseRecurrence({a:8,b:2,…}).critical === log_2(8) === 3.
+			prompt: 'Compute c = log_b(a) for a = 8, b = 2.',
+			answer: 3,
+			tolerance: 0.01,
+			placeholder: 'e.g. 3',
+			explanation:
+				'log₂(8) = 3 because 2³ = 8. That is the leaf-growth exponent c: the leaves number n^3, so once c (= 3) beats the combine exponent d, the leaves carry the whole cost.',
+		},
+	},
+	{
+		id: 'classify-cases',
+		eyebrow: 'Put it together',
+		title: 'Which side wins each recurrence?',
+		body: 'For each recurrence, compare c = log_b(a) against d (where f(n) = n^d), then drop it into the case its dominant side names: the leaves (c > d), every level tied (c = d), or the root (c < d).',
+		check: {
+			kind: 'classify',
+			prompt:
+				'Sort each recurrence by which part of the tree dominates its cost.',
+			items: [
+				// analyseRecurrence verdicts: c vs d.
+				{ id: 'merge', label: 'T = 2T(n/2) + n  (c=1, d=1)' }, // Case 2
+				{ id: 'leafy', label: 'T = 8T(n/2) + n  (c=3, d=1)' }, // Case 1
+				{ id: 'rooty', label: 'T = 2T(n/2) + n²  (c=1, d=2)' }, // Case 3
+			],
+			categories: [
+				{ id: 'leaves', label: 'Leaves win (Case 1)' },
+				{ id: 'levels', label: 'Every level ties (Case 2)' },
+				{ id: 'root', label: 'Root work wins (Case 3)' },
+			],
+			answer: {
+				merge: 'levels',
+				leafy: 'leaves',
+				rooty: 'root',
+			},
+			explanation:
+				'Merge sort ties (c = d = 1) → Case 2, Θ(n log n). With a = 8 the leaves explode (c = 3 > d = 1) → Case 1, Θ(n³). With f(n) = n² the combine work at the root outruns the leaves (c = 1 < d = 2) → Case 3, Θ(n²).',
+		},
+	},
 ];

@@ -14,7 +14,8 @@ import { GRAPH_ALGORITHM_META } from '../../utils/graphAlgorithmMeta.js';
 import { GRAPH_PRESETS } from '../../data/graphPresets.js';
 import PseudocodeRail from '../../common/PseudocodeRail/PseudocodeRail';
 import StepControlBar from '../../common/StepControlBar/StepControlBar';
-import { usePlayback } from '../../common/PlaybackEngine';
+import { usePlayback, PseudoState } from '../../common/PlaybackEngine';
+import { graphLineState } from '../../utils/graphAlgorithms.js';
 
 const cloneGraph = graph => JSON.parse(JSON.stringify(graph));
 
@@ -306,6 +307,18 @@ const GraphDashboard = ({ onUserInteract }) => {
 	const lines = GRAPH_ALGORITHMS[algorithmId]?.lines || [];
 	const activeLine = currentStep?.line ?? null;
 
+	// For algorithms with a pure {line, state} projection (BFS / DFS), drive the
+	// synced PseudoState panel: the executing pseudocode line plus a live readout
+	// of the frontier (queue / stack), the current node, and how many nodes are
+	// visited. The projection comes from the pure, unit-tested graphLineState, so
+	// the panel and the algorithm trace never drift. Other algorithms keep the
+	// plain pseudocode rail (no live-state regression).
+	const liveFrame = useMemo(
+		() => graphLineState(algorithmId, currentStep),
+		[algorithmId, currentStep]
+	);
+	const structureLabel = currentStep?.structureLabel || 'STATE';
+
 	const viewToggle = (
 		<div
 			className={styles.viewToggle}
@@ -429,11 +442,23 @@ const GraphDashboard = ({ onUserInteract }) => {
 					)}
 				</section>
 
-				<PseudocodeRail
-					lines={lines}
-					activeLine={activeLine}
-					isRunning={canStep}
-				/>
+				{liveFrame ? (
+					<PseudoState
+						className={styles.pseudoState}
+						lines={lines}
+						frame={{ line: activeLine, state: liveFrame.state }}
+						stateLabel={structureLabel}
+						step={stepIndex}
+						totalSteps={totalSteps}
+						isRunning={canStep}
+					/>
+				) : (
+					<PseudocodeRail
+						lines={lines}
+						activeLine={activeLine}
+						isRunning={canStep}
+					/>
+				)}
 			</div>
 
 			<div className={styles.bar}>

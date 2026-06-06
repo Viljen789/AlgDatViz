@@ -73,13 +73,13 @@ export const SCENES = [
 		title: 'Coming back up, neighboring pieces merge in order.',
 		body: 'Two sorted runs become one sorted run by reading their front cursors and copying the smaller value out, repeatedly.',
 		check: {
-			kind: 'choice',
+			kind: 'order',
 			prompt:
-				'You are merging the sorted runs [3, 7] and [5, 9]. Which value gets copied to the output first?',
-			options: [3, 5, 7, 9],
-			answer: 3,
+				'Merge the sorted runs [3, 7] and [5, 9]. Put the values into the order they get copied to the output.',
+			items: [7, 3, 9, 5],
+			answer: [3, 5, 7, 9],
 			explanation:
-				'Merge always compares the front cursors of the two runs and copies the smaller. Front of left is 3, front of right is 5; 3 wins and the left cursor advances. Next comparison: 7 vs 5. The merge never looks past the cursors — that is what makes it linear in the merged length.',
+				'Merge always compares the two front cursors and copies the smaller, then advances that run. 3 vs 5 → 3; 7 vs 5 → 5; 7 vs 9 → 7; the right run is exhausted, so 9 trails out. The merge never looks past the cursors — that is what keeps it linear in the merged length.',
 		},
 	},
 	{
@@ -88,13 +88,13 @@ export const SCENES = [
 		title: 'The same merge runs at every level. That is why the cost is O(n log n).',
 		body: 'log n levels of merges, each doing n work to scan and copy every element. The recursion tree is the proof.',
 		check: {
-			kind: 'choice',
+			kind: 'numeric',
 			prompt:
-				'At level 2 of the recursion tree (counting from the root as level 0), how many separate merge operations happen?',
-			options: [1, 2, 4, 8],
-			answer: 4,
+				'You merge two already-sorted runs of length 4 and 4. What is the maximum number of comparisons this single merge can make?',
+			answer: 7,
 			explanation:
-				'Level 2 has four ranges of two elements each, so four merges happen there. Each merge handles n/4 elements, and 4 × n/4 = n total work at that level. The same n shows up at every level, and there are log₂ n levels — that is the n log n.',
+				'A merge of runs totalling m elements makes at most m − 1 comparisons: every comparison emits one element to the output, and the very last element is copied without a comparison once one run empties. Here m = 8, so at most 8 − 1 = 7. Summed over a level, every level still does Θ(n) work, and there are log₂ n levels — that is the n log n.',
+			placeholder: 'Number of comparisons',
 		},
 	},
 ];

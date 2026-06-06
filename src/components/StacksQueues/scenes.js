@@ -35,11 +35,13 @@ export const SCENES = [
 		title: 'A stack is last in, first out. Add and remove both touch the top.',
 		body: 'Push A, B, C, D and they sit in a pile. Pop, and D — the newest — leaves first. Like a stack of plates: you take the one you just put down. Push and pop are both O(1) because only the top ever moves.',
 		check: {
-			kind: 'choice',
+			kind: 'predict',
+			mode: 'text',
 			prompt:
-				'You push A, then B, then C, then D onto a stack. Which value does the next pop return?',
-			options: ['A', 'B', 'C', 'D'],
+				'Predict the output: you push A, then B, then C, then D onto a stack, then pop once. Which value comes out?',
 			answer: 'D',
+			accept: ['d'],
+			placeholder: 'Type the value',
 			explanation:
 				'Last in, first out. D was pushed last, so it sits on top and pops first. The order out is D, C, B, A — the exact reverse of the order in. A stack reverses.',
 		},
@@ -50,11 +52,13 @@ export const SCENES = [
 		title: 'A queue is first in, first out. Add at the rear, remove at the front.',
 		body: 'Enqueue A, B, C, D and they form a line. Dequeue, and A — the oldest — is served first. Like a line at a counter: fair, in arrival order. Two pointers, front and rear, each move one way, so every operation stays O(1).',
 		check: {
-			kind: 'choice',
+			kind: 'order',
 			prompt:
-				'You enqueue A, then B, then C, then D into a queue. Which value does the next dequeue return?',
-			options: ['A', 'B', 'C', 'D'],
-			answer: 'A',
+				'You enqueue A, then B, then C, then D into a queue. Arrange the four into the order they will dequeue.',
+			// Presented scrambled so the student has to do the reordering; the
+			// dequeue order (FIFO) is the answer below.
+			items: ['C', 'A', 'D', 'B'],
+			answer: ['A', 'B', 'C', 'D'],
 			explanation:
 				'First in, first out. A arrived first and waited at the front, so it leaves first. The order out is A, B, C, D — arrival order preserved. A queue keeps order; a stack reverses it.',
 		},

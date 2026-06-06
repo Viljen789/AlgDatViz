@@ -51,18 +51,6 @@ export const COLLISION_KEYS = STAGE_HASHES.filter(
 	h => h.index === collisionBucket
 ).map(h => h.key);
 
-// Bucket-index choices for the scene-1 check, sorted so the right answer is
-// embedded among plausible neighbours.
-const bucketChoices = (() => {
-	const set = new Set([FOCUS.index]);
-	let offset = 1;
-	while (set.size < 4) {
-		set.add((FOCUS.index + offset) % STAGE_CAPACITY);
-		offset += 1;
-	}
-	return [...set].sort((a, b) => a - b);
-})();
-
 export const SCENES = [
 	{
 		id: 'hash',
@@ -70,10 +58,10 @@ export const SCENES = [
 		title: 'A key becomes a number, then an address.',
 		body: `Hashing folds every character of "${FOCUS_KEY}" into one integer, then squeezes it into the table with mod capacity. Same key in, same bucket out — every time.`,
 		check: {
-			kind: 'choice',
-			prompt: `The table has ${STAGE_CAPACITY} buckets. hash("${FOCUS_KEY}") = ${FOCUS.rawHash}. Which bucket does it land in?`,
-			options: bucketChoices,
+			kind: 'numeric',
+			prompt: `The table has ${STAGE_CAPACITY} buckets. hash("${FOCUS_KEY}") = ${FOCUS.rawHash}. Compute the bucket it lands in (0–${STAGE_CAPACITY - 1}).`,
 			answer: FOCUS.index,
+			placeholder: `0–${STAGE_CAPACITY - 1}`,
 			explanation: `${FOCUS.rawHash} % ${STAGE_CAPACITY} = ${FOCUS.index}. The modulo is the "compression" step: it maps any hash, however large, onto one of the ${STAGE_CAPACITY} real slots. Change the capacity and the same key can land somewhere else — which is exactly why resizing forces a rehash.`,
 		},
 	},

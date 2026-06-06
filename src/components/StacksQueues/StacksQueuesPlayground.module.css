@@ -330,7 +330,7 @@
 	}
 }
 
-/* ---------- Rail: pseudocode + trace ---------- */
+/* ---------- Rail: synced pseudocode + live state + trace ---------- */
 
 .rail {
 	display: flex;
@@ -343,41 +343,10 @@
 	min-width: 0;
 }
 
-.code {
-	list-style: none;
-	margin: 0;
-	padding: 0;
-	display: flex;
-	flex-direction: column;
-}
-
-.codeLine {
-	display: flex;
-	padding: var(--space-2xs) var(--space-sm);
-	border-radius: var(--radius-sm);
-	border-left: 2px solid transparent;
-	transition: background-color var(--transition), border-color var(--transition);
-}
-
-.codeBlank {
-	min-height: var(--space-md);
-}
-
-.codeText {
-	font-family: var(--font-family-mono);
-	font-size: var(--font-size-caption);
-	line-height: var(--line-height-snug);
-	color: var(--color-text-muted);
-	white-space: pre;
-}
-
-.codeLineActive {
-	background: var(--topic-stacks-wash);
-	border-left-color: var(--topic-accent);
-}
-
-.codeLineActive .codeText {
-	color: var(--color-text-primary);
+/* PseudoState owns its own pseudocode + state styling; we only constrain the
+   rail height so a long timeline scrolls inside the panel rather than the page. */
+.pseudo {
+	min-width: 0;
 }
 
 /* ---------- Controls dock ---------- */

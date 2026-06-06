@@ -3,7 +3,11 @@ import { Play, RotateCcw } from 'lucide-react';
 import Button from '../../common/Button/Button.jsx';
 import Input from '../../common/Input/Input.jsx';
 import StepControlBar from '../../common/StepControlBar/StepControlBar.jsx';
-import { usePlayback, FrameTrace } from '../../common/PlaybackEngine/index.js';
+import {
+	usePlayback,
+	FrameTrace,
+	PseudoState,
+} from '../../common/PlaybackEngine/index.js';
 import {
 	HASH_MAP_PRESETS,
 	HASH_OPERATIONS,
@@ -12,6 +16,7 @@ import {
 } from './hashMapMeta.js';
 import {
 	buildOperationTrace,
+	buildStateRows,
 	createBucketsFromEntries,
 } from './hashMapTrace.js';
 import styles from './HashMapPlayground.module.css';
@@ -199,15 +204,10 @@ const HashMapPlayground = ({ onUserInteract }) => {
 		return frame.description || frame.title;
 	}, [frame]);
 
-	const traceEntries = useMemo(
-		() =>
-			lines.map((text, idx) => ({
-				id: `line-${idx}`,
-				label: text,
-				active: idx === activeLine,
-			})),
-		[lines, activeLine]
-	);
+	// Live variable-state rows derived purely from the active frame so the
+	// pseudocode rail and the readout (hash, bucket index, chain length, α) move
+	// in lockstep with the canvas. buildStateRows is unit-tested in isolation.
+	const stateRows = useMemo(() => buildStateRows(frame), [frame]);
 
 	return (
 		<div className={styles.shell} ref={playerRef}>
@@ -397,18 +397,25 @@ const HashMapPlayground = ({ onUserInteract }) => {
 					</div>
 				</section>
 
-				<FrameTrace
-					className={styles.trace}
-					eyebrow={op?.name}
-					step={currentStep}
-					totalSteps={totalSteps}
-					narration={narration}
-					entries={traceEntries}
-					traceLabel="Pseudocode"
-					renderEntry={entry => (
-						<code className={styles.codeLine}>{entry.label}</code>
-					)}
-				/>
+				<div className={styles.trace}>
+					<FrameTrace
+						eyebrow={op?.name}
+						step={currentStep}
+						totalSteps={totalSteps}
+						narration={narration}
+					/>
+					<PseudoState
+						className={styles.pseudo}
+						lines={lines}
+						line={activeLine}
+						state={stateRows}
+						isRunning={activeLine != null}
+						label="Pseudocode"
+						stateLabel="Live state"
+						step={currentStep}
+						totalSteps={totalSteps}
+					/>
+				</div>
 			</div>
 
 			{/* ---------- Transport ---------- */}

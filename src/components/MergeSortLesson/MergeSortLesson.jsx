@@ -2,7 +2,9 @@ import { lazy, Suspense, useCallback, useMemo, useState } from 'react';
 import { ChevronDown } from 'lucide-react';
 import { TOPIC_BY_ID } from '../../data/curriculum.js';
 import useProgress from '../../hooks/useProgress.js';
-import TopicTemplate from '../../common/TopicTemplate/index.js';
+import TopicTemplate, {
+	checkAnswer,
+} from '../../common/TopicTemplate/index.js';
 import MergeSortStage from './MergeSortStage.jsx';
 import MergeSortPlayground from './MergeSortPlayground.jsx';
 import { SCENES } from './scenes.js';
@@ -43,15 +45,24 @@ const MergeSortLesson = () => {
 		markCompleted(TOPIC_ID);
 	}, [markCompleted]);
 
-	const handleChoiceAnswer = useCallback((sceneId, value) => {
+	// Generic submit for every non-`pair` check kind (choice / numeric / order /
+	// text / …). Grading is the pure, shared checkAnswer; this host only records
+	// the result + the user's input back into checkStates so LessonCheck can
+	// render the answered state. The `pair` check stays host-graded on the stage
+	// (handleBarClick). Wrong answers still reveal the explanation — the template
+	// shows it whenever a status is set.
+	const handleAnswer = useCallback((sceneId, payload) => {
 		const scene = SCENES.find(s => s.id === sceneId);
-		if (!scene) return;
-		const isCorrect = value === scene.check.answer;
+		if (!scene || !scene.check) return;
+		const result = checkAnswer(scene.check, payload);
+		if (result.correct == null) return; // pair / unknown — graded elsewhere.
 		setCheckStates(prev => ({
 			...prev,
 			[sceneId]: {
-				selected: value,
-				status: isCorrect ? 'correct' : 'incorrect',
+				selected: result.selected,
+				value: result.value,
+				order: result.order,
+				status: result.correct ? 'correct' : 'incorrect',
 			},
 		}));
 	}, []);
@@ -146,6 +157,58 @@ const MergeSortLesson = () => {
 		[topic]
 	);
 
+	const cheatSheet = useMemo(
+		() => ({
+			keyIdea:
+				'Split the array down to single elements (the base case), then merge sorted halves back up. The split is trivial; the merge does the real work.',
+			sections: [
+				{
+					title: 'Merge sort at a glance',
+					items: [
+						{
+							term: 'Recurrence',
+							def: 'T(n) = 2T(n/2) + Θ(n) = Θ(n log n). Two halves, each linear to merge; log n levels.',
+						},
+						{
+							term: 'Time',
+							def: 'Θ(n log n) in every case — best, average, and worst are the same.',
+						},
+						{
+							term: 'Stable',
+							def: 'Yes. Ties keep their original order because the merge copies from the left run first on equal keys (≤).',
+						},
+						{
+							term: 'In place?',
+							def: 'No. It needs Θ(n) auxiliary space for the merge buffer.',
+						},
+						{
+							term: 'Merge cost',
+							def: 'Merging runs of total length m takes at most m − 1 comparisons and m copies — linear.',
+						},
+					],
+				},
+				{
+					title: 'Versus the other sandbox sorts',
+					items: [
+						{
+							term: 'vs quick sort',
+							def: 'Same Θ(n log n) average, but merge sort guarantees it (quick sort degrades to Θ(n²) worst case). Quick sort is in place; merge sort is stable.',
+						},
+						{
+							term: 'vs heap sort',
+							def: 'Both Θ(n log n) worst case. Heap sort is in place but not stable; merge sort is stable but needs Θ(n) aux.',
+						},
+						{
+							term: 'vs insertion sort',
+							def: 'Insertion sort is Θ(n²) but beats merge sort on tiny or nearly-sorted inputs (Θ(n) best case, no overhead).',
+						},
+					],
+				},
+			],
+		}),
+		[]
+	);
+
 	return (
 		<TopicTemplate
 			topicId={TOPIC_ID}
@@ -154,8 +217,9 @@ const MergeSortLesson = () => {
 			lede="Watch a single recursion all the way down to the base case, then back up. Each scene ends with a quick check — answer it, then keep scrolling."
 			scenes={SCENES}
 			renderStage={renderStage}
+			cheatSheet={cheatSheet}
 			checkStates={checkStates}
-			onChoiceAnswer={handleChoiceAnswer}
+			onAnswer={handleAnswer}
 			playgroundEyebrow="Sandbox"
 			playgroundTitle="Now your turn. Step, scrub, replay."
 			playgroundLede="The same eight values, the actual algorithm. Use space, the arrow keys, or the controls below. Want bubble, quick, heap, or radix? Open the full sandbox below."

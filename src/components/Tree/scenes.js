@@ -10,6 +10,13 @@
 // Each scene ends with a `check` — a small interactive question the user answers
 // before scrolling on. Wrong answers are not punished: the explanation reveals
 // regardless of correctness, so every attempt becomes a teaching moment.
+//
+// Two of the checks are non-MCQ retrieval and graded against real BST helpers
+// (not hand-typed answers): the search scene is a `predict` (which branch to
+// descend) and the traversal scene is an `order` (reconstruct the in-order
+// sequence), whose answer is computed from `inorderValues` over a real tree.
+
+import { buildBst, inorderValues } from './treeUtils.js';
 
 // A fixed nine-node BST used by the stage. Insertion order is chosen so the tree
 // is reasonably balanced (height 3) and every level is populated, which keeps
@@ -24,6 +31,13 @@ export const INSERT_KEY = 29;
 // The branch-choice comprehension check. Searching for 54 from the root (42):
 // 54 > 42 → go right. The options mirror the BST decision a learner must make.
 const BRANCH_CHECK_KEY = 54;
+
+// A small five-node BST whose in-order sequence the learner reconstructs in the
+// traversal scene's `order` check. The answer is computed from the real BST so it
+// is guaranteed correct (and is, by the invariant, the values in sorted order).
+const ORDER_CHECK_VALUES = [50, 30, 70, 40, 60];
+const ORDER_CHECK_TREE = buildBst(ORDER_CHECK_VALUES);
+const ORDER_CHECK_INORDER = inorderValues(ORDER_CHECK_TREE).map(String);
 
 export const SCENES = [
 	{
@@ -61,7 +75,8 @@ export const SCENES = [
 		title: 'Each comparison throws away half the tree.',
 		body: `Searching for ${BRANCH_CHECK_KEY}: compare with the root. If the target is larger, the left subtree cannot possibly hold it, so you discard it and descend right. One comparison, one halving. The path is the shape of every search you will write.`,
 		check: {
-			kind: 'choice',
+			kind: 'predict',
+			mode: 'choice',
 			prompt: `You are searching for ${BRANCH_CHECK_KEY}. The root is 42. Which way do you go?`,
 			options: ['left', 'right'],
 			answer: 'right',
@@ -90,12 +105,15 @@ export const SCENES = [
 		title: 'Inorder reads the tree back in sorted order.',
 		body: 'A traversal visits every node in a fixed order. Inorder — left subtree, then the node, then the right subtree — follows the invariant exactly, so it emits values smallest to largest. Change the order to preorder or postorder and the same tree tells a different story.',
 		check: {
-			kind: 'choice',
-			prompt: 'Which traversal of a BST produces values in sorted order?',
-			options: ['preorder', 'inorder', 'postorder', 'level-order'],
-			answer: 'inorder',
+			kind: 'order',
+			prompt: `Arrange these BST values into the order an inorder traversal emits them (root ${ORDER_CHECK_VALUES[0]}, then ${ORDER_CHECK_VALUES.slice(1).join(', ')} inserted in turn).`,
+			// Presented shuffled (insertion order, not sorted) so it's a real task;
+			// the answer is the in-order sequence computed from the real tree.
+			items: ORDER_CHECK_VALUES.map(String),
+			answer: ORDER_CHECK_INORDER,
 			explanation:
-				'Inorder visits left (all smaller) before the node, then right (all larger) after it — at every node. That mirrors the BST rule, so the output comes out sorted. Preorder and postorder serialize structure instead; level-order reads breadth-first.',
+				'Inorder visits left (all smaller) before the node, then right (all larger) after it — at every node. That mirrors the BST rule, so the output comes out sorted: ' +
+				`${ORDER_CHECK_INORDER.join(', ')}. Preorder and postorder serialize structure instead; level-order reads breadth-first.`,
 		},
 	},
 ];

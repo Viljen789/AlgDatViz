@@ -1,6 +1,25 @@
 // Builds a frame array for the Coin Change DP walkthrough.
 // Each frame represents the state of the DP table after computing one cell,
 // plus the synchronized state of the greedy algorithm running on the same problem.
+//
+// Every frame also carries a `line` (0-based index into COIN_CHANGE_PSEUDO in
+// strategiesMeta.js) and a `state` array conforming to THE FRAME CONTRACT in
+// common/PlaybackEngine/PseudoState.jsx: ordered {label, value, active?} rows
+// showing the live machine state (current amount i, coin under consideration,
+// the dp cell being filled/read, and the running result). This lets the
+// playground render PseudoState with the executing line highlighted in lockstep
+// with a live variable readout. The mapping is pure and unit-tested in
+// coinChangeFrames.test.js.
+//
+// COIN_CHANGE_PSEUDO line indices (keep in sync with strategiesMeta.js):
+//   0  dp[0] = 0
+//   1  for i from 1 to target:
+//   2    best = ∞
+//   3    for each coin c in coins:
+//   4      if i - c >= 0 and dp[i - c] is known:
+//   5        best = min(best, dp[i - c] + 1)
+//   6    dp[i] = best
+//   7  return dp[target]
 
 const computeGreedyPath = (target, coins) => {
 	const sorted = [...coins].sort((a, b) => b - a);
@@ -29,6 +48,11 @@ const idleFrame = ({ target }) => ({
 	title: 'Base case',
 	description: 'dp[0] = 0 — zero coins are needed to make 0¢.',
 	line: 0,
+	state: [
+		{ id: 'target', label: 'target', value: target },
+		{ id: 'i', label: 'i', value: 0 },
+		{ id: 'dp', label: 'dp[0]', value: 0, active: true },
+	],
 	verdict: null,
 });
 
@@ -76,6 +100,33 @@ export const buildCoinChangeFrames = ({ target, coins }) => {
 					? `Only one coin reaches ${i}¢: ${candidates[0].coin}¢ takes you back to dp[${candidates[0].prevIndex}]=${candidates[0].prevValue}.`
 					: `Try every coin that fits — pick the choice that needs the fewest coins.`;
 
+		// Live variable-state for PseudoState. The "coin under consideration" is
+		// the winning coin when one exists (the relax that set best), else the
+		// largest fitting coin we tried; null when nothing fit.
+		const coinUnderConsideration =
+			winning?.coin ?? candidates[0]?.coin ?? null;
+		const readCell = winning?.prevIndex ?? candidates[0]?.prevIndex ?? null;
+		const state = [
+			{ id: 'target', label: 'target', value: target },
+			{ id: 'i', label: 'i', value: i, active: true },
+			{
+				id: 'c',
+				label: 'c (coin tried)',
+				value: coinUnderConsideration == null ? '—' : `${coinUnderConsideration}¢`,
+			},
+			{
+				id: 'read',
+				label: readCell == null ? 'dp[i − c]' : `dp[${readCell}] (read)`,
+				value: readCell == null ? '—' : dp[readCell],
+			},
+			{
+				id: 'best',
+				label: `dp[${i}] (best)`,
+				value: value == null ? '∞' : value,
+				active: true,
+			},
+		];
+
 		frames.push({
 			step: i,
 			dpTable: [...dp],
@@ -88,7 +139,10 @@ export const buildCoinChangeFrames = ({ target, coins }) => {
 			greedyDone,
 			title: `dp[${i}] = ${value ?? '∞'}`,
 			description,
-			line: candidates.length === 0 ? 2 : 5,
+			// No coin fit → stuck at the failed guard (line 4). Otherwise the cell
+			// resolves at the dp[i] = best write (line 6).
+			line: candidates.length === 0 ? 4 : 6,
+			state,
 			verdict: null,
 		});
 	}
@@ -101,6 +155,15 @@ export const buildCoinChangeFrames = ({ target, coins }) => {
 	if (frames.length > 0 && dpFinal != null) {
 		const last = frames[frames.length - 1];
 		last.line = 7;
+		last.state = [
+			{ id: 'target', label: 'target', value: target },
+			{ id: 'dpFinal', label: `dp[${target}]`, value: dpFinal, active: true },
+			{
+				id: 'greedy',
+				label: 'greedy coins',
+				value: greedyFinal == null ? 'stuck' : greedyFinal,
+			},
+		];
 		if (greedyFinal == null) {
 			last.verdict = `DP found ${dpFinal} coins. Greedy could not finish — no coin reaches the target from one of its commitments.`;
 		} else if (greedySafe) {

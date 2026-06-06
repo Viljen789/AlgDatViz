@@ -1481,6 +1481,80 @@ const maxFlowSteps = (graph, options) => {
 	return steps;
 };
 
+// ── Pure {line, state} mapping for the synced PseudoState panel ──────────────
+//
+// The step generators above already carry everything the PseudoState frame
+// contract needs (PlaybackEngine/PseudoState.jsx): the executing pseudocode line
+// lives on `step.line`, and the live machine state (frontier contents, current
+// node, visited set) is derivable from the step's fields. These helpers project
+// an existing BFS/DFS step into a conformant `{ line, state }` frame WITHOUT
+// re-running the algorithm — they are pure and unit-tested, so the playground
+// and a test share one source of truth.
+//
+// `state` is an ordered array of { id, label, value, active? } rows per the
+// contract. We surface the data structure that *is* the algorithm — the queue
+// for BFS, the stack for DFS — plus the current node and how many nodes are
+// visited so far.
+
+const firstActiveNode = step =>
+	Array.isArray(step?.activeNodes) && step.activeNodes.length
+		? step.activeNodes[0]
+		: '—';
+
+const visitedCount = step =>
+	Array.isArray(step?.visitedNodes) ? step.visitedNodes.length : 0;
+
+// Render a structure (array of node ids) as a compact, stable string.
+const structureToText = step => {
+	const items = Array.isArray(step?.structure) ? step.structure : [];
+	return items.length ? items.join(' ') : '∅';
+};
+
+/**
+ * bfsLineState — project a BFS step into a PseudoState frame.
+ * @param {object} step a step from `bfsSteps` (via createGraphAlgorithmSteps).
+ * @returns {{ line: number, state: Array<{id,label,value,active?}> }}
+ */
+export const bfsLineState = step => ({
+	line: typeof step?.line === 'number' ? step.line : 0,
+	state: [
+		{ id: 'current', label: 'current', value: firstActiveNode(step), active: true },
+		{ id: 'queue', label: 'queue (FIFO)', value: structureToText(step) },
+		{ id: 'visited', label: 'visited', value: visitedCount(step) },
+	],
+});
+
+/**
+ * dfsLineState — project a DFS step into a PseudoState frame.
+ * @param {object} step a step from `dfsSteps` (via createGraphAlgorithmSteps).
+ * @returns {{ line: number, state: Array<{id,label,value,active?}> }}
+ */
+export const dfsLineState = step => ({
+	line: typeof step?.line === 'number' ? step.line : 0,
+	state: [
+		{ id: 'current', label: 'current', value: firstActiveNode(step), active: true },
+		{ id: 'stack', label: 'stack (LIFO)', value: structureToText(step) },
+		{ id: 'visited', label: 'visited', value: visitedCount(step) },
+	],
+});
+
+// Dispatch: which projector (if any) maps a given algorithm's steps. Returns
+// null for algorithms without a dedicated live-state projection so callers can
+// fall back to the plain pseudocode rail.
+const LINE_STATE_PROJECTORS = {
+	bfs: bfsLineState,
+	dfs: dfsLineState,
+};
+
+/**
+ * graphLineState — project a step into a PseudoState frame for `algorithmId`,
+ * or null when that algorithm has no live-state projection.
+ */
+export const graphLineState = (algorithmId, step) => {
+	const projector = LINE_STATE_PROJECTORS[algorithmId];
+	return projector ? projector(step) : null;
+};
+
 export const createGraphAlgorithmSteps = (
 	graph,
 	algorithmId,

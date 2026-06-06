@@ -7,14 +7,16 @@ import {
 	XAxis,
 	YAxis,
 } from 'recharts';
-import { usePlayback, FrameTrace } from '../../common/PlaybackEngine/index.js';
+import { usePlayback, PseudoState } from '../../common/PlaybackEngine/index.js';
 import StepControlBar from '../../common/StepControlBar/StepControlBar.jsx';
 import { SPEED_OPTIONS } from '../../utils/sorting/algorithmMeta.js';
 import {
 	analyseRecurrence,
 	buildLevels,
+	buildRecursionFrames,
 	EXAMPLES,
 	formatNumber,
+	RECURSION_PSEUDOCODE,
 } from './masterMath.js';
 import styles from './MasterTheoremPlayground.module.css';
 
@@ -66,16 +68,21 @@ const MasterTheoremPlayground = ({ onUserInteract, params, onParamsChange }) => 
 	const analysis = useMemo(() => analyseRecurrence(params), [params]);
 	const levels = useMemo(() => buildLevels(params, TREE_DEPTH), [params]);
 
-	// One frame per revealed depth: frame i shows levels 0..i. The engine never
-	// inspects the frame shape; we only read currentStep back out.
+	// Synced pseudocode/state frames: one per unfolded level (frame i reveals
+	// levels 0..i), then a closing verdict frame. The engine never inspects the
+	// frame shape; we read currentStep back out to drive both the chart reveal
+	// and the live PseudoState panel from a single source of truth (masterMath,
+	// pure + unit-tested).
 	const frames = useMemo(
-		() => levels.map((_, i) => ({ revealed: i })),
-		[levels]
+		() => buildRecursionFrames(params, TREE_DEPTH),
+		[params]
 	);
 
 	const player = usePlayback(frames, { speed: 100 });
 	const { currentStep, totalSteps } = player;
-	const revealed = currentStep;
+	const activeFrame = frames[currentStep] ?? frames[0];
+	// The last frame is the verdict; cap the chart reveal at the deepest level.
+	const revealed = Math.min(currentStep, TREE_DEPTH);
 
 	// When the recurrence changes, snap the reveal back to the root so the build
 	// up reads cleanly for the new tree.
@@ -111,39 +118,6 @@ const MasterTheoremPlayground = ({ onUserInteract, params, onParamsChange }) => 
 			})),
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 		[levels, revealed, dominant]
-	);
-
-	const narration = useMemo(() => {
-		if (revealed === 0) {
-			return `Level 0 is the whole problem: one call doing f(n) work. Step forward to unfold the recursion. Leaf exponent c = log_${params.b}(${params.a}) = ${formatNumber(analysis.critical)}; combine exponent d = ${formatNumber(params.d)}.`;
-		}
-		const lvl = levels[revealed];
-		return `Level ${revealed}: ${formatNumber(lvl.nodes)} calls of size ${lvl.subproblem}, doing ${formatNumber(lvl.relativeWork)}× the root's work. ${analysis.explanation}`;
-	}, [revealed, levels, analysis, params]);
-
-	const traceEntries = useMemo(
-		() =>
-			[
-				{
-					id: 'c',
-					label: `leaf exponent  c = log_${params.b}(${params.a})`,
-					value: formatNumber(analysis.critical),
-					active: dominant === 'leaves',
-				},
-				{
-					id: 'd',
-					label: 'combine exponent  d',
-					value: formatNumber(params.d),
-					active: dominant === 'root',
-				},
-				{
-					id: 'ratio',
-					label: 'per-level work ratio  a/b^d',
-					value: `${formatNumber(analysis.ratio)}×`,
-					active: dominant === 'levels',
-				},
-			],
-		[params, analysis, dominant]
 	);
 
 	return (
@@ -302,7 +276,7 @@ const MasterTheoremPlayground = ({ onUserInteract, params, onParamsChange }) => 
 					</div>
 				</div>
 
-				{/* Right: verdict + comparison trace */}
+				{/* Right: verdict + synced pseudocode walk */}
 				<aside className={styles.side}>
 					<div className={styles.verdict}>
 						<span className={styles.verdictCase}>{analysis.name}</span>
@@ -310,11 +284,14 @@ const MasterTheoremPlayground = ({ onUserInteract, params, onParamsChange }) => 
 						<code className={styles.verdictResult}>{analysis.result}</code>
 					</div>
 
-					<FrameTrace
-						eyebrow="The comparison"
-						narration={narration}
-						entries={traceEntries}
-						traceLabel="Master theorem comparison"
+					<PseudoState
+						lines={RECURSION_PSEUDOCODE}
+						frame={activeFrame}
+						label="Recursion walk"
+						stateLabel="This level"
+						step={currentStep}
+						totalSteps={totalSteps}
+						isRunning
 					/>
 				</aside>
 			</div>

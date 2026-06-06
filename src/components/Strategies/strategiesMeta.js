@@ -90,3 +90,56 @@ export const INTERVAL_SCHEDULING_PSEUDO = [
 	'  else: skip interval',
 	'return chosen set',
 ];
+
+// Cheat sheet for the Strategies topic. Concise on purpose: the deep
+// greedy-vs-DP treatment (greedy-choice-property and optimal-substructure as
+// full proofs) is Phase 4 — this layer just names the ideas for revision.
+export const STRATEGIES_CHEAT_SHEET = {
+	keyIdea:
+		'One counterexample to the greedy choice ⇒ greedy is unsafe; use DP. Greedy is only valid with a proof (an exchange argument) that holds for every input.',
+	sections: [
+		{
+			title: 'The two strategies',
+			items: [
+				{
+					term: 'Greedy',
+					def: 'Commit to the locally best move now, never revise. Fast, but only correct when provably safe.',
+				},
+				{
+					term: 'Dynamic programming',
+					def: 'Solve each subproblem once, store the answer, build the optimum from already-optimal smaller answers.',
+				},
+			],
+		},
+		{
+			title: 'When greedy is safe',
+			items: [
+				{
+					term: 'Greedy-choice property',
+					def: 'A locally optimal choice can be extended to a globally optimal solution — provable by an exchange argument (e.g. interval scheduling: earliest finish).',
+				},
+				{
+					term: 'Optimal substructure',
+					def: 'An optimal solution is built from optimal solutions to its subproblems. Required by both greedy AND DP.',
+				},
+			],
+		},
+		{
+			title: 'When you need DP',
+			items: [
+				{
+					term: 'Overlapping subproblems',
+					def: 'The same subproblem recurs many times (e.g. dp[i − c] reused across amounts). DP solves each once instead of recomputing.',
+				},
+				{
+					term: 'Memoization (top-down)',
+					def: 'Recurse, but cache each subproblem result so repeats are free.',
+				},
+				{
+					term: 'Tabulation (bottom-up)',
+					def: 'Fill a table from base cases upward, so every cell is read only after it is final.',
+				},
+			],
+		},
+	],
+};

@@ -11,9 +11,12 @@ import {
 	insertValue,
 } from './treeUtils.js';
 import { TREE_OPERATIONS, TREE_OP_ORDER, TREE_PSEUDO } from './treeAlgorithmMeta.js';
-import { usePlayback, FrameTrace } from '../../common/PlaybackEngine/index.js';
+import {
+	usePlayback,
+	FrameTrace,
+	PseudoState,
+} from '../../common/PlaybackEngine/index.js';
 import StepControlBar from '../../common/StepControlBar/StepControlBar.jsx';
-import PseudocodeRail from '../../common/PseudocodeRail/PseudocodeRail.jsx';
 import Button from '../../common/Button/Button.jsx';
 import Input from '../../common/Input/Input.jsx';
 import styles from './TreePlayground.module.css';
@@ -108,6 +111,12 @@ const TreePlayground = ({ onUserInteract }) => {
 	const canStep = totalSteps > 1;
 	const lines = TREE_PSEUDO[operationId] || [];
 	const activeLine = currentFrame?.line ?? null;
+	// The PseudoState frame: the executing line + the live variable readout the
+	// generators emit (current node, comparison result, path / output so far).
+	const pseudoFrame = useMemo(
+		() => ({ line: activeLine, state: currentFrame?.state || [] }),
+		[activeLine, currentFrame]
+	);
 
 	// Replace the timeline and rewind to the start.
 	const loadSteps = useCallback(
@@ -151,6 +160,15 @@ const TreePlayground = ({ onUserInteract }) => {
 					pathNodes: [String(value)],
 					output: [],
 					line: existed ? 1 : 2,
+					state: [
+						{ id: 'target', label: 'value', value },
+						{
+							id: 'action',
+							label: existed ? 'result' : 'linked',
+							value: existed ? 'already present' : `new node ${value}`,
+							active: true,
+						},
+					],
 				},
 			]);
 			return;
@@ -172,6 +190,15 @@ const TreePlayground = ({ onUserInteract }) => {
 					pathNodes: [],
 					output: [],
 					line: existed ? 1 : 0,
+					state: [
+						{ id: 'target', label: 'value', value },
+						{
+							id: 'action',
+							label: 'result',
+							value: existed ? `removed ${value}` : 'not found',
+							active: true,
+						},
+					],
 				},
 			]);
 			return;
@@ -370,10 +397,13 @@ const TreePlayground = ({ onUserInteract }) => {
 					</div>
 				</section>
 
-				<PseudocodeRail
+				<PseudoState
+					className={styles.pseudo}
 					lines={lines}
-					activeLine={activeLine}
+					frame={pseudoFrame}
 					isRunning={canStep && currentStep > 0}
+					step={currentStep}
+					totalSteps={totalSteps}
 				/>
 			</div>
 

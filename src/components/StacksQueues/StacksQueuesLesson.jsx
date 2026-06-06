@@ -1,10 +1,11 @@
 import { useCallback, useMemo, useState } from 'react';
 import { TOPIC_BY_ID } from '../../data/curriculum.js';
 import useProgress from '../../hooks/useProgress.js';
-import TopicTemplate from '../../common/TopicTemplate/index.js';
+import TopicTemplate, { checkAnswer } from '../../common/TopicTemplate/index.js';
 import StacksQueuesStage from './StacksQueuesStage.jsx';
 import StacksQueuesPlayground from './StacksQueuesPlayground.jsx';
 import { SCENES } from './scenes.js';
+import { CHEAT_SHEET } from './stacksQueuesMeta.js';
 
 const TOPIC_ID = 'stacks-queues';
 
@@ -24,15 +25,19 @@ const StacksQueuesLesson = () => {
 
 	const topic = TOPIC_BY_ID[TOPIC_ID];
 
-	const handleChoiceAnswer = useCallback((sceneId, value) => {
+	// Generic submit for every check kind. Grading is delegated to the pure
+	// checkAnswer core, so the choice, predict-text and order checks all resolve
+	// through one path; the kind-specific result fields (selected/value/order/
+	// perItem) are stored back so LessonCheck can render the answered state.
+	const handleAnswer = useCallback((sceneId, payload) => {
 		const scene = SCENES.find(s => s.id === sceneId);
 		if (!scene) return;
-		const isCorrect = value === scene.check.answer;
+		const result = checkAnswer(scene.check, payload);
 		setCheckStates(prev => ({
 			...prev,
 			[sceneId]: {
-				selected: value,
-				status: isCorrect ? 'correct' : 'incorrect',
+				...result,
+				status: result.correct ? 'correct' : 'incorrect',
 			},
 		}));
 	}, []);
@@ -71,7 +76,8 @@ const StacksQueuesLesson = () => {
 			scenes={SCENES}
 			renderStage={renderStage}
 			checkStates={checkStates}
-			onChoiceAnswer={handleChoiceAnswer}
+			onAnswer={handleAnswer}
+			cheatSheet={CHEAT_SHEET}
 			playgroundEyebrow="Playground"
 			playgroundTitle="Now your turn. Push, pop, enqueue, dequeue — then replay it."
 			playgroundLede="Switch between stack and queue and run operations. Each one is recorded onto a timeline, so you can step back, scrub, or replay the whole run with the controls below — try the same operations in both modes and watch the order flip."

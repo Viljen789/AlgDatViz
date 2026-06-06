@@ -113,3 +113,79 @@ export const buildLevels = ({ a, b, d }, depth = 6) => {
 		width: Math.max(6, (level.relativeWork / maxWork) * 100),
 	}));
 };
+
+// The pseudocode the recursion-tree walk is synced against. The frame generator
+// below emits a `line` index into this array per step (see PseudoState's frame
+// contract), so the executing line is highlighted in lockstep with the readout.
+export const RECURSION_PSEUDOCODE = [
+	'MASTER(a, b, f)',
+	'  c = log_b(a)                 // leaf-growth exponent',
+	'  for level i = 0, 1, 2, …',
+	'    nodes  = a^i               // calls at this level',
+	'    size   = n / b^i           // subproblem size',
+	'    work_i = (a / b^d)^i       // work, relative to root',
+	'  compare c with d             // the deciding comparison',
+	'  return Θ(result)',
+];
+
+/**
+ * buildRecursionFrames — a pure PseudoState frame generator for the recursion
+ * tree. It walks the tree level by level (frame i unfolds level i), reporting a
+ * live state readout — current level, node count a^i, subproblem size n/b^i, and
+ * the per-level work (a/b^d)^i relative to the root — then closes with the
+ * deciding comparison and the Master-Theorem verdict.
+ *
+ * Conforms to THE FRAME CONTRACT (PlaybackEngine/PseudoState.jsx): each frame is
+ * { line, state:[{id,label,value,active?}], highlight:[level] }. Kept pure so it
+ * is unit-tested without React (masterMath.test.js) and memoized freely.
+ *
+ * @param {{a,b,d,k}} params  the recurrence parameters.
+ * @param {number}    depth   how many levels to unfold (default 6).
+ * @returns {Array<{line:number,state:Array,highlight:number[]}>} frames.
+ */
+export const buildRecursionFrames = (params, depth = 6) => {
+	const { d } = params;
+	const analysis = analyseRecurrence(params);
+	const levels = buildLevels(params, depth);
+	const cValue = formatNumber(analysis.critical);
+
+	// A frame per unfolded level: highlight the comparison row that this level's
+	// work feeds (leaves grow with c, root work with d).
+	const levelFrames = levels.map(level => ({
+		line: level.level === 0 ? 1 : 2,
+		state: [
+			{ id: 'level', label: 'level i', value: level.level, active: true },
+			{ id: 'nodes', label: 'nodes a^i', value: formatNumber(level.nodes) },
+			{ id: 'size', label: 'size n/b^i', value: level.subproblem },
+			{
+				id: 'work',
+				label: 'work (a/b^d)^i',
+				value: `${formatNumber(level.relativeWork)}×`,
+			},
+			{ id: 'c', label: 'c = log_b a', value: cValue },
+			{ id: 'd', label: 'd', value: formatNumber(d) },
+		],
+		highlight: [level.level],
+	}));
+
+	// Closing frame: the comparison resolves to one of the three cases.
+	const sign = analysis.caseId === 1 ? '>' : analysis.caseId === 3 ? '<' : '=';
+	const verdictFrame = {
+		line: 6,
+		state: [
+			{ id: 'c', label: 'c = log_b a', value: cValue },
+			{ id: 'd', label: 'd', value: formatNumber(d) },
+			{
+				id: 'compare',
+				label: 'compare',
+				value: `c ${sign} d`,
+				active: true,
+			},
+			{ id: 'case', label: 'case', value: analysis.name },
+			{ id: 'result', label: 'result', value: analysis.result, active: true },
+		],
+		highlight: [],
+	};
+
+	return [...levelFrames, verdictFrame];
+};

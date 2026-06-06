@@ -319,15 +319,18 @@
 	color: var(--topic-accent);
 }
 
+/* The trace column stacks the live narration (FrameTrace) above the synced
+   pseudocode + live-state panel (PseudoState). PseudoState owns its own styling;
+   we only set the column flow + gap. */
 .trace {
 	min-width: 0;
+	display: flex;
+	flex-direction: column;
+	gap: var(--space-md);
 }
 
-.codeLine {
-	font-family: var(--font-family-mono);
-	font-size: var(--font-size-caption);
-	color: inherit;
-	white-space: pre-wrap;
+.pseudo {
+	min-width: 0;
 }
 
 /* ---------- Transport ---------- */

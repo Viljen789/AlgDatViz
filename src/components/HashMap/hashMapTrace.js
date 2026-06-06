@@ -339,6 +339,73 @@ export const buildResizeTrace = ({ buckets, capacity }) => {
 	return { frames, finalBuckets: working, finalCapacity: newCapacity };
 };
 
+// ── Live state rows for PseudoState (pure; unit-tested). ──
+//
+// Maps one playback frame onto the {label, value, active?} rows PseudoState
+// renders next to the pseudocode, so the synced state shows the machine's real
+// values: the computed hash, the compressed bucket index, the length of the
+// chain being scanned, and the table's load factor α = n / m. It is pure so the
+// derivation can be tested without React; the playground only renders the rows.
+//
+// @param {object} frame    a frame produced by the build*Trace generators.
+// @returns {Array<{id,label,value,active?}>} rows in PseudoState's contract.
+export const buildStateRows = frame => {
+	if (!frame) return [];
+	const capacity = frame.capacity ?? 0;
+	const buckets = Array.isArray(frame.buckets) ? frame.buckets : [];
+	const entryCount = buckets.reduce((sum, b) => sum + b.length, 0);
+	const loadFactor = capacity ? entryCount / capacity : 0;
+
+	// Length of the chain currently in focus (the selected bucket), if any.
+	const selected = frame.selectedBucket;
+	const chainLength =
+		typeof selected === 'number' && buckets[selected]
+			? buckets[selected].length
+			: null;
+
+	const phase = frame.phase;
+	const rows = [];
+
+	if (frame.activeKey != null) {
+		rows.push({
+			id: 'key',
+			label: 'key',
+			value: `"${frame.activeKey}"`,
+			active: phase === 'hashing',
+		});
+	}
+
+	rows.push({
+		id: 'hash',
+		label: 'hash',
+		value: frame.hash == null ? '—' : frame.hash,
+		active: phase === 'hashing' || phase === 'compress',
+	});
+
+	rows.push({
+		id: 'index',
+		label: 'index = hash % m',
+		value: typeof selected === 'number' ? selected : '—',
+		active: phase === 'compress',
+	});
+
+	rows.push({
+		id: 'chain',
+		label: 'chain length',
+		value: chainLength == null ? '—' : chainLength,
+		active: phase === 'scan',
+	});
+
+	rows.push({
+		id: 'alpha',
+		label: 'α = n / m',
+		value: `${entryCount} / ${capacity} = ${loadFactor.toFixed(2)}`,
+		active: phase === 'rehash' || phase === 'plan' || phase === 'allocate',
+	});
+
+	return rows;
+};
+
 export const buildOperationTrace = (operation, args) => {
 	switch (operation) {
 		case 'put':

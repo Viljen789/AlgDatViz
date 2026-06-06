@@ -27,14 +27,22 @@ export const SCENES = [
 		eyebrow: 'When greedy lies',
 		title: 'The largest coin is not always the right coin.',
 		body: 'Make 10¢ from coins {1, 5, 6}. Greedy grabs 6 first because it is biggest — then it is stranded, paying four 1¢ coins for five total. The locally best first move poisoned everything downstream.',
+		// spotbug (line-mode): walk greedy's reasoning on {1,5,6}=10 and find the
+		// step whose claim is false. Grounded in the real coin-change result —
+		// DP=2 (5+5), greedy=5 (6+1+1+1+1); see coinChangeFrames.test.js.
 		check: {
-			kind: 'choice',
+			kind: 'spotbug',
 			prompt:
-				'For target 10 with coins {1, 5, 6}, how many coins does the optimal solution use?',
-			options: [2, 3, 4, 5],
-			answer: 2,
+				'Here is greedy reasoning on coins {1, 5, 6} for 10¢. Which step makes a wrong claim?',
+			lines: [
+				'10¢: largest coin that fits is 6¢ — take it. (remaining 4¢)',
+				'4¢: largest coin that fits is 1¢ — take it. (remaining 3¢)',
+				'…take 1¢, 1¢, 1¢ → 6+1+1+1+1 = 5 coins.',
+				'5 coins is optimal — no shorter way exists.',
+			],
+			answer: 3,
 			explanation:
-				'5 + 5 = 10 needs just two coins. Greedy took 6 and could never reach that — its first commitment was irreversible. This is a counterexample: it proves greedy is not safe for this coin set.',
+				'Steps 1–3 describe exactly what greedy does (5 coins), so they are true reports. Step 4 is the false claim: 5 + 5 = 10 uses only TWO coins, so 5 is not optimal. That single counterexample proves greedy is unsafe for this coin set.',
 		},
 	},
 	{
@@ -80,18 +88,28 @@ export const SCENES = [
 		eyebrow: 'Choosing what',
 		title: 'So which do you reach for?',
 		body: 'Try greedy first — it is simpler and faster. It is only safe if you can prove the local choice is exchangeable with an optimal one. If a single counterexample breaks it, the problem has overlapping subproblems you must remember: reach for DP.',
+		// classify: sort each problem into "greedy is provably safe" vs "needs DP",
+		// using the exact problems from the playground.
 		check: {
-			kind: 'choice',
+			kind: 'classify',
 			prompt:
-				'You found one input where the greedy rule gives a worse-than-optimal answer. What does that tell you?',
-			options: [
-				'Greedy is unsafe here — use DP',
-				'Greedy just needs a bigger first coin',
-				'Nothing — one case does not matter',
+				'For each problem, is the greedy choice provably safe, or do you need DP?',
+			items: [
+				{ id: 'intervals', label: 'Interval scheduling (earliest finish)' },
+				{ id: 'coins156', label: 'Coin change with coins {1, 5, 6}' },
+				{ id: 'stairs', label: 'Climbing stairs (count the ways)' },
 			],
-			answer: 'Greedy is unsafe here — use DP',
+			categories: [
+				{ id: 'greedy', label: 'Greedy is safe' },
+				{ id: 'dp', label: 'Need DP' },
+			],
+			answer: {
+				intervals: 'greedy',
+				coins156: 'dp',
+				stairs: 'dp',
+			},
 			explanation:
-				'A single counterexample is a disproof. Greedy is only valid with a proof that holds for every input, so one failing case rules it out — fall back to DP, which considers every option.',
+				'Interval scheduling has an exchange-argument proof, so greedy is safe. Coins {1, 5, 6} has the 10¢ counterexample (greedy 5 vs DP 2), so it needs DP. Climbing stairs counts paths by summing overlapping subproblems — there is no single local "best move" to be greedy about, so DP is the tool.',
 		},
 	},
 ];

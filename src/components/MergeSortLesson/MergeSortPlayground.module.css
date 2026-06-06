@@ -13,6 +13,15 @@
 	min-height: 520px;
 }
 
+.layout {
+	flex: 1;
+	display: grid;
+	grid-template-columns: minmax(0, 1.6fr) minmax(260px, 1fr);
+	gap: var(--space-xl);
+	align-items: stretch;
+	min-height: 0;
+}
+
 .canvas {
 	flex: 1;
 	position: relative;
@@ -25,6 +34,11 @@
 	min-height: 460px;
 	box-shadow: var(--shadow-2);
 	overflow: hidden;
+}
+
+.pseudo {
+	min-height: 0;
+	max-height: 460px;
 }
 
 .notation {
@@ -89,6 +103,15 @@
 .shuffleBtn:focus-visible {
 	outline: none;
 	box-shadow: var(--shadow-focus);
+}
+
+@media (max-width: 960px) {
+	.layout {
+		grid-template-columns: minmax(0, 1fr);
+	}
+	.pseudo {
+		max-height: none;
+	}
 }
 
 @media (max-width: 720px) {

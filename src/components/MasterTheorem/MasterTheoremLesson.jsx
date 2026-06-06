@@ -2,10 +2,44 @@ import { useCallback, useMemo, useState } from 'react';
 import { TOPIC_BY_ID } from '../../data/curriculum.js';
 import useProgress from '../../hooks/useProgress.js';
 import TopicTemplate from '../../common/TopicTemplate/index.js';
+import checkAnswer from '../../common/TopicTemplate/checkAnswer.js';
 import MasterTheoremStage from './MasterTheoremStage.jsx';
 import MasterTheoremPlayground from './MasterTheoremPlayground.jsx';
 import { SCENES } from './scenes.js';
 import { EXAMPLES } from './masterMath.js';
+
+// Concise cheat-sheet for the master theorem (Phase-1 revision layer depth — the
+// full three-case leaves/levels/root derivation is Phase 4).
+const CHEAT_SHEET = {
+	keyIdea:
+		'Compare the leaf-growth exponent c = log_b(a) against the combine-work exponent d (where f(n) = Θ(n^d)). Whichever side grows faster owns the runtime.',
+	sections: [
+		{
+			title: 'The recurrence',
+			items: [
+				{ term: 'T(n)', def: 'a·T(n/b) + f(n) — a calls of size n/b, plus f(n) combine work.' },
+				{ term: 'Compare', def: 'n^(log_b a) (leaf work) against f(n) (combine work).' },
+			],
+		},
+		{
+			title: 'The three cases',
+			items: [
+				{ term: 'Case 1 · c > d', def: 'Leaves dominate → Θ(n^(log_b a)).' },
+				{ term: 'Case 2 · c = d', def: 'Every level ties → Θ(n^d log n).' },
+				{ term: 'Case 3 · c < d', def: 'Root combine work dominates → Θ(n^d).' },
+			],
+		},
+		{
+			title: 'Running example',
+			items: [
+				{
+					term: 'Merge sort',
+					def: 'T(n) = 2T(n/2) + n → c = log₂2 = 1 = d → Case 2 → Θ(n log n).',
+				},
+			],
+		},
+	],
+};
 
 const TOPIC_ID = 'master-theorem';
 
@@ -27,15 +61,19 @@ const MasterTheoremLesson = () => {
 
 	const topic = TOPIC_BY_ID[TOPIC_ID];
 
-	const handleChoiceAnswer = useCallback((sceneId, value) => {
+	// Generic grading for every check kind (choice / numeric / classify / …) via
+	// the pure checkAnswer core, so non-MCQ retrieval checks grade correctly.
+	const handleAnswer = useCallback((sceneId, payload) => {
 		const scene = SCENES.find(s => s.id === sceneId);
 		if (!scene) return;
-		const isCorrect = value === scene.check.answer;
+		const result = checkAnswer(scene.check, payload);
 		setCheckStates(prev => ({
 			...prev,
 			[sceneId]: {
-				selected: value,
-				status: isCorrect ? 'correct' : 'incorrect',
+				...result,
+				selected: result.selected ?? payload,
+				value: result.value ?? payload,
+				status: result.correct ? 'correct' : 'incorrect',
 			},
 		}));
 	}, []);
@@ -73,13 +111,15 @@ const MasterTheoremLesson = () => {
 	return (
 		<TopicTemplate
 			topicId={TOPIC_ID}
+			accent={topic?.accent}
 			eyebrow={eyebrow}
 			title="Find where the recursion piles up its work."
 			lede="A problem that calls smaller copies of itself draws a tree. The Master Theorem is a single comparison that tells you which part of that tree carries the cost — the leaves, every level, or the root. Answer each check, then keep scrolling."
 			scenes={SCENES}
 			renderStage={renderStage}
 			checkStates={checkStates}
-			onChoiceAnswer={handleChoiceAnswer}
+			onAnswer={handleAnswer}
+			cheatSheet={CHEAT_SHEET}
 			playgroundEyebrow="Sandbox"
 			playgroundTitle="Set a, b, f(n). Watch the tree reveal."
 			playgroundLede="Step the recursion tree open one level at a time and watch the leaves-vs-combine work shift the dominant side. Use space, the arrow keys, or the controls. Try the preset recurrences to see all three cases."

@@ -2,9 +2,10 @@ import { useCallback, useMemo, useState } from 'react';
 import { TOPIC_BY_ID } from '../../../data/curriculum.js';
 import useProgress from '../../../hooks/useProgress.js';
 import TopicTemplate from '../../../common/TopicTemplate/index.js';
+import { checkAnswer } from '../../../common/TopicTemplate/checkAnswer.js';
 import GraphDashboard from '../GraphDashboard.jsx';
 import GraphStage from './GraphStage.jsx';
-import { SCENES } from './graphScenes.js';
+import { SCENES, CHEAT_SHEET } from './graphScenes.js';
 
 const TOPIC_ID = 'graphs';
 
@@ -24,15 +25,19 @@ const GraphLesson = () => {
 
 	const topic = TOPIC_BY_ID[TOPIC_ID];
 
-	const handleChoiceAnswer = useCallback((sceneId, value) => {
+	// Generic submit for every check kind (choice + the non-MCQ `order` retrieval
+	// check). Grading is delegated to the pure checkAnswer module, so this page
+	// never re-implements correctness; it only stores the kind-appropriate state
+	// fields LessonCheck reads back. Wrong answers still reveal the explanation.
+	const handleAnswer = useCallback((sceneId, payload) => {
 		const scene = SCENES.find(s => s.id === sceneId);
 		if (!scene) return;
-		const isCorrect = value === scene.check.answer;
+		const result = checkAnswer(scene.check, payload);
 		setCheckStates(prev => ({
 			...prev,
 			[sceneId]: {
-				selected: value,
-				status: isCorrect ? 'correct' : 'incorrect',
+				...result,
+				status: result.correct ? 'correct' : 'incorrect',
 			},
 		}));
 	}, []);
@@ -70,7 +75,8 @@ const GraphLesson = () => {
 			scenes={SCENES}
 			renderStage={renderStage}
 			checkStates={checkStates}
-			onChoiceAnswer={handleChoiceAnswer}
+			onAnswer={handleAnswer}
+			cheatSheet={CHEAT_SHEET}
 			playgroundEyebrow="Sandbox"
 			playgroundTitle="Now your turn. Step, scrub, replay."
 			playgroundLede="Run BFS, DFS, Dijkstra, MST, topological sort, or max flow on real graphs. Drag nodes, switch between graph / list / matrix views, and step through the algorithm with space and the arrow keys."

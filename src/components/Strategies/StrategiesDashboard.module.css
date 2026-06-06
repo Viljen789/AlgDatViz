@@ -305,6 +305,12 @@
 	padding-top: var(--space-md);
 }
 
+/* Synced pseudocode + live-state panel (sidebar beside the canvas). */
+.pseudo {
+	width: 260px;
+	flex-shrink: 0;
+}
+
 /* ---------- Control bar ---------- */
 
 .bar {
@@ -319,6 +325,9 @@
 	}
 	.headRight {
 		align-items: flex-start;
+		width: 100%;
+	}
+	.pseudo {
 		width: 100%;
 	}
 }

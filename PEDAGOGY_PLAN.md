@@ -50,3 +50,9 @@
 - Light theme's real cost is the glass/shadow `rgba` literals, not the named tokens.
 - Bringing playback into the scrolly without losing the narrative feel needs care (Phase 2 is the riskiest interaction change).
 - Phase 5 is large; gate each sub-phase. NP-completeness/reductions is the least reuse and the most conceptual.
+
+## 6. Progress log
+- **2026-06-06 — Phase 0:** audit + plan; §2 decisions LOCKED by human. Branch `mission2-pedagogy` cut; redesign baseline committed.
+- **2026-06-06 — Phase 1a (shared infra): DONE, committed `d33a42b`.** Retrieval check taxonomy (numeric/text/order/classify/predict/spotbug) with pure `checkAnswer.js`; `PseudoState` synced-pseudocode+live-state panel with documented frame contract; cheat-sheet + scene-navigator slots in `TopicTemplate`; `useProgress.recordCheck` (completion now derives from correct retrieval); honest curriculum (7 locked "coming soon" nodes, honest hero, count fixed to /7); `heroDivider` removed. Tests 25→40.
+- **2026-06-06 — Phase 1b (7 topics in parallel): DONE, gate passed.** Every topic now has ≥1 non-MCQ retrieval check (graded from real algorithm output, never fabricated), a cheat-sheet, and synced pseudocode + live variable state in its playground driven by a **pure, unit-tested `{line,state}` generator**. Verified on combined tree: lint exit 0, build green, **tests 40→94**, 0 hex. Bugs fixed in passing: tree traversal highlighted the wrong pseudocode line; master-theorem accent token fallback. **Phase 1 DoD met.**
+- **Deferred from Phase 1:** cross-topic *cumulative mixed-review* (needs a shared question bank) — schedule before/within Phase 7.
