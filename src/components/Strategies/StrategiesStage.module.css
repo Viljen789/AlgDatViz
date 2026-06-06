@@ -212,6 +212,181 @@
 	color: var(--color-success);
 }
 
+/* ---------- Recursion board (overlapping subproblems) ---------- */
+
+.recursionBoard {
+	display: flex;
+	flex-direction: column;
+	gap: var(--space-xl);
+	width: 100%;
+}
+
+.tree {
+	display: flex;
+	flex-direction: column;
+	gap: var(--space-xs);
+	width: 100%;
+}
+
+.treeLevel {
+	display: flex;
+	flex-wrap: wrap;
+	justify-content: center;
+	gap: var(--space-2xs) var(--space-xs);
+}
+
+.treeNode {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	padding: var(--space-2xs) var(--space-sm);
+	border-radius: var(--radius-sm);
+	font-family: var(--font-family-mono);
+	font-size: var(--font-size-caption);
+	font-weight: var(--font-weight-medium);
+	color: var(--color-text-muted);
+	background: var(--surface-input);
+	border: 1px solid var(--color-border);
+}
+
+/* Subproblems that recur — the visible DP signature. Tinted with the topic hue
+   so they read as "this is what DP is about", not as an error. */
+.treeNodeRepeat {
+	color: var(--topic-accent);
+	background: var(--topic-strategies-wash);
+	border-color: color-mix(in srgb, var(--topic-accent) 45%, transparent);
+	font-weight: var(--font-weight-bold);
+}
+
+.treeNodeBase {
+	color: var(--color-text-dim);
+	font-style: italic;
+}
+
+.treeNodeBase.treeNodeRepeat {
+	font-style: normal;
+}
+
+.censusRow {
+	list-style: none;
+	margin: 0;
+	padding: 0;
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(86px, 1fr));
+	gap: var(--space-xs);
+}
+
+.censusCell {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: 2px;
+	padding: var(--space-xs) var(--space-2xs);
+	border-radius: var(--radius-sm);
+	border: 1px solid color-mix(in srgb, var(--topic-accent) 40%, transparent);
+	background: var(--topic-strategies-wash);
+	animation: cellFill var(--duration-step) var(--ease-quiet) backwards;
+}
+
+.censusNaive {
+	font-family: var(--font-family-mono);
+	font-size: var(--font-size-caption);
+	color: var(--color-error);
+}
+
+.censusMemo {
+	font-family: var(--font-family-mono);
+	font-size: var(--font-size-caption);
+	font-weight: var(--font-weight-bold);
+	color: var(--topic-accent);
+}
+
+/* ---------- Decision board (the greedy-vs-DP rule) ---------- */
+
+.decisionBoard {
+	display: flex;
+	flex-direction: column;
+	gap: var(--space-md);
+	width: 100%;
+}
+
+.decisionList {
+	list-style: none;
+	margin: 0;
+	padding: 0;
+	display: flex;
+	flex-direction: column;
+	gap: var(--space-sm);
+}
+
+.decisionRow {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: var(--space-md);
+	padding: var(--space-sm) var(--space-md);
+	border-radius: var(--radius-md);
+	border: 1px solid var(--color-border);
+	background: var(--surface-input);
+}
+
+.decisionMain {
+	display: flex;
+	flex-direction: column;
+	gap: var(--space-2xs);
+	min-width: 0;
+}
+
+.decisionLabel {
+	font-family: var(--font-family-mono);
+	font-size: var(--font-size-label);
+	font-weight: var(--font-weight-bold);
+	color: var(--color-text-primary);
+}
+
+.decisionDef {
+	font-size: var(--font-size-caption);
+	line-height: var(--line-height-snug);
+	color: var(--color-text-muted);
+}
+
+.decisionTag {
+	flex: none;
+	font-family: var(--font-family-mono);
+	font-size: var(--font-size-caption);
+	font-weight: var(--font-weight-bold);
+	letter-spacing: var(--tracking-wide);
+	white-space: nowrap;
+	color: var(--color-text-secondary);
+}
+
+.decision-shared {
+	border-color: color-mix(in srgb, var(--topic-accent) 35%, transparent);
+	background: var(--topic-strategies-wash);
+}
+
+.decision-shared .decisionTag {
+	color: var(--topic-accent);
+}
+
+.decision-greedy {
+	border-color: color-mix(in srgb, var(--color-success) 45%, transparent);
+	background: var(--color-success-wash);
+}
+
+.decision-greedy .decisionTag {
+	color: var(--color-success);
+}
+
+.decision-dp {
+	border-color: color-mix(in srgb, var(--topic-accent) 45%, transparent);
+	background: var(--topic-strategies-wash);
+}
+
+.decision-dp .decisionTag {
+	color: var(--topic-accent);
+}
+
 /* ---------- Interval board ---------- */
 
 .intervalBoard {
@@ -315,6 +490,7 @@
 @media (prefers-reduced-motion: reduce) {
 	.coin,
 	.dpCellFilled,
+	.censusCell,
 	.intervalBar {
 		animation-duration: 200ms;
 		animation-delay: 0ms;
@@ -331,5 +507,10 @@
 	}
 	.dpValue {
 		font-size: var(--font-size-caption);
+	}
+	.decisionRow {
+		flex-direction: column;
+		align-items: flex-start;
+		gap: var(--space-2xs);
 	}
 }

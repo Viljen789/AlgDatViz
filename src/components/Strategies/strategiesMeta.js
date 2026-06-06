@@ -91,12 +91,11 @@ export const INTERVAL_SCHEDULING_PSEUDO = [
 	'return chosen set',
 ];
 
-// Cheat sheet for the Strategies topic. Concise on purpose: the deep
-// greedy-vs-DP treatment (greedy-choice-property and optimal-substructure as
-// full proofs) is Phase 4 — this layer just names the ideas for revision.
+// Cheat sheet for the Strategies topic. Names the three distinct properties and
+// the explicit decision rule built from them.
 export const STRATEGIES_CHEAT_SHEET = {
 	keyIdea:
-		'One counterexample to the greedy choice ⇒ greedy is unsafe; use DP. Greedy is only valid with a proof (an exchange argument) that holds for every input.',
+		'The decision rule: optimal substructure is the shared base for both strategies. Add a provable greedy-choice property ⇒ greedy is safe. Find overlapping subproblems instead ⇒ use DP (memoize/tabulate). One counterexample to the greedy choice ⇒ greedy is unsafe.',
 	sections: [
 		{
 			title: 'The two strategies',

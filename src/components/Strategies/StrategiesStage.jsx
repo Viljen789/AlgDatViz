@@ -1,16 +1,24 @@
 import { useMemo } from 'react';
+import {
+	buildRecursionTree,
+	recursionTreeToLevels,
+} from './climbingStairsRecursion.js';
+import { SCENES } from './scenes.js';
 import styles from './StrategiesStage.module.css';
 
-// The synchronized concept stage. It reacts to the active scrolly scene and
-// visualizes the greedy-vs-DP fork on two running examples:
+// The synchronized concept stage. It reacts to the active scrolly scene (by id,
+// not a fragile integer index) and visualizes the greedy-vs-DP fork on three
+// running examples:
 //   • coin change (target 10, coins {1,5,6}) — where greedy is trapped and DP
-//     wins, used for the first three scenes plus the closing summary;
-//   • interval scheduling — where the earliest-finish greedy choice is safe,
-//     used for the "when greedy wins" scene.
+//     wins, used for the first scenes plus the closing summary;
+//   • climbing stairs — the overlapping-subproblems vehicle: a naive recursion
+//     tree whose repeated subproblems collapse into a one-cell-per-state table;
+//   • interval scheduling — where the earliest-finish greedy choice is safe.
 // Everything is token-tinted; the topic hue arrives via --topic-accent.
 
 const COINS = [1, 5, 6];
 const TARGET = 10;
+const STAIRS_N = 5;
 
 // dp[i] = fewest coins to make i, for coins {1,5,6}, target 10.
 const buildDpTable = () => {
@@ -42,24 +50,19 @@ const INTERVALS = [
 ];
 const INTERVAL_MAX = 8;
 
-const CoinBoard = ({ activeScene }) => {
+const CoinBoard = ({ sceneId }) => {
 	const dp = useMemo(buildDpTable, []);
 
-	// How many DP cells have been "filled" — scene 2 reveals the table cell by
-	// cell as the prose explains it; scene 0/1 keep it dormant.
-	const filledThrough = (() => {
-		switch (activeScene) {
-			case 2:
-				return TARGET; // dp-remembers: whole table is settled
-			case 4:
-				return TARGET; // summary: keep the answer visible
-			default:
-				return 0;
-		}
-	})();
+	// Scene-driven reveal. The DP table is dormant until the scene that explains
+	// it, then settles fully; the summary keeps the answer visible.
+	const dpSettled = sceneId === 'dp-remembers' || sceneId === 'choose-what';
+	const filledThrough = dpSettled ? TARGET : 0;
 
-	const showGreedy = activeScene <= 1 || activeScene === 4;
-	const greedyTrapped = activeScene >= 1;
+	const showGreedy =
+		sceneId === 'two-shapes' ||
+		sceneId === 'greedy-trap' ||
+		sceneId === 'choose-what';
+	const greedyTrapped = sceneId !== 'two-shapes';
 	const dpAnswer = dp[TARGET];
 
 	return (
@@ -138,6 +141,78 @@ const CoinBoard = ({ activeScene }) => {
 	);
 };
 
+// The overlapping-subproblems board (Climbing Stairs). Left: the naive recursion
+// tree for ways(n), with repeated subproblems glowing. Right: the memoized table
+// — each distinct subproblem solved exactly once. The contrast IS the DP idea.
+const RecursionBoard = () => {
+	const { tree, levels, census } = useMemo(() => {
+		const t = buildRecursionTree(STAIRS_N);
+		return {
+			tree: t,
+			levels: recursionTreeToLevels(t.root),
+			census: t.census,
+		};
+	}, []);
+
+	return (
+		<div className={styles.recursionBoard}>
+			<div className={styles.lane}>
+				<div className={styles.laneHead}>
+					<span className={styles.laneTag}>Naive recursion</span>
+					<span className={styles.laneSub}>
+						ways({STAIRS_N}) calls itself — repeated nodes glow
+					</span>
+				</div>
+				<div className={styles.tree} aria-hidden="true">
+					{levels.map((level, depth) => (
+						<div key={depth} className={styles.treeLevel}>
+							{level.map(node => (
+								<span
+									key={node.id}
+									className={`${styles.treeNode} ${
+										node.isRepeated ? styles.treeNodeRepeat : ''
+									} ${node.isBase ? styles.treeNodeBase : ''}`}
+								>
+									ways({node.k})
+								</span>
+							))}
+						</div>
+					))}
+				</div>
+				<p className={`${styles.laneVerdict} ${styles.laneVerdictBad}`}>
+					{tree.nodeCount} calls — ways(2) alone is recomputed{' '}
+					{census.rows.find(r => r.k === 2)?.naive}× (exponential blow-up)
+				</p>
+			</div>
+
+			<div className={styles.lane}>
+				<div className={styles.laneHead}>
+					<span className={`${styles.laneTag} ${styles.laneTagDp}`}>
+						Memoized table
+					</span>
+					<span className={styles.laneSub}>
+						each ways(k) solved once, then reused
+					</span>
+				</div>
+				<ol className={styles.censusRow} aria-label="Memoized subproblems">
+					{census.rows.map(row => (
+						<li key={row.k} className={styles.censusCell}>
+							<span className={styles.dpIndex}>ways({row.k})</span>
+							<span className={styles.censusNaive}>
+								naive ×{row.naive}
+							</span>
+							<span className={styles.censusMemo}>memo ×1</span>
+						</li>
+					))}
+				</ol>
+				<p className={`${styles.laneVerdict} ${styles.laneVerdictGood}`}>
+					{census.memoTotal} cells — every subproblem solved exactly once, O(n)
+				</p>
+			</div>
+		</div>
+	);
+};
+
 const IntervalBoard = () => (
 	<div className={styles.intervalBoard}>
 		<div className={styles.intervalHead}>
@@ -177,28 +252,109 @@ const IntervalBoard = () => (
 	</div>
 );
 
+// The decision-rule board (two-properties scene): optimal substructure is the
+// shared base; the *second* ingredient decides the tool.
+const DECISION_ROWS = [
+	{
+		id: 'base',
+		label: 'Optimal substructure',
+		def: 'An optimal solution is built from optimal sub-solutions.',
+		tag: 'needed by both',
+		variant: 'shared',
+	},
+	{
+		id: 'greedy',
+		label: '+ Greedy-choice property',
+		def: 'A local choice is provably part of some optimum (exchange argument).',
+		tag: '→ Greedy',
+		variant: 'greedy',
+	},
+	{
+		id: 'dp',
+		label: '+ Overlapping subproblems',
+		def: 'The same subproblem recurs many times → memoize / tabulate.',
+		tag: '→ DP',
+		variant: 'dp',
+	},
+];
+
+const DecisionBoard = () => (
+	<div className={styles.decisionBoard}>
+		<div className={styles.laneHead}>
+			<span className={styles.laneTag}>The decision rule</span>
+			<span className={styles.laneSub}>
+				one shared base + one distinguishing ingredient
+			</span>
+		</div>
+		<ul className={styles.decisionList}>
+			{DECISION_ROWS.map(row => (
+				<li
+					key={row.id}
+					className={`${styles.decisionRow} ${
+						styles[`decision-${row.variant}`]
+					}`}
+				>
+					<div className={styles.decisionMain}>
+						<span className={styles.decisionLabel}>{row.label}</span>
+						<span className={styles.decisionDef}>{row.def}</span>
+					</div>
+					<span className={styles.decisionTag}>{row.tag}</span>
+				</li>
+			))}
+		</ul>
+	</div>
+);
+
+// Map each scene id to the board it drives + the accessible label + the corner
+// notation. Keying by id keeps the stage stable when scenes are added/reordered.
+const SCENE_BOARDS = {
+	'two-shapes': 'coin',
+	'greedy-trap': 'coin',
+	'dp-remembers': 'coin',
+	'overlapping-subproblems': 'recursion',
+	'greedy-safe': 'interval',
+	'two-properties': 'decision',
+	'choose-what': 'coin',
+};
+
+const BOARD_META = {
+	coin: {
+		label: 'Coin change — greedy commitment versus the dynamic-programming table',
+		notation: 'target = 10¢ · coins {1, 5, 6}',
+	},
+	recursion: {
+		label: 'Climbing stairs — naive recursion tree with repeated subproblems versus a memoized table',
+		notation: `ways(${STAIRS_N}) · naive vs memo`,
+	},
+	interval: {
+		label: 'Interval scheduling timeline — earliest-finish greedy choice',
+		notation: 'O(n log n) · greedy',
+	},
+	decision: {
+		label: 'The greedy-vs-DP decision rule built from optimal substructure',
+		notation: 'optimal substructure + ?',
+	},
+};
+
 const StrategiesStage = ({ activeScene = 0 }) => {
-	const showIntervals = activeScene === 3;
+	const sceneId = SCENES[activeScene]?.id ?? SCENES[0].id;
+	const board = SCENE_BOARDS[sceneId] ?? 'coin';
+	const meta = BOARD_META[board];
 
 	return (
 		<div
 			className={styles.wrap}
 			data-scene={activeScene}
 			role="img"
-			aria-label={
-				showIntervals
-					? 'Interval scheduling timeline — earliest-finish greedy choice'
-					: 'Coin change — greedy commitment versus the dynamic-programming table'
-			}
+			aria-label={meta.label}
 		>
-			{showIntervals ? (
-				<IntervalBoard />
-			) : (
-				<CoinBoard activeScene={activeScene} />
-			)}
+			{board === 'coin' && <CoinBoard sceneId={sceneId} />}
+			{board === 'recursion' && <RecursionBoard />}
+			{board === 'interval' && <IntervalBoard />}
+			{board === 'decision' && <DecisionBoard />}
 
 			<div className={styles.notation} aria-hidden="true">
-				{showIntervals ? 'O(n log n) · greedy' : 'target = 10¢ · coins {1, 5, 6}'}
+				{meta.notation}
 			</div>
 		</div>
 	);
