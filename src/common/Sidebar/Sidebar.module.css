@@ -263,7 +263,8 @@
 	.logoText,
 	.label,
 	.progressLabel,
-	.progressCount {
+	.progressCount,
+	.soonBadge {
 		display: none;
 	}
 
