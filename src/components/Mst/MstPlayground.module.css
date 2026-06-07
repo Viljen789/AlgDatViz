@@ -1,0 +1,303 @@
+/* =============================================================================
+   MstPlayground — Kruskal-and-Prim-on-one-graph sandbox, on canonical tokens.
+   Tinted by --topic-accent inherited from TopicTemplate (mst = yellow-green).
+   No hardcoded hex, no raw white/black.
+   ============================================================================ */
+
+.shell {
+	width: 100%;
+	display: flex;
+	flex-direction: column;
+	gap: var(--space-lg);
+}
+
+/* ---------- Controls ---------- */
+
+.controls {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: flex-end;
+	justify-content: space-between;
+	gap: var(--space-lg);
+}
+
+.scenarioRow {
+	display: flex;
+	align-items: center;
+	gap: var(--space-md);
+	flex-wrap: wrap;
+}
+
+.scenarioLabel {
+	font-family: var(--font-family-mono);
+	font-size: var(--font-size-caption);
+	letter-spacing: var(--tracking-caps);
+	text-transform: uppercase;
+	color: var(--color-text-muted);
+}
+
+.scenarioChips {
+	display: flex;
+	flex-wrap: wrap;
+	gap: var(--space-sm);
+}
+
+.scenarioChip {
+	padding: var(--space-2xs) var(--space-md);
+	background: var(--surface-1);
+	border: 1px solid var(--color-border);
+	border-radius: var(--radius-pill);
+	color: var(--color-text-secondary);
+	font-family: var(--font-family-sans);
+	font-size: var(--font-size-label);
+	cursor: pointer;
+	transition: color var(--transition), border-color var(--transition),
+		background-color var(--transition);
+}
+
+.scenarioChip:hover {
+	color: var(--color-text-primary);
+	border-color: var(--color-border-strong);
+	background: var(--surface-hover);
+}
+
+.scenarioChip:focus-visible {
+	outline: none;
+	box-shadow: var(--shadow-focus);
+}
+
+.scenarioChipActive {
+	color: var(--topic-accent);
+	border-color: color-mix(in srgb, var(--topic-accent) 50%, transparent);
+	background: color-mix(in srgb, var(--topic-accent) 10%, transparent);
+}
+
+.actions {
+	display: flex;
+	align-items: center;
+	gap: var(--space-sm);
+}
+
+.opLine {
+	margin: 0;
+	font-size: var(--font-size-body);
+	line-height: var(--line-height-body);
+	color: var(--color-text-secondary);
+	max-width: 70ch;
+}
+
+/* ---------- Stats ---------- */
+
+.stats {
+	display: flex;
+	flex-wrap: wrap;
+	gap: var(--space-sm);
+}
+
+.stat {
+	display: flex;
+	flex-direction: column;
+	gap: 2px;
+	padding: var(--space-sm) var(--space-md);
+	background: var(--surface-1);
+	border: 1px solid var(--color-border);
+	border-radius: var(--radius-md);
+	min-width: 96px;
+}
+
+.statValue {
+	font-family: var(--font-family-mono);
+	font-size: var(--font-size-body);
+	font-weight: var(--font-weight-medium);
+	color: var(--color-text-primary);
+}
+
+.statLabel {
+	font-family: var(--font-family-mono);
+	font-size: var(--font-size-caption);
+	letter-spacing: var(--tracking-wide);
+	color: var(--color-text-muted);
+}
+
+/* ---------- Canvas + trace ---------- */
+
+.body {
+	display: grid;
+	grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
+	gap: var(--space-lg);
+	align-items: stretch;
+}
+
+.canvas {
+	position: relative;
+	background: var(--surface-1);
+	border: 1px solid var(--color-border);
+	border-radius: var(--radius-lg);
+	box-shadow: var(--shadow-2);
+	display: flex;
+	flex-direction: column;
+	gap: var(--space-md);
+	min-height: 360px;
+	padding: var(--space-2xl) var(--space-lg) var(--space-lg);
+	overflow: hidden;
+}
+
+.canvasOverlay {
+	position: absolute;
+	top: var(--space-md);
+	right: var(--space-md);
+	display: inline-flex;
+	align-items: center;
+	gap: var(--space-xs);
+	font-family: var(--font-family-mono);
+	font-size: var(--font-size-caption);
+	color: var(--color-text-secondary);
+	pointer-events: none;
+	max-width: 60%;
+	flex-wrap: wrap;
+	justify-content: flex-end;
+}
+
+.mono {
+	color: var(--color-text-secondary);
+}
+
+.dot {
+	color: var(--color-text-dim);
+}
+
+.graphBox {
+	flex: 1;
+	min-height: 0;
+	display: flex;
+	justify-content: center;
+	align-items: center;
+}
+
+/* ---------- The data structure (components / cut) ---------- */
+
+.structure {
+	display: flex;
+	flex-direction: column;
+	gap: var(--space-xs);
+}
+
+.structureLabel {
+	font-family: var(--font-family-mono);
+	font-size: var(--font-size-caption);
+	letter-spacing: var(--tracking-caps);
+	text-transform: uppercase;
+	color: var(--color-text-muted);
+}
+
+.componentChips {
+	display: flex;
+	flex-wrap: wrap;
+	gap: var(--space-2xs);
+}
+
+.componentChip {
+	padding: 2px var(--space-sm);
+	background: var(--surface-2);
+	border: 1px solid var(--color-border);
+	border-radius: var(--radius-sm);
+	font-family: var(--font-family-mono);
+	font-size: var(--font-size-caption);
+	color: var(--color-text-secondary);
+}
+
+.componentEmpty {
+	font-family: var(--font-family-mono);
+	font-size: var(--font-size-caption);
+	color: var(--color-text-dim);
+}
+
+/* ---------- Trace column ---------- */
+
+.trace {
+	min-width: 0;
+	display: flex;
+	flex-direction: column;
+	gap: var(--space-md);
+}
+
+.pseudo {
+	min-width: 0;
+}
+
+/* ---------- Same-tree comparison strip ---------- */
+
+.sameStrip {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: var(--space-md);
+	padding: var(--space-sm) var(--space-md);
+	background: var(--surface-0);
+	border: 1px solid var(--color-border);
+	border-radius: var(--radius-md);
+}
+
+.sameLead {
+	font-size: var(--font-size-label);
+	color: var(--color-text-secondary);
+}
+
+.sameItem {
+	font-family: var(--font-family-mono);
+	font-size: var(--font-size-caption);
+	color: var(--color-text-primary);
+}
+
+.sameVerdict {
+	margin-left: auto;
+	font-family: var(--font-family-mono);
+	font-size: var(--font-size-caption);
+	font-weight: var(--font-weight-medium);
+	color: var(--color-text-muted);
+}
+
+.sameOk {
+	color: var(--color-success);
+}
+
+/* ---------- Transport ---------- */
+
+.transport {
+	display: flex;
+	justify-content: center;
+}
+
+/* ---------- Reduced motion ---------- */
+
+@media (prefers-reduced-motion: reduce) {
+	.scenarioChip {
+		transition-duration: 1ms;
+	}
+}
+
+/* ---------- Responsive ---------- */
+
+@media (max-width: 960px) {
+	.body {
+		grid-template-columns: 1fr;
+	}
+}
+
+@media (max-width: 720px) {
+	.controls {
+		flex-direction: column;
+		align-items: stretch;
+	}
+	.canvas {
+		padding: var(--space-2xl) var(--space-md) var(--space-md);
+	}
+	.canvasOverlay {
+		position: static;
+		max-width: none;
+		justify-content: flex-start;
+	}
+	.sameVerdict {
+		margin-left: 0;
+	}
+}

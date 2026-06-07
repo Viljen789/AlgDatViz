@@ -214,18 +214,36 @@ export const CURRICULUM = [
 	// ── Coming soon: the examinable back half, in course order. Locked, neutral
 	//    treatment, excluded from progress. Built out in Phase 5 (course order,
 	//    two topics per batch).
-	comingSoon(
-		'11',
-		'Minimum spanning trees',
-		'Connect everything for the least total weight. Greedy, and provably right.',
-		'O(E log V)'
-	),
-	comingSoon(
-		'12',
-		'Shortest paths (single-source)',
-		'One source, every destination — relax edges until nothing improves.',
-		'O((V + E) log V)'
-	),
+	{
+		id: 'mst',
+		number: '11',
+		name: 'Minimum spanning trees',
+		navLabel: 'Spanning trees',
+		pullQuote:
+			'Connect everything for the least total weight. Greedy, and provably right.',
+		complexity: 'O(E log V)',
+		tokenId: 'mst',
+		accent: topicAccent('mst'),
+		icon: 'Share2',
+		to: '/mst',
+		status: 'ready',
+		countsToProgress: true,
+	},
+	{
+		id: 'shortest-paths',
+		number: '12',
+		name: 'Shortest paths (single-source)',
+		navLabel: 'Shortest paths',
+		pullQuote:
+			'One source, every destination — relax edges until nothing improves.',
+		complexity: 'O((V + E) log V)',
+		tokenId: 'sssp',
+		accent: topicAccent('sssp'),
+		icon: 'Route',
+		to: '/shortest-paths',
+		status: 'ready',
+		countsToProgress: true,
+	},
 	comingSoon(
 		'13',
 		'All-pairs shortest paths',

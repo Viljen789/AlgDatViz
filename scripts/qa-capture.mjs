@@ -25,6 +25,8 @@ const PAGES = [
 	{ path: '/strategies', name: '07-strategies' },
 	{ path: '/linear-time-sorting', name: '09-linsort' },
 	{ path: '/heaps', name: '10-heaps' },
+	{ path: '/mst', name: '11-mst' },
+	{ path: '/shortest-paths', name: '12-sssp' },
 	{ path: '/styleguide', name: '08-styleguide' },
 ];
 

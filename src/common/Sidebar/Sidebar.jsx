@@ -11,6 +11,8 @@ import {
 	List,
 	Lock,
 	Network,
+	Route,
+	Share2,
 	Sigma,
 	Triangle,
 } from 'lucide-react';
@@ -31,6 +33,8 @@ const ICONS = {
 	List,
 	Lock,
 	Network,
+	Route,
+	Share2,
 	Sigma,
 	Triangle,
 };

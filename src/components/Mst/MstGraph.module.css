@@ -1,0 +1,136 @@
+/* =============================================================================
+   MstGraph — the shared weighted-graph SVG renderer.
+   Canonical tokens only; tinted by the inherited --topic-accent (mst = yellow-green).
+   No hardcoded hex, no raw white/black.
+   ============================================================================ */
+
+.svg {
+	width: 100%;
+	max-width: 460px;
+	display: block;
+	overflow: visible;
+}
+
+/* ---------- Edges ---------- */
+
+.edge {
+	stroke: var(--color-border-strong);
+	stroke-width: 1.1;
+	stroke-linecap: round;
+	transition:
+		stroke var(--duration-step) var(--ease-quiet),
+		stroke-width var(--duration-step) var(--ease-quiet),
+		opacity var(--duration-step) var(--ease-quiet);
+}
+
+/* Frontier / candidate crossing edges (Prim). */
+.edgeFrontier {
+	stroke: color-mix(in srgb, var(--topic-accent) 55%, var(--color-border-strong));
+	stroke-width: 1.4;
+	stroke-dasharray: 2.4 2;
+}
+
+/* Edge currently under consideration. */
+.edgeConsider {
+	stroke: var(--color-warning);
+	stroke-width: 2;
+}
+
+/* The safe light edge across a cut. */
+.edgeLight {
+	stroke: var(--topic-accent);
+	stroke-width: 2.6;
+}
+
+/* Edge committed to the MST. */
+.edgeTree {
+	stroke: var(--topic-accent);
+	stroke-width: 2.4;
+}
+
+/* Rejected (cycle-forming) edge. */
+.edgeRejected {
+	stroke: var(--color-border);
+	stroke-width: 1;
+	stroke-dasharray: 1.6 2.4;
+	opacity: 0.5;
+}
+
+/* ---------- Weight pills ---------- */
+
+.weightPill {
+	fill: var(--surface-0);
+	stroke: var(--color-border);
+	stroke-width: 0.6;
+	transition:
+		fill var(--duration-step) var(--ease-quiet),
+		stroke var(--duration-step) var(--ease-quiet);
+}
+
+.weightPillStrong {
+	fill: color-mix(in srgb, var(--topic-accent) 16%, var(--surface-0));
+	stroke: var(--topic-accent);
+}
+
+.weightText {
+	font-family: var(--font-family-mono);
+	font-size: 4.6px;
+	font-weight: var(--font-weight-bold);
+	fill: var(--color-text-secondary);
+	pointer-events: none;
+	user-select: none;
+}
+
+/* ---------- Vertices ---------- */
+
+.node {
+	fill: var(--surface-2);
+	stroke: var(--color-text-muted);
+	stroke-width: 1.2;
+	transition:
+		fill var(--duration-step) var(--ease-quiet),
+		stroke var(--duration-step) var(--ease-quiet),
+		stroke-width var(--duration-step) var(--ease-quiet);
+}
+
+/* Vertices inside the growing tree. */
+.nodeTree {
+	fill: var(--topic-accent);
+	stroke: var(--topic-accent);
+}
+
+/* Cut sides (teaching stage): inside vs outside the partition. */
+.nodeInside {
+	fill: color-mix(in srgb, var(--topic-accent) 26%, var(--surface-2));
+	stroke: var(--topic-accent);
+	stroke-width: 1.6;
+}
+
+.nodeOutside {
+	fill: color-mix(in srgb, var(--color-warning) 20%, var(--surface-2));
+	stroke: var(--color-warning);
+	stroke-width: 1.6;
+}
+
+.nodeText {
+	font-family: var(--font-family-mono);
+	font-size: 5.2px;
+	font-weight: var(--font-weight-bold);
+	fill: var(--color-text-primary);
+	pointer-events: none;
+	user-select: none;
+}
+
+.nodeTree .nodeText {
+	fill: var(--color-text-on-accent);
+}
+
+/* ---------- Reduced motion ---------- */
+
+@media (prefers-reduced-motion: reduce) {
+	.edge,
+	.node,
+	.weightPill {
+		transition-duration: 1ms;
+	}
+}

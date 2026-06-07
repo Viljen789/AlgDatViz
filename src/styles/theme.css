@@ -80,6 +80,8 @@
 	--topic-strategies-h: 338; /* rose */
 	--topic-linsort-h: 128; /* green — linear-time sorting */
 	--topic-heaps-h: 312; /* magenta — heaps & priority queues */
+	--topic-mst-h: 88; /* yellow-green — minimum spanning trees */
+	--topic-sssp-h: 268; /* blue-violet — single-source shortest paths */
 
 	--topic-foundations: hsl(var(--topic-foundations-h) var(--topic-s) var(--topic-l));
 	--topic-stacks: hsl(var(--topic-stacks-h) var(--topic-s) var(--topic-l));
@@ -91,6 +93,8 @@
 	--topic-strategies: hsl(var(--topic-strategies-h) var(--topic-s) var(--topic-l));
 	--topic-linsort: hsl(var(--topic-linsort-h) var(--topic-s) var(--topic-l));
 	--topic-heaps: hsl(var(--topic-heaps-h) var(--topic-s) var(--topic-l));
+	--topic-mst: hsl(var(--topic-mst-h) var(--topic-s) var(--topic-l));
+	--topic-sssp: hsl(var(--topic-sssp-h) var(--topic-s) var(--topic-l));
 
 	/* Translucent washes, same hue (for fills, hovers, selection tints) */
 	--topic-foundations-wash: hsl(var(--topic-foundations-h) var(--topic-s) var(--topic-l) / 0.14);
@@ -103,6 +107,8 @@
 	--topic-strategies-wash: hsl(var(--topic-strategies-h) var(--topic-s) var(--topic-l) / 0.14);
 	--topic-linsort-wash: hsl(var(--topic-linsort-h) var(--topic-s) var(--topic-l) / 0.14);
 	--topic-heaps-wash: hsl(var(--topic-heaps-h) var(--topic-s) var(--topic-l) / 0.14);
+	--topic-mst-wash: hsl(var(--topic-mst-h) var(--topic-s) var(--topic-l) / 0.14);
+	--topic-sssp-wash: hsl(var(--topic-sssp-h) var(--topic-s) var(--topic-l) / 0.14);
 
 	/* ---------------------------------------------------------------------------
 	   4. BRAND ACCENT (derived from the family) + algorithm "state" colors
