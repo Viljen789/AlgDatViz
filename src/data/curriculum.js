@@ -35,27 +35,9 @@
 
 const topicAccent = tokenId => `var(--topic-${tokenId})`;
 
-// The unbuilt back half of the TDT4120 curriculum, in course order. These are
-// honest "coming soon" placeholders: locked, non-navigable, excluded from
-// overall progress, and given a neutral/muted treatment (no per-topic hue is
-// minted until the topic is actually built in Phase 1b/5). They keep the home
-// curriculum map honest about full scope without claiming coverage we lack.
-const comingSoon = (number, name, pullQuote, complexity) => ({
-	id: `soon-${name.toLowerCase().replace(/[^a-z]+/g, '-').replace(/^-|-$/g, '')}`,
-	number,
-	name,
-	navLabel: name,
-	pullQuote,
-	complexity,
-	tokenId: null,
-	accent: 'var(--color-text-dim)',
-	icon: 'Lock',
-	to: null,
-	status: 'soon',
-	locked: true,
-	countsToProgress: false,
-});
-
+// Full TDT4120 curriculum, in teaching order — every topic is now built
+// (the back half shipped in Phase 5). 'soon' remains a valid status value for
+// future additions, but no entry currently uses it.
 export const CURRICULUM = [
 	{
 		id: 'foundations',
@@ -211,9 +193,6 @@ export const CURRICULUM = [
 		status: 'ready',
 		countsToProgress: true,
 	},
-	// ── Coming soon: the examinable back half, in course order. Locked, neutral
-	//    treatment, excluded from progress. Built out in Phase 5 (course order,
-	//    two topics per batch).
 	{
 		id: 'mst',
 		number: '11',
@@ -244,24 +223,51 @@ export const CURRICULUM = [
 		status: 'ready',
 		countsToProgress: true,
 	},
-	comingSoon(
-		'13',
-		'All-pairs shortest paths',
-		'Every shortest route at once, through dynamic programming on intermediates.',
-		'O(V³)'
-	),
-	comingSoon(
-		'14',
-		'Maximum flow',
-		'How much can a network carry? Push, find residuals, and cut the bottleneck.',
-		'O(V·E²)'
-	),
-	comingSoon(
-		'15',
-		'NP-completeness',
-		'The line between "hard to solve" and "easy to check" — and reductions across it.',
-		'P vs NP'
-	),
+	{
+		id: 'apsp',
+		number: '13',
+		name: 'All-pairs shortest paths',
+		navLabel: 'All-pairs SP',
+		pullQuote:
+			'Every shortest route at once, through dynamic programming on intermediates.',
+		complexity: 'O(V³)',
+		tokenId: 'apsp',
+		accent: topicAccent('apsp'),
+		icon: 'Grid3x3',
+		to: '/all-pairs-shortest-paths',
+		status: 'ready',
+		countsToProgress: true,
+	},
+	{
+		id: 'max-flow',
+		number: '14',
+		name: 'Maximum flow',
+		navLabel: 'Max flow',
+		pullQuote:
+			'How much can a network carry? Push, find residuals, and cut the bottleneck.',
+		complexity: 'O(V·E²)',
+		tokenId: 'maxflow',
+		accent: topicAccent('maxflow'),
+		icon: 'Workflow',
+		to: '/max-flow',
+		status: 'ready',
+		countsToProgress: true,
+	},
+	{
+		id: 'np-completeness',
+		number: '15',
+		name: 'NP-completeness',
+		navLabel: 'NP-completeness',
+		pullQuote:
+			'The line between "hard to solve" and "easy to check" — and reductions across it.',
+		complexity: 'P vs NP',
+		tokenId: 'npc',
+		accent: topicAccent('npc'),
+		icon: 'Puzzle',
+		to: '/np-completeness',
+		status: 'ready',
+		countsToProgress: true,
+	},
 ];
 
 export const TOPIC_BY_ID = Object.fromEntries(

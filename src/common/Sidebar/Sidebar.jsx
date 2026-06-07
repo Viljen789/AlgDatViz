@@ -5,16 +5,19 @@ import {
 	Brain,
 	Check,
 	GitBranch,
+	Grid3x3,
 	Hash,
 	House,
 	Layers,
 	List,
 	Lock,
 	Network,
+	Puzzle,
 	Route,
 	Share2,
 	Sigma,
 	Triangle,
+	Workflow,
 } from 'lucide-react';
 import { CURRICULUM, TOPIC_BY_ROUTE } from '../../data/curriculum.js';
 import useProgress from '../../hooks/useProgress.js';
@@ -28,15 +31,18 @@ const ICONS = {
 	BarChart3,
 	Brain,
 	GitBranch,
+	Grid3x3,
 	Hash,
 	Layers,
 	List,
 	Lock,
 	Network,
+	Puzzle,
 	Route,
 	Share2,
 	Sigma,
 	Triangle,
+	Workflow,
 };
 
 const Sidebar = () => {

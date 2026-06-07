@@ -27,6 +27,9 @@ const PAGES = [
 	{ path: '/heaps', name: '10-heaps' },
 	{ path: '/mst', name: '11-mst' },
 	{ path: '/shortest-paths', name: '12-sssp' },
+	{ path: '/all-pairs-shortest-paths', name: '13-apsp' },
+	{ path: '/max-flow', name: '14-maxflow' },
+	{ path: '/np-completeness', name: '15-npc' },
 	{ path: '/styleguide', name: '08-styleguide' },
 ];
 

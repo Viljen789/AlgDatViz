@@ -1,0 +1,246 @@
+/* =============================================================================
+   AllPairsShortestPathsStage — synchronized weighted digraph + V×V distance
+   matrix filling across k for the APSP scrolly. Canonical tokens only; tinted by
+   the inherited --topic-accent (apsp = lime). No hardcoded hex, no raw white/black.
+   ============================================================================ */
+
+.wrap {
+	position: relative;
+	width: 100%;
+	height: 100%;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	gap: var(--space-lg);
+	padding: clamp(var(--space-lg), 3vw, var(--space-2xl));
+	box-sizing: border-box;
+	background: var(--surface-1);
+	border: 1px solid var(--color-border);
+	border-radius: var(--radius-lg);
+	box-shadow: var(--shadow-2);
+	overflow: hidden;
+}
+
+.notation {
+	position: absolute;
+	top: clamp(var(--space-md), 2.2vw, var(--space-lg));
+	left: clamp(var(--space-md), 2.5vw, var(--space-lg));
+	font-family: var(--font-family-mono);
+	font-size: var(--font-size-caption);
+	letter-spacing: var(--tracking-wide);
+	color: var(--color-text-secondary);
+	pointer-events: none;
+}
+
+/* ---------- Layout: graph beside the matrix ---------- */
+
+.layout {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	gap: clamp(var(--space-md), 3vw, var(--space-2xl));
+	width: 100%;
+	flex-wrap: wrap;
+}
+
+.svg {
+	width: 100%;
+	max-width: 320px;
+	flex: 1 1 260px;
+	display: block;
+}
+
+/* ---------- Edges ---------- */
+
+.edge {
+	stroke: var(--color-border-strong);
+	stroke-width: 0.9;
+	stroke-linecap: round;
+}
+
+.arrowHead {
+	fill: var(--color-border-strong);
+}
+
+.weight {
+	font-family: var(--font-family-mono);
+	font-size: 4.4px;
+	font-weight: var(--font-weight-bold);
+	fill: var(--color-text-secondary);
+	pointer-events: none;
+	user-select: none;
+}
+
+/* ---------- Nodes ---------- */
+
+.node {
+	fill: var(--surface-2);
+	stroke: var(--topic-accent);
+	stroke-width: 1.2;
+}
+
+.nodeText {
+	font-family: var(--font-family-mono);
+	font-size: 5px;
+	font-weight: var(--font-weight-bold);
+	fill: var(--color-text-primary);
+	pointer-events: none;
+	user-select: none;
+}
+
+/* ---------- The V×V matrix (the spine) ---------- */
+
+.matrixWrap {
+	display: flex;
+	flex-direction: column;
+	gap: var(--space-sm);
+	flex: 0 0 auto;
+}
+
+.matrix {
+	border-collapse: collapse;
+	font-family: var(--font-family-mono);
+	font-size: var(--font-size-label);
+	background: var(--surface-0);
+	border: 1px solid var(--color-border);
+	border-radius: var(--radius-md);
+	overflow: hidden;
+}
+
+.matrix th,
+.matrix td {
+	padding: var(--space-2xs) var(--space-sm);
+	text-align: center;
+	border: 1px solid var(--color-border);
+	min-width: 34px;
+	transition:
+		background-color var(--duration-step) var(--ease-quiet),
+		color var(--duration-step) var(--ease-quiet);
+}
+
+.matrix thead th {
+	font-size: var(--font-size-caption);
+	letter-spacing: var(--tracking-caps);
+	text-transform: uppercase;
+	color: var(--color-text-muted);
+	background: var(--surface-1);
+}
+
+.corner {
+	color: var(--color-text-secondary);
+	font-weight: var(--font-weight-bold);
+	text-transform: none;
+}
+
+.rowKey {
+	color: var(--color-text-primary);
+	font-weight: var(--font-weight-bold);
+	background: var(--surface-1);
+	font-size: var(--font-size-caption);
+}
+
+.cell {
+	color: var(--color-text-primary);
+}
+
+/* The cell being relaxed (d[i][j], the write target). */
+.cellWrite {
+	background: var(--topic-accent);
+	color: var(--color-text-on-accent);
+	font-weight: var(--font-weight-bold);
+}
+
+/* The two cells read this beat: d[i][k] and d[k][j]. */
+.cellRead {
+	background: color-mix(in srgb, var(--topic-accent) 22%, transparent);
+	color: var(--topic-accent);
+	font-weight: var(--font-weight-bold);
+}
+
+/* Reconstructed-path edge cells. */
+.cellPath {
+	background: color-mix(in srgb, var(--color-warning) 20%, transparent);
+	color: var(--color-warning);
+	font-weight: var(--font-weight-bold);
+}
+
+/* Diagonal spotlight (negative-cycle diagnostic). */
+.cellDiag {
+	box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--topic-accent) 60%, transparent);
+}
+
+.colHot,
+.rowHot {
+	color: var(--topic-accent);
+}
+
+/* ---------- Read/write legend ---------- */
+
+.readLegend {
+	display: flex;
+	flex-wrap: wrap;
+	gap: var(--space-sm);
+	font-family: var(--font-family-mono);
+	font-size: var(--font-size-caption);
+	letter-spacing: var(--tracking-wide);
+}
+
+.legRead {
+	color: var(--topic-accent);
+}
+
+.legWrite {
+	color: var(--color-text-secondary);
+}
+
+/* ---------- Caption ---------- */
+
+.caption {
+	position: absolute;
+	bottom: clamp(16px, 2.2vw, 26px);
+	right: clamp(16px, 2.5vw, 28px);
+	margin: 0;
+	max-width: 62%;
+	text-align: right;
+	font-family: var(--font-family-mono);
+	font-size: var(--font-size-label);
+	color: var(--color-text-secondary);
+	letter-spacing: var(--tracking-wide);
+	line-height: var(--line-height-snug);
+}
+
+/* ---------- Reduced motion ---------- */
+
+@media (prefers-reduced-motion: reduce) {
+	.matrix th,
+	.matrix td {
+		transition-duration: 1ms;
+	}
+}
+
+/* ---------- Responsive ---------- */
+
+@media (max-width: 720px) {
+	.wrap {
+		justify-content: flex-start;
+		gap: var(--space-md);
+		padding: var(--space-lg) var(--space-md);
+	}
+	.notation {
+		position: static;
+	}
+	.layout {
+		flex-direction: column;
+		gap: var(--space-md);
+	}
+	.svg {
+		max-width: 100%;
+	}
+	.caption {
+		position: static;
+		max-width: 100%;
+		text-align: center;
+		font-size: var(--font-size-caption);
+	}
+}

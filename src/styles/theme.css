@@ -82,6 +82,9 @@
 	--topic-heaps-h: 312; /* magenta — heaps & priority queues */
 	--topic-mst-h: 88; /* yellow-green — minimum spanning trees */
 	--topic-sssp-h: 268; /* blue-violet — single-source shortest paths */
+	--topic-apsp-h: 108; /* lime — all-pairs shortest paths */
+	--topic-maxflow-h: 68; /* gold-green — maximum flow */
+	--topic-npc-h: 178; /* cyan — NP-completeness */
 
 	--topic-foundations: hsl(var(--topic-foundations-h) var(--topic-s) var(--topic-l));
 	--topic-stacks: hsl(var(--topic-stacks-h) var(--topic-s) var(--topic-l));
@@ -95,6 +98,9 @@
 	--topic-heaps: hsl(var(--topic-heaps-h) var(--topic-s) var(--topic-l));
 	--topic-mst: hsl(var(--topic-mst-h) var(--topic-s) var(--topic-l));
 	--topic-sssp: hsl(var(--topic-sssp-h) var(--topic-s) var(--topic-l));
+	--topic-apsp: hsl(var(--topic-apsp-h) var(--topic-s) var(--topic-l));
+	--topic-maxflow: hsl(var(--topic-maxflow-h) var(--topic-s) var(--topic-l));
+	--topic-npc: hsl(var(--topic-npc-h) var(--topic-s) var(--topic-l));
 
 	/* Translucent washes, same hue (for fills, hovers, selection tints) */
 	--topic-foundations-wash: hsl(var(--topic-foundations-h) var(--topic-s) var(--topic-l) / 0.14);
@@ -109,6 +115,9 @@
 	--topic-heaps-wash: hsl(var(--topic-heaps-h) var(--topic-s) var(--topic-l) / 0.14);
 	--topic-mst-wash: hsl(var(--topic-mst-h) var(--topic-s) var(--topic-l) / 0.14);
 	--topic-sssp-wash: hsl(var(--topic-sssp-h) var(--topic-s) var(--topic-l) / 0.14);
+	--topic-apsp-wash: hsl(var(--topic-apsp-h) var(--topic-s) var(--topic-l) / 0.14);
+	--topic-maxflow-wash: hsl(var(--topic-maxflow-h) var(--topic-s) var(--topic-l) / 0.14);
+	--topic-npc-wash: hsl(var(--topic-npc-h) var(--topic-s) var(--topic-l) / 0.14);
 
 	/* ---------------------------------------------------------------------------
 	   4. BRAND ACCENT (derived from the family) + algorithm "state" colors

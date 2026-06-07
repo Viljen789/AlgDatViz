@@ -21,6 +21,11 @@ const LinearTimeSortingPage = lazy(() =>
 const HeapsPage = lazy(() => import('./pages/HeapsPage.jsx'));
 const MstPage = lazy(() => import('./pages/MstPage.jsx'));
 const ShortestPathsPage = lazy(() => import('./pages/ShortestPathsPage.jsx'));
+const AllPairsShortestPathsPage = lazy(() =>
+	import('./pages/AllPairsShortestPathsPage.jsx')
+);
+const MaxFlowPage = lazy(() => import('./pages/MaxFlowPage.jsx'));
+const NpCompletenessPage = lazy(() => import('./pages/NpCompletenessPage.jsx'));
 const MergeSortLessonPage = lazy(() => import('./pages/MergeSortLessonPage.jsx'));
 const StyleGuide = lazy(() => import('./styles/styleguide/StyleGuide.jsx'));
 
@@ -143,6 +148,15 @@ const AppLayout = () => {
 									<Route
 										path="/shortest-paths"
 										element={<ShortestPathsPage />}
+									/>
+									<Route
+										path="/all-pairs-shortest-paths"
+										element={<AllPairsShortestPathsPage />}
+									/>
+									<Route path="/max-flow" element={<MaxFlowPage />} />
+									<Route
+										path="/np-completeness"
+										element={<NpCompletenessPage />}
 									/>
 									<Route path="/master-theorem" element={<MasterTheoremPage />} />
 									<Route

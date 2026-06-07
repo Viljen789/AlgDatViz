@@ -167,7 +167,7 @@ const HomePage = () => {
 		return {
 			title: 'Algorithms, in motion.',
 			subtitle:
-				'A guided path building toward the full TDT4120 curriculum. The first seven topics are live; the rest are on the way. Built to make the why click — not just the what.',
+				'A guided path through the full TDT4120 curriculum — every topic, from arrays and complexity to NP-completeness, live and interactive. Built to make the why click — not just the what.',
 			ctaLabel: `Begin with ${FIRST_TOPIC.name.toLowerCase()}`,
 			ctaTopic: FIRST_TOPIC,
 		};
@@ -282,8 +282,8 @@ const HomePage = () => {
 						The full curriculum, in the order it teaches itself.
 					</h2>
 					<p className={styles.pathSub}>
-						Seven topics are live and interactive. The rest of the TDT4120
-						syllabus is mapped here and on its way.
+						Every topic in the TDT4120 syllabus, end to end — from arrays
+						and complexity through to NP-completeness.
 					</p>
 				</header>
 

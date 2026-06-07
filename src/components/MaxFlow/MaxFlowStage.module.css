@@ -1,0 +1,219 @@
+/* =============================================================================
+   MaxFlowStage — synchronized directed flow network for the max-flow scrolly.
+   Canonical tokens only; tinted by the inherited --topic-accent (maxflow =
+   gold-green). No hardcoded hex, no raw white/black.
+   ============================================================================ */
+
+.wrap {
+	position: relative;
+	width: 100%;
+	height: 100%;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	gap: var(--space-lg);
+	padding: clamp(var(--space-lg), 3vw, var(--space-2xl));
+	box-sizing: border-box;
+	background: var(--surface-1);
+	border: 1px solid var(--color-border);
+	border-radius: var(--radius-lg);
+	box-shadow: var(--shadow-2);
+	overflow: hidden;
+}
+
+.notation {
+	position: absolute;
+	top: clamp(var(--space-md), 2.2vw, var(--space-lg));
+	left: clamp(var(--space-md), 2.5vw, var(--space-lg));
+	font-family: var(--font-family-mono);
+	font-size: var(--font-size-caption);
+	letter-spacing: var(--tracking-wide);
+	color: var(--color-text-secondary);
+	pointer-events: none;
+}
+
+.svg {
+	width: 100%;
+	max-width: 460px;
+	display: block;
+}
+
+/* ---------- Edges ---------- */
+
+.edge {
+	stroke: var(--color-border-strong);
+	stroke-width: 0.9;
+	stroke-linecap: round;
+	transition:
+		stroke var(--duration-step) var(--ease-quiet),
+		stroke-width var(--duration-step) var(--ease-quiet);
+}
+
+.arrowHead {
+	fill: var(--color-border-strong);
+}
+
+.arrowHeadHot {
+	fill: var(--topic-accent);
+}
+
+.edgeFlowing {
+	stroke: color-mix(in srgb, var(--topic-accent) 60%, var(--color-border-strong));
+	stroke-width: 1.3;
+}
+
+.edgeSaturated {
+	stroke: var(--topic-accent);
+	stroke-width: 1.9;
+}
+
+.edgePath {
+	stroke: var(--topic-accent);
+	stroke-width: 2.1;
+	stroke-dasharray: 4 2;
+}
+
+.edgeCut {
+	stroke: var(--color-warning);
+	stroke-width: 2.1;
+}
+
+.weight {
+	font-family: var(--font-family-mono);
+	font-size: 4px;
+	font-weight: var(--font-weight-bold);
+	fill: var(--color-text-secondary);
+	pointer-events: none;
+	user-select: none;
+}
+
+.weightHot {
+	fill: var(--topic-accent);
+}
+
+/* ---------- Min-cut divider ---------- */
+
+.cutLine {
+	stroke: var(--color-warning);
+	stroke-width: 0.6;
+	stroke-dasharray: 2 2;
+	opacity: 0.55;
+}
+
+/* ---------- Nodes ---------- */
+
+.node {
+	fill: var(--surface-2);
+	stroke: var(--color-text-muted);
+	stroke-width: 1;
+	transition:
+		fill var(--duration-step) var(--ease-quiet),
+		stroke var(--duration-step) var(--ease-quiet),
+		stroke-width var(--duration-step) var(--ease-quiet);
+}
+
+.nodeSource {
+	fill: var(--topic-accent);
+	stroke: var(--topic-accent);
+	stroke-width: 1.4;
+}
+
+.nodeSink {
+	fill: color-mix(in srgb, var(--topic-accent) 30%, var(--surface-2));
+	stroke: var(--topic-accent);
+	stroke-width: 1.4;
+}
+
+/* Min-cut partition tints. */
+.nodeInS {
+	stroke: var(--topic-accent);
+	stroke-width: 1.5;
+}
+
+.nodeInT {
+	stroke: var(--color-warning);
+	stroke-width: 1.5;
+	stroke-dasharray: 2 1.5;
+}
+
+.nodeText {
+	font-family: var(--font-family-mono);
+	font-size: 4.4px;
+	font-weight: var(--font-weight-bold);
+	fill: var(--color-text-primary);
+	pointer-events: none;
+	user-select: none;
+}
+
+.nodeSource .nodeText {
+	fill: var(--color-text-on-accent);
+}
+
+/* ---------- Badges ---------- */
+
+.badge {
+	position: absolute;
+	top: clamp(var(--space-md), 2.2vw, var(--space-lg));
+	right: clamp(var(--space-md), 2.5vw, var(--space-lg));
+	font-family: var(--font-family-mono);
+	font-size: var(--font-size-label);
+	font-weight: var(--font-weight-bold);
+	color: var(--topic-accent);
+	background: color-mix(in srgb, var(--topic-accent) 14%, transparent);
+	border: 1px solid color-mix(in srgb, var(--topic-accent) 40%, transparent);
+	border-radius: var(--radius-pill);
+	padding: var(--space-2xs) var(--space-md);
+	pointer-events: none;
+}
+
+/* ---------- Caption ---------- */
+
+.caption {
+	position: absolute;
+	bottom: clamp(16px, 2.2vw, 26px);
+	right: clamp(16px, 2.5vw, 28px);
+	margin: 0;
+	max-width: 62%;
+	text-align: right;
+	font-family: var(--font-family-mono);
+	font-size: var(--font-size-label);
+	color: var(--color-text-secondary);
+	letter-spacing: var(--tracking-wide);
+	line-height: var(--line-height-snug);
+}
+
+/* ---------- Reduced motion ---------- */
+
+@media (prefers-reduced-motion: reduce) {
+	.edge,
+	.node {
+		transition-duration: 1ms;
+	}
+}
+
+/* ---------- Responsive ---------- */
+
+@media (max-width: 720px) {
+	.wrap {
+		justify-content: flex-start;
+		gap: var(--space-md);
+		padding: var(--space-lg) var(--space-md);
+	}
+	.notation {
+		position: static;
+	}
+	.svg {
+		max-width: 100%;
+	}
+	.badge {
+		position: static;
+		align-self: flex-end;
+	}
+	.caption {
+		position: static;
+		max-width: 100%;
+		text-align: center;
+		font-size: var(--font-size-caption);
+	}
+}
