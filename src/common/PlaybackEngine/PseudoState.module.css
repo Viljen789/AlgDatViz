@@ -99,6 +99,30 @@
 	background: var(--topic-accent, var(--color-accent-blue));
 }
 
+/* Flash the newly-arrived executing line: a quick accent wash that settles back
+   to the resting .lineActive tint, so the eye is pulled to where control moved.
+   Re-keyed per step in PseudoState.jsx so it replays on every advance. */
+.linePulse {
+	animation: pseudo-line-flash var(--duration-step) var(--ease-quiet) 1;
+}
+
+@keyframes pseudo-line-flash {
+	0% {
+		background: color-mix(
+			in srgb,
+			var(--topic-accent, var(--color-accent-blue)) 30%,
+			transparent
+		);
+	}
+	100% {
+		background: color-mix(
+			in srgb,
+			var(--topic-accent, var(--color-accent-blue)) 8%,
+			transparent
+		);
+	}
+}
+
 .lineComment {
 	opacity: 0.35;
 }
@@ -164,6 +188,46 @@
 	);
 }
 
+/* Change pulse: a row whose value changed (or that just became active) gets a
+   brief background + scale emphasis, then settles. Re-keyed per step so it
+   replays. The scale is tiny (transform-only, GPU-cheap) — it draws the eye to
+   the one row that updated without shoving the layout around. */
+.stateRowPulse {
+	animation: pseudo-row-pulse var(--duration-step) var(--ease-spring) 1;
+}
+
+@keyframes pseudo-row-pulse {
+	0% {
+		border-color: var(--topic-accent, var(--color-accent-blue));
+		background: color-mix(
+			in srgb,
+			var(--topic-accent, var(--color-accent-blue)) 26%,
+			var(--surface-input)
+		);
+		transform: scale(1.025);
+	}
+	60% {
+		transform: scale(1.005);
+	}
+	100% {
+		transform: scale(1);
+	}
+}
+
+/* Reduced-motion fallback: no animation. The active row already carries the
+   resting accent tint; this adds a small persistent accent dot so the change is
+   still *announced* statically rather than via a flash. */
+.stateRow[data-changed='true'] .stateKey::before {
+	content: '';
+	display: inline-block;
+	width: 6px;
+	height: 6px;
+	margin-right: var(--space-xs);
+	border-radius: var(--radius-pill);
+	background: var(--topic-accent, var(--color-accent-blue));
+	vertical-align: middle;
+}
+
 .stateKey {
 	margin: 0;
 	font-family: var(--font-family-mono);
@@ -188,6 +252,14 @@
 	.line,
 	.stateRow {
 		transition: none;
+	}
+
+	/* Defense in depth: PseudoState.jsx already withholds the pulse classes
+	   under reduced motion (it never even diffs). If they ever slip through,
+	   neutralize the animations so nothing flashes or scales. */
+	.linePulse,
+	.stateRowPulse {
+		animation: none;
 	}
 
 	.railScroll {

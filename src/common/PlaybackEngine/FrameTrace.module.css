@@ -69,6 +69,45 @@
 	color: var(--color-text-primary);
 }
 
+/* Change pulse: a trace row whose value changed (or that just became active)
+   gets a brief accent wash + tiny scale, then settles to its resting style.
+   Re-keyed per step in FrameTrace.jsx so it replays on each advance. */
+.entryPulse {
+	animation: trace-entry-pulse var(--duration-step) var(--ease-spring) 1;
+}
+
+@keyframes trace-entry-pulse {
+	0% {
+		border-color: var(--topic-accent, var(--color-accent-blue));
+		background: color-mix(
+			in srgb,
+			var(--topic-accent, var(--color-accent-blue)) 24%,
+			var(--color-bg-panel)
+		);
+		color: var(--color-text-primary);
+		transform: scale(1.025);
+	}
+	60% {
+		transform: scale(1.005);
+	}
+	100% {
+		transform: scale(1);
+	}
+}
+
+/* Reduced-motion fallback: no animation — a small persistent accent dot marks
+   the active/changed row statically instead of flashing. */
+.entry[data-changed='true'] .entryLabel::before {
+	content: '';
+	display: inline-block;
+	width: 6px;
+	height: 6px;
+	margin-right: var(--space-xs);
+	border-radius: var(--radius-pill);
+	background: var(--topic-accent, var(--color-accent-blue));
+	vertical-align: middle;
+}
+
 .entryLabel {
 	overflow: hidden;
 	text-overflow: ellipsis;
@@ -84,5 +123,11 @@
 @media (prefers-reduced-motion: reduce) {
 	.entry {
 		transition: none;
+	}
+
+	/* Defense in depth: FrameTrace.jsx already withholds the pulse class under
+	   reduced motion. If it ever slips through, neutralize the animation. */
+	.entryPulse {
+		animation: none;
 	}
 }

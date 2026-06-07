@@ -28,6 +28,7 @@ const MaxFlowPage = lazy(() => import('./pages/MaxFlowPage.jsx'));
 const NpCompletenessPage = lazy(() => import('./pages/NpCompletenessPage.jsx'));
 const MergeSortLessonPage = lazy(() => import('./pages/MergeSortLessonPage.jsx'));
 const StyleGuide = lazy(() => import('./styles/styleguide/StyleGuide.jsx'));
+const ReviewPage = lazy(() => import('./pages/ReviewPage.jsx'));
 
 const RouteFallback = () => (
 	<div className={styles.routeFallback} role="status" aria-live="polite">
@@ -84,6 +85,7 @@ const getPageMeta = pathname => {
 // generic app header. Derived from the topic model plus home + the lesson.
 const ROUTES_WITH_HERO = new Set([
 	'/',
+	'/review',
 	...Object.keys(TOPIC_BY_ROUTE),
 ]);
 
@@ -163,6 +165,7 @@ const AppLayout = () => {
 										path="/lessons/merge-sort"
 										element={<MergeSortLessonPage />}
 									/>
+									<Route path="/review" element={<ReviewPage />} />
 									<Route path="/styleguide" element={<StyleGuide />} />
 								</Routes>
 							</Suspense>

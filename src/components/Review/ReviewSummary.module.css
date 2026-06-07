@@ -1,0 +1,295 @@
+/* =============================================================================
+   ReviewSummary — end-of-session results + revisit plan.
+   Per-topic rows set --q-accent / --q-accent-ink / --q-accent-contrast inline.
+   Tokens only; no hex/white/black.
+   ============================================================================ */
+
+.summary {
+	display: flex;
+	flex-direction: column;
+	gap: var(--space-xl);
+}
+
+/* ---------- Score header ---------- */
+
+.head {
+	display: flex;
+	flex-direction: column;
+	gap: var(--space-md);
+	padding: clamp(var(--space-lg), 4vw, var(--space-2xl));
+	background: var(--surface-1);
+	border: 1px solid var(--color-border);
+	border-radius: var(--radius-xl);
+	box-shadow: var(--shadow-2);
+}
+
+.eyebrow {
+	margin: 0;
+	font-family: var(--font-family-mono);
+	font-size: var(--font-size-caption);
+	font-weight: var(--font-weight-bold);
+	letter-spacing: var(--tracking-caps);
+	text-transform: uppercase;
+	color: var(--color-text-muted);
+}
+
+.scoreLine {
+	margin: 0;
+	display: flex;
+	align-items: baseline;
+	gap: var(--space-2xs);
+	font-family: var(--font-family-display);
+	line-height: 1;
+	color: var(--color-text-primary);
+}
+
+.scoreNum {
+	font-size: var(--font-size-display-2xl);
+	font-weight: var(--font-weight-display);
+	letter-spacing: var(--tracking-display);
+}
+
+.scoreOf {
+	font-size: var(--font-size-display-lg);
+	font-weight: var(--font-weight-semibold);
+	color: var(--color-text-muted);
+}
+
+.scoreTrack {
+	height: 8px;
+	background: var(--color-bg-sunken);
+	border-radius: var(--radius-pill);
+	overflow: hidden;
+}
+
+.scoreFill {
+	display: block;
+	height: 100%;
+	border-radius: var(--radius-pill);
+	background: var(--color-success);
+	transition: width var(--duration-merge) var(--ease-quiet);
+}
+
+.verdict {
+	margin: 0;
+	font-size: var(--font-size-body-lg);
+	line-height: var(--line-height-snug);
+	color: var(--color-text-secondary);
+}
+
+/* ---------- Blocks ---------- */
+
+.block {
+	display: flex;
+	flex-direction: column;
+	gap: var(--space-md);
+}
+
+.blockTitle {
+	margin: 0;
+	font-size: var(--font-size-label);
+	font-weight: var(--font-weight-bold);
+	letter-spacing: var(--tracking-label);
+	text-transform: uppercase;
+	color: var(--color-text-muted);
+}
+
+/* ---------- Revisit list ---------- */
+
+.topicList {
+	list-style: none;
+	margin: 0;
+	padding: 0;
+	display: flex;
+	flex-direction: column;
+	gap: var(--space-sm);
+}
+
+.topicRow {
+	--q-accent: var(--color-accent-blue);
+}
+
+.topicLink {
+	display: flex;
+	align-items: center;
+	gap: var(--space-md);
+	padding: var(--space-md) var(--space-lg);
+	background: var(--surface-1);
+	border: 1px solid var(--color-border);
+	border-left: 3px solid var(--q-accent);
+	border-radius: var(--radius-lg);
+	text-decoration: none;
+	color: var(--color-text-primary);
+	transition: background-color var(--transition), border-color var(--transition),
+		transform var(--transition);
+}
+
+.topicLink:hover {
+	background: var(--surface-hover);
+	transform: translateX(2px);
+}
+
+.topicLink:focus-visible {
+	outline: none;
+	box-shadow: var(--shadow-focus);
+}
+
+.topicNum {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	min-width: 26px;
+	height: 26px;
+	padding: 0 6px;
+	background: var(--q-accent);
+	color: var(--q-accent-contrast);
+	border-radius: var(--radius-pill);
+	font-family: var(--font-family-mono);
+	font-size: var(--font-size-caption);
+	font-weight: var(--font-weight-bold);
+	flex-shrink: 0;
+}
+
+.topicMeta {
+	display: flex;
+	flex-direction: column;
+	gap: 2px;
+	flex: 1;
+	min-width: 0;
+}
+
+.topicName {
+	font-size: var(--font-size-body);
+	font-weight: var(--font-weight-semibold);
+}
+
+.topicScore {
+	font-family: var(--font-family-mono);
+	font-size: var(--font-size-caption);
+	color: var(--color-text-muted);
+}
+
+.missBadge {
+	display: inline-flex;
+	align-items: center;
+	gap: 4px;
+	padding: 3px var(--space-sm);
+	background: var(--color-warning-wash);
+	border-radius: var(--radius-pill);
+	font-size: var(--font-size-caption);
+	font-weight: var(--font-weight-semibold);
+	color: var(--color-warning);
+	white-space: nowrap;
+	flex-shrink: 0;
+}
+
+.topicArrow {
+	color: var(--color-text-muted);
+	flex-shrink: 0;
+}
+
+/* ---------- Mastered chips ---------- */
+
+.masteredList {
+	list-style: none;
+	margin: 0;
+	padding: 0;
+	display: flex;
+	flex-wrap: wrap;
+	gap: var(--space-sm);
+}
+
+.masteredChip {
+	--q-accent: var(--color-accent-blue);
+	display: inline-flex;
+	align-items: center;
+	gap: 5px;
+	padding: 5px var(--space-md);
+	background: color-mix(in srgb, var(--q-accent) 12%, transparent);
+	border: 1px solid color-mix(in srgb, var(--q-accent) 30%, transparent);
+	border-radius: var(--radius-pill);
+	font-size: var(--font-size-label);
+	font-weight: var(--font-weight-medium);
+	color: var(--q-accent-ink);
+}
+
+/* ---------- Actions ---------- */
+
+.actions {
+	display: flex;
+	align-items: center;
+	gap: var(--space-lg);
+	flex-wrap: wrap;
+}
+
+.restartBtn {
+	display: inline-flex;
+	align-items: center;
+	gap: var(--space-sm);
+	padding: var(--space-md) var(--space-xl);
+	background: var(--color-accent-blue);
+	color: var(--color-text-on-accent);
+	border: none;
+	border-radius: var(--radius-pill);
+	font-family: var(--font-family-sans);
+	font-size: var(--font-size-body);
+	font-weight: var(--font-weight-semibold);
+	cursor: pointer;
+	transition: filter var(--transition), transform var(--transition);
+}
+
+.restartBtn:hover {
+	filter: brightness(1.06);
+}
+
+.restartBtn:active {
+	transform: translateY(1px);
+}
+
+.restartBtn:focus-visible {
+	outline: none;
+	box-shadow: var(--shadow-focus);
+}
+
+.homeLink {
+	color: var(--color-text-secondary);
+	text-decoration: none;
+	font-size: var(--font-size-label);
+	border-radius: var(--radius-sm);
+	transition: color var(--transition);
+}
+
+.homeLink:hover {
+	color: var(--color-text-primary);
+}
+
+.homeLink:focus-visible {
+	outline: none;
+	box-shadow: var(--shadow-focus);
+}
+
+/* ---------- Responsive ---------- */
+
+@media (max-width: 480px) {
+	.topicLink {
+		flex-wrap: wrap;
+	}
+
+	.topicMeta {
+		flex: 1 1 100%;
+		order: 2;
+	}
+
+	.missBadge {
+		order: 3;
+	}
+
+	.actions {
+		gap: var(--space-md);
+	}
+
+	.restartBtn {
+		flex: 1;
+		justify-content: center;
+	}
+}

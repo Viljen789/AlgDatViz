@@ -1,0 +1,286 @@
+/* =============================================================================
+   ReviewSession — one mixed-review run (progress + score + question card).
+   --q-accent is set inline per question to the owning topic's signature hue, so
+   the card reads as belonging to that topic. Tokens only; no hex/white/black.
+   ============================================================================ */
+
+.session {
+	--q-accent: var(--color-accent-blue);
+	display: flex;
+	flex-direction: column;
+	gap: var(--space-lg);
+}
+
+/* ---------- Status bar: progress + running score ---------- */
+
+.statusBar {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: var(--space-lg);
+	flex-wrap: wrap;
+}
+
+.progress {
+	display: flex;
+	align-items: center;
+	gap: var(--space-md);
+	flex: 1 1 200px;
+	min-width: 0;
+}
+
+.progressTrack {
+	flex: 1;
+	min-width: 0;
+	height: 6px;
+	background: var(--color-bg-sunken);
+	border-radius: var(--radius-pill);
+	overflow: hidden;
+}
+
+.progressFill {
+	display: block;
+	height: 100%;
+	border-radius: var(--radius-pill);
+	background: var(--q-accent);
+	transition: width var(--duration-step) var(--ease-quiet);
+}
+
+.progressLabel {
+	font-family: var(--font-family-mono);
+	font-size: var(--font-size-caption);
+	color: var(--color-text-muted);
+	white-space: nowrap;
+	flex-shrink: 0;
+}
+
+.progressLabel strong {
+	color: var(--color-text-primary);
+	font-weight: var(--font-weight-bold);
+}
+
+.score {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	padding: 6px var(--space-md);
+	background: var(--color-success-wash);
+	border: 1px solid color-mix(in srgb, var(--color-success) 30%, transparent);
+	border-radius: var(--radius-pill);
+	font-size: var(--font-size-label);
+	color: var(--color-success);
+	flex-shrink: 0;
+}
+
+.score strong {
+	font-weight: var(--font-weight-bold);
+}
+
+.scoreMeta {
+	color: var(--color-text-muted);
+}
+
+/* ---------- Question card ---------- */
+
+.card {
+	background: var(--surface-1);
+	border: 1px solid var(--color-border);
+	border-radius: var(--radius-xl);
+	padding: clamp(var(--space-lg), 4vw, var(--space-2xl));
+	display: flex;
+	flex-direction: column;
+	gap: var(--space-md);
+	box-shadow: var(--shadow-2);
+}
+
+.cardHead {
+	display: flex;
+	flex-direction: column;
+	gap: var(--space-sm);
+}
+
+.topicTag {
+	display: inline-flex;
+	align-items: center;
+	gap: var(--space-sm);
+	align-self: flex-start;
+	padding: 5px var(--space-md) 5px var(--space-sm);
+	background: color-mix(in srgb, var(--q-accent) 12%, transparent);
+	border: 1px solid color-mix(in srgb, var(--q-accent) 32%, transparent);
+	border-radius: var(--radius-pill);
+	text-decoration: none;
+	color: var(--color-text-primary);
+	transition: background-color var(--transition), border-color var(--transition);
+}
+
+.topicTag:hover {
+	background: color-mix(in srgb, var(--q-accent) 20%, transparent);
+	border-color: color-mix(in srgb, var(--q-accent) 50%, transparent);
+}
+
+.topicTag:focus-visible {
+	outline: none;
+	box-shadow: var(--shadow-focus);
+}
+
+.topicNum {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	min-width: 22px;
+	height: 22px;
+	padding: 0 5px;
+	background: var(--q-accent);
+	color: var(--q-accent-contrast);
+	border-radius: var(--radius-pill);
+	font-family: var(--font-family-mono);
+	font-size: var(--font-size-caption);
+	font-weight: var(--font-weight-bold);
+}
+
+.topicName {
+	font-size: var(--font-size-label);
+	font-weight: var(--font-weight-semibold);
+}
+
+.sceneTitle {
+	margin: 0;
+	font-size: var(--font-size-body);
+	line-height: var(--line-height-snug);
+	color: var(--color-text-secondary);
+}
+
+/* Visually-hidden per-question heading (focus target / SR continuity). */
+.srHeading {
+	position: absolute;
+	width: 1px;
+	height: 1px;
+	padding: 0;
+	margin: -1px;
+	overflow: hidden;
+	clip: rect(0, 0, 0, 0);
+	white-space: nowrap;
+	border: 0;
+}
+
+/* ---------- Actions ---------- */
+
+.actions {
+	display: flex;
+	justify-content: flex-end;
+	gap: var(--space-md);
+	flex-wrap: wrap;
+}
+
+.nextBtn {
+	display: inline-flex;
+	align-items: center;
+	gap: var(--space-sm);
+	padding: var(--space-sm) var(--space-xl);
+	background: var(--color-accent-blue);
+	color: var(--color-text-on-accent);
+	border: none;
+	border-radius: var(--radius-pill);
+	font-family: var(--font-family-sans);
+	font-size: var(--font-size-label);
+	font-weight: var(--font-weight-semibold);
+	cursor: pointer;
+	transition: filter var(--transition), transform var(--transition);
+}
+
+.nextBtn:hover {
+	filter: brightness(1.06);
+}
+
+.nextBtn:active {
+	transform: translateY(1px);
+}
+
+.nextBtn:focus-visible {
+	outline: none;
+	box-shadow: var(--shadow-focus);
+}
+
+.skipBtn {
+	display: inline-flex;
+	align-items: center;
+	padding: var(--space-sm) var(--space-lg);
+	background: transparent;
+	border: 1px solid var(--color-border);
+	border-radius: var(--radius-pill);
+	color: var(--color-text-muted);
+	font-family: var(--font-family-sans);
+	font-size: var(--font-size-label);
+	font-weight: var(--font-weight-medium);
+	cursor: pointer;
+	transition: color var(--transition), border-color var(--transition),
+		background-color var(--transition);
+}
+
+.skipBtn:hover {
+	color: var(--color-text-secondary);
+	border-color: var(--color-border-strong);
+	background: var(--surface-hover);
+}
+
+.skipBtn:focus-visible {
+	outline: none;
+	box-shadow: var(--shadow-focus);
+}
+
+/* ---------- Session footer ---------- */
+
+.sessionFoot {
+	display: flex;
+	justify-content: center;
+}
+
+.restartLink {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	padding: var(--space-xs) var(--space-sm);
+	background: transparent;
+	border: none;
+	color: var(--color-text-muted);
+	font-family: var(--font-family-sans);
+	font-size: var(--font-size-label);
+	cursor: pointer;
+	border-radius: var(--radius-sm);
+	transition: color var(--transition);
+}
+
+.restartLink:hover {
+	color: var(--color-text-secondary);
+}
+
+.restartLink:focus-visible {
+	outline: none;
+	box-shadow: var(--shadow-focus);
+}
+
+/* ---------- Empty state ---------- */
+
+.empty {
+	padding: var(--space-3xl) var(--space-lg);
+	text-align: center;
+	color: var(--color-text-muted);
+}
+
+/* ---------- Responsive ---------- */
+
+@media (max-width: 480px) {
+	.statusBar {
+		gap: var(--space-md);
+	}
+
+	.actions {
+		justify-content: stretch;
+	}
+
+	.nextBtn,
+	.skipBtn {
+		flex: 1;
+		justify-content: center;
+	}
+}

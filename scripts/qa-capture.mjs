@@ -30,6 +30,7 @@ const PAGES = [
 	{ path: '/all-pairs-shortest-paths', name: '13-apsp' },
 	{ path: '/max-flow', name: '14-maxflow' },
 	{ path: '/np-completeness', name: '15-npc' },
+	{ path: '/review', name: '16-review' },
 	{ path: '/styleguide', name: '08-styleguide' },
 ];
 

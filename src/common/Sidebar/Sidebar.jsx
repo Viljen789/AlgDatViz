@@ -5,6 +5,7 @@ import {
 	Brain,
 	Check,
 	GitBranch,
+	GraduationCap,
 	Grid3x3,
 	Hash,
 	House,
@@ -75,6 +76,20 @@ const Sidebar = () => {
 							<House size={16} strokeWidth={2.2} />
 						</span>
 						<span className={styles.label}>Home</span>
+					</NavLink>
+				</li>
+				<li>
+					<NavLink
+						to="/review"
+						className={({ isActive }) =>
+							`${styles.navLink} ${isActive ? styles.activeLink : ''}`
+						}
+					>
+						<span className={styles.navBar} aria-hidden="true" />
+						<span className={styles.icon} aria-hidden="true">
+							<GraduationCap size={16} strokeWidth={2.2} />
+						</span>
+						<span className={styles.label}>Review</span>
 					</NavLink>
 				</li>
 

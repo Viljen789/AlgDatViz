@@ -436,6 +436,10 @@ const HomePage = () => {
 							<ArrowRight size={13} strokeWidth={2} />
 						</Link>
 					)}
+					<Link className={styles.footerLink} to="/review">
+						Test yourself — cumulative review
+						<ArrowRight size={13} strokeWidth={2} />
+					</Link>
 				</footer>
 			</section>
 		</div>

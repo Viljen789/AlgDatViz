@@ -46,7 +46,59 @@
 //   className    string            — extra class on the root.
 
 import { useEffect, useRef } from 'react';
+import useReducedMotion from '../../hooks/useReducedMotion.js';
 import styles from './PseudoState.module.css';
+
+// Stable identity for a state row across frames. We diff by label/id — never by
+// array index — so reordering or scrubbing doesn't smear "what changed" onto the
+// wrong rows.
+const rowKey = (row, idx) => row?.id ?? row?.label ?? idx;
+
+// Compare the incoming frame against the previous one and report the delta:
+//   - changed: Set of rowKeys whose `value` flipped or that became newly active
+//   - lineChanged: did the executing pseudocode line move?
+// Returns `null` for "don't pulse anything" cases (first render, or a reset /
+// wholesale row-set swap where every row would otherwise scream at once).
+const diffFrame = (prev, next) => {
+	if (!prev) return null; // first render — nothing to announce yet.
+
+	const lineChanged = prev.line !== next.line;
+
+	const prevRows = prev.rows;
+	const nextRows = next.rows;
+	const hasPrevRows = Array.isArray(prevRows) && prevRows.length > 0;
+	const hasNextRows = Array.isArray(nextRows) && nextRows.length > 0;
+
+	// Idle/reset transitions (rows appear, vanish, or are fully swapped out)
+	// must not light up every row — that reads as noise, not a delta.
+	if (!hasPrevRows || !hasNextRows) {
+		return { changed: new Set(), lineChanged };
+	}
+
+	const prevByKey = new Map(
+		prevRows.map((row, idx) => [rowKey(row, idx), row])
+	);
+	const nextKeys = nextRows.map((row, idx) => rowKey(row, idx));
+
+	// A reset commonly re-keys the whole panel (different labels entirely). If
+	// none of the new rows existed before, it's a reset, not a per-row change.
+	const overlap = nextKeys.filter(k => prevByKey.has(k)).length;
+	if (overlap === 0) {
+		return { changed: new Set(), lineChanged };
+	}
+
+	const changed = new Set();
+	nextRows.forEach((row, idx) => {
+		const key = nextKeys[idx];
+		const before = prevByKey.get(key);
+		if (!before) return; // brand-new row from a reset/swap — don't pulse.
+		const valueChanged = String(before.value) !== String(row.value);
+		const becameActive = !before.active && !!row.active;
+		if (valueChanged || becameActive) changed.add(key);
+	});
+
+	return { changed, lineChanged };
+};
 
 const PseudoState = ({
 	lines = [],
@@ -67,6 +119,28 @@ const PseudoState = ({
 
 	const railRef = useRef(null);
 	const activeRef = useRef(null);
+
+	const reducedMotion = useReducedMotion();
+
+	// ── Delta tracking ──────────────────────────────────────────────────────
+	// Each render we diff the incoming frame against the last one to find what
+	// changed (a state row's value/active state, or the executing line). Changed
+	// elements are re-keyed (the row's key folds in the new value/active flag, the
+	// line key folds in a flip flag) so React remounts just those nodes and the
+	// CSS pulse replays on every advance. The diff is read-only here; the snapshot
+	// is committed in an effect, keeping render pure (StrictMode-safe). Under
+	// reduced motion we skip the diff entirely and fall back to a static marker.
+	const prevFrameRef = useRef(null);
+	const current = { line: activeLine, rows };
+	const delta = reducedMotion ? null : diffFrame(prevFrameRef.current, current);
+	const changedRows = delta ? delta.changed : null;
+	const lineDidChange = delta ? delta.lineChanged : false;
+
+	// Commit the frame snapshot *after* diffing so the next render compares
+	// against this one.
+	useEffect(() => {
+		prevFrameRef.current = current;
+	});
 
 	// Keep the executing line centered in the rail as it advances.
 	useEffect(() => {
@@ -101,13 +175,19 @@ const PseudoState = ({
 							const trimmed = String(text ?? '').trim();
 							const isComment = trimmed.startsWith('//');
 							const isEmpty = trimmed === '';
+							// Flash the active line only on the step that moved it
+							// here. Re-key it (with a flip token) so React remounts
+							// the node and the flash replays even on consecutive
+							// advances onto adjacent lines.
+							const pulse = isActive && lineDidChange;
 							return (
 								<li
-									key={idx}
+									key={pulse ? `${idx}-flash` : idx}
 									ref={isActive ? activeRef : null}
 									className={[
 										styles.line,
 										isActive ? styles.lineActive : '',
+										pulse ? styles.linePulse : '',
 										isComment ? styles.lineComment : '',
 										isEmpty ? styles.lineEmpty : '',
 									]
@@ -133,17 +213,39 @@ const PseudoState = ({
 						<span className={styles.label}>{stateLabel}</span>
 					</header>
 					<dl className={styles.stateList} aria-live="polite">
-						{rows.map((row, idx) => (
-							<div
-								key={row.id ?? row.label ?? idx}
-								className={`${styles.stateRow} ${
-									row.active ? styles.stateRowActive : ''
-								}`}
-							>
-								<dt className={styles.stateKey}>{row.label}</dt>
-								<dd className={styles.stateVal}>{row.value}</dd>
-							</div>
-						))}
+						{rows.map((row, idx) => {
+							const key = rowKey(row, idx);
+							const didChange = changedRows?.has(key);
+							// Animated pulse when motion is allowed; a persistent
+							// "changed" marker when it isn't (reduced motion never
+							// reaches diffFrame, so changedRows is null there).
+							// Re-key changed rows on their new value so React
+							// remounts them and the pulse replays each step.
+							return (
+								<div
+									key={
+										didChange
+											? `${key}:${row.value}:${row.active ? 1 : 0}`
+											: key
+									}
+									className={[
+										styles.stateRow,
+										row.active ? styles.stateRowActive : '',
+										didChange ? styles.stateRowPulse : '',
+									]
+										.filter(Boolean)
+										.join(' ')}
+									data-changed={
+										reducedMotion && row.active
+											? 'true'
+											: undefined
+									}
+								>
+									<dt className={styles.stateKey}>{row.label}</dt>
+									<dd className={styles.stateVal}>{row.value}</dd>
+								</div>
+							);
+						})}
 					</dl>
 				</section>
 			)}
