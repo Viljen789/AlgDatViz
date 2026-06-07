@@ -57,13 +57,13 @@
 }
 
 .opTabActive {
-	color: var(--color-text-on-accent);
+	color: var(--topic-accent-contrast);
 	background: var(--topic-accent);
 	border-color: var(--topic-accent);
 }
 
 .opTabActive:hover {
-	color: var(--color-text-on-accent);
+	color: var(--topic-accent-contrast);
 	background: var(--topic-accent);
 	filter: brightness(1.06);
 }

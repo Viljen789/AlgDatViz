@@ -53,12 +53,12 @@
 }
 
 .algTabActive {
-	color: var(--color-text-on-accent);
+	color: var(--topic-accent-contrast);
 	background: var(--topic-accent);
 }
 
 .algTabActive:hover {
-	color: var(--color-text-on-accent);
+	color: var(--topic-accent-contrast);
 	background: var(--topic-accent);
 }
 

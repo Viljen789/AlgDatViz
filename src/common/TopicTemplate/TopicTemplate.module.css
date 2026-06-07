@@ -132,6 +132,10 @@
 	color: var(--color-text-primary);
 	max-width: 22ch;
 	text-wrap: balance;
+	/* Long/hyphenated titles (e.g. "All-Pairs Shortest Paths") wrap at word
+	   boundaries rather than overrunning the column. overflow-wrap (not the more
+	   aggressive word-break) only splits a word when it genuinely cannot fit. */
+	overflow-wrap: break-word;
 }
 
 .heroLede {
@@ -440,4 +444,20 @@
 	font-size: var(--font-size-body);
 	line-height: var(--line-height-body);
 	color: var(--color-text-secondary);
+}
+
+/* ---------- Responsive ---------- */
+
+/* On phones the display-2xl hero (clamp floor 2.75rem ≈ 44px) is wider than a
+   ~260px content column for long single words, forcing ugly mid-word breaks.
+   Step the hero down to display-xl (floor ≈ 36px) so titles wrap cleanly at
+   word boundaries. */
+@media (max-width: 540px) {
+	.heroTitle {
+		font-size: var(--font-size-display-xl);
+	}
+
+	.upNextLink {
+		font-size: var(--font-size-heading-lg);
+	}
 }

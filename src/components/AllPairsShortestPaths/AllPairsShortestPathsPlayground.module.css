@@ -54,12 +54,12 @@
 }
 
 .modeTabActive {
-	color: var(--color-text-on-accent);
+	color: var(--topic-accent-contrast);
 	background: var(--topic-accent);
 }
 
 .modeTabActive:hover {
-	color: var(--color-text-on-accent);
+	color: var(--topic-accent-contrast);
 	background: var(--topic-accent);
 }
 
@@ -125,7 +125,7 @@
 }
 
 .scenarioChipActive {
-	color: var(--topic-accent);
+	color: var(--topic-accent-ink);
 	border-color: color-mix(in srgb, var(--topic-accent) 50%, transparent);
 	background: color-mix(in srgb, var(--topic-accent) 10%, transparent);
 }
@@ -362,13 +362,13 @@
 
 .cellWrite {
 	background: var(--topic-accent);
-	color: var(--color-text-on-accent);
+	color: var(--topic-accent-contrast);
 	font-weight: var(--font-weight-bold);
 }
 
 .cellRead {
 	background: color-mix(in srgb, var(--topic-accent) 22%, transparent);
-	color: var(--topic-accent);
+	color: var(--topic-accent-ink);
 	font-weight: var(--font-weight-bold);
 }
 
@@ -380,7 +380,7 @@
 
 .colHot,
 .rowHot {
-	color: var(--topic-accent);
+	color: var(--topic-accent-ink);
 }
 
 /* Reconstructed-path summary under the matrix. */
@@ -406,7 +406,7 @@
 	font-family: var(--font-family-mono);
 	font-size: var(--font-size-label);
 	font-weight: var(--font-weight-medium);
-	color: var(--topic-accent);
+	color: var(--topic-accent-ink);
 }
 
 /* Trace column */

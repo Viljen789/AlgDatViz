@@ -19,7 +19,7 @@
 }
 
 .phaseLabel {
-	color: var(--color-accent-green);
+	color: var(--color-accent-green-ink);
 	font-size: 10px;
 	font-weight: 800;
 	text-transform: uppercase;

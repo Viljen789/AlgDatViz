@@ -47,7 +47,7 @@
 }
 
 .tabOn {
-	color: var(--topic-accent);
+	color: var(--topic-accent-ink);
 	background: var(--topic-npc-wash);
 	border-color: color-mix(in srgb, var(--topic-accent) 40%, transparent);
 }
@@ -124,7 +124,7 @@
 }
 
 .toggleOn {
-	color: var(--topic-accent);
+	color: var(--topic-accent-ink);
 	background: var(--topic-npc-wash);
 	border-color: color-mix(in srgb, var(--topic-accent) 45%, transparent);
 }
@@ -279,7 +279,7 @@
 }
 
 .segmentOn {
-	color: var(--topic-accent);
+	color: var(--topic-accent-ink);
 	background: var(--topic-npc-wash);
 }
 

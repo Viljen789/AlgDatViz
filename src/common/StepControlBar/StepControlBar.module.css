@@ -318,3 +318,45 @@
 	justify-content: center;
 	padding: 2px 0 0;
 }
+
+/* ---------------------------------------------------------------------------
+   Narrow viewports (mobile ≤ ~440px). The default inline-flex "dock" bar packs
+   5 buttons + a 220px scrubber + meta + speed in one row (~430px), which
+   overflows a phone. Let it wrap and give the scrubber its own full-width row
+   so every control stays reachable at 380px. (The wrapping .panel variant
+   already reflows; this brings the dock to parity.)
+   --------------------------------------------------------------------------- */
+@media (max-width: 440px) {
+	.bar:not(.panel) {
+		display: flex;
+		flex-wrap: wrap;
+		justify-content: center;
+		row-gap: 6px;
+		max-width: 100%;
+	}
+
+	/* Scrubber + meta drop to their own full-width row below the buttons. */
+	.bar:not(.panel) .scrub {
+		order: 2;
+		width: 100%;
+		flex-basis: 100%;
+	}
+
+	.bar:not(.panel) .meta {
+		order: 3;
+		min-width: 0;
+	}
+
+	.bar:not(.panel) .speedWrap {
+		order: 4;
+	}
+
+	.bar:not(.panel) .right {
+		order: 5;
+	}
+
+	/* The vertical dividers read as clutter once the bar wraps. */
+	.bar:not(.panel) .divider {
+		display: none;
+	}
+}

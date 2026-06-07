@@ -321,7 +321,7 @@
 	border-radius: 50%;
 	background: var(--color-bg-app);
 	border: 1.5px solid var(--color-border-strong);
-	color: var(--color-text-on-accent);
+	color: var(--accent-contrast, var(--color-text-on-accent));
 	transition:
 		background var(--duration-step) var(--ease-quiet),
 		border-color var(--duration-step) var(--ease-quiet),

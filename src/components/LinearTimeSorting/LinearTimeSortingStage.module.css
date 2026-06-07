@@ -78,7 +78,7 @@
 }
 
 .cellHot {
-	color: var(--topic-accent);
+	color: var(--topic-accent-ink);
 	font-weight: var(--font-weight-semibold);
 }
 
@@ -208,7 +208,7 @@
 	font-family: var(--font-family-mono);
 	font-size: var(--font-size-label);
 	font-weight: var(--font-weight-semibold);
-	color: var(--topic-accent);
+	color: var(--topic-accent-ink);
 }
 
 .boundNote {
@@ -456,7 +456,7 @@
 
 .summaryCost {
 	font-family: var(--font-family-mono);
-	color: var(--topic-accent);
+	color: var(--topic-accent-ink);
 }
 
 .summaryNeeds {

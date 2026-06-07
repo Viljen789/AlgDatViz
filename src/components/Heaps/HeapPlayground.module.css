@@ -54,12 +54,12 @@
 }
 
 .opTabActive {
-	color: var(--color-text-on-accent);
+	color: var(--topic-accent-contrast);
 	background: var(--topic-accent);
 }
 
 .opTabActive:hover {
-	color: var(--color-text-on-accent);
+	color: var(--topic-accent-contrast);
 	background: var(--topic-accent);
 }
 
@@ -136,7 +136,7 @@
 }
 
 .scenarioChipActive {
-	color: var(--topic-accent);
+	color: var(--topic-accent-ink);
 	border-color: color-mix(in srgb, var(--topic-accent) 50%, transparent);
 	background: color-mix(in srgb, var(--topic-accent) 10%, transparent);
 }
@@ -344,7 +344,7 @@
 .cellCompare {
 	background: color-mix(in srgb, var(--topic-accent) 14%, transparent);
 	border-color: var(--topic-accent);
-	color: var(--topic-accent);
+	color: var(--topic-accent-ink);
 }
 
 .cellSwap {
@@ -356,7 +356,7 @@
 .cellActive {
 	background: var(--topic-accent);
 	border-color: var(--topic-accent);
-	color: var(--color-text-on-accent);
+	color: var(--topic-accent-contrast);
 }
 
 .cellSorted {

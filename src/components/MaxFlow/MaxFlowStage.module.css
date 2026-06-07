@@ -159,7 +159,7 @@
 	font-family: var(--font-family-mono);
 	font-size: var(--font-size-label);
 	font-weight: var(--font-weight-bold);
-	color: var(--topic-accent);
+	color: var(--topic-accent-ink);
 	background: color-mix(in srgb, var(--topic-accent) 14%, transparent);
 	border: 1px solid color-mix(in srgb, var(--topic-accent) 40%, transparent);
 	border-radius: var(--radius-pill);

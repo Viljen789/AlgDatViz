@@ -35,7 +35,7 @@
 	align-items: center;
 	justify-content: center;
 	flex-shrink: 0;
-	color: var(--color-accent-yellow);
+	color: var(--color-accent-yellow-ink);
 	transition: color var(--transition);
 }
 

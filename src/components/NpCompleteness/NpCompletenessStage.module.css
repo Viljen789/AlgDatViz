@@ -112,7 +112,7 @@
 }
 
 .ringLit > .ringLabel {
-	color: var(--topic-accent);
+	color: var(--topic-accent-ink);
 }
 
 .npcBadge {
@@ -139,14 +139,14 @@
 }
 
 .npcBadgeLit {
-	color: var(--topic-accent);
+	color: var(--topic-accent-ink);
 	background: var(--topic-npc-wash);
 	border-style: solid;
 	border-color: color-mix(in srgb, var(--topic-accent) 55%, transparent);
 }
 
 .npcBadgeLit small {
-	color: var(--topic-accent);
+	color: var(--topic-accent-ink);
 }
 
 /* ---------- Verify: 3-SAT certificate check ---------- */
@@ -171,7 +171,7 @@
 	font-weight: var(--font-weight-bold);
 	letter-spacing: var(--tracking-caps);
 	text-transform: uppercase;
-	color: var(--topic-accent);
+	color: var(--topic-accent-ink);
 }
 
 .assignChip {
@@ -269,7 +269,7 @@
 }
 
 .colTagNpc {
-	color: var(--topic-accent);
+	color: var(--topic-accent-ink);
 }
 
 .chipGrid {
@@ -295,7 +295,7 @@
 }
 
 .chipNpc {
-	color: var(--topic-accent);
+	color: var(--topic-accent-ink);
 	background: var(--topic-npc-wash);
 	border-color: color-mix(in srgb, var(--topic-accent) 40%, transparent);
 	font-weight: var(--font-weight-bold);
@@ -352,7 +352,7 @@
 }
 
 .dirNodeTo {
-	color: var(--topic-accent);
+	color: var(--topic-accent-ink);
 }
 
 .dirArrow {
@@ -360,7 +360,7 @@
 	flex-direction: column;
 	align-items: center;
 	gap: 2px;
-	color: var(--topic-accent);
+	color: var(--topic-accent-ink);
 }
 
 .dirArrowLabel {
@@ -386,7 +386,7 @@
 
 .dirCallout em {
 	font-style: italic;
-	color: var(--topic-accent);
+	color: var(--topic-accent-ink);
 	font-weight: var(--font-weight-semibold);
 }
 
@@ -436,7 +436,7 @@
 }
 
 .redTo {
-	color: var(--topic-accent);
+	color: var(--topic-accent-ink);
 }
 
 .gadgets {
@@ -491,7 +491,7 @@
 }
 
 .litNodeChosen {
-	color: var(--topic-accent);
+	color: var(--topic-accent-ink);
 	background: var(--topic-npc-wash);
 	border-color: var(--topic-accent);
 	box-shadow: 0 0 0 1px color-mix(in srgb, var(--topic-accent) 45%, transparent);

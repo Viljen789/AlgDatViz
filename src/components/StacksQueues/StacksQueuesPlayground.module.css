@@ -57,11 +57,11 @@
 
 .modeBtnActive {
 	background: var(--topic-accent);
-	color: var(--color-text-on-accent);
+	color: var(--topic-accent-contrast);
 }
 
 .modeBtnActive:hover {
-	color: var(--color-text-on-accent);
+	color: var(--topic-accent-contrast);
 }
 
 .modeAcronym {
@@ -96,7 +96,7 @@
 
 .primaryBtn {
 	background: var(--topic-accent);
-	color: var(--color-text-on-accent);
+	color: var(--topic-accent-contrast);
 	border: 1px solid transparent;
 }
 

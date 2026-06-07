@@ -362,7 +362,10 @@ const HomePage = () => {
 								} ${visited ? styles.nodeVisited : ''} ${
 									isNext ? styles.nodeNext : ''
 								}`}
-								style={{ '--accent': topic.accent }}
+								style={{
+									'--accent': topic.accent,
+									'--accent-contrast': `var(--topic-${topic.id}-contrast)`,
+								}}
 							>
 								<div className={styles.nodeMarker} aria-hidden="true">
 									<span className={styles.nodeDot}>

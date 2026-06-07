@@ -59,13 +59,13 @@
 }
 
 .play {
-	color: var(--topic-accent);
+	color: var(--topic-accent-ink);
 	background: color-mix(in srgb, var(--topic-accent) 12%, transparent);
 	border-color: color-mix(in srgb, var(--topic-accent) 34%, transparent);
 }
 
 .play:hover:not(:disabled) {
-	color: var(--topic-accent);
+	color: var(--topic-accent-ink);
 	background: color-mix(in srgb, var(--topic-accent) 20%, transparent);
 }
 
@@ -136,7 +136,7 @@
 }
 
 .metaPlaying {
-	color: var(--topic-accent);
+	color: var(--topic-accent-ink);
 }
 
 .metaBlocked {

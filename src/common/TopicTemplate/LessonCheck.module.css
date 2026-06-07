@@ -86,7 +86,7 @@
 
 .choice:hover:not(:disabled) {
 	border-color: var(--topic-accent);
-	color: var(--topic-accent);
+	color: var(--topic-accent-ink);
 	background: color-mix(in srgb, var(--topic-accent) 6%, transparent);
 	transform: translateY(-1px);
 }
@@ -130,7 +130,7 @@
 }
 
 .pairProgress svg {
-	color: var(--topic-accent);
+	color: var(--topic-accent-ink);
 	flex-shrink: 0;
 }
 
@@ -208,7 +208,7 @@
 	background: var(--topic-accent);
 	border: 1px solid var(--topic-accent);
 	border-radius: var(--radius-md);
-	color: var(--color-text-on-accent);
+	color: var(--topic-accent-contrast);
 	font-family: var(--font-family-mono);
 	font-size: var(--font-size-label);
 	font-weight: var(--font-weight-bold);
@@ -321,7 +321,7 @@
 }
 
 .orderBtn:hover:not(:disabled) {
-	color: var(--topic-accent);
+	color: var(--topic-accent-ink);
 	border-color: var(--topic-accent);
 }
 
@@ -359,7 +359,8 @@
 	display: flex;
 	align-items: center;
 	justify-content: space-between;
-	gap: var(--space-md);
+	flex-wrap: wrap;
+	gap: var(--space-sm) var(--space-md);
 	padding: var(--space-sm) var(--space-md);
 	background: var(--surface-input);
 	border: 1px solid var(--color-border);
@@ -377,11 +378,15 @@
 }
 
 .classifyLabel {
+	flex: 1 1 8ch;
+	min-width: 0;
 	font-size: var(--font-size-label);
 	color: var(--color-text-primary);
 }
 
 .classifySelect {
+	flex: 0 1 auto;
+	max-width: 100%;
 	padding: 6px 10px;
 	background: var(--surface-2);
 	border: 1px solid var(--color-border);

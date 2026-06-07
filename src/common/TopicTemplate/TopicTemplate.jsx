@@ -205,6 +205,21 @@ const TopicTemplate = ({
 	const topicIdx = CURRICULUM.findIndex(t => t.id === topicId);
 	const nextTopic = topicIdx >= 0 ? CURRICULUM[topicIdx + 1] : null;
 	const resolvedAccent = accent || `var(--topic-${topicId})`;
+	// Derive the AA partner tokens from whichever topic hue the page actually
+	// uses. Pages may pass accent={topic.accent} (which is itself "var(--topic-
+	// <suffix>)", e.g. linsort/sssp where the suffix ≠ the topicId), so we parse
+	// the suffix off the resolved accent rather than the topicId. A genuinely
+	// custom (non-topic) accent color falls back to the theme-neutral defaults.
+	const topicSuffix = /^var\(--topic-([a-z0-9]+)\)$/.exec(resolvedAccent)?.[1];
+	// AA-safe text color to place ON the solid topic fill (white on deep hues,
+	// dark ink on the light yellow-green band in light theme).
+	const resolvedContrast = topicSuffix
+		? `var(--topic-${topicSuffix}-contrast)`
+		: 'var(--color-text-on-accent)';
+	// AA-safe variant of the topic hue for use as small (<13px) colored TEXT.
+	const resolvedInk = topicSuffix
+		? `var(--topic-${topicSuffix}-ink)`
+		: 'var(--topic-accent-ink)';
 
 	// Generic submit; onChoiceAnswer remains supported as an alias.
 	const handleAnswer = onAnswer || onChoiceAnswer;
@@ -272,7 +287,11 @@ const TopicTemplate = ({
 	return (
 		<div
 			className={styles.page}
-			style={{ '--topic-accent': resolvedAccent }}
+			style={{
+				'--topic-accent': resolvedAccent,
+				'--topic-accent-contrast': resolvedContrast,
+				'--topic-accent-ink': resolvedInk,
+			}}
 		>
 			<header className={styles.topicHeader}>
 				<div className={styles.topicHeaderInner}>

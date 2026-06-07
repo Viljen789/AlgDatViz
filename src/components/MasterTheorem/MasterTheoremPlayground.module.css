@@ -28,7 +28,7 @@
 }
 
 .recurrence b {
-	color: var(--topic-accent);
+	color: var(--topic-accent-ink);
 	font-weight: var(--font-weight-semibold);
 }
 
@@ -70,7 +70,7 @@
 }
 
 .presetActive {
-	color: var(--topic-accent);
+	color: var(--topic-accent-ink);
 	border-color: var(--topic-accent);
 	background: var(--topic-master-wash);
 }
@@ -247,7 +247,7 @@
 	font-family: var(--font-family-mono);
 	font-size: var(--font-size-body-lg);
 	font-weight: var(--font-weight-medium);
-	color: var(--topic-accent);
+	color: var(--topic-accent-ink);
 }
 
 @media (max-width: 960px) {

@@ -205,7 +205,7 @@
 .rowActive .rowKey,
 .rowActive .rowVal,
 .rowActive .rowPred {
-	color: var(--topic-accent);
+	color: var(--topic-accent-ink);
 }
 
 .orderRow {
@@ -230,7 +230,7 @@
 	font-family: var(--font-family-mono);
 	font-size: var(--font-size-label);
 	font-weight: var(--font-weight-medium);
-	color: var(--topic-accent);
+	color: var(--topic-accent-ink);
 }
 
 /* ---------- Caption ---------- */

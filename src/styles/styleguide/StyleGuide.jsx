@@ -14,10 +14,17 @@ const TOPICS = [
 	{ id: 'stacks-queues', label: 'Stacks & Queues', token: '--topic-stacks' },
 	{ id: 'master-theorem', label: 'Master Theorem', token: '--topic-master' },
 	{ id: 'sorting', label: 'Sorting', token: '--topic-sorting' },
+	{ id: 'linsort', label: 'Linear-time Sorting', token: '--topic-linsort' },
 	{ id: 'hashing', label: 'Hashing', token: '--topic-hashing' },
 	{ id: 'trees', label: 'Trees', token: '--topic-trees' },
+	{ id: 'heaps', label: 'Heaps & PQs', token: '--topic-heaps' },
 	{ id: 'graphs', label: 'Graphs', token: '--topic-graphs' },
 	{ id: 'strategies', label: 'Strategies', token: '--topic-strategies' },
+	{ id: 'mst', label: 'Minimum Spanning Trees', token: '--topic-mst' },
+	{ id: 'sssp', label: 'Single-source SP', token: '--topic-sssp' },
+	{ id: 'apsp', label: 'All-pairs SP', token: '--topic-apsp' },
+	{ id: 'maxflow', label: 'Maximum Flow', token: '--topic-maxflow' },
+	{ id: 'npc', label: 'NP-completeness', token: '--topic-npc' },
 ];
 
 const SEMANTIC = [
@@ -123,7 +130,7 @@ const StyleGuide = () => {
 
 			<Section
 				title="Per-topic signature hues"
-				subtitle="One harmonized HSL family — shared saturation (72%) and lightness (66%); only the hue rotates. Each topic hue is defined once."
+				subtitle="One harmonized HSL family across all 15 topics — shared saturation/lightness (dark 72%/66%, light 62%/38%); only the hue rotates. Each hue is defined once and re-tones per theme. Small colored text uses the AA-safe --topic-*-ink variant."
 			>
 				<div className={styles.swatchGrid}>
 					{TOPICS.map(t => (

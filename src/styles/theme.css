@@ -69,6 +69,12 @@
 	   --------------------------------------------------------------------------- */
 	--topic-s: 72%; /* shared saturation for the whole family */
 	--topic-l: 66%; /* shared lightness for the whole family */
+	/* "ink" lightness — a darker variant of every hue used ONLY where a hue must
+	   serve as <13px text. In DARK it equals --topic-l (the family value already
+	   clears AA on dark surfaces); in LIGHT it drops to a deep tone so the hue
+	   clears 4.5:1 small-text on white (see the [data-theme='light'] override).
+	   Tokenized so a single knob re-tones every *-ink derivative. */
+	--topic-l-ink: var(--topic-l);
 
 	--topic-foundations-h: 226; /* blue — the home base hue */
 	--topic-stacks-h: 250; /* indigo */
@@ -102,6 +108,55 @@
 	--topic-maxflow: hsl(var(--topic-maxflow-h) var(--topic-s) var(--topic-l));
 	--topic-npc: hsl(var(--topic-npc-h) var(--topic-s) var(--topic-l));
 
+	/* "Ink" variants — same hue, the AA-safe ink lightness — for any spot that
+	   uses a topic hue as SMALL TEXT (eyebrow labels, badges, active cells).
+	   Identical to the bright hue in dark; deep-toned in light so it clears
+	   4.5:1 on white. Use these instead of the bright hue for <13px colored text. */
+	--topic-foundations-ink: hsl(var(--topic-foundations-h) var(--topic-s) var(--topic-l-ink));
+	--topic-stacks-ink: hsl(var(--topic-stacks-h) var(--topic-s) var(--topic-l-ink));
+	--topic-master-ink: hsl(var(--topic-master-h) var(--topic-s) var(--topic-l-ink));
+	--topic-sorting-ink: hsl(var(--topic-sorting-h) var(--topic-s) var(--topic-l-ink));
+	--topic-hashing-ink: hsl(var(--topic-hashing-h) var(--topic-s) var(--topic-l-ink));
+	--topic-trees-ink: hsl(var(--topic-trees-h) var(--topic-s) var(--topic-l-ink));
+	--topic-graphs-ink: hsl(var(--topic-graphs-h) var(--topic-s) var(--topic-l-ink));
+	--topic-strategies-ink: hsl(var(--topic-strategies-h) var(--topic-s) var(--topic-l-ink));
+	--topic-linsort-ink: hsl(var(--topic-linsort-h) var(--topic-s) var(--topic-l-ink));
+	--topic-heaps-ink: hsl(var(--topic-heaps-h) var(--topic-s) var(--topic-l-ink));
+	--topic-mst-ink: hsl(var(--topic-mst-h) var(--topic-s) var(--topic-l-ink));
+	--topic-sssp-ink: hsl(var(--topic-sssp-h) var(--topic-s) var(--topic-l-ink));
+	--topic-apsp-ink: hsl(var(--topic-apsp-h) var(--topic-s) var(--topic-l-ink));
+	--topic-maxflow-ink: hsl(var(--topic-maxflow-h) var(--topic-s) var(--topic-l-ink));
+	--topic-npc-ink: hsl(var(--topic-npc-h) var(--topic-s) var(--topic-l-ink));
+
+	/* "Contrast" — the AA-safe TEXT color to place ON a solid topic fill
+	   (background: var(--topic-accent)). In DARK every fill (s72 l66) wants the
+	   dark ink, so all default to --color-text-on-accent. In LIGHT the lighter
+	   yellow-green hues (gold→cyan) need dark ink instead of white; the
+	   [data-theme='light'] block flips only those. TopicTemplate publishes the
+	   active topic's value as --topic-accent-contrast on the page root. */
+	--topic-foundations-contrast: var(--color-text-on-accent);
+	--topic-stacks-contrast: var(--color-text-on-accent);
+	--topic-master-contrast: var(--color-text-on-accent);
+	--topic-sorting-contrast: var(--color-text-on-accent);
+	--topic-hashing-contrast: var(--color-text-on-accent);
+	--topic-trees-contrast: var(--color-text-on-accent);
+	--topic-graphs-contrast: var(--color-text-on-accent);
+	--topic-strategies-contrast: var(--color-text-on-accent);
+	--topic-linsort-contrast: var(--color-text-on-accent);
+	--topic-heaps-contrast: var(--color-text-on-accent);
+	--topic-mst-contrast: var(--color-text-on-accent);
+	--topic-sssp-contrast: var(--color-text-on-accent);
+	--topic-apsp-contrast: var(--color-text-on-accent);
+	--topic-maxflow-contrast: var(--color-text-on-accent);
+	--topic-npc-contrast: var(--color-text-on-accent);
+
+	/* Topic-neutral defaults for the page-root aliases (TopicTemplate overrides
+	   them per topic). --topic-accent-contrast = dark ink, correct on the default
+	   brand-blue fill in dark; --topic-accent-ink = the AA-safe hue for small
+	   colored text (defaults to the brand blue, which clears AA in both themes). */
+	--topic-accent-contrast: var(--color-text-on-accent);
+	--topic-accent-ink: var(--topic-foundations-ink);
+
 	/* Translucent washes, same hue (for fills, hovers, selection tints) */
 	--topic-foundations-wash: hsl(var(--topic-foundations-h) var(--topic-s) var(--topic-l) / 0.14);
 	--topic-stacks-wash: hsl(var(--topic-stacks-h) var(--topic-s) var(--topic-l) / 0.14);
@@ -131,6 +186,14 @@
 	--color-accent-purple: hsl(var(--topic-trees-h) var(--topic-s) var(--topic-l));
 	--color-accent-yellow: hsl(var(--topic-master-h) var(--topic-s) var(--topic-l));
 	--color-accent-red: hsl(2 78% 66%);
+
+	/* AA-safe "ink" siblings of the named accents (for <13px colored text). The
+	   azure/blue/red/purple slots already clear 4.5:1 small-text on white, but
+	   green (graphs teal) and yellow (master gold) do not — these re-point to the
+	   ink lightness so labels stay on-brand AND legible in both themes. */
+	--color-accent-green-ink: hsl(var(--topic-graphs-h) var(--topic-s) var(--topic-l-ink));
+	--color-accent-orange-ink: hsl(var(--topic-hashing-h) var(--topic-s) var(--topic-l-ink));
+	--color-accent-yellow-ink: hsl(var(--topic-master-h) var(--topic-s) var(--topic-l-ink));
 
 	/* Algorithm visualization "state" roles (kept stable — heavily referenced) */
 	--state-active: var(--color-accent-blue);
@@ -399,6 +462,19 @@
 	--color-text-on-accent: hsl(0 0% 100%); /* white text atop dark accents */
 	--color-text-on-node: hsl(0 0% 100%);
 
+	/* Topic-fill text contrast — in light, white reads on the deep/blue/violet
+	   hues but FAILS AA on the lighter yellow-green band (gold→cyan). Flip just
+	   those to a deep ink so button/cell text on those fills clears 4.5:1.
+	   (master 5.4 · maxflow 6.5 · mst 6.0 · apsp 5.7 · linsort 5.6 · graphs 5.8 ·
+	   npc 5.9 — all AA; the rest keep white at 6–11:1.) */
+	--topic-master-contrast: hsl(232 40% 8%);
+	--topic-graphs-contrast: hsl(232 40% 8%);
+	--topic-linsort-contrast: hsl(232 40% 8%);
+	--topic-mst-contrast: hsl(232 40% 8%);
+	--topic-apsp-contrast: hsl(232 40% 8%);
+	--topic-maxflow-contrast: hsl(232 40% 8%);
+	--topic-npc-contrast: hsl(232 40% 8%);
+
 	/* 3. TOPIC FAMILY legibility knobs — the 8 hues + washes + accent slots +
 	   states + glows all derive from these. Darker + slightly desaturated so the
 	   family reads as accents/icons/fills on white. At l38 every hue clears the
@@ -408,6 +484,12 @@
 	   treatment instead (see --nav-active-text and per-spot fixes). */
 	--topic-s: 62%;
 	--topic-l: 38%;
+	/* Ink lightness for small colored TEXT on white: every hue (incl. the two
+	   that can't reach AA at l38 — gold 48° and teal 162°) clears 4.5:1 at l30.
+	   The *-ink tokens + --color-accent-{green,orange,yellow}-ink derive from
+	   this, so all small topic-hued text becomes AA without desaturating the
+	   bright fills/icons that already pass at large sizes / 3:1. */
+	--topic-l-ink: 30%;
 
 	/* Brand red sits in the family lightness so it matches on white. */
 	--color-accent-red: hsl(2 72% 48%);

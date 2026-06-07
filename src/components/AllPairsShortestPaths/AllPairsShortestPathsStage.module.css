@@ -147,14 +147,14 @@
 /* The cell being relaxed (d[i][j], the write target). */
 .cellWrite {
 	background: var(--topic-accent);
-	color: var(--color-text-on-accent);
+	color: var(--topic-accent-contrast);
 	font-weight: var(--font-weight-bold);
 }
 
 /* The two cells read this beat: d[i][k] and d[k][j]. */
 .cellRead {
 	background: color-mix(in srgb, var(--topic-accent) 22%, transparent);
-	color: var(--topic-accent);
+	color: var(--topic-accent-ink);
 	font-weight: var(--font-weight-bold);
 }
 
@@ -172,7 +172,7 @@
 
 .colHot,
 .rowHot {
-	color: var(--topic-accent);
+	color: var(--topic-accent-ink);
 }
 
 /* ---------- Read/write legend ---------- */
@@ -187,7 +187,7 @@
 }
 
 .legRead {
-	color: var(--topic-accent);
+	color: var(--topic-accent-ink);
 }
 
 .legWrite {

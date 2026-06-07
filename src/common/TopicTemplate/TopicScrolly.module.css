@@ -97,7 +97,7 @@
 }
 
 .sceneActive .sceneIndex {
-	color: var(--topic-accent);
+	color: var(--topic-accent-ink);
 	border-color: color-mix(in srgb, var(--topic-accent) 50%, transparent);
 	background: color-mix(in srgb, var(--topic-accent) 8%, transparent);
 }
@@ -134,8 +134,19 @@
 
 @media (max-width: 960px) {
 	.scrolly {
-		grid-template-columns: 1fr;
+		/* minmax(0, 1fr) (not a bare 1fr, whose implicit min-content floor lets a
+		   wide stage figure push the column past the viewport) so the single
+		   column can shrink to the phone width and its figure reflows/scrolls. */
+		grid-template-columns: minmax(0, 1fr);
 		gap: var(--space-lg);
+	}
+
+	.stageColumn,
+	.stageSticky,
+	.stageFigure,
+	.proseColumn {
+		min-width: 0;
+		max-width: 100%;
 	}
 
 	.stageColumn {

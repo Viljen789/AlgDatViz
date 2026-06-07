@@ -171,13 +171,13 @@
 .cellActive {
 	background: color-mix(in srgb, var(--topic-accent) 16%, transparent);
 	border-color: var(--topic-accent);
-	color: var(--topic-accent);
+	color: var(--topic-accent-ink);
 }
 
 .cellMax {
 	background: var(--topic-accent);
 	border-color: var(--topic-accent);
-	color: var(--color-text-on-accent);
+	color: var(--topic-accent-contrast);
 }
 
 .cellParent {
@@ -202,7 +202,7 @@
 }
 
 .formula strong {
-	color: var(--topic-accent);
+	color: var(--topic-accent-ink);
 	font-weight: var(--font-weight-bold);
 }
 
