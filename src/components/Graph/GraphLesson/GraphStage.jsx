@@ -26,9 +26,10 @@ const buildAdjacency = () => {
 // drives the highlight. Earlier scenes show structure only. Scene indices match
 // SCENES in graphScenes.js:
 //   2 frontier · 3 bfs · 4 bfs-order (recall, shows full BFS) · 5 dfs
+//   6 one-frontier (the unifying thesis — show the full BFS frontier picture)
 const traversalFor = activeScene => {
 	if (activeScene === 2) return { order: BFS_ORDER, count: 1 }; // just A marked
-	if (activeScene === 3 || activeScene === 4)
+	if (activeScene === 3 || activeScene === 4 || activeScene === 6)
 		return { order: BFS_ORDER, count: BFS_ORDER.length };
 	if (activeScene === 5) return { order: DFS_ORDER, count: DFS_ORDER.length };
 	return { order: [], count: 0 };
@@ -60,7 +61,9 @@ const GraphStage = ({ activeScene = 0 }) => {
 			? 'BFS · queue'
 			: activeScene === 5
 				? 'DFS · stack'
-				: null;
+				: activeScene === 6
+					? 'one loop · swap the frontier'
+					: null;
 
 	const renderEdge = ({ from, to }) => {
 		const a = nodeById(from);

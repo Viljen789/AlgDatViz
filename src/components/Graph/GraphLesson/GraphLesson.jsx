@@ -4,8 +4,10 @@ import useProgress from '../../../hooks/useProgress.js';
 import TopicTemplate from '../../../common/TopicTemplate/index.js';
 import { checkAnswer } from '../../../common/TopicTemplate/checkAnswer.js';
 import GraphDashboard from '../GraphDashboard.jsx';
+import OneFrontier from '../OneFrontier/OneFrontier.jsx';
 import GraphStage from './GraphStage.jsx';
 import { SCENES, CHEAT_SHEET } from './graphScenes.js';
+import styles from './GraphLesson.module.css';
 
 const TOPIC_ID = 'graphs';
 
@@ -82,7 +84,30 @@ const GraphLesson = () => {
 			playgroundLede="Run BFS, DFS, Dijkstra, MST, topological sort, or max flow on real graphs. Drag nodes, switch between graph / list / matrix views, and step through the algorithm with space and the arrow keys."
 			onVisit={handleVisit}
 			renderPlayground={renderPlayground}
-		/>
+		>
+			<section
+				id="one-frontier"
+				className={styles.oneFrontierSection}
+				aria-labelledby="one-frontier-heading"
+			>
+				<header className={styles.oneFrontierHeader}>
+					<p className={styles.oneFrontierEyebrow}>Signature interactive</p>
+					<h2 id="one-frontier-heading" className={styles.oneFrontierTitle}>
+						One frontier, four algorithms.
+					</h2>
+					<p className={styles.oneFrontierLede}>
+						The same generic loop — seed the frontier, extract a vertex, settle
+						it, offer its neighbours back — on one shared graph. Toggle the{' '}
+						<strong>frontier discipline</strong> and watch the same loop become
+						BFS, DFS, Dijkstra, or Prim. Only <code>extract()</code> changes:
+						which vertex leaves the frontier next. Use space, the arrow keys, or
+						the controls; the live frontier, the settle order, the resulting
+						tree, and the synced pseudocode all update in lockstep.
+					</p>
+				</header>
+				<OneFrontier onUserInteract={handlePlaygroundInteract} />
+			</section>
+		</TopicTemplate>
 	);
 };
 

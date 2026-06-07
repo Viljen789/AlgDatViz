@@ -157,6 +157,37 @@ export const SCENES = [
 				'A stack returns the newest node, so after pushing B’s neighbours DFS dives into D, then F, then back up to E — exploring B’s whole branch before it ever returns to C. Same graph, same start, completely different order: the data structure is the algorithm.',
 		},
 	},
+	{
+		id: 'one-frontier',
+		eyebrow: 'The unifying idea',
+		title: 'One loop, one frontier — swap its discipline, change the algorithm.',
+		body: 'BFS and DFS were the same loop with a different frontier. Push that further: key the frontier by tentative distance and the same loop becomes Dijkstra; key it by the lightest crossing edge and it becomes Prim’s MST. The only line that ever changes is extract() — which vertex leaves the frontier next. The interactive below the playground runs all four from one loop.',
+		check: {
+			kind: 'classify',
+			prompt:
+				'Match each frontier discipline to the algorithm the one loop becomes.',
+			items: [
+				{ id: 'fifo', label: 'FIFO queue (oldest out)' },
+				{ id: 'lifo', label: 'LIFO stack (newest out)' },
+				{ id: 'mindist', label: 'min priority queue keyed by distance' },
+				{ id: 'minedge', label: 'min priority queue keyed by crossing-edge weight' },
+			],
+			categories: [
+				{ id: 'bfs', label: 'BFS' },
+				{ id: 'dfs', label: 'DFS' },
+				{ id: 'dijkstra', label: 'Dijkstra' },
+				{ id: 'prim', label: 'Prim (MST)' },
+			],
+			answer: {
+				fifo: 'bfs',
+				lifo: 'dfs',
+				mindist: 'dijkstra',
+				minedge: 'prim',
+			},
+			explanation:
+				'All four are one generic traversal: init the frontier with the start, then repeatedly extract a vertex, settle it, and offer its neighbours back to the frontier. Only extract() differs — FIFO → BFS, LIFO → DFS, min-distance → Dijkstra, min-edge → Prim. The frontier discipline is the algorithm.',
+		},
+	},
 ];
 
 // The collapsible cheat-sheet shown in the hero (TopicTemplate `cheatSheet`).
@@ -165,7 +196,7 @@ export const SCENES = [
 // notation students must recall on the exam.
 export const CHEAT_SHEET = {
 	keyIdea:
-		'A graph is just things and the links between them. The whole craft is choosing what to explore next — the frontier’s data structure (queue vs stack) is the entire difference between BFS and DFS.',
+		'A graph is just things and the links between them. The whole craft is choosing what to explore next. One generic loop with a swappable frontier discipline becomes four algorithms: FIFO queue → BFS, LIFO stack → DFS, min-distance PQ → Dijkstra, min-edge PQ → Prim. Only extract() — which vertex leaves the frontier next — ever changes.',
 	sections: [
 		{
 			title: 'Representation',
@@ -198,6 +229,31 @@ export const CHEAT_SHEET = {
 				{
 					term: 'Both are O(V + E)',
 					def: 'Each vertex is processed once and each edge inspected once. The frontier (queue or stack) holds up to V nodes.',
+				},
+			],
+		},
+		{
+			title: 'One frontier, four algorithms',
+			items: [
+				{
+					term: 'The generic loop',
+					def: 'Seed the frontier with the start; while it is non-empty, extract a vertex, settle it, and offer each neighbour back to the frontier. Only extract() differs between algorithms.',
+				},
+				{
+					term: 'FIFO queue → BFS',
+					def: 'Extract the oldest waiting vertex. Spreads in layers → shortest unweighted paths.',
+				},
+				{
+					term: 'LIFO stack → DFS',
+					def: 'Extract the newest vertex. Plunges down one branch then backtracks.',
+				},
+				{
+					term: 'min-distance PQ → Dijkstra',
+					def: 'Extract the closest unsettled vertex (key = tentative distance). Non-negative weights only.',
+				},
+				{
+					term: 'min-edge PQ → Prim',
+					def: 'Extract the vertex across the lightest crossing edge (key = edge weight). Builds a minimum spanning tree.',
 				},
 			],
 		},

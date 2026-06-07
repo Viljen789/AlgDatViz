@@ -1,0 +1,64 @@
+/* =============================================================================
+   GraphLesson — the Graphs topic's extra "one frontier, four algorithms"
+   section, rendered as TopicTemplate children below the playground. Matches the
+   template's playground-section rhythm. Tokens only; tinted by --topic-accent.
+   ============================================================================ */
+
+.oneFrontierSection {
+	max-width: 1280px;
+	margin: 0 auto;
+	padding: clamp(var(--space-2xl), 6vw, var(--space-4xl))
+		clamp(var(--space-xl), 6vw, var(--space-4xl))
+		clamp(var(--space-2xl), 5vw, var(--space-3xl));
+	border-top: 1px solid var(--color-border);
+	scroll-margin-top: 84px;
+}
+
+.oneFrontierHeader {
+	display: flex;
+	flex-direction: column;
+	gap: var(--space-md);
+	margin-bottom: clamp(var(--space-xl), 4vw, var(--space-2xl));
+	max-width: 70ch;
+}
+
+.oneFrontierEyebrow {
+	margin: 0;
+	font-family: var(--font-family-mono);
+	font-size: var(--font-size-caption);
+	font-weight: var(--font-weight-bold);
+	letter-spacing: var(--tracking-caps);
+	text-transform: uppercase;
+	color: var(--topic-accent);
+}
+
+.oneFrontierTitle {
+	margin: 0;
+	font-family: var(--font-family-display);
+	font-size: var(--font-size-display-lg);
+	font-weight: var(--font-weight-display);
+	line-height: var(--line-height-heading);
+	letter-spacing: var(--tracking-display);
+	color: var(--color-text-primary);
+}
+
+.oneFrontierLede {
+	margin: 0;
+	font-size: var(--font-size-body);
+	line-height: var(--line-height-body);
+	color: var(--color-text-secondary);
+}
+
+.oneFrontierLede code {
+	font-family: var(--font-family-mono);
+	font-size: 0.92em;
+	padding: 0 var(--space-2xs);
+	border-radius: var(--radius-sm);
+	background: var(--surface-2);
+	color: var(--color-text-primary);
+}
+
+.oneFrontierLede strong {
+	color: var(--color-text-primary);
+	font-weight: var(--font-weight-bold);
+}
