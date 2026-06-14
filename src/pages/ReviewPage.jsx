@@ -7,6 +7,7 @@ import {
 	sampleSession,
 } from '../components/Review/reviewBank.js';
 import ReviewSession from '../components/Review/ReviewSession.jsx';
+import { logActivity } from '../lib/activityLog.js';
 import useProgress from '../hooks/useProgress.js';
 import useSrs from '../hooks/useSrs.js';
 import styles from './ReviewPage.module.css';
@@ -73,6 +74,15 @@ const ReviewPage = () => {
 		if (mode === 'due') startDue();
 		else startMixed();
 	}, [mode, startDue, startMixed]);
+
+	// Grade the card AND log a day of study (streak / "today" / heatmap).
+	const handleGraded = useCallback(
+		(id, correct) => {
+			grade(id, correct);
+			logActivity();
+		},
+		[grade]
+	);
 
 	const bankSize = REVIEW_BANK.length;
 	const topicCount = REVIEW_TOPIC_IDS.length;
@@ -162,7 +172,7 @@ const ReviewPage = () => {
 						key={runId}
 						questions={sessionQuestions}
 						onRestart={restart}
-						onGraded={grade}
+						onGraded={handleGraded}
 					/>
 				</section>
 			)}

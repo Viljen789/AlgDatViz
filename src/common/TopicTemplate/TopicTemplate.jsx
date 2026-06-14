@@ -7,6 +7,7 @@ import {
 	ChevronRight,
 } from 'lucide-react';
 import { CURRICULUM } from '../../data/curriculum.js';
+import { logActivity } from '../../lib/activityLog.js';
 import useProgress from '../../hooks/useProgress.js';
 import useReducedMotion from '../../hooks/useReducedMotion.js';
 import TopicScrolly from './TopicScrolly.jsx';
@@ -221,8 +222,16 @@ const TopicTemplate = ({
 		? `var(--topic-${topicSuffix}-ink)`
 		: 'var(--topic-accent-ink)';
 
-	// Generic submit; onChoiceAnswer remains supported as an alias.
-	const handleAnswer = onAnswer || onChoiceAnswer;
+	// Generic submit; onChoiceAnswer remains supported as an alias. Wrapped so
+	// every answered scene check logs a day of study (streak / "today" / heatmap).
+	const submitAnswer = onAnswer || onChoiceAnswer;
+	const handleAnswer = useCallback(
+		(sceneId, payload) => {
+			submitAnswer?.(sceneId, payload);
+			logActivity();
+		},
+		[submitAnswer]
+	);
 
 	// How many correct checks complete this topic. Default = scenes carrying a
 	// check, so completion derives from correct retrieval (Deliverable D).
