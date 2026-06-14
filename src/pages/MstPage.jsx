@@ -4,7 +4,7 @@ import useProgress from '../hooks/useProgress.js';
 import TopicTemplate from '../common/TopicTemplate/index.js';
 import { checkAnswer } from '../common/TopicTemplate/checkAnswer.js';
 import MstStage from '../components/Mst/MstStage.jsx';
-import MstPlayground from '../components/Mst/MstPlayground.jsx';
+import MstSandbox from '../components/Mst/MstSandbox.jsx';
 import { SCENES, MST_EDGE_COUNT, MST_WEIGHT } from '../components/Mst/scenes.js';
 
 const TOPIC_ID = 'mst';
@@ -110,7 +110,7 @@ const MstPage = () => {
 	}, [markCompleted]);
 
 	const renderPlayground = useCallback(
-		() => <MstPlayground onUserInteract={handlePlaygroundInteract} />,
+		() => <MstSandbox onUserInteract={handlePlaygroundInteract} />,
 		[handlePlaygroundInteract]
 	);
 
@@ -137,7 +137,7 @@ const MstPage = () => {
 			cheatSheet={CHEAT_SHEET}
 			playgroundEyebrow="Sandbox"
 			playgroundTitle="Same graph, two algorithms, one tree."
-			playgroundLede="Run Kruskal, or Prim from A or F, on one shared weighted graph. Watch the accepted edges glow, the rejected cycles fade, and the union-find components (Kruskal) or the (tree, rest) frontier (Prim) update beside the synced pseudocode. Use space, the arrow keys, or the controls — and the scenario chips to switch algorithm or start vertex."
+			playgroundLede="Run a single algorithm with synced pseudocode and live state, or switch to Compare and watch Kruskal and Prim race side by side on the same graph under one scrubber, both reaching the identical minimum tree. Use space, the arrow keys, or the controls — and the scenario chips to switch algorithm or start vertex."
 			renderPlayground={renderPlayground}
 			onVisit={handleVisit}
 		/>

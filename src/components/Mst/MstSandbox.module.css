@@ -1,0 +1,44 @@
+.sandbox {
+	display: flex;
+	flex-direction: column;
+	gap: var(--space-lg);
+}
+
+/* Segmented Single / Compare control. */
+.toggle {
+	display: inline-flex;
+	align-self: flex-start;
+	gap: 2px;
+	padding: 3px;
+	background: var(--color-bg-sunken);
+	border: 1px solid var(--color-border);
+	border-radius: var(--radius-pill);
+}
+
+.toggleBtn {
+	padding: var(--space-xs) var(--space-md);
+	border: none;
+	border-radius: var(--radius-pill);
+	background: transparent;
+	color: var(--color-text-muted);
+	font-family: var(--font-family-sans);
+	font-size: var(--font-size-label);
+	font-weight: var(--font-weight-medium);
+	cursor: pointer;
+	transition: color var(--transition), background-color var(--transition);
+}
+
+.toggleBtn:hover {
+	color: var(--color-text-primary);
+}
+
+.toggleActive {
+	background: var(--surface-1);
+	color: var(--color-text-primary);
+	box-shadow: var(--shadow-1);
+}
+
+.toggleBtn:focus-visible {
+	outline: none;
+	box-shadow: var(--shadow-focus);
+}
