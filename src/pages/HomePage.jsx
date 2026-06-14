@@ -1,6 +1,6 @@
 import { useCallback, useLayoutEffect, useMemo, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { ArrowRight, Check, Clock, Lock, RotateCcw } from 'lucide-react';
+import { ArrowRight, Check, Clock, Flame, Lock } from 'lucide-react';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import {
@@ -10,8 +10,10 @@ import {
 	TOPIC_BY_ID,
 } from '../data/curriculum.js';
 import { REVIEW_BANK } from '../components/Review/reviewBank.js';
+import { DAILY_GOAL, examNewCap } from '../lib/activityLog.js';
 import useProgress from '../hooks/useProgress.js';
 import useSrs from '../hooks/useSrs.js';
+import useActivity from '../hooks/useActivity.js';
 import HeroRecompose from './HeroRecompose.jsx';
 import styles from './HomePage.module.css';
 
@@ -133,11 +135,41 @@ const PREVIEW_BY_ID = {
 	hashing: PreviewBuckets,
 };
 
+// A small daily-goal ring: today's answered count against the goal.
+const GoalRing = ({ value, goal, done }) => {
+	const R = 15;
+	const C = 2 * Math.PI * R;
+	const frac = Math.max(0, Math.min(1, goal > 0 ? value / goal : 0));
+	return (
+		<svg
+			className={styles.ring}
+			width="40"
+			height="40"
+			viewBox="0 0 40 40"
+			aria-hidden="true"
+		>
+			<circle className={styles.ringTrack} cx="20" cy="20" r={R} />
+			<circle
+				className={styles.ringFill}
+				cx="20"
+				cy="20"
+				r={R}
+				transform="rotate(-90 20 20)"
+				style={{ strokeDasharray: C, strokeDashoffset: C * (1 - frac) }}
+			/>
+			{done && (
+				<path className={styles.ringCheck} d="M14.5 20.5 l3.5 3.5 l7 -8" />
+			)}
+		</svg>
+	);
+};
+
 const HomePage = () => {
 	const navigate = useNavigate();
-	const { lastVisited, markVisited, reset, isCompleted, isVisited, overall } =
+	const { lastVisited, markVisited, isCompleted, isVisited, overall } =
 		useProgress();
 	const { plan: srsPlan } = useSrs();
+	const { todayCount, currentStreak, daysUntilExam } = useActivity();
 	const pageRef = useRef(null);
 	const nodeRefs = useRef([]);
 
@@ -145,12 +177,14 @@ const HomePage = () => {
 	const started = overall.visited > 0;
 
 	// Spaced-repetition: how many cards are due (or newly eligible) right now.
+	// Closer to the exam ⇒ a larger new-card budget.
 	const isNewEligible = useCallback(entry => isVisited(entry.topicId), [isVisited]);
 	const duePlan = useMemo(
-		() => srsPlan(REVIEW_BANK, { newCap: 8, isNewEligible }),
-		[srsPlan, isNewEligible]
+		() => srsPlan(REVIEW_BANK, { newCap: examNewCap(daysUntilExam), isNewEligible }),
+		[srsPlan, isNewEligible, daysUntilExam]
 	);
 	const dueTotal = duePlan.dueCount + duePlan.freshCount;
+	const goalDone = started && todayCount >= DAILY_GOAL;
 
 	const lastTopic = lastVisited ? TOPIC_BY_ID[lastVisited] : null;
 	const nextTopic = useMemo(() => {
@@ -398,66 +432,76 @@ const HomePage = () => {
 					<p className={styles.heroSubtitle} data-hero-sub>
 						{heroState.subtitle}
 					</p>
-					<div className={styles.heroActions} data-hero-actions>
-						<button
-							type="button"
-							className={styles.primaryCta}
-							onClick={() => visit(heroState.ctaTopic)}
-						>
-							<span>{heroState.ctaLabel}</span>
-							<ArrowRight size={16} strokeWidth={2} />
-						</button>
-						{started && !allComplete && (
+					<div className={styles.today} data-hero-actions>
+						<div className={styles.todayTop}>
+							<span className={styles.todayLabel}>
+								{started ? 'Today' : 'Start here'}
+							</span>
+							{currentStreak > 0 && (
+								<span className={styles.streak}>
+									<Flame size={13} strokeWidth={2.4} aria-hidden="true" />
+									{currentStreak}-day streak
+								</span>
+							)}
+							{daysUntilExam != null && daysUntilExam >= 0 && (
+								<Link to="/progress" className={styles.examChip}>
+									Exam in {daysUntilExam}d
+								</Link>
+							)}
+						</div>
+
+						<div className={styles.todayActions}>
 							<button
 								type="button"
-								className={styles.ghostCta}
-								onClick={reset}
-								title="Clear progress and start over"
+								className={styles.primaryCta}
+								onClick={() => visit(heroState.ctaTopic)}
 							>
-								<RotateCcw size={13} strokeWidth={2} />
-								<span>Reset progress</span>
+								<span>{heroState.ctaLabel}</span>
+								<ArrowRight size={16} strokeWidth={2} />
 							</button>
+							{started && dueTotal > 0 && (
+								<Link
+									to="/review"
+									className={styles.reviewCta}
+									aria-label={`Review ${dueTotal} due — spaced retrieval`}
+								>
+									<Clock size={14} strokeWidth={2.2} aria-hidden="true" />
+									<span>
+										Review <strong>{dueTotal}</strong> due
+									</span>
+								</Link>
+							)}
+						</div>
+
+						{started && (
+							<div className={styles.todayGoal}>
+								<GoalRing value={todayCount} goal={DAILY_GOAL} done={goalDone} />
+								<div className={styles.goalText}>
+									{goalDone ? (
+										<>
+											<span className={styles.goalHead}>Done for today</span>
+											<span className={styles.goalSub}>
+												{todayCount} answered · streak safe
+											</span>
+										</>
+									) : (
+										<>
+											<span className={styles.goalHead}>
+												{todayCount} / {DAILY_GOAL} answered today
+											</span>
+											<span className={styles.goalSub}>
+												{overall.completed} of {overall.total} topics complete
+											</span>
+										</>
+									)}
+								</div>
+								<Link to="/progress" className={styles.progressLink}>
+									Progress
+									<ArrowRight size={13} strokeWidth={2} aria-hidden="true" />
+								</Link>
+							</div>
 						)}
 					</div>
-					{started && (
-						<div
-							className={styles.heroProgress}
-							role="group"
-							aria-label={`Overall progress: ${overall.completed} of ${overall.total} topics completed`}
-							data-hero-progress
-						>
-							<div
-								className={styles.heroProgressTrack}
-								role="progressbar"
-								aria-valuenow={overall.completed}
-								aria-valuemin={0}
-								aria-valuemax={overall.total}
-							>
-								<span
-									className={styles.heroProgressFill}
-									style={{ width: `${overall.percent}%` }}
-								/>
-							</div>
-							<p className={styles.heroMeta}>
-								{overall.completed} of {overall.total} topics completed
-								{overall.visited > overall.completed &&
-									` · ${overall.visited - overall.completed} in progress`}
-							</p>
-						</div>
-					)}
-					{started && dueTotal > 0 && (
-						<Link
-							to="/review"
-							className={styles.heroReview}
-							aria-label={`Review ${dueTotal} due — spaced retrieval`}
-						>
-							<Clock size={14} strokeWidth={2.2} aria-hidden="true" />
-							<span>
-								Review <strong>{dueTotal}</strong> due
-							</span>
-							<ArrowRight size={13} strokeWidth={2} aria-hidden="true" />
-						</Link>
-					)}
 				</div>
 				<HeroRecompose className={styles.heroRecompose} />
 			</section>
