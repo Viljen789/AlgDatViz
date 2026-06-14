@@ -19,9 +19,8 @@
 	position: sticky;
 	top: 0;
 	z-index: 5;
-	background: color-mix(in srgb, var(--color-bg-app) 86%, transparent);
-	backdrop-filter: blur(14px) saturate(1.05);
-	-webkit-backdrop-filter: blur(14px) saturate(1.05);
+	/* Solid paper, not a blurred glass bar (perf + on-brand). */
+	background: var(--color-bg-app);
 	border-bottom: 1px solid var(--color-border-subtle);
 	padding: var(--space-md) clamp(var(--space-lg), 4vw, var(--space-3xl));
 }
@@ -145,16 +144,29 @@
 	color: var(--color-text-primary);
 }
 
-/* ---------- Start button ---------- */
+/* ---------- Launch: due (spaced repetition) + mixed (free practice) ---------- */
 
-.startBtn {
-	align-self: flex-start;
+.launch {
+	display: flex;
+	flex-direction: column;
+	gap: var(--space-sm);
+	margin-top: var(--space-sm);
+}
+
+.actions {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: var(--space-md);
+}
+
+/* The due (spaced-repetition) call to action wears the amber "review" accent. */
+.dueBtn {
 	display: inline-flex;
 	align-items: center;
 	gap: var(--space-sm);
-	margin-top: var(--space-sm);
 	padding: var(--space-md) var(--space-xl);
-	background: var(--color-accent-blue);
+	background: var(--review-brand);
 	color: var(--color-text-on-accent);
 	border: none;
 	border-radius: var(--radius-pill);
@@ -166,18 +178,72 @@
 		filter var(--transition);
 }
 
-.startBtn:hover {
-	filter: brightness(1.06);
-	box-shadow: var(--shadow-glow-accent);
+.dueBtn:hover {
+	filter: brightness(1.05);
+	box-shadow: 0 0 0 1px var(--review-brand-wash),
+		0 12px 40px color-mix(in srgb, var(--review-brand) 22%, transparent);
 }
 
-.startBtn:active {
+.dueBtn:active {
 	transform: translateY(1px);
 }
 
-.startBtn:focus-visible {
+.dueBtn:focus-visible {
 	outline: none;
 	box-shadow: var(--shadow-focus);
+}
+
+.mixedBtn {
+	display: inline-flex;
+	align-items: center;
+	gap: var(--space-sm);
+	padding: var(--space-md) var(--space-lg);
+	background: var(--surface-1);
+	color: var(--color-text-primary);
+	border: 1px solid var(--color-border);
+	border-radius: var(--radius-pill);
+	font-family: var(--font-family-sans);
+	font-size: var(--font-size-label);
+	font-weight: var(--font-weight-medium);
+	cursor: pointer;
+	transition: background-color var(--transition), border-color var(--transition);
+}
+
+.mixedBtn:hover {
+	background: var(--surface-hover);
+	border-color: var(--color-border-strong);
+}
+
+.mixedBtn:focus-visible {
+	outline: none;
+	box-shadow: var(--shadow-focus);
+}
+
+.dueMeta {
+	margin: 0;
+	font-family: var(--font-family-mono);
+	font-size: var(--font-size-caption);
+	letter-spacing: var(--tracking-wide);
+	color: var(--color-text-muted);
+}
+
+.caughtUp {
+	margin: 0;
+	max-width: 46ch;
+	font-size: var(--font-size-body);
+	line-height: var(--line-height-snug);
+	color: var(--color-text-secondary);
+}
+
+/* The "due now" stat wears the review accent so it reads as the thing to act on. */
+.statDue {
+	border-color: color-mix(in srgb, var(--review-brand) 40%, transparent);
+	background: var(--review-brand-wash);
+}
+
+.statDue .statLabel,
+.statDue .statValue {
+	color: var(--review-brand-ink);
 }
 
 /* ---------- Session wrapper ---------- */

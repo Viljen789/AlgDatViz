@@ -25,8 +25,11 @@ import styles from './ReviewSession.module.css';
  *   questions   the sampled bank entries (each: { id, topicId, topicName,
  *               topicNumber, to, accent, sceneId, sceneTitle, check }).
  *   onRestart   () => void — reseed and start a fresh session.
+ *   onGraded    optional (entryId, correct) => void — fired once per question
+ *               when first answered, so a spaced-repetition layer can reschedule
+ *               the card. Omitted by free-practice callers.
  */
-const ReviewSession = ({ questions, onRestart }) => {
+const ReviewSession = ({ questions, onRestart, onGraded }) => {
 	// Per-question controlled check state, keyed by entry id. Same shape the
 	// topic pages feed LessonCheck: { status, ...graderResult }.
 	const [answers, setAnswers] = useState({});
@@ -53,9 +56,10 @@ const ReviewSession = ({ questions, onRestart }) => {
 	const handleAnswer = useCallback(
 		payload => {
 			if (!current) return;
+			if (answers[current.id]?.status != null) return; // grade & schedule once
+			const result = checkAnswer(current.check, payload);
 			setAnswers(prev => {
-				if (prev[current.id]?.status != null) return prev; // answer once
-				const result = checkAnswer(current.check, payload);
+				if (prev[current.id]?.status != null) return prev;
 				return {
 					...prev,
 					[current.id]: {
@@ -64,8 +68,9 @@ const ReviewSession = ({ questions, onRestart }) => {
 					},
 				};
 			});
+			onGraded?.(current.id, result.correct);
 		},
-		[current]
+		[current, answers, onGraded]
 	);
 
 	const goNext = useCallback(() => {
