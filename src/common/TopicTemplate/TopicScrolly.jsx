@@ -57,9 +57,15 @@ const TopicScrolly = ({
 				}
 			},
 			{
-				root,
-				threshold: [0.4, 0.6, 0.8],
-				rootMargin: '-25% 0px -35% 0px',
+				// Observe against the viewport (root:null), NOT the .scrolly element.
+				// The scenes scroll inside the page's own scroll container, so an
+				// element root that isn't that container never re-fires on scroll —
+				// the active scene (and the sticky stage) would freeze at its mount
+				// value. A thin band ~42% down the viewport selects the scene being
+				// read, so the stage now follows the scroll smoothly.
+				root: null,
+				threshold: 0,
+				rootMargin: '-40% 0px -55% 0px',
 			}
 		);
 		sceneRefs.current.forEach(node => {

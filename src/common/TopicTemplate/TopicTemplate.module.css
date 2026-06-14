@@ -26,9 +26,9 @@
 	position: sticky;
 	top: 0;
 	z-index: 5;
-	background: color-mix(in srgb, var(--color-bg-app) 86%, transparent);
-	backdrop-filter: blur(14px) saturate(1.05);
-	-webkit-backdrop-filter: blur(14px) saturate(1.05);
+	/* Solid paper, not a blurred glass bar: backdrop-filter repaints the whole
+	   strip every scroll frame (the jank) and is off-brand. */
+	background: var(--color-bg-app);
 	border-bottom: 1px solid var(--color-border-subtle);
 	padding: var(--space-md) clamp(var(--space-lg), 4vw, var(--space-3xl));
 }
@@ -104,12 +104,14 @@
 .hero {
 	max-width: 1280px;
 	margin: 0 auto;
-	padding: clamp(var(--space-2xl), 6vw, var(--space-4xl))
+	/* A slim title band, not a full-screen card — the visualization that follows
+	   is the hero, so the intro text gives way to it quickly. */
+	padding: clamp(var(--space-xl), 3.5vw, var(--space-3xl))
 		clamp(var(--space-xl), 6vw, var(--space-4xl))
-		clamp(var(--space-xl), 4vw, var(--space-3xl));
+		clamp(var(--space-lg), 2.5vw, var(--space-xl));
 	display: flex;
 	flex-direction: column;
-	gap: var(--space-lg);
+	gap: var(--space-md);
 }
 
 .eyebrow {
@@ -125,12 +127,12 @@
 .heroTitle {
 	margin: 0;
 	font-family: var(--font-family-display);
-	font-size: var(--font-size-display-2xl);
+	font-size: var(--font-size-display-lg);
 	font-weight: var(--font-weight-display);
 	line-height: var(--line-height-display);
 	letter-spacing: var(--tracking-display);
 	color: var(--color-text-primary);
-	max-width: 22ch;
+	max-width: 26ch;
 	text-wrap: balance;
 	/* Long/hyphenated titles (e.g. "All-Pairs Shortest Paths") wrap at word
 	   boundaries rather than overrunning the column. overflow-wrap (not the more
@@ -453,10 +455,6 @@
    Step the hero down to display-xl (floor ≈ 36px) so titles wrap cleanly at
    word boundaries. */
 @media (max-width: 540px) {
-	.heroTitle {
-		font-size: var(--font-size-display-xl);
-	}
-
 	.upNextLink {
 		font-size: var(--font-size-heading-lg);
 	}

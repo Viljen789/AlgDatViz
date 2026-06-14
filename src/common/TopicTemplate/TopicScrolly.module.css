@@ -9,8 +9,10 @@
 	padding: 0 clamp(var(--space-xl), 6vw, var(--space-4xl))
 		clamp(var(--space-2xl), 6vw, var(--space-4xl));
 	display: grid;
-	grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
-	gap: clamp(var(--space-2xl), 6vw, var(--space-4xl));
+	/* The visualization is the product. Give the stage hero proportion (~62%)
+	   and let the prose column recede beside it. */
+	grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr);
+	gap: clamp(var(--space-xl), 4vw, var(--space-3xl));
 	align-items: start;
 }
 
@@ -21,13 +23,16 @@
 
 .stageSticky {
 	position: sticky;
-	top: 88px;
+	top: 76px;
 	display: flex;
 	flex-direction: column;
 	align-items: center;
 	justify-content: center;
 	gap: var(--space-md);
-	height: min(72vh, 580px);
+	height: min(86vh, 760px);
+	/* Promote the pinned stage to its own compositor layer so scrolling the prose
+	   beside it doesn't repaint the visualization each frame. */
+	will-change: transform;
 }
 
 .stageFigure {
@@ -115,7 +120,8 @@
 .sceneTitle {
 	margin: 0;
 	font-family: var(--font-family-display);
-	font-size: var(--font-size-display-lg);
+	/* Smaller than the hero: the prose narrates, the visualization leads. */
+	font-size: var(--font-size-heading-lg);
 	font-weight: var(--font-weight-display);
 	line-height: var(--line-height-heading);
 	letter-spacing: var(--tracking-heading);
