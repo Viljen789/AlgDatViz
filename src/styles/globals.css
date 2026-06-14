@@ -19,6 +19,8 @@ body,
 	-webkit-font-smoothing: antialiased;
 	-moz-osx-font-smoothing: grayscale;
 	text-rendering: optimizeLegibility;
+	/* Inter character variants: open 4/6/9, single-story a — the tutor's tuning. */
+	font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
 }
 
 body {
@@ -235,21 +237,30 @@ samp {
 
 @keyframes pulse-hint {
 	0% {
-		box-shadow: 0 0 0 0 var(--color-info-wash);
+		box-shadow: 0 0 0 0 var(--brand-wash);
 		transform: scale(1);
 	}
 	70% {
-		box-shadow: 0 0 0 10px hsl(var(--topic-foundations-h) var(--topic-s) var(--topic-l) / 0);
+		box-shadow: 0 0 0 10px hsl(var(--brand-h) var(--brand-s) var(--brand-l) / 0);
 		transform: scale(1.02);
 	}
 	100% {
-		box-shadow: 0 0 0 0 hsl(var(--topic-foundations-h) var(--topic-s) var(--topic-l) / 0);
+		box-shadow: 0 0 0 0 hsl(var(--brand-h) var(--brand-s) var(--brand-l) / 0);
 		transform: scale(1);
 	}
 }
 
 .pulse-hint {
 	animation: pulse-hint 2s infinite;
+}
+
+/* Graph-paper substrate — opt-in on "working" surfaces (visualizers, code
+   blocks). Never behind prose; keep the reading room a clean page. */
+.gridPaper {
+	background-image:
+		linear-gradient(to right, var(--grid-line) 1px, transparent 1px),
+		linear-gradient(to bottom, var(--grid-line) 1px, transparent 1px);
+	background-size: var(--grid-pitch) var(--grid-pitch);
 }
 
 @media (prefers-reduced-motion: reduce) {

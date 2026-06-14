@@ -29,30 +29,30 @@
 	   greys feel intentional and warm-cool balanced rather than pure black.
 	   --------------------------------------------------------------------------- */
 
-	--color-bg-app: hsl(232 36% 5%); /* #07080f — app canvas (base) */
-	--color-bg-sunken: hsl(232 34% 4%); /* recessed wells, tracks */
-	--color-bg-sidebar: hsl(234 38% 6%); /* chrome / sidebar */
+	--color-bg-app: hsl(36 12% 9%); /* warm "dark paper" canvas */
+	--color-bg-sunken: hsl(36 12% 7%); /* recessed wells, tracks */
+	--color-bg-sidebar: hsl(36 12% 11%); /* chrome / sidebar */
 
 	/* Layered surfaces — each step ~+2% lightness as it comes toward the user */
-	--surface-0: hsl(232 34% 6%); /* flush with canvas */
-	--surface-1: hsl(231 32% 8%); /* default panel / card */
-	--surface-2: hsl(230 30% 11%); /* raised panel, popover */
-	--surface-3: hsl(229 29% 14%); /* topmost: menus, tooltips, modals */
-	--surface-input: hsl(232 32% 9%); /* form field wells */
-	--surface-hover: hsl(229 28% 13%); /* generic interactive hover */
+	--surface-0: hsl(36 12% 9%); /* flush with canvas */
+	--surface-1: hsl(36 11% 12%); /* default panel / card */
+	--surface-2: hsl(36 11% 14%); /* raised panel, popover */
+	--surface-3: hsl(36 11% 16%); /* topmost: menus, tooltips, modals */
+	--surface-input: hsl(36 11% 13%); /* form field wells */
+	--surface-hover: hsl(36 11% 15%); /* generic interactive hover */
 
 	/* Borders / hairlines — low-saturation, increasing presence */
-	--color-border: hsl(231 26% 17%);
-	--color-border-strong: hsl(230 30% 27%);
-	--color-border-subtle: hsl(232 24% 13%);
+	--color-border: hsl(36 8% 22%);
+	--color-border-strong: hsl(36 8% 34%);
+	--color-border-subtle: hsl(36 8% 18%);
 
 	/* ---------------------------------------------------------------------------
 	   2. TEXT — tuned for WCAG AA on the surfaces above
 	   --------------------------------------------------------------------------- */
-	--color-text-primary: hsl(228 35% 90%); /* headings / body, AAA on bg */
-	--color-text-secondary: hsl(229 18% 66%); /* supporting body, AA on bg */
-	--color-text-muted: hsl(230 16% 54%); /* labels / meta, AA on bg */
-	--color-text-dim: hsl(231 18% 36%); /* decorative / disabled hint */
+	--color-text-primary: hsl(38 24% 92%); /* warm ink, AAA on bg */
+	--color-text-secondary: hsl(36 14% 74%); /* supporting body, AA on bg */
+	--color-text-muted: hsl(36 10% 60%); /* labels / meta, AA on bg */
+	--color-text-dim: hsl(36 10% 48%); /* decorative / disabled hint */
 	--color-text-on-accent: hsl(232 40% 6%); /* text atop saturated accents */
 	--color-text-on-node: hsl(232 40% 6%);
 
@@ -180,7 +180,31 @@
 	   accent slots that the rest of the app references by name are re-pointed to
 	   harmonized hues so legacy components inherit the new palette for free.
 	   --------------------------------------------------------------------------- */
-	--color-accent-blue: hsl(var(--topic-foundations-h) var(--topic-s) var(--topic-l));
+	/* Brand chrome hues — DECOUPLED from the topic family so repointing the brand
+	   never recolors per-topic identity or the algorithm --state-* roles.
+	   (foundations 226 is ALSO --state-active; it must not move.) Indigo = "learn",
+	   amber = "review". Lightness knobs are overridden per theme. */
+	--brand-h: 245;
+	--brand-s: 72%;
+	--brand-l: 68%; /* dark default; [data-theme='light'] drops to 60% */
+	--brand: hsl(var(--brand-h) var(--brand-s) var(--brand-l));
+	--brand-ink: hsl(var(--brand-h) var(--brand-s) 80%); /* small brand text (dark) */
+	--brand-wash: hsl(var(--brand-h) var(--brand-s) var(--brand-l) / 0.16);
+
+	--review-h: 32;
+	--review-s: 90%;
+	--review-l: 58%; /* dark default; light drops to 45% */
+	--review-brand: hsl(var(--review-h) var(--review-s) var(--review-l));
+	--review-brand-ink: hsl(var(--review-h) var(--review-s) 70%);
+	--review-brand-wash: hsl(var(--review-h) var(--review-s) var(--review-l) / 0.16);
+
+	/* Graph-paper substrate — opt-in via .gridPaper on working surfaces only. */
+	--grid-line: hsl(36 8% 20% / 0.55);
+	--grid-pitch: 24px;
+
+	/* The chrome "blue" now resolves to the indigo brand; the per-topic foundations
+	   hue stays the algorithm "active" color (re-pinned on --state-active below). */
+	--color-accent-blue: var(--brand);
 	--color-accent-green: hsl(var(--topic-graphs-h) var(--topic-s) var(--topic-l));
 	--color-accent-orange: hsl(var(--topic-hashing-h) var(--topic-s) var(--topic-l));
 	--color-accent-purple: hsl(var(--topic-trees-h) var(--topic-s) var(--topic-l));
@@ -196,7 +220,9 @@
 	--color-accent-yellow-ink: hsl(var(--topic-master-h) var(--topic-s) var(--topic-l-ink));
 
 	/* Algorithm visualization "state" roles (kept stable — heavily referenced) */
-	--state-active: var(--color-accent-blue);
+	/* Keep the algorithm "active" color the foundations azure — NOT the indigo
+	   brand that --color-accent-blue now points to. */
+	--state-active: hsl(var(--topic-foundations-h) var(--topic-s) var(--topic-l));
 	--state-done: var(--color-accent-green);
 	--state-flight: var(--color-accent-orange);
 	--state-special: var(--color-accent-purple);
@@ -239,12 +265,12 @@
 	--color-bg-hover: var(--surface-hover);
 
 	/* Selection + interactive feedback tints (topic-neutral default = brand) */
-	--selection-color: hsl(var(--topic-foundations-h) var(--topic-s) var(--topic-l) / 0.25);
+	--selection-color: hsl(var(--brand-h) var(--brand-s) var(--brand-l) / 0.25);
 	--viz-hover-color: var(--color-accent-blue);
 
 	/* Visualizer node/edge palette */
 	--viz-node-fill: var(--surface-2);
-	--viz-node-stroke: var(--color-accent-blue);
+	--viz-node-stroke: hsl(var(--topic-foundations-h) var(--topic-s) var(--topic-l));
 	--viz-edge-color: var(--color-border-strong);
 	--viz-text-color: var(--color-text-primary);
 
@@ -256,8 +282,7 @@
 	   line-height and tracking. Large display gets tight tracking; body gets a
 	   generous line-height for readability by first-time students.
 	   --------------------------------------------------------------------------- */
-	--font-family-display: 'Bricolage Grotesque', 'Inter', -apple-system,
-		BlinkMacSystemFont, sans-serif;
+	--font-family-display: 'Newsreader', Georgia, 'Times New Roman', serif;
 	--font-family-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI',
 		sans-serif;
 	--font-family-mono: 'JetBrains Mono', 'Roboto Mono', ui-monospace, monospace;
@@ -288,7 +313,7 @@
 	--line-height-body: 1.65; /* generous, for running text */
 
 	/* Letter-spacing / tracking tokens */
-	--tracking-display: -0.03em; /* tighten big display */
+	--tracking-display: -0.01em; /* serif display wants near-zero, not grotesque-tight */
 	--tracking-heading: -0.015em;
 	--tracking-normal: 0;
 	--tracking-wide: 0.02em;
@@ -300,7 +325,7 @@
 	--font-weight-medium: 500;
 	--font-weight-semibold: 600;
 	--font-weight-bold: 700;
-	--font-weight-display: 800; /* Bricolage display headlines */
+	--font-weight-display: 600; /* Newsreader editorial display */
 
 	/* ---------------------------------------------------------------------------
 	   8. SPACING — 4px base. New --space-* names; legacy --spacing-* aliased.
@@ -326,10 +351,10 @@
 	/* ---------------------------------------------------------------------------
 	   9. RADII — new --radius-* names; legacy --border-radius-* aliased.
 	   --------------------------------------------------------------------------- */
-	--radius-sm: 4px;
-	--radius-md: 8px;
-	--radius-lg: 12px;
-	--radius-xl: 18px;
+	--radius-sm: 6px;
+	--radius-md: 10px;
+	--radius-lg: 14px; /* buttons, code blocks (Tutor xl) */
+	--radius-xl: 20px; /* cards, panels (Tutor 2xl) */
 	--radius-pill: 999px;
 
 	--border-radius-sm: var(--radius-sm);
@@ -370,10 +395,10 @@
 	--mask-ink: hsl(0 0% 0%); /* opaque base for mask-image gradients */
 
 	/* Topic-tinted accent glow — applied via --topic-accent where a page sets it */
-	--shadow-glow-accent: 0 0 0 1px hsl(var(--topic-foundations-h) var(--topic-s) var(--topic-l) / 0.25),
-		0 12px 40px hsl(var(--topic-foundations-h) var(--topic-s) var(--topic-l) / 0.18);
+	--shadow-glow-accent: 0 0 0 1px hsl(var(--brand-h) var(--brand-s) var(--brand-l) / 0.25),
+		0 12px 40px hsl(var(--brand-h) var(--brand-s) var(--brand-l) / 0.18);
 
-	--shadow-focus: 0 0 0 3px hsl(var(--topic-foundations-h) var(--topic-s) var(--topic-l) / 0.4);
+	--shadow-focus: 0 0 0 3px hsl(var(--brand-h) var(--brand-s) var(--brand-l) / 0.4);
 	--shadow-canvas-lamp: 0 24px 80px -36px hsl(var(--topic-foundations-h) var(--topic-s) var(--topic-l) / 0.22);
 	--shadow-card-hover: var(--shadow-3);
 
@@ -438,27 +463,36 @@
 
 	/* 1. SURFACES & ELEVATION — light canvas; raised surfaces brighten toward
 	   white and lean on shadow (not lightness steps) for elevation. */
-	--color-bg-app: hsl(232 28% 96%); /* warm-cool off-white canvas */
-	--color-bg-sunken: hsl(232 26% 92%); /* recessed wells, tracks */
-	--color-bg-sidebar: hsl(232 30% 98%); /* chrome / sidebar */
+	--color-bg-app: hsl(40 30% 96%); /* warm cream "paper" canvas */
+	--color-bg-sunken: hsl(40 26% 92%); /* recessed wells, tracks */
+	--color-bg-sidebar: hsl(40 28% 98%); /* chrome / sidebar */
 
-	--surface-0: hsl(232 28% 96%); /* flush with canvas */
-	--surface-1: hsl(0 0% 100%); /* default panel / card — clean white */
-	--surface-2: hsl(232 30% 99%); /* raised panel, popover */
-	--surface-3: hsl(0 0% 100%); /* topmost: menus, tooltips, modals */
-	--surface-input: hsl(232 24% 98%); /* form field wells */
-	--surface-hover: hsl(232 30% 94%); /* generic interactive hover */
+	--surface-0: hsl(40 30% 96%); /* flush with canvas */
+	--surface-1: hsl(40 40% 99%); /* default panel / card — warm paper-white */
+	--surface-2: hsl(40 35% 99.5%); /* raised panel, popover */
+	--surface-3: hsl(40 40% 100%); /* topmost: menus, tooltips, modals */
+	--surface-input: hsl(40 30% 98%); /* form field wells */
+	--surface-hover: hsl(40 28% 93%); /* generic interactive hover */
 
-	/* Borders / hairlines — darker than the surface, increasing presence */
-	--color-border: hsl(231 20% 84%);
-	--color-border-strong: hsl(230 18% 70%);
-	--color-border-subtle: hsl(232 22% 89%);
+	/* Borders / hairlines — warm ink, darker than the surface */
+	--color-border: hsl(40 18% 82%);
+	--color-border-strong: hsl(38 16% 64%);
+	--color-border-subtle: hsl(40 20% 88%);
+
+	/* Brand reads darker on paper; small brand text gets an AA ink. */
+	--brand-l: 60%;
+	--brand-ink: hsl(var(--brand-h) var(--brand-s) 42%);
+	--review-l: 45%;
+	--review-brand-ink: hsl(var(--review-h) var(--review-s) 34%);
+
+	/* Graph-paper hairline on cream. */
+	--grid-line: hsl(40 18% 82% / 0.5);
 
 	/* 2. TEXT — dark ink ramp, all AA+ on the light surfaces above */
-	--color-text-primary: hsl(231 38% 14%); /* ~13.8:1 on canvas */
-	--color-text-secondary: hsl(230 20% 34%); /* ~7.0:1 */
-	--color-text-muted: hsl(230 16% 42%); /* ~5.2:1 — AA body */
-	--color-text-dim: hsl(231 14% 52%); /* ~3.6:1 — large/decorative only */
+	--color-text-primary: hsl(30 18% 14%); /* warm ink, ~13:1 on cream */
+	--color-text-secondary: hsl(32 14% 30%); /* ~8:1 */
+	--color-text-muted: hsl(34 13% 38%); /* AA body on cream */
+	--color-text-dim: hsl(34 12% 50%); /* large/decorative only */
 	--color-text-on-accent: hsl(0 0% 100%); /* white text atop dark accents */
 	--color-text-on-node: hsl(0 0% 100%);
 
@@ -508,22 +542,27 @@
 	/* 6. ROLE ALIAS that hard-codes a lightness (others derive automatically) */
 	--color-secondary: hsl(var(--topic-foundations-h) var(--topic-s) 32%);
 
-	/* 10. ELEVATION / SHADOWS — much lighter; a soft neutral ink, low alpha. */
-	--shadow-color: hsl(232 30% 24% / 0.16);
+	/* 10. ELEVATION / SHADOWS — paper sits flat; depth is border + fill, not
+	   shadow. Collapse the ramp to hairlines and kill the dark-mode glow conceits. */
+	--shadow-color: hsl(30 18% 14% / 0.08);
 
-	--shadow-1: 0 1px 2px hsl(232 30% 24% / 0.08);
-	--shadow-2: 0 2px 4px hsl(232 30% 24% / 0.08),
-		0 4px 12px hsl(232 30% 24% / 0.07);
-	--shadow-3: 0 4px 8px hsl(232 30% 24% / 0.09),
-		0 12px 28px hsl(232 30% 24% / 0.1);
-	--shadow-4: 0 8px 16px hsl(232 30% 24% / 0.1),
-		0 24px 56px hsl(232 30% 24% / 0.14);
+	--shadow-1: none;
+	--shadow-2: 0 1px 2px hsl(30 18% 14% / 0.05);
+	--shadow-3: 0 1px 3px hsl(30 18% 14% / 0.06);
+	--shadow-4: 0 2px 10px hsl(30 18% 14% / 0.08);
+
+	/* Glow conceits flatten on paper. */
+	--shadow-glow: none;
+	--shadow-glow-accent: 0 0 0 1px var(--brand-wash);
+	--shadow-canvas-lamp: none;
+	--shadow-card-hover: var(--shadow-2);
+	--shadow-focus: 0 0 0 3px hsl(var(--brand-h) var(--brand-s) var(--brand-l) / 0.35);
 
 	/* 10b. THEME-AWARE LITERALS — invert the glass tint to a dark ink so the
 	   same color-mix(... var(--glass-tint) X%) hairlines/insets read on white;
 	   keep the scrim deep but lighten the backdrop dim for light context. */
-	--glass-tint: hsl(231 38% 14%); /* dark ink for highlights/hairlines */
-	--scrim-ink: hsl(232 35% 18%); /* slate ink — modal dim + soft shadows */
+	--glass-tint: hsl(30 18% 14%); /* warm ink for highlights/hairlines */
+	--scrim-ink: hsl(30 18% 16%); /* warm ink — modal dim + soft shadows */
 
 	/* Sidebar active nav label: neutral text in light (topic hues like gold/
 	   amber/teal/azure can't reach AA as small text on white). Identity still
