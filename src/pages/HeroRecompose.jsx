@@ -24,9 +24,12 @@ const BAR_OP = 0.5;
 const MORPH = 1.7;
 const HOLD = 1.4;
 
-const HeroRecompose = ({ className }) => {
+const HeroRecompose = ({ className, onState }) => {
 	const rootRef = useRef(null);
 	const svgRef = useRef(null);
+	// Keep the latest callback without re-running the GSAP setup effect.
+	const onStateRef = useRef(onState);
+	onStateRef.current = onState;
 
 	useLayoutEffect(() => {
 		const svg = svgRef.current;
@@ -55,11 +58,19 @@ const HeroRecompose = ({ className }) => {
 					autoAlpha: 0,
 				});
 				gsap.set(bars, { attr: { height: i => BARS[i].h, y: 0 }, autoAlpha: 0 });
-				gsap.set(lines, { autoAlpha: 0 });
+				gsap.set(lines, { autoAlpha: 0, strokeDashoffset: 1 });
 				gsap.set(halos, { autoAlpha: 0, scale: 1 });
 				gsap.set(svg, { '--wash-h': WASH_HUE.array });
 
-				const master = gsap.timeline();
+				// Opt the edges into draw-on ink (stroke-dasharray gated by .motion,
+				// so the reduced-motion / no-JS static tree keeps solid edges).
+				const emit = state => onStateRef.current?.(state);
+				svg.classList.add('motion');
+
+				// onStart names the opening state once the loop actually begins — on
+				// the next tick, after React's commit, so the figcaption refs are
+				// attached (a synchronous call at setup would race ahead of them).
+				const master = gsap.timeline({ onStart: () => emit('array') });
 
 				// Intro: gather into the array (plays once).
 				master.to(atoms, {
@@ -78,13 +89,21 @@ const HeroRecompose = ({ className }) => {
 				});
 				const hold = (d = HOLD) => loop.to({}, { duration: d });
 
-				const morphTo = state => {
+				// edgeMode decides how the pooled lines behave through a transition:
+				//   'draw'  → ink on, parent→child (only where that is literally true)
+				//   'undraw'→ un-ink as the structure collapses back to the array
+				//   else    → just retarget endpoints (bend a tree into a heap, or
+				//             jump to unrelated graph pairs) with no false "pointer" ink
+				const morphTo = (state, edgeMode) => {
 					loop.to(atoms, {
 						x: i => STATES[state].atoms[i].x,
 						y: i => STATES[state].atoms[i].y,
 						scale: i => STATES[state].atoms[i].scale,
 						duration: MORPH,
 						stagger: { each: 0.02, from: 'center' },
+						// Name the structure the instant it has FORMED (not on start —
+						// that would lead the morph by a full MORPH and lie for ~1.7s).
+						onComplete: () => emit(state),
 					});
 					loop.to(
 						lines,
@@ -100,6 +119,27 @@ const HeroRecompose = ({ className }) => {
 						},
 						'<'
 					);
+					if (edgeMode === 'draw') {
+						// The 13 tree pointers ink on. treeEdges are pushed root-first,
+						// so the default index stagger reads as growth from the root.
+						loop.fromTo(
+							lines,
+							{ strokeDashoffset: 1 },
+							{
+								strokeDashoffset: k => (edgeFrame(state, k).active ? 0 : 1),
+								duration: 0.7,
+								stagger: { each: 0.05 },
+								ease: 'power1.inOut',
+							},
+							'<0.2'
+						);
+					} else if (edgeMode === 'undraw') {
+						loop.to(
+							lines,
+							{ strokeDashoffset: 1, duration: MORPH * 0.7, ease: 'power1.in' },
+							'<'
+						);
+					}
 					const sb = STATES[state].bars;
 					loop.to(
 						bars,
@@ -141,15 +181,15 @@ const HeroRecompose = ({ className }) => {
 				};
 
 				hold(); // dwell on the array
-				morphTo('sorted');
+				morphTo('sorted'); // edges idle on both sides
 				hold();
-				morphTo('tree');
+				morphTo('tree', 'draw'); // ink the 13 pointers on, root → leaves
 				hold();
-				morphTo('heap');
+				morphTo('heap', 'bend'); // same pointers, just re-packed (no re-ink)
 				loop.add(beat(HEAPIFY_PATH, { step: 0.34, pop: 1.5 })); // heapify sift
-				morphTo('graph');
+				morphTo('graph', 'retarget'); // pooled lines retarget — no false "pointer" ink
 				loop.add(beat(BFS_ORDER, { step: 0.1, pop: 1.32 })); // BFS frontier
-				morphTo('array'); // collapse back — lands exactly on the start
+				morphTo('array', 'undraw'); // un-ink and collapse — lands exactly on the start
 
 				master.add(loop);
 
@@ -166,6 +206,7 @@ const HeroRecompose = ({ className }) => {
 				return () => {
 					io.disconnect();
 					document.removeEventListener('visibilitychange', onVisibility);
+					svg.classList.remove('motion');
 				};
 			});
 		}, svgRef);
@@ -201,6 +242,7 @@ const HeroRecompose = ({ className }) => {
 								key={k}
 								data-edge
 								className={styles.edge}
+								pathLength="1"
 								x1={f.x1}
 								y1={f.y1}
 								x2={f.x2}

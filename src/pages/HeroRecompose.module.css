@@ -23,6 +23,14 @@
 	stroke-linecap: round;
 }
 
+/* Draw-on ink for the tree pointers — gated behind the JS-added .motion class so
+   the reduced-motion / no-JS static frame keeps solid, legible edges. pathLength
+   ="1" normalises every line to length 1, so all lines ink in equal wall-clock
+   time; GSAP drives stroke-dashoffset (1 = un-drawn, 0 = fully inked). */
+.motion .edge {
+	stroke-dasharray: 1;
+}
+
 .bar {
 	fill: var(--color-text-muted);
 	/* Hidden by default so the reduced-motion / no-JS resting frame is a clean
