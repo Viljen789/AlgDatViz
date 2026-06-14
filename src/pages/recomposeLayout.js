@@ -114,6 +114,24 @@ export const WASH_HUE = {
 	graph: 162, // graphs teal
 };
 
+// The legend copy for the live figcaption — one short, STRUCTURALLY-TRUE line
+// per state. Deliberately restrained to claims the rendered pixels satisfy:
+// topology and index arithmetic, never value-ordering. The heap/tree here are
+// index-PACKED (treeLayout), not value-ordered — atom 0 (value 6) sits above
+// child atom 1 (value 10) — so captioning "max-heap / parent ≥ children" would
+// be a visible lie. We say only what is true on screen.
+export const PHASES = {
+	array: { name: 'Array', note: '14 values, one order' },
+	sorted: { name: 'Sorted run', note: 'rearranged by value' },
+	tree: { name: 'Binary tree', note: 'children of i at 2i+1, 2i+2' },
+	heap: { name: 'Heap', note: 'same array, parent/child by index' },
+	graph: { name: 'Graph', note: 'edges, no inherent root' },
+};
+
+// The conservation thesis in words — the <960px fallback, where the live
+// instrument is hidden and only the reading column renders.
+export const THESIS_SENTENCE = 'The same fourteen values, read five ways.';
+
 /**
  * edgeFrame — for a state and a line-pool index, the endpoint coords + whether
  * the line is active (drawn). Lines beyond the state's edge count park at the
