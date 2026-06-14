@@ -1,15 +1,21 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useLayoutEffect, useMemo, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { ArrowRight, Check, Lock, RotateCcw } from 'lucide-react';
+import { ArrowRight, Check, Clock, Lock, RotateCcw } from 'lucide-react';
+import gsap from 'gsap';
+import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import {
 	BUILT_TOPICS,
 	CURRICULUM,
 	FIRST_TOPIC,
 	TOPIC_BY_ID,
 } from '../data/curriculum.js';
+import { REVIEW_BANK } from '../components/Review/reviewBank.js';
 import useProgress from '../hooks/useProgress.js';
-import useReducedMotion from '../hooks/useReducedMotion.js';
+import useSrs from '../hooks/useSrs.js';
+import HeroRecompose from './HeroRecompose.jsx';
 import styles from './HomePage.module.css';
+
+gsap.registerPlugin(ScrollTrigger);
 
 const PreviewBars = () => (
 	<svg
@@ -129,14 +135,22 @@ const PREVIEW_BY_ID = {
 
 const HomePage = () => {
 	const navigate = useNavigate();
-	const reducedMotion = useReducedMotion();
 	const { lastVisited, markVisited, reset, isCompleted, isVisited, overall } =
 		useProgress();
-	const [pathIndex, setPathIndex] = useState(-1);
+	const { plan: srsPlan } = useSrs();
+	const pageRef = useRef(null);
 	const nodeRefs = useRef([]);
 
 	const allComplete = overall.allComplete;
 	const started = overall.visited > 0;
+
+	// Spaced-repetition: how many cards are due (or newly eligible) right now.
+	const isNewEligible = useCallback(entry => isVisited(entry.topicId), [isVisited]);
+	const duePlan = useMemo(
+		() => srsPlan(REVIEW_BANK, { newCap: 8, isNewEligible }),
+		[srsPlan, isNewEligible]
+	);
+	const dueTotal = duePlan.dueCount + duePlan.freshCount;
 
 	const lastTopic = lastVisited ? TOPIC_BY_ID[lastVisited] : null;
 	const nextTopic = useMemo(() => {
@@ -178,23 +192,175 @@ const HomePage = () => {
 		navigate(topic.to);
 	};
 
-	useEffect(() => {
-		if (reducedMotion) return undefined;
-		const observer = new IntersectionObserver(
-			entries => {
-				entries.forEach(entry => {
-					if (!entry.isIntersecting) return;
-					const idx = Number(entry.target.dataset.idx);
-					setPathIndex(prev => (idx > prev ? idx : prev));
-				});
-			},
-			{ rootMargin: '-30% 0px -45% 0px', threshold: 0 }
-		);
-		nodeRefs.current.forEach(node => {
-			if (node) observer.observe(node);
-		});
-		return () => observer.disconnect();
-	}, [reducedMotion]);
+	// Scroll choreography. The whole sequence is gated behind
+	// `prefers-reduced-motion: no-preference`, so reduced-motion (and no-JS)
+	// users get the fully drawn rail and visible nodes from the CSS defaults —
+	// nothing here strips a lesson, it only adds flow on top of a static page.
+	useLayoutEffect(() => {
+		const pageEl = pageRef.current;
+		if (!pageEl) return undefined;
+
+		const ctx = gsap.context(() => {
+			const mm = gsap.matchMedia();
+			mm.add('(prefers-reduced-motion: no-preference)', () => {
+				const q = sel => pageEl.querySelector(sel);
+
+				// ---- Hero: a short, confident staggered entrance ----
+				const heroTl = gsap.timeline({ defaults: { ease: 'power3.out' } });
+				const lampEl = q('[data-hero-lamp]');
+				const eyebrowEl = q('[data-hero-eyebrow]');
+				const titleEl = q('[data-hero-title]');
+				const subEl = q('[data-hero-sub]');
+				const actionEls = pageEl.querySelectorAll('[data-hero-actions] > *');
+				const progressEl = q('[data-hero-progress]');
+
+				if (lampEl)
+					heroTl.from(
+						lampEl,
+						{ autoAlpha: 0, scale: 1.08, duration: 1.4, ease: 'power2.out' },
+						0
+					);
+				if (eyebrowEl)
+					heroTl.from(eyebrowEl, { y: 14, opacity: 0, duration: 0.55 }, 0.1);
+				if (titleEl)
+					heroTl.from(
+						titleEl,
+						{ yPercent: 100, opacity: 0, duration: 0.9 },
+						0.16
+					);
+				if (subEl)
+					heroTl.from(subEl, { y: 18, opacity: 0, duration: 0.7 }, 0.34);
+				if (actionEls.length)
+					heroTl.from(
+						actionEls,
+						{ y: 14, opacity: 0, duration: 0.6, stagger: 0.09 },
+						0.44
+					);
+				if (progressEl)
+					heroTl.from(progressEl, { y: 12, opacity: 0, duration: 0.6 }, 0.54);
+				const recomposeEl = q('[data-hero-recompose]');
+				if (recomposeEl)
+					heroTl.from(
+						recomposeEl,
+						{ autoAlpha: 0, scale: 0.985, duration: 1.1, ease: 'power2.out' },
+						0.2
+					);
+
+				// ---- Hero lamp drifts down a touch as you scroll past it ----
+				const heroEl = q('[data-hero]');
+				if (lampEl && heroEl)
+					gsap.to(lampEl, {
+						yPercent: 16,
+						ease: 'none',
+						scrollTrigger: {
+							trigger: heroEl,
+							scroller: pageEl,
+							start: 'top top',
+							end: 'bottom top',
+							scrub: true,
+						},
+					});
+
+				// ---- The spine draws itself; a glow pool follows the reader ----
+				const railEl = q('[data-rail]');
+				const fillEl = q('[data-rail-fill]');
+				const headEl = q('[data-rail-head]');
+				const glowEl = q('[data-rail-glow]');
+				const spineEl = q('[data-spine]');
+
+				if (railEl && fillEl && spineEl) {
+					gsap.set([headEl, glowEl].filter(Boolean), { opacity: 1 });
+					const railTl = gsap.timeline({
+						scrollTrigger: {
+							trigger: spineEl,
+							scroller: pageEl,
+							start: 'top 72%',
+							end: 'bottom 60%',
+							scrub: 0.6,
+						},
+					});
+					railTl.fromTo(fillEl, { scaleY: 0 }, { scaleY: 1, ease: 'none' }, 0);
+					if (headEl)
+						railTl.fromTo(
+							headEl,
+							{ y: 0 },
+							{ y: () => railEl.offsetHeight, ease: 'none' },
+							0
+						);
+					if (glowEl)
+						railTl.fromTo(
+							glowEl,
+							{ y: () => -spineEl.offsetHeight * 0.1 },
+							{ y: () => spineEl.offsetHeight * 0.9, ease: 'none' },
+							0
+						);
+				}
+
+				// ---- Each station rises and ignites as the line reaches it ----
+				const nodes = gsap.utils.toArray('[data-node]');
+				if (nodes.length) {
+					gsap.set(nodes, { opacity: 0, y: 30 });
+					const revealed = new WeakSet();
+					ScrollTrigger.batch(nodes, {
+						scroller: pageEl,
+						start: 'top 90%',
+						onEnter: batch => {
+							const fresh = batch.filter(n => !revealed.has(n));
+							if (!fresh.length) return;
+							fresh.forEach(n => revealed.add(n));
+							gsap.to(fresh, {
+								opacity: 1,
+								y: 0,
+								duration: 0.8,
+								ease: 'power3.out',
+								stagger: 0.12,
+								overwrite: true,
+							});
+							fresh.forEach((node, i) => {
+								const dot = node.querySelector('[data-dot]');
+								const spark = node.querySelector('[data-spark]');
+								if (dot)
+									gsap.fromTo(
+										dot,
+										{ scale: 0.68 },
+										{
+											scale: 1,
+											duration: 0.7,
+											ease: 'power3.out',
+											delay: i * 0.12,
+										}
+									);
+								if (spark)
+									gsap.fromTo(
+										spark,
+										{ scale: 0.3, opacity: 0.85 },
+										{
+											scale: 2.6,
+											opacity: 0,
+											duration: 1,
+											ease: 'power2.out',
+											delay: i * 0.12,
+										}
+									);
+							});
+						},
+					});
+				}
+			});
+		}, pageEl);
+
+		// Positions depend on web-font metrics and the route mount transition;
+		// recompute once both have settled.
+		const raf = requestAnimationFrame(() => ScrollTrigger.refresh());
+		if (document.fonts && document.fonts.ready) {
+			document.fonts.ready.then(() => ScrollTrigger.refresh());
+		}
+
+		return () => {
+			cancelAnimationFrame(raf);
+			ctx.revert();
+		};
+	}, []);
 
 	const onKeyNavigate = (event, idx) => {
 		if (event.key === 'ArrowDown') {
@@ -209,21 +375,30 @@ const HomePage = () => {
 	};
 
 	return (
-		<div className={styles.page}>
+		<div className={styles.page} ref={pageRef}>
 			<section
 				className={styles.hero}
 				aria-labelledby="home-hero-title"
+				data-hero
 			>
-				<div className={styles.lamp} aria-hidden="true" />
+				<div className={styles.lamp} aria-hidden="true" data-hero-lamp />
 				<div className={styles.heroInner}>
-					<p className={styles.eyebrow}>
+					<p className={styles.eyebrow} data-hero-eyebrow>
 						AlgDatViz · TDT4120
 					</p>
-					<h1 id="home-hero-title" className={styles.heroTitle}>
-						{heroState.title}
-					</h1>
-					<p className={styles.heroSubtitle}>{heroState.subtitle}</p>
-					<div className={styles.heroActions}>
+					<span className={styles.heroTitleMask}>
+						<h1
+							id="home-hero-title"
+							className={styles.heroTitle}
+							data-hero-title
+						>
+							{heroState.title}
+						</h1>
+					</span>
+					<p className={styles.heroSubtitle} data-hero-sub>
+						{heroState.subtitle}
+					</p>
+					<div className={styles.heroActions} data-hero-actions>
 						<button
 							type="button"
 							className={styles.primaryCta}
@@ -249,6 +424,7 @@ const HomePage = () => {
 							className={styles.heroProgress}
 							role="group"
 							aria-label={`Overall progress: ${overall.completed} of ${overall.total} topics completed`}
+							data-hero-progress
 						>
 							<div
 								className={styles.heroProgressTrack}
@@ -269,157 +445,175 @@ const HomePage = () => {
 							</p>
 						</div>
 					)}
+					{started && dueTotal > 0 && (
+						<Link
+							to="/review"
+							className={styles.heroReview}
+							aria-label={`Review ${dueTotal} due — spaced retrieval`}
+						>
+							<Clock size={14} strokeWidth={2.2} aria-hidden="true" />
+							<span>
+								Review <strong>{dueTotal}</strong> due
+							</span>
+							<ArrowRight size={13} strokeWidth={2} aria-hidden="true" />
+						</Link>
+					)}
 				</div>
+				<HeroRecompose className={styles.heroRecompose} />
 			</section>
 
-			<section
-				className={styles.pathSection}
-				aria-labelledby="path-heading"
-			>
+			<section className={styles.pathSection} aria-labelledby="path-heading">
 				<header className={styles.pathHeader}>
 					<p className={styles.label}>The path</p>
 					<h2 id="path-heading" className={styles.pathHeading}>
 						The full curriculum, in the order it teaches itself.
 					</h2>
 					<p className={styles.pathSub}>
-						Every topic in the TDT4120 syllabus, end to end — from arrays
-						and complexity through to NP-completeness.
+						Every topic in the TDT4120 syllabus, end to end — from arrays and
+						complexity through to NP-completeness.
 					</p>
 				</header>
 
-				<ol className={styles.spine} aria-label="Learning path">
-					{CURRICULUM.map((topic, idx) => {
-						const reached = idx <= pathIndex || reducedMotion;
+				<div className={styles.spineWrap} data-spine>
+					<div className={styles.glow} aria-hidden="true" data-rail-glow />
+					<div className={styles.rail} aria-hidden="true" data-rail>
+						<span className={styles.railFill} data-rail-fill />
+						<span className={styles.railHead} data-rail-head />
+					</div>
 
-						// Coming-soon: a clearly-labelled, non-navigable, muted node.
-						if (topic.status === 'soon') {
+					<ol className={styles.spine} aria-label="Learning path">
+						{CURRICULUM.map((topic, idx) => {
+							// Coming-soon: a clearly-labelled, non-navigable, muted node.
+							if (topic.status === 'soon') {
+								return (
+									<li
+										key={topic.id}
+										data-idx={idx}
+										data-node
+										ref={node => {
+											nodeRefs.current[idx] = node;
+										}}
+										tabIndex={-1}
+										className={`${styles.node} ${styles.nodeSoon}`}
+										style={{ '--accent': topic.accent }}
+									>
+										<div className={styles.nodeMarker} aria-hidden="true">
+											<span className={styles.nodeDot} data-dot>
+												<span className={styles.nodeDotInner} />
+											</span>
+										</div>
+										<div
+											className={styles.nodeBody}
+											aria-label={`${topic.name} — coming soon`}
+										>
+											<div className={styles.nodeHead}>
+												<span className={styles.nodeNumber}>
+													{topic.number}
+												</span>
+												<span className={styles.nodeSoonBadge}>
+													<Lock
+														size={11}
+														strokeWidth={2.4}
+														aria-hidden="true"
+													/>
+													Coming soon
+												</span>
+											</div>
+											<h3 className={styles.nodeName}>{topic.name}</h3>
+											<p className={styles.nodeQuote}>{topic.pullQuote}</p>
+											<div className={styles.nodeFoot}>
+												<span className={styles.nodeComplexity}>
+													{topic.complexity}
+												</span>
+											</div>
+										</div>
+									</li>
+								);
+							}
+
+							const completed = isCompleted(topic.id);
+							const visited = !completed && isVisited(topic.id);
+							const isNext = !completed && topic.id === nextTopic?.id;
+							const Preview = PREVIEW_BY_ID[topic.id];
+							const statusText = completed
+								? 'Completed'
+								: isNext
+									? 'Next up'
+									: visited
+										? 'In progress'
+										: '';
 							return (
 								<li
 									key={topic.id}
 									data-idx={idx}
+									data-node
 									ref={node => {
 										nodeRefs.current[idx] = node;
 									}}
 									tabIndex={-1}
-									className={`${styles.node} ${styles.nodeSoon} ${
-										reached ? styles.nodeReached : ''
+									className={`${styles.node} ${
+										completed ? styles.nodeComplete : ''
+									} ${visited ? styles.nodeVisited : ''} ${
+										isNext ? styles.nodeNext : ''
 									}`}
-									style={{ '--accent': topic.accent }}
+									style={{
+										'--accent': topic.accent,
+										'--accent-contrast': `var(--topic-${topic.id}-contrast)`,
+									}}
 								>
 									<div className={styles.nodeMarker} aria-hidden="true">
-										<span className={styles.nodeDot} />
+										<span className={styles.nodeSpark} data-spark />
+										<span className={styles.nodeDot} data-dot>
+											{completed ? (
+												<Check size={11} strokeWidth={3.2} />
+											) : (
+												<span className={styles.nodeDotInner} />
+											)}
+										</span>
+										{isNext && <span className={styles.nodeRing} />}
 									</div>
-									<div
+
+									<button
+										type="button"
 										className={styles.nodeBody}
-										aria-label={`${topic.name} — coming soon`}
+										onClick={() => visit(topic)}
+										onKeyDown={event => onKeyNavigate(event, idx)}
+										aria-describedby={`node-quote-${topic.id}`}
 									>
 										<div className={styles.nodeHead}>
-											<span className={styles.nodeNumber}>
-												{topic.number}
-											</span>
-											<span className={styles.nodeSoonBadge}>
-												<Lock
-													size={11}
-													strokeWidth={2.4}
-													aria-hidden="true"
-												/>
-												Coming soon
-											</span>
+											<span className={styles.nodeNumber}>{topic.number}</span>
+											{statusText && (
+												<span className={styles.nodeStatus}>{statusText}</span>
+											)}
 										</div>
 										<h3 className={styles.nodeName}>{topic.name}</h3>
-										<p className={styles.nodeQuote}>{topic.pullQuote}</p>
+										<p
+											id={`node-quote-${topic.id}`}
+											className={styles.nodeQuote}
+										>
+											{topic.pullQuote}
+										</p>
 										<div className={styles.nodeFoot}>
 											<span className={styles.nodeComplexity}>
 												{topic.complexity}
 											</span>
+											<span className={styles.nodeArrow} aria-hidden="true">
+												Open
+												<ArrowRight size={13} strokeWidth={2} />
+											</span>
 										</div>
-									</div>
+									</button>
+
+									{Preview && (
+										<div className={styles.nodePreview} aria-hidden="true">
+											<Preview />
+										</div>
+									)}
 								</li>
 							);
-						}
-
-						const completed = isCompleted(topic.id);
-						const visited = !completed && isVisited(topic.id);
-						const isNext = !completed && topic.id === nextTopic?.id;
-						const Preview = PREVIEW_BY_ID[topic.id];
-						const statusText = completed
-							? 'Completed'
-							: isNext
-								? 'Next up'
-								: visited
-									? 'In progress'
-									: '';
-						return (
-							<li
-								key={topic.id}
-								data-idx={idx}
-								ref={node => {
-									nodeRefs.current[idx] = node;
-								}}
-								tabIndex={-1}
-								className={`${styles.node} ${reached ? styles.nodeReached : ''} ${
-									completed ? styles.nodeComplete : ''
-								} ${visited ? styles.nodeVisited : ''} ${
-									isNext ? styles.nodeNext : ''
-								}`}
-								style={{
-									'--accent': topic.accent,
-									'--accent-contrast': `var(--topic-${topic.id}-contrast)`,
-								}}
-							>
-								<div className={styles.nodeMarker} aria-hidden="true">
-									<span className={styles.nodeDot}>
-										{completed && (
-											<Check size={11} strokeWidth={3.2} />
-										)}
-									</span>
-									{isNext && <span className={styles.nodeRing} />}
-								</div>
-
-								<button
-									type="button"
-									className={styles.nodeBody}
-									onClick={() => visit(topic)}
-									onKeyDown={event => onKeyNavigate(event, idx)}
-									aria-describedby={`node-quote-${topic.id}`}
-								>
-									<div className={styles.nodeHead}>
-										<span className={styles.nodeNumber}>
-											{topic.number}
-										</span>
-										{statusText && (
-											<span className={styles.nodeStatus}>
-												{statusText}
-											</span>
-										)}
-									</div>
-									<h3 className={styles.nodeName}>{topic.name}</h3>
-									<p
-										id={`node-quote-${topic.id}`}
-										className={styles.nodeQuote}
-									>
-										{topic.pullQuote}
-									</p>
-									<div className={styles.nodeFoot}>
-										<span className={styles.nodeComplexity}>
-											{topic.complexity}
-										</span>
-										<span className={styles.nodeArrow} aria-hidden="true">
-											Open
-											<ArrowRight size={13} strokeWidth={2} />
-										</span>
-									</div>
-								</button>
-
-								{Preview && (
-									<div className={styles.nodePreview} aria-hidden="true">
-										<Preview />
-									</div>
-								)}
-							</li>
-						);
-					})}
-				</ol>
+						})}
+					</ol>
+				</div>
 
 				<footer className={styles.pathFooter}>
 					<p>

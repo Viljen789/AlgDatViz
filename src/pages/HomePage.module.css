@@ -52,6 +52,66 @@
 	gap: var(--space-lg);
 }
 
+/* At desktop widths the hero becomes two columns: the reading column (title,
+   CTA, progress) and the live "Recompose" instrument. Below 960px the
+   instrument is hidden (title legibility wins) and the hero stays single-column. */
+@media (min-width: 960px) {
+	.hero {
+		display: grid;
+		grid-template-columns: minmax(0, 58ch) 1fr;
+		align-items: center;
+		gap: clamp(32px, 5vw, 88px);
+	}
+}
+
+.heroRecompose {
+	display: none;
+}
+
+@media (min-width: 960px) {
+	.heroRecompose {
+		display: block;
+		width: 100%;
+		max-width: 560px;
+		aspect-ratio: 800 / 520;
+		justify-self: center;
+		align-self: center;
+	}
+}
+
+/* Spaced-repetition entry point — wears the amber "review" accent. */
+.heroReview {
+	display: inline-flex;
+	align-items: center;
+	gap: var(--space-sm);
+	align-self: flex-start;
+	margin-top: var(--space-2xs);
+	padding: var(--space-sm) var(--space-md);
+	border-radius: var(--radius-pill);
+	background: var(--review-brand-wash);
+	border: 1px solid color-mix(in srgb, var(--review-brand) 36%, transparent);
+	color: var(--review-brand-ink);
+	font-family: var(--font-family-sans);
+	font-size: var(--font-size-label);
+	font-weight: var(--font-weight-medium);
+	text-decoration: none;
+	transition: background-color var(--transition), border-color var(--transition);
+}
+
+.heroReview:hover {
+	background: color-mix(in srgb, var(--review-brand) 18%, transparent);
+	border-color: color-mix(in srgb, var(--review-brand) 50%, transparent);
+}
+
+.heroReview:focus-visible {
+	outline: none;
+	box-shadow: var(--shadow-focus);
+}
+
+.heroReview strong {
+	font-weight: var(--font-weight-bold);
+}
+
 .eyebrow {
 	margin: 0;
 	font-family: var(--font-family-mono);
@@ -60,6 +120,14 @@
 	letter-spacing: var(--tracking-caps);
 	text-transform: uppercase;
 	color: var(--color-text-muted);
+}
+
+.heroTitleMask {
+	display: block;
+	overflow: hidden;
+	/* Give descenders (g, y, j) room so the clip doesn't shave them. */
+	padding-bottom: 0.1em;
+	margin-bottom: -0.1em;
 }
 
 .heroTitle {
@@ -195,6 +263,7 @@
 	margin: 0;
 	font-family: var(--font-family-mono);
 	font-size: var(--font-size-caption);
+	font-variant-numeric: tabular-nums;
 	color: var(--color-text-muted);
 	letter-spacing: var(--tracking-wide);
 }
@@ -246,6 +315,99 @@
 
 /* ---------- Spine ---------- */
 
+.spineWrap {
+	position: relative;
+	isolation: isolate;
+}
+
+/* One travelling pool of light — the desk lamp, made literal, following the
+   reader down the path. Driven by GSAP on scroll; invisible until then. */
+.glow {
+	position: absolute;
+	z-index: 0;
+	top: 0;
+	left: -160px;
+	width: clamp(380px, 42vw, 540px);
+	height: clamp(380px, 42vw, 540px);
+	border-radius: 50%;
+	background: radial-gradient(
+		circle at center,
+		hsl(var(--brand-h) var(--brand-s) var(--brand-l) / 0.14) 0%,
+		hsl(var(--brand-h) var(--brand-s) var(--brand-l) / 0.05) 42%,
+		transparent 70%
+	);
+	opacity: 0;
+	pointer-events: none;
+	will-change: transform;
+}
+
+/* The faint, unlit filament — always present (the no-JS / reduced-motion rail). */
+.rail {
+	position: absolute;
+	z-index: 1;
+	left: 19px;
+	top: 22px;
+	bottom: 22px;
+	width: 2px;
+	border-radius: var(--radius-pill);
+	background: linear-gradient(
+		180deg,
+		transparent 0%,
+		var(--color-border) 5%,
+		var(--color-border) 95%,
+		transparent 100%
+	);
+	pointer-events: none;
+}
+
+/* The lit portion, drawn from the top down as you scroll (scrubbed scaleY). */
+.railFill {
+	position: absolute;
+	inset: 0;
+	transform-origin: top center;
+	transform: scaleY(1);
+	border-radius: inherit;
+	background: linear-gradient(
+		180deg,
+		hsl(var(--brand-h) var(--brand-s) var(--brand-l) / 0.7) 0%,
+		hsl(var(--brand-h) var(--brand-s) var(--brand-l)) 100%
+	);
+	will-change: transform;
+}
+
+/* The glowing comet head riding the front of the draw. */
+.railHead {
+	position: absolute;
+	top: -5px;
+	left: 50%;
+	width: 10px;
+	height: 10px;
+	margin-left: -5px;
+	border-radius: 50%;
+	background: hsl(var(--brand-h) var(--brand-s) var(--brand-l));
+	opacity: 0;
+	will-change: transform;
+}
+
+/* Dark keeps the neon bloom; light draws indigo ink on paper with a soft ring. */
+:global([data-theme='dark']) .railFill {
+	box-shadow: 0 0 12px hsl(var(--brand-h) var(--brand-s) var(--brand-l) / 0.55);
+}
+:global([data-theme='dark']) .railHead {
+	box-shadow:
+		0 0 8px 2px hsl(var(--brand-h) var(--brand-s) var(--brand-l) / 0.9),
+		0 0 20px 7px hsl(var(--brand-h) var(--brand-s) var(--brand-l) / 0.45);
+}
+:global([data-theme='light']) .railHead {
+	box-shadow: 0 0 0 4px hsl(var(--brand-h) var(--brand-s) var(--brand-l) / 0.16);
+}
+:global([data-theme='dark']) .nodeSpark {
+	mix-blend-mode: screen;
+}
+:global([data-theme='light']) .lamp {
+	opacity: 0.5;
+}
+
 .spine {
 	list-style: none;
 	margin: 0;
@@ -253,23 +415,7 @@
 	display: flex;
 	flex-direction: column;
 	position: relative;
-}
-
-.spine::before {
-	content: '';
-	position: absolute;
-	left: 19px;
-	top: 22px;
-	bottom: 22px;
-	width: 1px;
-	background: linear-gradient(
-		180deg,
-		transparent 0%,
-		var(--color-border) 6%,
-		var(--color-border) 94%,
-		transparent 100%
-	);
-	pointer-events: none;
+	z-index: 2;
 }
 
 .node {
@@ -279,24 +425,6 @@
 	gap: clamp(16px, 2.5vw, 32px);
 	align-items: stretch;
 	padding: clamp(20px, 2.6vw, 32px) 0;
-	opacity: 0;
-	transform: translateY(12px);
-	transition:
-		opacity 600ms var(--ease-quiet),
-		transform 600ms var(--ease-quiet);
-}
-
-.nodeReached {
-	opacity: 1;
-	transform: translateY(0);
-}
-
-@media (prefers-reduced-motion: reduce) {
-	.node {
-		opacity: 1;
-		transform: none;
-		transition: none;
-	}
 }
 
 .node + .node {
@@ -327,6 +455,36 @@
 		border-color var(--duration-step) var(--ease-quiet),
 		box-shadow var(--duration-step) var(--ease-quiet);
 	z-index: 1;
+}
+
+/* A small core inside the station dot — lights to the topic hue once the
+   topic is reached, idle grey otherwise. */
+.nodeDotInner {
+	width: 5px;
+	height: 5px;
+	border-radius: 50%;
+	background: var(--color-border-strong);
+	transition: background var(--duration-step) var(--ease-quiet);
+}
+
+.nodeVisited .nodeDotInner,
+.nodeNext .nodeDotInner {
+	background: var(--accent);
+}
+
+/* One-shot ignition ping, fired by GSAP as the drawing line reaches a node. */
+.nodeSpark {
+	position: absolute;
+	top: 18px;
+	left: 11px;
+	width: 18px;
+	height: 18px;
+	border-radius: 50%;
+	background: radial-gradient(circle, var(--accent) 0%, transparent 70%);
+	transform: scale(0.3);
+	opacity: 0;
+	pointer-events: none;
+	z-index: 0;
 }
 
 .nodeVisited .nodeDot {
@@ -501,7 +659,7 @@
 	margin: 0;
 	font-family: var(--font-family-display);
 	font-size: var(--font-size-heading-lg);
-	font-weight: var(--font-weight-bold);
+	font-weight: var(--font-weight-semibold);
 	line-height: var(--line-height-heading);
 	letter-spacing: var(--tracking-heading);
 	color: var(--color-text-primary);
@@ -526,11 +684,12 @@
 .nodeComplexity {
 	font-family: var(--font-family-mono);
 	font-size: var(--font-size-label);
+	font-variant-numeric: tabular-nums;
 	color: var(--color-text-secondary);
 	padding: 3px 9px;
-	border: 1px solid var(--color-border);
+	border: 1px solid color-mix(in srgb, var(--accent) 26%, transparent);
 	border-radius: var(--radius-sm);
-	background: var(--color-bg-sunken);
+	background: color-mix(in srgb, var(--accent) 12%, transparent);
 }
 
 .nodeArrow {
@@ -618,8 +777,12 @@
 		grid-template-columns: 32px 1fr;
 	}
 
-	.spine::before {
+	.rail {
 		left: 15px;
+	}
+
+	.nodeSpark {
+		left: 7px;
 	}
 
 	.nodeMarker {
