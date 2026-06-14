@@ -111,6 +111,14 @@ const MstCompare = ({ onUserInteract }) => {
 
 	return (
 		<div className={styles.shell} ref={playerRef}>
+			{/* Announce each synchronized step to assistive tech (compare mode has no
+			    FrameTrace of its own). */}
+			<p className={styles.srLive} aria-live="polite">
+				{`Step ${currentStep + 1} of ${totalSteps}. Kruskal: ${
+					leftFrame?.description || leftFrame?.title || ''
+				}. Prim: ${rightFrame?.description || rightFrame?.title || ''}.`}
+			</p>
+
 			<div className={styles.twoUp}>
 				<ComparePane
 					title="Kruskal"
