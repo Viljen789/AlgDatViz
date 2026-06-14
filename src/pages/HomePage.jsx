@@ -15,6 +15,7 @@ import useProgress from '../hooks/useProgress.js';
 import useSrs from '../hooks/useSrs.js';
 import useActivity from '../hooks/useActivity.js';
 import HeroRecompose from './HeroRecompose.jsx';
+import { PHASES, THESIS_SENTENCE, WASH_HUE } from './recomposeLayout.js';
 import styles from './HomePage.module.css';
 
 gsap.registerPlugin(ScrollTrigger);
@@ -172,6 +173,35 @@ const HomePage = () => {
 	const { todayCount, currentStreak, daysUntilExam } = useActivity();
 	const pageRef = useRef(null);
 	const nodeRefs = useRef([]);
+	// The live figure legend is updated imperatively (5× per loop) to avoid a
+	// React re-render on every morph boundary.
+	const figureRef = useRef(null);
+	const figureNameRef = useRef(null);
+	const figureNoteRef = useRef(null);
+	const flipTimer = useRef(null);
+
+	// HeroRecompose calls this at each morph completion: swap the structure name
+	// and its one defining fact, retint the "Fig. 1" mark to the active concept
+	// hue, and play a brief flip.
+	const handleHeroState = useCallback(state => {
+		const phase = PHASES[state];
+		const fig = figureRef.current;
+		const nameEl = figureNameRef.current;
+		const noteEl = figureNoteRef.current;
+		if (nameEl && phase) nameEl.textContent = phase.name;
+		if (noteEl && phase) noteEl.textContent = phase.note;
+		if (fig && WASH_HUE[state] != null) {
+			fig.style.setProperty('--wash-h', String(WASH_HUE[state]));
+			fig.classList.remove(styles.isFlipping);
+			// force reflow so the flip animation restarts on each swap
+			void fig.offsetWidth;
+			fig.classList.add(styles.isFlipping);
+			clearTimeout(flipTimer.current);
+			flipTimer.current = setTimeout(() => {
+				if (figureRef.current) figureRef.current.classList.remove(styles.isFlipping);
+			}, 220);
+		}
+	}, []);
 
 	const allComplete = overall.allComplete;
 	const started = overall.visited > 0;
@@ -198,7 +228,7 @@ const HomePage = () => {
 	const heroState = useMemo(() => {
 		if (allComplete) {
 			return {
-				title: 'Reviewing?',
+				titleLines: ['Reviewing?'],
 				subtitle: 'Every topic is complete. Start anywhere on the path.',
 				ctaLabel: 'Open the path',
 				ctaTopic: FIRST_TOPIC,
@@ -206,16 +236,16 @@ const HomePage = () => {
 		}
 		if (lastTopic && lastTopic.id !== nextTopic?.id) {
 			return {
-				title: 'Welcome back.',
+				titleLines: ['Welcome back.'],
 				subtitle: `You stopped at ${lastTopic.name.toLowerCase()}. Pick it back up, or jump ahead.`,
 				ctaLabel: `Continue with ${nextTopic.name.toLowerCase()}`,
 				ctaTopic: nextTopic,
 			};
 		}
 		return {
-			title: 'Algorithms, in motion.',
+			titleLines: ['One dataset.', 'Every structure.'],
 			subtitle:
-				'A guided path through the full TDT4120 curriculum — every topic, from arrays and complexity to NP-completeness, live and interactive. Built to make the why click — not just the what.',
+				'Fourteen values, read as an array, a tree, a heap, and a graph — a guided, interactive path through all of TDT4120, built to make the why click, not just the what.',
 			ctaLabel: `Begin with ${FIRST_TOPIC.name.toLowerCase()}`,
 			ctaTopic: FIRST_TOPIC,
 		};
@@ -234,6 +264,20 @@ const HomePage = () => {
 		const pageEl = pageRef.current;
 		if (!pageEl) return undefined;
 
+		// Seed the live figure legend to the static-tree frame. HeroRecompose then
+		// drives it imperatively via onState; reduced-motion / no-JS users never get
+		// an onState call, so this is the legend they keep — "Binary tree", tinted to
+		// match the drawn tree the static SVG shows.
+		if (figureRef.current) {
+			figureRef.current.style.setProperty('--wash-h', String(WASH_HUE.tree));
+		}
+		if (figureNameRef.current) {
+			figureNameRef.current.textContent = PHASES.tree.name;
+		}
+		if (figureNoteRef.current) {
+			figureNoteRef.current.textContent = PHASES.tree.note;
+		}
+
 		const ctx = gsap.context(() => {
 			const mm = gsap.matchMedia();
 			mm.add('(prefers-reduced-motion: no-preference)', () => {
@@ -243,8 +287,9 @@ const HomePage = () => {
 				const heroTl = gsap.timeline({ defaults: { ease: 'power3.out' } });
 				const lampEl = q('[data-hero-lamp]');
 				const eyebrowEl = q('[data-hero-eyebrow]');
-				const titleEl = q('[data-hero-title]');
+				const titleLineEls = pageEl.querySelectorAll('[data-hero-title-line]');
 				const subEl = q('[data-hero-sub]');
+				const stripEl = q('[data-hero-strip]');
 				const actionEls = pageEl.querySelectorAll('[data-hero-actions] > *');
 				const progressEl = q('[data-hero-progress]');
 
@@ -256,14 +301,17 @@ const HomePage = () => {
 					);
 				if (eyebrowEl)
 					heroTl.from(eyebrowEl, { y: 14, opacity: 0, duration: 0.55 }, 0.1);
-				if (titleEl)
+				// Each title line rises out of its own clipping mask, in sequence.
+				if (titleLineEls.length)
 					heroTl.from(
-						titleEl,
-						{ yPercent: 100, opacity: 0, duration: 0.9 },
+						titleLineEls,
+						{ yPercent: 110, opacity: 0, duration: 0.9, stagger: 0.08 },
 						0.16
 					);
 				if (subEl)
 					heroTl.from(subEl, { y: 18, opacity: 0, duration: 0.7 }, 0.34);
+				if (stripEl)
+					heroTl.from(stripEl, { y: 12, opacity: 0, duration: 0.6 }, 0.42);
 				if (actionEls.length)
 					heroTl.from(
 						actionEls,
@@ -278,6 +326,14 @@ const HomePage = () => {
 						recomposeEl,
 						{ autoAlpha: 0, scale: 0.985, duration: 1.1, ease: 'power2.out' },
 						0.2
+					);
+				// The figure legend lands as the closing beat of the hero entrance.
+				const figCaptionEl = q('[data-hero-figure-caption]');
+				if (figCaptionEl)
+					heroTl.from(
+						figCaptionEl,
+						{ y: 10, opacity: 0, duration: 0.6, ease: 'power2.out' },
+						0.62
 					);
 
 				// ---- Hero lamp drifts down a touch as you scroll past it ----
@@ -392,6 +448,7 @@ const HomePage = () => {
 
 		return () => {
 			cancelAnimationFrame(raf);
+			clearTimeout(flipTimer.current);
 			ctx.revert();
 		};
 	}, []);
@@ -420,17 +477,25 @@ const HomePage = () => {
 					<p className={styles.eyebrow} data-hero-eyebrow>
 						AlgDatViz · TDT4120
 					</p>
-					<span className={styles.heroTitleMask}>
-						<h1
-							id="home-hero-title"
-							className={styles.heroTitle}
-							data-hero-title
-						>
-							{heroState.title}
-						</h1>
-					</span>
+					<h1 id="home-hero-title" className={styles.heroTitle}>
+						{heroState.titleLines.map((line, i) => (
+							<span key={i} className={styles.heroTitleMask}>
+								<span className={styles.heroTitleLine} data-hero-title-line>
+									{line}
+								</span>
+							</span>
+						))}
+					</h1>
 					<p className={styles.heroSubtitle} data-hero-sub>
 						{heroState.subtitle}
+					</p>
+					<p className={styles.heroThesisStrip} data-hero-strip>
+						{THESIS_SENTENCE}{' '}
+						<span className={styles.heroThesisForms}>
+							{Object.values(PHASES)
+								.map(p => p.name)
+								.join(' · ')}
+						</span>
 					</p>
 					<div className={styles.today} data-hero-actions>
 						<div className={styles.todayTop}>
@@ -503,7 +568,27 @@ const HomePage = () => {
 						)}
 					</div>
 				</div>
-				<HeroRecompose className={styles.heroRecompose} />
+				<figure className={styles.heroFigure} ref={figureRef}>
+					<HeroRecompose
+						className={styles.heroRecompose}
+						onState={handleHeroState}
+					/>
+					<figcaption
+						className={styles.heroFigcaption}
+						aria-hidden="true"
+						data-hero-figure-caption
+					>
+						{/* Legend text + the figure's --wash-h are imperative DOM, driven
+						    by HeroRecompose via onState (and seeded in the layout effect).
+						    React must not manage them, or it resets the live values on
+						    every re-render — hence no text children and no inline --wash-h. */}
+						<span className={styles.heroFigureRow}>
+							<span className={styles.heroFigureMark}>Fig. 1</span>
+							<span className={styles.heroFigureName} ref={figureNameRef} />
+						</span>
+						<span className={styles.heroFigureNote} ref={figureNoteRef} />
+					</figcaption>
+				</figure>
 			</section>
 
 			<section className={styles.pathSection} aria-labelledby="path-heading">

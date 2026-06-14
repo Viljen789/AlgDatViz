@@ -64,18 +64,99 @@
 	}
 }
 
-.heroRecompose {
+/* The instrument lives inside a <figure> so a hairline-ruled legend can name the
+   live structure as it forms. Below 960px the whole figure (instrument + caption)
+   is hidden — title legibility wins — and the reading column carries the thesis
+   in words instead (see .heroThesisStrip). */
+.heroFigure {
 	display: none;
+	margin: 0;
+}
+
+.heroRecompose {
+	display: block;
+	width: 100%;
+	aspect-ratio: 800 / 520;
 }
 
 @media (min-width: 960px) {
-	.heroRecompose {
-		display: block;
+	.heroFigure {
+		display: flex;
+		flex-direction: column;
+		gap: var(--space-sm);
 		width: 100%;
 		max-width: 560px;
-		aspect-ratio: 800 / 520;
 		justify-self: center;
 		align-self: center;
+	}
+}
+
+/* ---- The live figure legend: "Fig. 1 — <structure>" + its one defining fact ---- */
+.heroFigcaption {
+	display: flex;
+	flex-direction: column;
+	gap: 2px;
+	padding-top: var(--space-sm);
+	border-top: 1px solid var(--color-border-subtle);
+}
+
+.heroFigureRow {
+	display: flex;
+	align-items: baseline;
+	justify-content: space-between;
+	gap: var(--space-md);
+}
+
+.heroFigureMark {
+	font-family: var(--font-family-mono);
+	font-size: var(--font-size-caption);
+	letter-spacing: var(--tracking-caps);
+	text-transform: uppercase;
+	/* The single spot of concept-hue colour — reads the same --wash-h the canvas
+	   wash is driven by, so the mark and the active structure always agree. It is
+	   decorative (the figure is aria-hidden); the headline carries the meaning. */
+	color: hsl(var(--wash-h, 226) 48% 52%);
+}
+
+.heroFigureName {
+	min-width: 6ch;
+	font-family: var(--font-family-display);
+	font-style: italic;
+	font-size: var(--font-size-body);
+	color: var(--color-text-primary);
+	text-align: end;
+}
+
+/* The one defining fact — the "oh, that's why" line. Quiet mono, never claiming
+   a value-ordering invariant the index-packed geometry doesn't satisfy. */
+.heroFigureNote {
+	font-family: var(--font-family-mono);
+	font-size: var(--font-size-caption);
+	color: var(--color-text-dim);
+	text-align: end;
+}
+
+/* A brief opacity dip as the legend swaps at each morph boundary. */
+.isFlipping .heroFigureName,
+.isFlipping .heroFigureNote {
+	animation: figNameFlip 220ms ease;
+}
+
+@keyframes figNameFlip {
+	0% {
+		opacity: 1;
+	}
+	35% {
+		opacity: 0.15;
+	}
+	100% {
+		opacity: 1;
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.isFlipping .heroFigureName {
+		animation: none;
 	}
 }
 
@@ -319,12 +400,37 @@
 	text-wrap: balance;
 }
 
+/* Each title clause is its own block so it can ride its own clipping mask. */
+.heroTitleLine {
+	display: block;
+}
+
 .heroSubtitle {
 	margin: 0;
 	max-width: 56ch;
 	font-size: var(--font-size-body-lg);
 	line-height: var(--line-height-body);
 	color: var(--color-text-secondary);
+}
+
+/* The conservation thesis in words — shown ONLY below 960px, where the live
+   instrument is hidden, so phone/tablet crammers still get the payload. */
+.heroThesisStrip {
+	margin: 0;
+	font-family: var(--font-family-mono);
+	font-size: var(--font-size-caption);
+	line-height: 1.7;
+	color: var(--color-text-dim);
+}
+
+.heroThesisForms {
+	color: var(--color-text-muted);
+}
+
+@media (min-width: 960px) {
+	.heroThesisStrip {
+		display: none;
+	}
 }
 
 .heroActions {
