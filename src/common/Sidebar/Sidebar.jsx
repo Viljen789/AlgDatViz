@@ -1,5 +1,6 @@
 import { NavLink, useLocation } from 'react-router-dom';
 import {
+	Activity,
 	ArrowDownNarrowWide,
 	BarChart3,
 	Brain,
@@ -90,6 +91,20 @@ const Sidebar = () => {
 							<GraduationCap size={16} strokeWidth={2.2} />
 						</span>
 						<span className={styles.label}>Review</span>
+					</NavLink>
+				</li>
+				<li>
+					<NavLink
+						to="/progress"
+						className={({ isActive }) =>
+							`${styles.navLink} ${isActive ? styles.activeLink : ''}`
+						}
+					>
+						<span className={styles.navBar} aria-hidden="true" />
+						<span className={styles.icon} aria-hidden="true">
+							<Activity size={16} strokeWidth={2.2} />
+						</span>
+						<span className={styles.label}>Progress</span>
 					</NavLink>
 				</li>
 
