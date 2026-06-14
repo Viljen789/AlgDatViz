@@ -38,6 +38,8 @@
 	flex-direction: column;
 	gap: var(--space-xl);
 	width: 100%;
+	max-width: min(100%, 580px);
+	margin-inline: auto;
 }
 
 .lane {
@@ -219,6 +221,8 @@
 	flex-direction: column;
 	gap: var(--space-xl);
 	width: 100%;
+	max-width: min(100%, 680px);
+	margin-inline: auto;
 }
 
 .tree {
@@ -308,6 +312,8 @@
 	flex-direction: column;
 	gap: var(--space-md);
 	width: 100%;
+	max-width: min(100%, 680px);
+	margin-inline: auto;
 }
 
 .decisionList {
@@ -394,6 +400,8 @@
 	flex-direction: column;
 	gap: var(--space-md);
 	width: 100%;
+	max-width: min(100%, 680px);
+	margin-inline: auto;
 }
 
 .intervalHead {

@@ -46,8 +46,8 @@
 
 .svg {
 	width: 100%;
-	max-width: 380px;
-	flex: 1 1 300px;
+	max-width: min(100%, 480px);
+	flex: 1 1 360px;
 	display: block;
 }
 

@@ -38,12 +38,12 @@
 	flex-direction: column;
 	gap: var(--space-2xs);
 	width: 100%;
-	max-width: 420px;
+	max-width: min(100%, 640px);
 	margin: 0 auto;
 }
 
 .tableResize {
-	max-width: 460px;
+	max-width: min(100%, 660px);
 	gap: 1px;
 }
 
@@ -150,7 +150,7 @@
 
 .gauge {
 	width: 100%;
-	max-width: 420px;
+	max-width: min(100%, 640px);
 	margin: 0 auto;
 	display: flex;
 	flex-direction: column;

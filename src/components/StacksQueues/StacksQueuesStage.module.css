@@ -38,13 +38,13 @@
 	grid-template-columns: 1fr;
 	gap: var(--space-xl);
 	width: 100%;
-	max-width: 480px;
+	max-width: min(100%, 600px);
 	align-items: stretch;
 }
 
 .disciplineGridBoth {
 	grid-template-columns: 1fr 1fr;
-	max-width: 560px;
+	max-width: min(100%, 700px);
 }
 
 .discipline {
@@ -242,7 +242,7 @@
 	grid-template-columns: 1fr 1fr;
 	gap: var(--space-lg);
 	width: 100%;
-	max-width: 560px;
+	max-width: min(100%, 700px);
 }
 
 .traversalCard {

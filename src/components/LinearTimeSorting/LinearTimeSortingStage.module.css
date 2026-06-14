@@ -104,7 +104,7 @@
 	flex-direction: column;
 	gap: var(--space-md);
 	width: 100%;
-	max-width: 480px;
+	max-width: min(100%, 660px);
 	margin: 0 auto;
 }
 
@@ -115,7 +115,7 @@
 	flex-direction: column;
 	gap: var(--space-lg);
 	width: 100%;
-	max-width: 520px;
+	max-width: min(100%, 680px);
 	margin: 0 auto;
 }
 
@@ -290,7 +290,7 @@
 	flex-direction: column;
 	gap: var(--space-md);
 	width: 100%;
-	max-width: 520px;
+	max-width: min(100%, 660px);
 	margin: 0 auto;
 }
 
@@ -424,7 +424,7 @@
 	flex-direction: column;
 	gap: var(--space-md);
 	width: 100%;
-	max-width: 520px;
+	max-width: min(100%, 640px);
 	margin: 0 auto;
 }
 
