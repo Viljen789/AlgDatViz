@@ -46,17 +46,17 @@ export const CURRICULUM = [
 		navLabel: 'Foundations',
 		pullQuote:
 			'Where every algorithm lives. The cost of one operation, multiplied.',
-		complexity: 'O(1) … O(n²)',
+		complexity: 'O(1) … O(2ⁿ)',
 		tokenId: 'foundations',
 		accent: topicAccent('foundations'),
 		icon: 'Layers',
-		// Foundations does not yet have a dedicated page; surface as the
-		// playground for stacks/queues which is the closest existing primer.
-		// Marked `preview` and excluded from overall progress so completing
-		// stacks/queues doesn't double-count.
-		to: '/stacks-queues',
-		status: 'preview',
-		countsToProgress: false,
+		// The complexity primer — its own dedicated lesson, taught before any data
+		// structure: what "cost" means, counting work in code, the O/Ω/Θ bounds,
+		// the growth-rate race, and best/worst/average + amortized cost.
+		// Recurrences (aT(n/b)+f(n)) live in the Master Theorem topic.
+		to: '/foundations',
+		status: 'ready',
+		countsToProgress: true,
 	},
 	{
 		id: 'stacks-queues',

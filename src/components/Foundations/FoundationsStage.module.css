@@ -1,0 +1,251 @@
+/* FoundationsStage — the complexity figures. Canonical tokens only; tinted by
+   the inherited --topic-accent (foundations = blue). Scenes cross-fade so the
+   stage eases between ideas instead of popping. */
+
+.wrap {
+	position: relative;
+	width: 100%;
+	height: 100%;
+	max-width: min(100%, 680px);
+	margin: 0 auto;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	padding: clamp(var(--space-md), 2.5vw, var(--space-xl));
+	box-sizing: border-box;
+	background: var(--surface-1);
+	border: 1px solid var(--color-border);
+	border-radius: var(--radius-lg);
+	box-shadow: var(--shadow-2);
+	overflow: hidden;
+}
+
+.svg {
+	display: block;
+	width: 100%;
+	height: 100%;
+}
+
+/* Scene groups occupy the same area; only the active one shows, eased. */
+.scene {
+	opacity: 0;
+	visibility: hidden;
+	transform: translateY(6px);
+	transition:
+		opacity var(--duration-merge) var(--ease-quiet),
+		transform var(--duration-merge) var(--ease-quiet);
+}
+
+.sceneOn {
+	opacity: 1;
+	visibility: visible;
+	transform: translateY(0);
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.scene {
+		transition: opacity var(--duration-step) var(--ease-quiet);
+		transform: none;
+	}
+}
+
+/* ---- Text roles ---- */
+.kicker {
+	font-family: var(--font-family-mono);
+	font-size: 13px;
+	fill: var(--color-text-muted);
+	letter-spacing: var(--tracking-wide);
+}
+
+.caption {
+	font-family: var(--font-family-sans);
+	font-size: 13px;
+	fill: var(--color-text-muted);
+}
+
+.axis {
+	stroke: var(--color-border-strong);
+	stroke-width: 1.5;
+	stroke-linecap: round;
+}
+
+.axisLabel {
+	font-family: var(--font-family-mono);
+	font-size: 11px;
+	fill: var(--color-text-muted);
+	letter-spacing: var(--tracking-wide);
+}
+
+/* ---- 0 cost ---- */
+.cell {
+	fill: var(--topic-foundations-wash);
+	stroke: var(--topic-foundations);
+	stroke-width: 1.5;
+}
+
+.cellLabel {
+	font-family: var(--font-family-mono);
+	font-size: 14px;
+	fill: var(--color-text-secondary);
+}
+
+/* ---- 1 counting ---- */
+.codeLine {
+	font-family: var(--font-family-mono);
+	font-size: 18px;
+	fill: var(--color-text-secondary);
+}
+
+.codeHot {
+	fill: var(--topic-foundations-ink);
+	font-weight: var(--font-weight-bold);
+}
+
+.opDot {
+	fill: var(--topic-foundations);
+	opacity: 0.82;
+}
+
+.gridLabel {
+	font-family: var(--font-family-mono);
+	font-size: 13px;
+	fill: var(--color-text-secondary);
+}
+
+/* ---- 2 drop ---- */
+.expr {
+	font-family: var(--font-family-mono);
+	font-size: 36px;
+	fill: var(--color-text-primary);
+}
+
+.exprFade {
+	fill: var(--color-text-dim);
+}
+
+.exprKeep {
+	fill: var(--topic-foundations-ink);
+	font-weight: var(--font-weight-bold);
+}
+
+.exprArrow {
+	font-family: var(--font-family-mono);
+	font-size: 14px;
+	fill: var(--color-text-muted);
+}
+
+.exprResult {
+	font-family: var(--font-family-mono);
+	font-size: 34px;
+	font-weight: var(--font-weight-bold);
+	fill: var(--topic-foundations-ink);
+}
+
+.shareDom {
+	fill: var(--topic-foundations);
+}
+
+.shareRest {
+	fill: var(--color-border-strong);
+}
+
+.shareLabel {
+	font-family: var(--font-family-mono);
+	font-size: 14px;
+	font-weight: var(--font-weight-bold);
+	fill: var(--topic-foundations-contrast);
+}
+
+/* ---- 3 notation ---- */
+.band {
+	fill: color-mix(in srgb, var(--brand) 12%, transparent);
+}
+
+.bound {
+	stroke: var(--color-border-strong);
+	stroke-width: 1.5;
+	stroke-dasharray: 5 5;
+}
+
+.fLine {
+	stroke: var(--brand);
+	stroke-width: 2.5;
+	stroke-linecap: round;
+}
+
+.curveLabel {
+	font-family: var(--font-family-mono);
+	font-size: 12.5px;
+	fill: var(--color-text-secondary);
+}
+
+.fLabel {
+	fill: var(--brand-ink);
+	font-weight: var(--font-weight-bold);
+}
+
+.bandLabel {
+	font-family: var(--font-family-mono);
+	font-size: 13px;
+	fill: var(--brand-ink);
+	font-weight: var(--font-weight-bold);
+}
+
+/* ---- 4 race ---- */
+.curve {
+	fill: none;
+	stroke-width: 2.6;
+	stroke-linecap: round;
+	stroke-linejoin: round;
+}
+
+.legendSwatch {
+	stroke-width: 3;
+	stroke-linecap: round;
+}
+
+.legendLabel {
+	font-family: var(--font-family-mono);
+	font-size: 13px;
+	fill: var(--color-text-secondary);
+}
+
+/* ---- 5 cases ---- */
+.caseBest {
+	fill: color-mix(in srgb, var(--topic-graphs) 22%, transparent);
+	stroke: var(--topic-graphs);
+	stroke-width: 1.5;
+}
+
+.caseWorst {
+	fill: color-mix(in srgb, var(--topic-hashing) 22%, transparent);
+	stroke: var(--topic-hashing);
+	stroke-width: 1.5;
+}
+
+.caseLabel {
+	font-family: var(--font-family-mono);
+	font-size: 13px;
+	fill: var(--color-text-secondary);
+}
+
+.amortBar {
+	fill: var(--topic-foundations);
+	opacity: 0.62;
+}
+
+.amortSpike {
+	fill: var(--brand);
+}
+
+.amortLine {
+	stroke: var(--color-border-strong);
+	stroke-width: 1.5;
+	stroke-dasharray: 4 4;
+}
+
+.amortLineLabel {
+	font-family: var(--font-family-mono);
+	font-size: 12px;
+	fill: var(--color-text-muted);
+}

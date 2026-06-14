@@ -9,6 +9,7 @@ import { TOPIC_BY_ROUTE } from './data/curriculum.js';
 import styles from './App.module.css';
 
 const HomePage = lazy(() => import('./pages/HomePage.jsx'));
+const FoundationsPage = lazy(() => import('./pages/FoundationsPage.jsx'));
 const GraphPage = lazy(() => import('./pages/GraphPage.jsx'));
 const HashMapPage = lazy(() => import('./pages/HashMapPage.jsx'));
 const TreePage = lazy(() => import('./pages/TreePage.jsx'));
@@ -136,6 +137,7 @@ const AppLayout = () => {
 							<Suspense fallback={<RouteFallback />}>
 								<Routes location={location}>
 									<Route path="/" element={<HomePage />} />
+									<Route path="/foundations" element={<FoundationsPage />} />
 									<Route path="/graph" element={<GraphPage />} />
 									<Route path="/hashmap" element={<HashMapPage />} />
 									<Route path="/stacks-queues" element={<StacksQueuesPage />} />

@@ -28,6 +28,7 @@ import { TOPIC_BY_ID } from '../../data/curriculum.js';
 // from curriculum.js so every entry resolves a real curriculum node (name,
 // number, route, accent). The Graph topic has no scrolly scenes and is excluded
 // by construction (it simply has no entry here).
+import { SCENES as foundationsScenes } from '../Foundations/scenes.js';
 import { SCENES as sortingScenes } from '../MergeSortLesson/scenes.js';
 import { SCENES as stacksScenes } from '../StacksQueues/scenes.js';
 import { SCENES as masterScenes } from '../MasterTheorem/scenes.js';
@@ -44,6 +45,7 @@ import { SCENES as npcScenes } from '../NpCompleteness/scenes.js';
 
 // topicId (curriculum.js) → that topic's SCENES, in teaching order.
 const TOPIC_SCENES = [
+	['foundations', foundationsScenes],
 	['sorting', sortingScenes],
 	['stacks-queues', stacksScenes],
 	['master-theorem', masterScenes],
