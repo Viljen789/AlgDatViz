@@ -291,7 +291,12 @@ const TopicTemplate = ({
 		});
 	}, [reducedMotion]);
 
-	const navEnabled = showSceneNav ?? scenes.length > 0;
+	// The scene navigator duplicated the lesson outline (already in each scene's
+	// title, the cheat sheet, and the stage's SceneControlBar) and, sitting in the
+	// hero, pushed the live visualization below the fold. Off by default now; the
+	// stage-docked SceneControlBar is the single scene player. A topic can still
+	// opt back in with showSceneNav.
+	const navEnabled = showSceneNav ?? false;
 
 	return (
 		<div

@@ -27,7 +27,7 @@
 	display: flex;
 	flex-direction: column;
 	align-items: center;
-	justify-content: center;
+	justify-content: flex-start;
 	gap: var(--space-md);
 	height: min(86vh, 760px);
 	/* Promote the pinned stage to its own compositor layer so scrolling the prose
@@ -73,6 +73,13 @@
 
 .sceneActive {
 	opacity: 1;
+}
+
+/* The first scene rises into view with the stage instead of sitting centered a
+   half-screen down, so the visualization and scene 01 crest the fold together. */
+.scene:first-child {
+	justify-content: flex-start;
+	padding-top: var(--space-md);
 }
 
 @media (prefers-reduced-motion: reduce) {
