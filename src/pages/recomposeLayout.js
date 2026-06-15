@@ -1,17 +1,21 @@
 // recomposeLayout — the pure geometry for the Home hero's "Recompose" instrument.
 //
-// One conserved company of 14 atoms re-forms itself through every core CS
-// structure: array → sorted bars → binary tree → heap → graph → back to array.
-// The thesis (the product's whole point): it is the SAME data the whole time —
-// a heap is an array, a tree is an array, a sorted run and a graph are one
-// dataset under different access rules. Atom identity is conserved (atom 0 is
-// always the array's index 0, the tree's root, the heap's root) so a literate
-// viewer can track a node through the morph — that legibility is what makes it
-// read as an instrument, not decoration.
+// One conserved company of 14 atoms re-forms itself through core CS structures:
+// array → linked list → sorted bars → binary tree → heap → graph → spanning tree
+// → back to the array. The thesis (the product's whole point): it is the SAME
+// data the whole time — a heap is an array, a tree is an array, a list and a
+// graph are one dataset under different access rules. Atom identity is conserved
+// (atom 0 is always the array's index 0, the list's head, the tree's root) so a
+// literate viewer can track a node through the morph — that legibility is what
+// makes it read as an instrument, not decoration.
+//
+// Every state is self-evident in the instrument's pure language (atoms + edges +
+// bars): topology is drawn with edges, magnitude with bars. We deliberately do
+// NOT try to draw container-defined structures (a stack frame, a hash bin, a
+// matrix grid) here — those are shown on the curriculum map's per-topic figures.
 //
 // Pure + deterministic: every coordinate is computed once at module load from
 // the viewBox, so the animation layer only interpolates between fixed targets.
-// No paid plugins, no path morphing — just per-atom transforms + cheap attrs.
 
 export const VIEWBOX = { w: 800, h: 520 };
 const { w: W, h: H } = VIEWBOX;
@@ -49,39 +53,13 @@ const sortedAtoms = VALUES.map((v, i) => ({
 	scale: 1,
 }));
 
-// ── Stack (the array stood on one end: a single column, one open top) ────────
-// Atom 0 (the accent core) sits at the TOP, the end you push to and pop from.
-const STACK_X = W / 2;
-const STACK_TOP = 84;
-const STACK_GAP = 27;
-const stackAtoms = VALUES.map((_, i) => ({
-	x: STACK_X,
-	y: STACK_TOP + i * STACK_GAP,
-	scale: 1,
-}));
-
-// ── Matrix (every pair in a grid: the O(n²) / adjacency-matrix view) ─────────
-// The same company laid into a 4-wide grid; each row is centered so the last
-// short row sits symmetric. No edges: the lattice itself is the structure.
-const MATRIX_COLS = 4;
-const MATRIX_GAP_X = 96;
-const MATRIX_GAP_Y = 88;
-const MATRIX_MID_Y = 256;
-const matrixAtoms = (() => {
-	const rows = Math.ceil(N / MATRIX_COLS);
-	const topY = MATRIX_MID_Y - ((rows - 1) * MATRIX_GAP_Y) / 2;
-	return Array.from({ length: N }, (_, i) => {
-		const row = Math.floor(i / MATRIX_COLS);
-		const col = i % MATRIX_COLS;
-		const inRow = Math.min(MATRIX_COLS, N - row * MATRIX_COLS);
-		const rowStartX = W / 2 - ((inRow - 1) * MATRIX_GAP_X) / 2;
-		return {
-			x: rowStartX + col * MATRIX_GAP_X,
-			y: topY + row * MATRIX_GAP_Y,
-			scale: 0.95,
-		};
-	});
-})();
+// ── Linked list (the array as a chain: one row, each node points to the next) ─
+// Same x-spread as the array, dropped to a single baseline, with 13 pointer edges
+// i→i+1. Drawn pointers are what make it a LIST and not just a row of dots.
+const LIST_Y = 248;
+const listAtoms = VALUES.map((_, i) => ({ x: slotX(i), y: LIST_Y, scale: 1 }));
+const listEdges = [];
+for (let i = 0; i < N - 1; i += 1) listEdges.push({ from: i, to: i + 1 });
 
 // ── Binary tree / heap (same topology, different packing) ───────────────────
 // Node i: level = floor(log2(i+1)); children at 2i+1, 2i+2. A parent sits exactly
@@ -133,6 +111,9 @@ const graphAtoms = [
 	{ x: 520, y: 138 },
 ].map(p => ({ ...p, scale: 1 }));
 
+// The FIRST N-1 (13) edges form a spanning tree of all 14 nodes; the rest close
+// cycles, so the graph is visibly denser than its spanning tree and the
+// spanningTree state reads as "trim the graph back to a tree."
 const graphEdges = [
 	{ from: 0, to: 12 },
 	{ from: 0, to: 13 },
@@ -147,74 +128,53 @@ const graphEdges = [
 	{ from: 2, to: 6 },
 	{ from: 5, to: 9 },
 	{ from: 6, to: 11 },
+	// cycle-closing edges (beyond the spanning tree)
 	{ from: 8, to: 9 },
+	{ from: 7, to: 8 },
+	{ from: 4, to: 5 },
+	{ from: 3, to: 4 },
+	{ from: 5, to: 6 },
 ];
+// The spanning tree is exactly the first N-1 edges (connects all 14, no cycle).
+const spanningTreeEdges = graphEdges.slice(0, N - 1);
 
-export const EDGE_POOL = Math.max(treeEdges.length, graphEdges.length);
-
-// ── Hash buckets (the same dataset re-read as a chained hash table) ──────────
-// Each atom lands in bucket (value mod 5) and stacks into that bucket's chain,
-// so the conserved company regroups into five bins by key — the hashing view of
-// "same data, a different access rule." No edges: the columns ARE the buckets.
-const BUCKET_COUNT = 5;
-const BUCKET_MARGIN = 150;
-const BUCKET_TOP = 170;
-const CHAIN_GAP = 60;
-const bucketX = b =>
-	BUCKET_MARGIN + (b * (W - 2 * BUCKET_MARGIN)) / (BUCKET_COUNT - 1);
-const bucketAtoms = new Array(N);
-// Chain links inside each bucket (consecutive entries in the same chain), so the
-// state reads as a CHAINED hash table, not a bare grid of dots.
-const bucketEdges = [];
-(() => {
-	const chains = Array.from({ length: BUCKET_COUNT }, () => []);
-	VALUES.forEach((v, i) => chains[v % BUCKET_COUNT].push(i));
-	chains.forEach((chain, b) => {
-		chain.forEach((atomIdx, slot) => {
-			bucketAtoms[atomIdx] = {
-				x: bucketX(b),
-				y: BUCKET_TOP + slot * CHAIN_GAP,
-				scale: 0.95,
-			};
-			if (slot > 0) bucketEdges.push({ from: chain[slot - 1], to: atomIdx });
-		});
-	});
-})();
+export const EDGE_POOL = Math.max(
+	treeEdges.length,
+	graphEdges.length,
+	listEdges.length
+);
 
 export const STATES = {
 	array: { atoms: arrayAtoms, bars: BARS, edges: [] },
+	list: { atoms: listAtoms, bars: null, edges: listEdges },
 	sorted: { atoms: sortedAtoms, bars: BARS, edges: [] },
-	stack: { atoms: stackAtoms, bars: null, edges: [] },
 	tree: { atoms: treeAtoms, bars: null, edges: treeEdges },
 	heap: { atoms: heapAtoms, bars: null, edges: treeEdges },
 	graph: { atoms: graphAtoms, bars: null, edges: graphEdges },
-	matrix: { atoms: matrixAtoms, bars: null, edges: [] },
-	buckets: { atoms: bucketAtoms, bars: null, edges: bucketEdges },
+	spanningTree: { atoms: graphAtoms, bars: null, edges: spanningTreeEdges },
 };
 
-// The loop order. It returns to 'array', and graph→array lands EXACTLY on the
-// array coords, so the loop is seamless by construction.
+// The loop order. It returns to 'array', and spanningTree→array lands EXACTLY on
+// the array coords, so the loop is seamless by construction.
 export const ORDER = [
 	'array',
+	'list',
 	'sorted',
-	'stack',
 	'tree',
 	'heap',
 	'graph',
-	'matrix',
-	'buckets',
+	'spanningTree',
 ];
 
 // A topic-hue wash names the active concept (subtle, ≤0.08 alpha in CSS).
 export const WASH_HUE = {
 	array: 226, // foundations blue
+	list: 250, // lists/pointers indigo
 	sorted: 210, // sorting azure
-	stack: 254, // stacks indigo
 	tree: 286, // trees violet
 	heap: 312, // heaps magenta
 	graph: 162, // graphs teal
-	matrix: 134, // all-pairs green
-	buckets: 38, // hashing amber — one warm note among the cools
+	spanningTree: 142, // spanning trees green
 };
 
 // The legend copy for the live figcaption — one short, STRUCTURALLY-TRUE line
@@ -225,18 +185,20 @@ export const WASH_HUE = {
 // be a visible lie. We say only what is true on screen.
 export const PHASES = {
 	array: { name: 'Array', note: '14 values, one order' },
+	list: { name: 'Linked list', note: 'each node points to the next' },
 	sorted: { name: 'Sorted run', note: 'rearranged by value' },
-	stack: { name: 'Stack', note: 'one open end, last in first out' },
 	tree: { name: 'Binary tree', note: 'children of i at 2i+1, 2i+2' },
 	heap: { name: 'Heap', note: 'same array, parent/child by index' },
 	graph: { name: 'Graph', note: 'edges, no inherent root' },
-	matrix: { name: 'Matrix', note: 'rows and columns, n by n' },
-	buckets: { name: 'Hash buckets', note: 'each value into bucket v mod 5' },
+	spanningTree: {
+		name: 'Spanning tree',
+		note: 'connect every node, no cycles',
+	},
 };
 
 // The conservation thesis in words — the <960px fallback, where the live
 // instrument is hidden and only the reading column renders.
-export const THESIS_SENTENCE = 'The same fourteen values, read five ways.';
+export const THESIS_SENTENCE = 'The same fourteen values, read seven ways.';
 
 /**
  * edgeFrame — for a state and a line-pool index, the endpoint coords + whether
@@ -246,14 +208,29 @@ export const THESIS_SENTENCE = 'The same fourteen values, read five ways.';
 export const edgeFrame = (state, k) => {
 	const { atoms, edges } = STATES[state];
 	const e = edges[k];
-	if (!e) return { active: false, x1: W / 2, y1: H / 2, x2: W / 2, y2: H / 2 };
-	return {
-		active: true,
-		x1: atoms[e.from].x,
-		y1: atoms[e.from].y,
-		x2: atoms[e.to].x,
-		y2: atoms[e.to].y,
-	};
+	if (e) {
+		return {
+			active: true,
+			x1: atoms[e.from].x,
+			y1: atoms[e.from].y,
+			x2: atoms[e.to].x,
+			y2: atoms[e.to].y,
+		};
+	}
+	// The cycle-closing graph edges (index ≥ N-1) park at their graph position when
+	// inactive, so they fade/draw in place in the graph instead of flying from the
+	// canvas center. Core edges (the spanning tree / list / tree pointers) park at
+	// center as before — they fade out there, masked by the morph.
+	const g = k >= N - 1 ? graphEdges[k] : null;
+	if (g)
+		return {
+			active: false,
+			x1: graphAtoms[g.from].x,
+			y1: graphAtoms[g.from].y,
+			x2: graphAtoms[g.to].x,
+			y2: graphAtoms[g.to].y,
+		};
+	return { active: false, x1: W / 2, y1: H / 2, x2: W / 2, y2: H / 2 };
 };
 
 // A root→leaf path for the heapify "sift" cascade beat.

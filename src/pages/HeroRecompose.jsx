@@ -123,11 +123,12 @@ const HeroRecompose = ({ className, onState }) => {
 						'<'
 					);
 					if (edgeMode === 'draw') {
-						// The 13 tree pointers ink on. treeEdges are pushed root-first,
-						// so the default index stagger reads as growth from the root.
-						loop.fromTo(
+						// Active edges ink on (index-order stagger reads as growth from the
+						// root / head). A plain `to` (not fromTo) means edges a prior state
+						// already inked stay put, so a denser state draws only its NEW lines
+						// instead of re-inking the ones already on screen.
+						loop.to(
 							lines,
-							{ strokeDashoffset: 1 },
 							{
 								strokeDashoffset: k => (edgeFrame(state, k).active ? 0 : 1),
 								duration: 0.7,
@@ -189,21 +190,19 @@ const HeroRecompose = ({ className, onState }) => {
 				};
 
 				hold(); // dwell on the array
-				morphTo('sorted'); // edges idle on both sides
+				morphTo('list', 'draw'); // the array linked into a chain — pointers ink on
 				hold();
-				morphTo('stack'); // the array stood on one end — a single column, no edges
+				morphTo('sorted', 'undraw'); // pointers un-ink, atoms sort, bars return
 				hold();
-				morphTo('tree', 'draw'); // ink the 13 pointers on, root → leaves
+				morphTo('tree', 'draw'); // ink the tree pointers on, root → leaves
 				hold();
 				morphTo('heap', 'bend'); // same pointers, just re-packed (no re-ink)
 				loop.add(beat(HEAPIFY_PATH, { step: 0.34, pop: 1.5 })); // heapify sift
-				morphTo('graph', 'retarget'); // pooled lines retarget — no false "pointer" ink
+				morphTo('graph', 'draw'); // the cycle edges ink on to complete the denser graph
 				loop.add(beat(BFS_ORDER, { step: 0.1, pop: 1.32 })); // BFS frontier
-				morphTo('matrix', 'undraw'); // edges un-ink as the company snaps into an n×n grid
+				morphTo('spanningTree'); // the cycle edges fade — trimmed to the spanning tree
 				hold();
-				morphTo('buckets', 'draw'); // chain links ink on, one per bucket
-				hold();
-				morphTo('array', 'undraw'); // un-ink the chains and collapse — lands on the start
+				morphTo('array', 'undraw'); // un-ink and collapse to the baseline — lands on the start
 
 				master.add(loop);
 
@@ -251,13 +250,12 @@ const HeroRecompose = ({ className, onState }) => {
 				const cycle = gsap.timeline({ repeat: -1 });
 				[
 					'array',
+					'list',
 					'sorted',
-					'stack',
 					'tree',
 					'heap',
 					'graph',
-					'matrix',
-					'buckets',
+					'spanningTree',
 				].forEach(state => {
 					const sb = STATES[state].bars;
 					// Reposition while invisible — pure attribute sets, no animated motion.
