@@ -1,4 +1,5 @@
-import { useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import useReducedMotion from '../../hooks/useReducedMotion.js';
 import { STAGE_VALUES } from './scenes.js';
 import styles from './MergeSortStage.module.css';
 
@@ -20,6 +21,55 @@ const VIEW_H = PAD_Y * 2 + 4 * LEVEL_GAP - 4;
 // the far left of the sorted run), so tagging it lets the eye track ONE piece all
 // the way down to its base case and back up — the lesson the stage exists to show.
 const FOLLOW_IDX = STAGE_VALUES.indexOf(Math.min(...STAGE_VALUES));
+const FOLLOW_VALUE = STAGE_VALUES[FOLLOW_IDX];
+
+// Scene 3 ("Combine") zooms into ONE real merge: the two leftmost sorted
+// leaf-pairs combine into their parent. Two cursors compare fronts, the smaller
+// is copied out, repeat — the linear-scan invariant the whole lesson builds to.
+// The follow-me value (3) is copied out first, so it visibly leads the run.
+const MERGE_L = STAGE_VALUES.slice(0, 2).slice().sort((a, b) => a - b);
+const MERGE_R = STAGE_VALUES.slice(2, 4).slice().sort((a, b) => a - b);
+const MERGE_TOTAL = MERGE_L.length + MERGE_R.length;
+
+// Pre-compute the merge as a list of frames (a compare, then a copy, per element)
+// so the stage only steps an index. No paid plugins, deterministic, replayable.
+const buildMergeSteps = (left, right) => {
+	const steps = [];
+	const out = [];
+	let i = 0;
+	let j = 0;
+	while (i < left.length && j < right.length) {
+		steps.push({ i, j, out: [...out], comparing: true, copied: null,
+			narr: `compare fronts: ${left[i]} vs ${right[j]}` });
+		if (left[i] <= right[j]) {
+			out.push(left[i]);
+			steps.push({ i: i + 1, j, out: [...out], comparing: false, copied: left[i],
+				narr: `${left[i]} ≤ ${right[j]}, so copy ${left[i]} out` });
+			i += 1;
+		} else {
+			out.push(right[j]);
+			steps.push({ i, j: j + 1, out: [...out], comparing: false, copied: right[j],
+				narr: `${right[j]} < ${left[i]}, so copy ${right[j]} out` });
+			j += 1;
+		}
+	}
+	while (i < left.length) {
+		out.push(left[i]);
+		steps.push({ i: i + 1, j, out: [...out], comparing: false, copied: left[i],
+			narr: `left is drained, copy ${left[i]}` });
+		i += 1;
+	}
+	while (j < right.length) {
+		out.push(right[j]);
+		steps.push({ i, j: j + 1, out: [...out], comparing: false, copied: right[j],
+			narr: `right is drained, copy ${right[j]}` });
+		j += 1;
+	}
+	steps.push({ i, j, out: [...out], comparing: false, copied: null,
+		narr: 'one sorted run; the merge is linear' });
+	return steps;
+};
+const MERGE_STEPS = buildMergeSteps(MERGE_L, MERGE_R);
 
 const heightFor = value => Math.max(4, (value / VALUE_MAX) * BAR_MAX_H);
 
@@ -61,6 +111,31 @@ const MergeSortStage = ({
 }) => {
 	const levels = useMemo(() => buildLevels(STAGE_VALUES), []);
 	const sorted = useMemo(() => sortGroups(levels), [levels]);
+	const reducedMotion = useReducedMotion();
+
+	// Scene 3 is the choreographed merge. Step an index through MERGE_STEPS while
+	// it's active; reduced motion shows the finished run; leaving resets.
+	const isCombine = activeScene === 3;
+	const [mergeStep, setMergeStep] = useState(0);
+	useEffect(() => {
+		if (!isCombine) {
+			setMergeStep(0);
+			return undefined;
+		}
+		if (reducedMotion) {
+			setMergeStep(MERGE_STEPS.length - 1);
+			return undefined;
+		}
+		setMergeStep(0);
+		let idx = 0;
+		const id = window.setInterval(() => {
+			idx += 1;
+			// Hold the finished run for two ticks, then replay for late scrollers.
+			if (idx >= MERGE_STEPS.length + 2) idx = 0;
+			setMergeStep(Math.min(idx, MERGE_STEPS.length - 1));
+		}, 1150);
+		return () => window.clearInterval(id);
+	}, [isCombine, reducedMotion]);
 
 	const visibleLevels = activeScene >= 1 ? 4 : 1;
 	const showRecurrence = activeScene >= 4;
@@ -218,42 +293,125 @@ const MergeSortStage = ({
 		return lines;
 	};
 
+	// Scene 3: the choreographed merge. Two sorted runs, a compare-and-copy that
+	// builds the parent run one element at a time, with i/j cursors and a live
+	// caption. Tokens reuse the State Quartet: comparing = active, just-copied =
+	// in-flight, placed = done; the follow value keeps its accent outline.
+	const renderMergeDemo = () => {
+		const step = MERGE_STEPS[mergeStep] || MERGE_STEPS[0];
+		const tokenClass = (value, role) =>
+			[styles.mToken, role, value === FOLLOW_VALUE ? styles.mFollow : '']
+				.filter(Boolean)
+				.join(' ');
+		const renderRun = (run, cursor, label, cursorKey) => (
+			<div className={styles.mergeRun}>
+				<span className={styles.mLabel}>{label}</span>
+				<div className={styles.mRow}>
+					{run.map((value, idx) => {
+						const consumed = idx < cursor;
+						const comparing = step.comparing && idx === cursor;
+						const role = comparing
+							? styles.mCompare
+							: consumed
+								? styles.mConsumed
+								: '';
+						return (
+							<span key={idx} className={tokenClass(value, role)}>
+								{value}
+								{comparing && (
+									<small className={styles.mCursor}>{cursorKey}</small>
+								)}
+							</span>
+						);
+					})}
+				</div>
+			</div>
+		);
+		return (
+			<div className={styles.mergeDemo}>
+				<div className={styles.mergeRuns}>
+					{renderRun(MERGE_L, step.i, 'left, sorted', 'i')}
+					{renderRun(MERGE_R, step.j, 'right, sorted', 'j')}
+				</div>
+				<div className={styles.mergeOut}>
+					<span className={styles.mLabel}>merged</span>
+					<div className={styles.mRow}>
+						{Array.from({ length: MERGE_TOTAL }).map((_, k) => {
+							const value = step.out[k];
+							if (value == null)
+								return (
+									<span
+										key={k}
+										className={`${styles.mToken} ${styles.mEmpty}`}
+									/>
+								);
+							const justCopied =
+								k === step.out.length - 1 && step.copied != null;
+							return (
+								<span
+									key={k}
+									className={tokenClass(
+										value,
+										justCopied ? styles.mJust : styles.mDone
+									)}
+								>
+									{value}
+								</span>
+							);
+						})}
+					</div>
+				</div>
+				<p className={styles.mergeNarr} aria-live="polite">
+					{step.narr}
+				</p>
+			</div>
+		);
+	};
+
 	return (
 		<div
 			className={styles.wrap}
 			data-scene={activeScene}
 			role="img"
-			aria-label="Merge sort recursion tree visualization"
+			aria-label={
+				isCombine
+					? 'Merging two sorted runs into one'
+					: 'Merge sort recursion tree visualization'
+			}
 		>
-			<svg
-				viewBox={`0 0 ${VIEW_W} ${VIEW_H}`}
-				className={styles.svg}
-				preserveAspectRatio="xMidYMid meet"
-			>
-				<g className={styles.connectorGroup}>{renderConnections()}</g>
+			{isCombine ? (
+				renderMergeDemo()
+			) : (
+				<svg
+					viewBox={`0 0 ${VIEW_W} ${VIEW_H}`}
+					className={styles.svg}
+					preserveAspectRatio="xMidYMid meet"
+				>
+					<g className={styles.connectorGroup}>{renderConnections()}</g>
 
-				{Array.from({ length: visibleLevels }).map((_, levelIdx) => {
-					const groups = sortedMask[levelIdx]
-						? sorted[levelIdx]
-						: levels[levelIdx];
-					return (
-						<g
-							key={levelIdx}
-							className={styles.levelGroup}
-							style={{
-								// Per-level entrance delay when first revealing the tree.
-								'--delay': `${levelIdx * 90}ms`,
-							}}
-						>
-							{groups.map((group, groupIdx) =>
-								group.map((bar, withinIdx) =>
-									renderBar(bar, levelIdx, groupIdx, withinIdx)
-								)
-							)}
-						</g>
-					);
-				})}
-			</svg>
+					{Array.from({ length: visibleLevels }).map((_, levelIdx) => {
+						const groups = sortedMask[levelIdx]
+							? sorted[levelIdx]
+							: levels[levelIdx];
+						return (
+							<g
+								key={levelIdx}
+								className={styles.levelGroup}
+								style={{
+									// Per-level entrance delay when first revealing the tree.
+									'--delay': `${levelIdx * 90}ms`,
+								}}
+							>
+								{groups.map((group, groupIdx) =>
+									group.map((bar, withinIdx) =>
+										renderBar(bar, levelIdx, groupIdx, withinIdx)
+									)
+								)}
+							</g>
+						);
+					})}
+				</svg>
+			)}
 
 			<div
 				className={`${styles.recurrence} ${showRecurrence ? styles.recurrenceShow : ''}`}
