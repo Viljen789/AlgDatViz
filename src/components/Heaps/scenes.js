@@ -49,6 +49,14 @@ const SECOND_MAX = extractMaxTrace({ heap: AFTER_FIRST }).max; // the real runne
 // Sanity: STAGE_HEAP really is a valid max-heap (kept honest at module load).
 const STAGE_IS_HEAP = buildMaxHeapTrace(STAGE_HEAP).finalHeap;
 
+// Counting the sift-downs of Build-Max-Heap on the stage heap. Build-Max-Heap
+// runs Max-Heapify (sift-down) once on every INTERNAL node, that is every node
+// with at least one child. In an n-element heap those are exactly the first
+// floor(n/2) array slots (indices floor(n/2)-1 .. 0); the remaining ceil(n/2)
+// slots are leaves and are skipped. For STAGE_HEAP (n = 7) that is 3 calls.
+const STAGE_N = STAGE_HEAP.length;
+const STAGE_INTERNAL_NODES = Math.floor(STAGE_N / 2); // sift-down call count = 3
+
 export const SCENES = [
 	{
 		id: 'heap-property',
@@ -150,6 +158,19 @@ export const SCENES = [
 			],
 			answer: { build: 'linear', repeated: 'linearithmic' },
 			explanation: `Bottom-up Build-Max-Heap is Θ(n): summing each node's possible sink-distance over the tree converges to a constant times n. Repeated insertion is Θ(n log n) in the worst case: n inserts × up to log n levels each. Same final heap, different cost — measured here as ${BUILD_OPS} vs ${INSERT_OPS} ops. When you have all the data up front, always build, don't insert.`,
+		},
+	},
+	{
+		id: 'build-derivation',
+		eyebrow: 'Why O(n) (the derivation)',
+		title: 'The deep sinks are rare, so the sum is linear.',
+		body: `The measurement says O(n); here is why. Build-Max-Heap runs sift-down once on each internal node, and a node of height h costs O(h). The catch is that height is scarce near the bottom: a complete tree has at most ⌈n/2^(h+1)⌉ nodes of height h, so half the nodes are leaves (h = 0, no work), a quarter have height 1, and only one node has the full height. The total is Σ over h of (n/2^(h+1))·O(h) = O(n · Σ h/2^h). That series Σ h/2^h converges to 2 (not to log n), so the whole build is O(2n) = O(n). Repeated insert loses because it pays from the bottom UP, where the levels are crowded.`,
+		check: {
+			kind: 'numeric',
+			prompt: `On the ${STAGE_N}-node heap on the left, how many sift-down (Max-Heapify) calls does Build-Max-Heap make?`,
+			answer: STAGE_INTERNAL_NODES,
+			placeholder: 'a count',
+			explanation: `Build-Max-Heap sifts down every internal node and skips the leaves, so it makes ⌊n/2⌋ = ⌊${STAGE_N}/2⌋ = ${STAGE_INTERNAL_NODES} calls (the leaves, the other ${STAGE_N - STAGE_INTERNAL_NODES} slots, already satisfy the heap property). Most of those calls sit low in the tree and barely sink: weighting each height h by its ⌈n/2^(h+1)⌉ nodes gives O(n·Σ h/2^h) = O(2n) = O(n), since Σ h/2^h = 2.`,
 		},
 	},
 ];
