@@ -21,7 +21,11 @@ import {
 	Triangle,
 	Workflow,
 } from 'lucide-react';
-import { CURRICULUM, TOPIC_BY_ROUTE } from '../../data/curriculum.js';
+import {
+	BUILT_TOPICS,
+	CURRICULUM,
+	TOPIC_BY_ROUTE,
+} from '../../data/curriculum.js';
 import useProgress from '../../hooks/useProgress.js';
 import ThemeToggle from '../ThemeToggle/ThemeToggle.jsx';
 import styles from './Sidebar.module.css';
@@ -50,6 +54,12 @@ const ICONS = {
 const Sidebar = () => {
 	const { isVisited, isCompleted, overall } = useProgress();
 	const { pathname } = useLocation();
+
+	// The single forward affordance: the first built topic not yet completed.
+	// Mirrors the home page's "Next up" path ring so wayfinding survives once you
+	// leave home (the sidebar is the only chrome present deep inside a lesson).
+	// Undefined when everything is complete — then no row is marked.
+	const nextTopic = BUILT_TOPICS.find(t => !isCompleted(t.id));
 
 	return (
 		<nav className={styles.sidebar} aria-label="Primary">
@@ -140,11 +150,19 @@ const Sidebar = () => {
 
 					const completed = isCompleted(topic.id);
 					const visited = !completed && isVisited(topic.id);
+					// Exactly one row carries the "Next" marker (nextTopic is the first
+					// uncompleted built topic, or undefined when all are done).
+					const isNext = nextTopic?.id === topic.id;
 					const statusLabel = completed
 						? 'completed'
 						: visited
 							? 'visited'
 							: 'not started';
+					// "Next" rides on the existing aria-label so it is announced, not
+					// signalled by hue alone (the chip itself is decorative chrome).
+					const rowLabel = isNext
+						? `${topic.name}, ${statusLabel}, next up`
+						: `${topic.name}, ${statusLabel}`;
 					// A route can be shared (e.g. the `foundations` preview aliases
 					// `/stacks-queues`). Only the topic that actually owns the route in
 					// the topic model (TOPIC_BY_ROUTE — the real `ready` topic) may show
@@ -161,16 +179,25 @@ const Sidebar = () => {
 									active ? styles.activeLink : ''
 								} ${completed ? styles.completed : ''} ${
 									visited ? styles.visited : ''
-								}`}
+								} ${isNext ? styles.next : ''}`}
 								aria-current={active ? 'page' : undefined}
 								style={{ '--accent': topic.accent }}
-								aria-label={`${topic.name} — ${statusLabel}`}
+								aria-label={rowLabel}
 							>
 								<span className={styles.navBar} aria-hidden="true" />
 								<span className={styles.icon} aria-hidden="true">
 									<Icon size={16} strokeWidth={2.2} />
 								</span>
 								<span className={styles.label}>{topic.navLabel}</span>
+								{isNext && (
+									<span
+										className={styles.nextChip}
+										aria-hidden="true"
+										title="Next up"
+									>
+										Next
+									</span>
+								)}
 								<span
 									className={styles.status}
 									aria-hidden="true"

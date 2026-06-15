@@ -183,6 +183,33 @@
 	color: var(--accent);
 }
 
+/* ---------- "Next up" marker ---------- */
+
+/* Exactly one row (the first uncompleted built topic) carries this. The home
+   page shows "Next up" as a tracer ring on the path; the sidebar is the only
+   chrome that survives inside a lesson, so it repeats the cue here. Quiet by
+   design: a small mono chip tinted with the topic's --accent (never red). The
+   word "Next" carries the meaning, so it reads without colour. */
+.nextChip {
+	flex-shrink: 0;
+	font-family: var(--font-family-mono);
+	font-size: var(--font-size-caption);
+	font-weight: var(--font-weight-medium);
+	letter-spacing: var(--tracking-wide);
+	text-transform: uppercase;
+	color: var(--accent);
+	padding: 2px 6px;
+	border: 1px solid color-mix(in srgb, var(--accent) 30%, transparent);
+	border-radius: var(--radius-pill);
+	background: color-mix(in srgb, var(--accent) 12%, transparent);
+}
+
+/* Tint the leading status dot to agree with the chip (the next row is, by
+   definition, neither visited nor completed, so it owns the neutral dot). */
+.next .statusDot {
+	border-color: var(--accent);
+}
+
 /* ---------- Footer / overall progress ---------- */
 
 .footer {
@@ -264,7 +291,10 @@
 	.label,
 	.progressLabel,
 	.progressCount,
-	.soonBadge {
+	.soonBadge,
+	/* No room for the text chip on the rail; the accent-tinted corner pip
+	   (.next .statusDot) carries the "next" cue here instead. */
+	.nextChip {
 		display: none;
 	}
 
