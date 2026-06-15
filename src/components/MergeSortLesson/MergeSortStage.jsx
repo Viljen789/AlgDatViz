@@ -16,6 +16,11 @@ const VALUE_MAX = Math.max(...STAGE_VALUES);
 const VIEW_W = PAD_X * 2 + STAGE_VALUES.length * SLOT;
 const VIEW_H = PAD_Y * 2 + 4 * LEVEL_GAP - 4;
 
+// The "follow-me" element: the smallest value travels the full width (it ends at
+// the far left of the sorted run), so tagging it lets the eye track ONE piece all
+// the way down to its base case and back up — the lesson the stage exists to show.
+const FOLLOW_IDX = STAGE_VALUES.indexOf(Math.min(...STAGE_VALUES));
+
 const heightFor = value => Math.max(4, (value / VALUE_MAX) * BAR_MAX_H);
 
 // Return the slot index of each bar within the original array. We always
@@ -126,6 +131,8 @@ const MergeSortStage = ({
 		const hitY = baseline - BAR_MAX_H - 6;
 		const hitW = SLOT;
 		const hitH = BAR_MAX_H + 12;
+		const isFollow = bar.idx === FOLLOW_IDX;
+		const slotCenterX = PAD_X + renderSlot * SLOT + SLOT / 2;
 
 		return (
 			<g key={`${levelIdx}-${groupIdx}-${withinGroupIdx}`}>
@@ -135,8 +142,17 @@ const MergeSortStage = ({
 					width={BAR_W}
 					height={h}
 					rx="1.5"
-					className={fillClass}
+					className={`${fillClass} ${isFollow ? styles.barFollow : ''}`}
 				/>
+				{/* The value lives ON the bar so a student can follow one number down
+				    to its base case and watch it re-join in sorted order. */}
+				<text
+					x={slotCenterX}
+					y={baseline + 9}
+					className={`${styles.barValue} ${isFollow ? styles.barValueFollow : ''}`}
+				>
+					{bar.value}
+				</text>
 				{isInteractiveBar && (
 					<rect
 						x={hitX}

@@ -85,6 +85,27 @@
 	transition: fill var(--duration-step) var(--ease-quiet);
 }
 
+/* The value sits ON the bar (a mono number-row beneath each level) so a student
+   can read and follow a single element down the tree and back up. */
+.barValue {
+	fill: var(--color-text-secondary);
+	font-family: var(--font-family-mono);
+	font-size: 9px;
+	text-anchor: middle;
+}
+
+.barValueFollow {
+	fill: var(--topic-accent-ink);
+	font-weight: 700;
+}
+
+/* The follow-me element keeps a thin accent outline through every level so the
+   eye can track it splitting away from its neighbours and re-joining them. */
+.barFollow {
+	stroke: var(--topic-accent);
+	stroke-width: 1.4px;
+}
+
 .hitTarget {
 	fill: transparent;
 	cursor: pointer;
