@@ -419,7 +419,7 @@ const ExamSession = ({
 		persistedRef.current = true;
 		const scores = runSets.map(s => states[s.id]?.score ?? 0);
 		aggregateByTopic(runSets, scores).forEach(t => {
-			recordExamTopic(t.topicId, t.ratio, { score: t.sum, total: t.count });
+			recordExamTopic(t.topicId, t.ratio);
 		});
 	}, [finished, runSets, states]);
 

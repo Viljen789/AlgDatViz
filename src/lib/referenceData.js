@@ -40,11 +40,17 @@ export const sortComparison = ALGORITHM_ORDER.map(id => {
 // the deciding booleans from the SAME metas the lessons drive, so the rule on the
 // card is exactly the rule the lesson taught.
 
-// Shortest paths: the choice keys on handlesNegatives + needsDag.
+// Shortest paths: the choice keys on handlesNegatives + needsDag. We DERIVE each
+// option from those booleans (rather than hand-picking an algorithm by key), so the
+// card tracks the same metas the lessons drive and a meta edit that invalidated the
+// rule would change the card too. The three predicates are mutually exclusive and
+// exhaustive over the SSSP set: the general negative-edge tool handles negatives
+// without needing a DAG; the DAG tool needs a DAG; the non-negative tool does neither.
 const ssspChoice = (() => {
-	const dijkstra = SSSP_ALGORITHMS.dijkstra;
-	const dagSp = SSSP_ALGORITHMS.dagShortestPaths;
-	const bellman = SSSP_ALGORITHMS.bellmanFord;
+	const algos = Object.values(SSSP_ALGORITHMS);
+	const bellman = algos.find(a => a.handlesNegatives && !a.needsDag);
+	const dagSp = algos.find(a => a.needsDag);
+	const dijkstra = algos.find(a => !a.handlesNegatives && !a.needsDag);
 	return {
 		id: 'sssp',
 		topicId: 'shortest-paths',

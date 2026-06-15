@@ -202,7 +202,11 @@ const M2_EDGES = [
 	{ u: 'C', v: 'D', w: 2 },
 ];
 const M2_W = weightMap(M2_EDGES);
-const M2_PRIM = primTrace({ vertices: M2_VERTICES, edges: M2_EDGES, start: 'A' });
+const M2_PRIM = primTrace({
+	vertices: M2_VERTICES,
+	edges: M2_EDGES,
+	start: 'A',
+});
 // treeEdges is in Prim acceptance order (lightest crossing edge each step).
 const M2_ACCEPT = M2_PRIM.treeEdges.map(id => mstEdgeLabel(id, M2_W));
 const M2_ITEMS_SHUFFLED = [...M2_ACCEPT].slice().reverse();
@@ -236,12 +240,7 @@ const problemM2 = {
 		{
 			kind: 'choice',
 			prompt: 'Which edge does Prim add FIRST from start vertex A?',
-			options: [
-				`${M2_ACCEPT[0]}`,
-				'A–B (3)',
-				'C–D (2)',
-				'B–D (5)',
-			],
+			options: [`${M2_ACCEPT[0]}`, 'A–B (3)', 'C–D (2)', 'B–D (5)'],
 			answer: `${M2_ACCEPT[0]}`,
 			explanation:
 				`The frontier out of A is A–B(3) and A–C(1); the lighter is ${M2_ACCEPT[0]}, ` +
@@ -352,7 +351,12 @@ const problemS2 = {
 			prompt:
 				'This graph has a negative-weight edge B→A(-3). Which algorithm is the ' +
 				'correct choice to compute shortest paths here?',
-			options: ['Bellman-Ford', 'Dijkstra', 'Either works the same', 'Neither can run'],
+			options: [
+				'Bellman-Ford',
+				'Dijkstra',
+				'Either works the same',
+				'Neither can run',
+			],
 			answer: 'Bellman-Ford',
 			explanation:
 				'Bellman-Ford relaxes every edge |V|−1 times and is correct with negative ' +
@@ -388,8 +392,7 @@ const problemS2 = {
 				'The vertex with the largest distance',
 				'Whether Dijkstra would have been faster',
 			],
-			answer:
-				'A reachable negative-weight cycle (any edge that still relaxes)',
+			answer: 'A reachable negative-weight cycle (any edge that still relaxes)',
 			explanation:
 				'After |V|−1 passes all true shortest paths are settled. If any edge can ' +
 				'still be relaxed on one more pass, a reachable negative-weight cycle exists ' +
@@ -451,12 +454,10 @@ const problemH1 = {
 		},
 		{
 			kind: 'numeric',
-			prompt:
-				'After BuildMaxHeap, what value sits at the root (index 0)?',
+			prompt: 'After BuildMaxHeap, what value sits at the root (index 0)?',
 			answer: H1_FINAL[0],
 			placeholder: 'a value',
-			explanation:
-				`The root of a max-heap is always the maximum element, here ${H1_FINAL[0]}.`,
+			explanation: `The root of a max-heap is always the maximum element, here ${H1_FINAL[0]}.`,
 		},
 	],
 };
@@ -488,8 +489,7 @@ const problemH2 = {
 			prompt: 'What value does ExtractMax return?',
 			answer: H2_MAX,
 			placeholder: 'a value',
-			explanation:
-				`ExtractMax always returns the root of a max-heap, here ${H2_MAX}.`,
+			explanation: `ExtractMax always returns the root of a max-heap, here ${H2_MAX}.`,
 		},
 		{
 			kind: 'choice',
@@ -538,10 +538,9 @@ const masterProblem = ({ id, a, b, d, k, fnText, recurrenceText }) => {
 		'Θ(n^3)',
 		'Θ(n)',
 	];
-	const boundOptions = [
-		r.result,
-		...BOUND_POOL.filter(o => o !== r.result),
-	].filter((o, i, arr) => arr.indexOf(o) === i).slice(0, 4);
+	const boundOptions = [r.result, ...BOUND_POOL.filter(o => o !== r.result)]
+		.filter((o, i, arr) => arr.indexOf(o) === i)
+		.slice(0, 4);
 	return {
 		id,
 		a,
@@ -562,7 +561,9 @@ const masterProblem = ({ id, a, b, d, k, fnText, recurrenceText }) => {
 function formatNForExam(x) {
 	if (Math.abs(x) < 0.001) return '1';
 	if (Math.abs(x - 1) < 0.001) return 'n';
-	const rounded = Number.isInteger(x) ? String(x) : x.toFixed(2).replace(/0+$/, '').replace(/\.$/, '');
+	const rounded = Number.isInteger(x)
+		? String(x)
+		: x.toFixed(2).replace(/0+$/, '').replace(/\.$/, '');
 	return `n^${rounded}`;
 }
 
@@ -595,8 +596,7 @@ const masterCheck = T => ({
 	parts: [
 		{
 			kind: 'choice',
-			prompt:
-				`Compute the leaf-growth exponent c = log_b(a) = log_${T.b}(${T.a}). What is c?`,
+			prompt: `Compute the leaf-growth exponent c = log_b(a) = log_${T.b}(${T.a}). What is c?`,
 			options: [...new Set([T.cText, String(T.d), '1', '2', '3'])].slice(0, 4),
 			answer: T.cText,
 			explanation:
@@ -605,8 +605,7 @@ const masterCheck = T => ({
 		},
 		{
 			kind: 'choice',
-			prompt:
-				`Comparing c = ${T.cText} with d = ${T.d}, which Master Theorem case applies?`,
+			prompt: `Comparing c = ${T.cText} with d = ${T.d}, which Master Theorem case applies?`,
 			options: T.caseOptions,
 			answer: T.analysis.name,
 			explanation:
@@ -622,8 +621,7 @@ const masterCheck = T => ({
 			prompt: 'What is the asymptotic bound Θ(·) for T(n)?',
 			options: T.boundOptions,
 			answer: T.analysis.result,
-			explanation:
-				`The bound is ${T.analysis.result}. ${T.analysis.explanation}`,
+			explanation: `The bound is ${T.analysis.result}. ${T.analysis.explanation}`,
 		},
 	],
 });
@@ -850,9 +848,9 @@ const problemL1 = {
 	kind: 'problem',
 	stem:
 		`Counting-sort the array [${L1_INPUT.join(', ')}]. The keys are integers in ` +
-		`0..${Math.max(...L1_INPUT)}, so the count array has indices 0..${
-			Math.max(...L1_INPUT)
-		}.`,
+		`0..${Math.max(...L1_INPUT)}, so the count array has indices 0..${Math.max(
+			...L1_INPUT
+		)}.`,
 	parts: [
 		{
 			kind: 'numeric',
@@ -861,10 +859,9 @@ const problemL1 = {
 				'k (the number of count slots)?',
 			answer: L1_K,
 			placeholder: 'a count',
-			explanation:
-				`The largest key is ${Math.max(...L1_INPUT)}, so the slots are 0..${
-					Math.max(...L1_INPUT)
-				} — that is k = ${L1_K} slots.`,
+			explanation: `The largest key is ${Math.max(...L1_INPUT)}, so the slots are 0..${Math.max(
+				...L1_INPUT
+			)} — that is k = ${L1_K} slots.`,
 		},
 		{
 			kind: 'numeric',
@@ -872,8 +869,7 @@ const problemL1 = {
 				'After the tally pass, what is count[0] (the number of keys equal to 0)?',
 			answer: L1_COUNT0,
 			placeholder: 'a count',
-			explanation:
-				`There are ${L1_COUNT0} zeros in the input, so count[0] = ${L1_COUNT0}.`,
+			explanation: `There are ${L1_COUNT0} zeros in the input, so count[0] = ${L1_COUNT0}.`,
 		},
 		{
 			kind: 'choice',
@@ -1030,8 +1026,7 @@ const problemB1 = {
 		},
 		{
 			kind: 'choice',
-			prompt:
-				'Which key is the ROOT of the tree, and which is its left child?',
+			prompt: 'Which key is the ROOT of the tree, and which is its left child?',
 			options: [
 				`root ${B1_PRE[0]}, left child ${B1_PRE[1]}`,
 				`root ${B1_INORDER[0]}, left child ${B1_INORDER[1]}`,
@@ -1117,8 +1112,7 @@ const problemG1 = {
 	parts: [
 		{
 			kind: 'order',
-			prompt:
-				'Give the order BFS (a FIFO queue frontier) VISITS the vertices.',
+			prompt: 'Give the order BFS (a FIFO queue frontier) VISITS the vertices.',
 			items: ['F', 'E', 'D', 'C', 'B', 'A'],
 			answer: G1_BFS_ORDER,
 			explanation:
@@ -1182,7 +1176,8 @@ const HM1_CAPACITY = 7;
 const HM1_ENTRIES = HM1_KEYS.map(k => ({ key: k, value: k.length }));
 const HM1_BUCKETS = createBucketsFromEntries(HM1_ENTRIES, HM1_CAPACITY);
 // Find the bucket holding a specific key (derived, not hand-typed).
-const HM1_BUCKET_OF = key => HM1_BUCKETS.findIndex(b => b.some(e => e.key === key));
+const HM1_BUCKET_OF = key =>
+	HM1_BUCKETS.findIndex(b => b.some(e => e.key === key));
 const HM1_CAT_BUCKET = HM1_BUCKET_OF('cat');
 // The number of buckets that hold more than one key (a real chained collision).
 const HM1_COLLISION_BUCKETS = HM1_BUCKETS.filter(b => b.length > 1).length;
@@ -1388,7 +1383,10 @@ const M3_BASE = kruskalTrace({ vertices: M3_VERTICES, edges: M3_EDGES });
 const M3_BASE_ACCEPT = M3_BASE.treeEdges.map(id => mstEdgeLabel(id, M3_W));
 const M3_SHIFT = 10;
 const M3_SHIFTED_EDGES = M3_EDGES.map(e => ({ ...e, w: e.w + M3_SHIFT }));
-const M3_SHIFTED = kruskalTrace({ vertices: M3_VERTICES, edges: M3_SHIFTED_EDGES });
+const M3_SHIFTED = kruskalTrace({
+	vertices: M3_VERTICES,
+	edges: M3_SHIFTED_EDGES,
+});
 // Same tree? Compare the (sorted) accepted edge-id sets.
 const M3_SAME_TREE =
 	JSON.stringify([...M3_BASE.treeEdges].sort()) ===
@@ -1430,8 +1428,7 @@ const problemM3 = {
 			prompt: 'What is the total weight of the MST on the ORIGINAL graph?',
 			answer: M3_BASE_WEIGHT,
 			placeholder: 'total weight',
-			explanation:
-				`The MST edges are ${M3_BASE_ACCEPT.join(', ')}, summing to ${M3_BASE_WEIGHT}.`,
+			explanation: `The MST edges are ${M3_BASE_ACCEPT.join(', ')}, summing to ${M3_BASE_WEIGHT}.`,
 		},
 		{
 			kind: 'numeric',
@@ -1478,8 +1475,6 @@ const F1_N = 8;
 // Inner body executes for j = i..n−1 on each i, i.e. n + (n−1) + … + 1 times.
 // That sum is n(n+1)/2, computed here as an explicit expression (the answer key).
 const F1_BODY_COUNT = (F1_N * (F1_N + 1)) / 2; // 8·9/2 = 36
-// A single-loop linear baseline for contrast (n iterations).
-const F1_LINEAR_COUNT = F1_N;
 
 const problemF1 = {
 	kind: 'problem',
@@ -1553,9 +1548,7 @@ const problemF1 = {
 			explanation:
 				'n pushes do at most ~2n total work (geometric resizing: 1 + 2 + 4 + … ' +
 				'< 2n copies), so the average per push is Θ(1). Worst-case for one push ' +
-				`is still Θ(n); a plain linear scan instead costs Θ(${F1_LINEAR_COUNT}) ` +
-				'work for n = ' +
-				`${F1_N}.`,
+				'is still Θ(n).',
 		},
 	],
 };
@@ -1687,12 +1680,7 @@ const problemSQ1 = {
 			prompt:
 				'After the full sequence, what does the STACK contain, listed bottom to ' +
 				'top? (A stack removes the most recently added element.)',
-			options: [
-				SQ_STACK_FINAL_STR,
-				SQ_QUEUE_FINAL_STR,
-				'[A, D]',
-				'[B, D]',
-			],
+			options: [SQ_STACK_FINAL_STR, SQ_QUEUE_FINAL_STR, '[A, D]', '[B, D]'],
 			answer: SQ_STACK_FINAL_STR,
 			explanation:
 				'Push A, B, C leaves [A, B, C]. Pop removes C (the top). Push D gives ' +
@@ -1703,12 +1691,7 @@ const problemSQ1 = {
 			prompt:
 				'After the full sequence, what does the QUEUE contain, listed front to ' +
 				'rear? (A queue removes the earliest added element.)',
-			options: [
-				SQ_QUEUE_FINAL_STR,
-				SQ_STACK_FINAL_STR,
-				'[A, D]',
-				'[B, D]',
-			],
+			options: [SQ_QUEUE_FINAL_STR, SQ_STACK_FINAL_STR, '[A, D]', '[B, D]'],
 			answer: SQ_QUEUE_FINAL_STR,
 			explanation:
 				'Enqueue A, B, C leaves [A, B, C]. Dequeue removes A (the front). ' +
@@ -1876,9 +1859,9 @@ const problemMS1 = {
 			explanation:
 				`This run performs ${MS1_COMPARISONS} comparisons across all the merges. ` +
 				'Merge sort makes Θ(n log n) comparisons; for n = ' +
-				`${MS1_INPUT.length} the worst case is about n·log₂n = ` +
+				`${MS1_INPUT.length} that is at most about n·log₂n = ` +
 				`${MS1_INPUT.length} × ${Math.log2(MS1_INPUT.length)} = ` +
-				`${MS1_INPUT.length * Math.log2(MS1_INPUT.length)}.`,
+				`${MS1_INPUT.length * Math.log2(MS1_INPUT.length)} in the worst case, so ${MS1_COMPARISONS} sits just under the bound.`,
 		},
 		{
 			kind: 'choice',
@@ -1916,7 +1899,8 @@ const MS2_TOP_MERGE = MS2_STEPS.filter(
 		s.metadata.target[0] === 0 &&
 		s.metadata.target[1] === MS2_LEFT.length + MS2_RIGHT.length - 1
 );
-const MS2_MERGED = MS2_TOP_MERGE[MS2_TOP_MERGE.length - 1].metadata.outputSnapshot;
+const MS2_MERGED =
+	MS2_TOP_MERGE[MS2_TOP_MERGE.length - 1].metadata.outputSnapshot;
 const MS2_MERGED_STR = `[${MS2_MERGED.join(', ')}]`;
 // Recursion depth (number of halving levels) for n elements = ⌈log₂ n⌉, computed
 // with an explicit expression so the key is derived, not guessed.
@@ -2174,8 +2158,7 @@ const problemNP1 = {
 		},
 		{
 			kind: 'choice',
-			prompt:
-				'What is NP-complete, precisely?',
+			prompt: 'What is NP-complete, precisely?',
 			options: [
 				'A problem that is BOTH in NP AND NP-hard',
 				'Any problem that takes exponential time',
@@ -2240,8 +2223,7 @@ const problemNP2 = {
 				'Reduce INDEPENDENT-SET to a problem in P',
 				'Either direction proves NP-hardness equally',
 			],
-			answer:
-				'Reduce 3-SAT to INDEPENDENT-SET (3-SAT ≤p INDEPENDENT-SET)',
+			answer: 'Reduce 3-SAT to INDEPENDENT-SET (3-SAT ≤p INDEPENDENT-SET)',
 			misconceptions: {
 				'Reduce INDEPENDENT-SET to 3-SAT (INDEPENDENT-SET ≤p 3-SAT)':
 					'That direction only shows INDEPENDENT-SET is no harder than 3-SAT (an ' +

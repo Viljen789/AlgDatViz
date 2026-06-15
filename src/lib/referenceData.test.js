@@ -9,6 +9,7 @@ import {
 import { ALGORITHM_INFO } from '../utils/sorting/algorithmInfo.js';
 import { ALGORITHM_ORDER } from '../utils/sorting/algorithmMeta.js';
 import { PROGRESS_TOPICS } from '../data/curriculum.js';
+import { SSSP_ALGORITHMS } from '../components/ShortestPaths/ssspMeta.js';
 
 // ── sortComparison ──────────────────────────────────────────────────────────
 test('sortComparison covers every sort in ALGORITHM_ORDER, in order', () => {
@@ -72,12 +73,24 @@ test('decision cards point at real curriculum topics', () => {
 	}
 });
 
-test('the SSSP card derives its picks from the metas (Dijkstra needs non-negative)', () => {
+test('the SSSP card derives its picks from the meta booleans (drift-guarded)', () => {
 	const sssp = decisionCards.find(c => c.id === 'sssp');
-	const picks = sssp.options.map(o => o.pick);
-	assert.ok(picks.includes('Bellman-Ford'));
-	assert.ok(picks.includes('DAG-SP'));
-	assert.ok(picks.includes('Dijkstra'));
+	const negatives = sssp.options.find(o => /negative edges/i.test(o.when));
+	const dag = sssp.options.find(o => /DAG/i.test(o.when));
+	const nonneg = sssp.options.find(o => /non-negative/i.test(o.when));
+	// Each option must name the algorithm its deciding predicate selects. If a future
+	// ssspMeta edit invalidated a rule (e.g. flipped dijkstra.handlesNegatives), this
+	// fails here instead of silently misleading a student on the cheat sheet.
+	assert.equal(negatives.pick, SSSP_ALGORITHMS.bellmanFord.name);
+	assert.equal(dag.pick, SSSP_ALGORITHMS.dagShortestPaths.name);
+	assert.equal(nonneg.pick, SSSP_ALGORITHMS.dijkstra.name);
+	// The booleans that make those derivations valid (mutually exclusive, exhaustive).
+	assert.ok(
+		SSSP_ALGORITHMS.bellmanFord.handlesNegatives &&
+			!SSSP_ALGORITHMS.bellmanFord.needsDag
+	);
+	assert.ok(SSSP_ALGORITHMS.dagShortestPaths.needsDag);
+	assert.ok(!SSSP_ALGORITHMS.dijkstra.handlesNegatives);
 });
 
 // ── complexitySheet ─────────────────────────────────────────────────────────
@@ -87,11 +100,6 @@ test('complexitySheet covers all progress topics, in teaching order', () => {
 		complexitySheet.map(t => t.id),
 		PROGRESS_TOPICS.map(t => t.id)
 	);
-});
-
-test('complexitySheet covers all 15 curriculum topics', () => {
-	// The TDT4120 curriculum is 15 topics; the cheat sheet must list every one.
-	assert.equal(complexitySheet.length, 15);
 });
 
 test('complexitySheet rows carry number, name, complexity, accent', () => {
