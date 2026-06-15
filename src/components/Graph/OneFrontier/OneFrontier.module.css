@@ -250,7 +250,11 @@
 }
 
 .edgeTree {
-	stroke: color-mix(in srgb, var(--topic-accent) 70%, var(--color-border-strong));
+	stroke: color-mix(
+		in srgb,
+		var(--topic-accent) 70%,
+		var(--color-border-strong)
+	);
 	stroke-width: 1.8;
 }
 
@@ -378,6 +382,23 @@
 	min-height: 24px;
 }
 
+/* Frontier shape encodes the discipline: FIFO/PQ drain along a horizontal lane,
+   LIFO stacks into a vertical pile. The row<->column delta is what GSAP Flip
+   interpolates on a discipline swap, so "the same elements, re-disciplined" is a
+   visible reflow rather than a remount. Base stays row (pixel-identical to the
+   FIFO rest-state); only the pile modifier changes layout. */
+.frontierChipsLane {
+	flex-direction: row;
+}
+
+.frontierChipsPile {
+	/* column-reverse keeps the next-to-extract chip (index 0, the newest pushed)
+	   at the TOP of the pile — exactly how a stack hands back its newest first. */
+	flex-direction: column-reverse;
+	flex-wrap: nowrap;
+	align-items: flex-start;
+}
+
 .chip {
 	display: inline-flex;
 	align-items: center;
@@ -448,6 +469,9 @@
 	.edge {
 		transition-duration: 1ms;
 	}
+	/* The discipline-swap Flip is skipped in JS (no travel); the chips reflow
+	   instantly into the new orientation and PQ key-order — the lesson is kept —
+	   with only a brief opacity cross-fade so the change still registers. */
 }
 
 /* ---------- Responsive ---------- */
