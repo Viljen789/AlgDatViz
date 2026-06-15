@@ -41,6 +41,19 @@ import {
 	extractMaxTrace,
 } from '../components/Heaps/heapTrace.js';
 import { analyseRecurrence } from '../components/MasterTheorem/masterMath.js';
+import { floydWarshall } from '../components/AllPairsShortestPaths/fwTrace.js';
+import { getCountingSortStepsWithStats } from '../utils/sorting/algorithms/countingSort.js';
+import { radixWithSubroutine } from '../components/LinearTimeSorting/stability.js';
+import {
+	buildBst,
+	inorderValues,
+	deleteValue,
+	getTraversalSteps,
+	containsValue,
+} from '../components/Tree/treeUtils.js';
+import { genericTraverse } from '../components/Graph/oneFrontier.js';
+import { createBucketsFromEntries } from '../components/HashMap/hashMapTrace.js';
+import { edmondsKarpTrace } from '../components/MaxFlow/maxFlowTrace.js';
 
 // ── small derivation helpers (pure) ──────────────────────────────────────────
 
@@ -81,6 +94,15 @@ const settleOrder = frames => {
 
 // Format a dist[] map value (null = unreachable / ∞) for a numeric answer key.
 const distVal = v => (v == null ? Infinity : v);
+
+// The dist[] snapshot AFTER a given Bellman-Ford pass: walk the trace frames and
+// keep the last frame stamped with that pass index (the state after its final
+// edge-relax, i.e. after the whole pass). Pure read off the generator's frames.
+const distAfterPass = (frames, pass) => {
+	let snap = null;
+	for (const f of frames) if (f.pass === pass) snap = f.dist;
+	return snap || {};
+};
 
 // =============================================================================
 // MST — two problems on two small weighted, connected, undirected graphs.
@@ -604,6 +626,841 @@ const problemT1 = masterCheck(T1);
 const problemT2 = masterCheck(T2);
 
 // =============================================================================
+// ALL-PAIRS SHORTEST PATHS — a full Floyd-Warshall hand-trace (one final row + an
+// intermediate-layer cell), derived from floydWarshall.
+// =============================================================================
+
+// Problem A1: Floyd-Warshall on a 4-vertex directed graph (vertices 1..4). We
+// grade one complete final-matrix ROW and one cell of an intermediate k-layer,
+// both read straight off the generator's layers.
+const A1_GRAPH = {
+	nodes: [{ id: '1' }, { id: '2' }, { id: '3' }, { id: '4' }],
+	edges: [
+		{ from: '1', to: '2', weight: 3 },
+		{ from: '1', to: '4', weight: 7 },
+		{ from: '2', to: '3', weight: 1 },
+		{ from: '3', to: '1', weight: 2 },
+		{ from: '3', to: '4', weight: 2 },
+		{ from: '4', to: '2', weight: 5 },
+	],
+};
+const A1_FW = floydWarshall(A1_GRAPH);
+const A1_IDS = A1_FW.ids; // ['1','2','3','4']
+// Final shortest-distance row out of vertex 1 (distVal maps null → ∞ for keys).
+const A1_ROW1 = A1_FW.dist[A1_IDS.indexOf('1')];
+const A1_D12 = distVal(A1_ROW1[A1_IDS.indexOf('2')]);
+const A1_D13 = distVal(A1_ROW1[A1_IDS.indexOf('3')]);
+const A1_D14 = distVal(A1_ROW1[A1_IDS.indexOf('4')]);
+// layers[k] = D after allowing intermediates {1..k}. layers[1] allows only vertex 1.
+// The cell d[4][2] after the k=1 round: is going 4 → 1 → 2 yet possible? No, since
+// 4 → 1 has no path through {1} alone, so d[4][2] stays its direct edge weight 5.
+const A1_LAYER1 = A1_FW.layers[1];
+const A1_L1_42 = distVal(A1_LAYER1[A1_IDS.indexOf('4')][A1_IDS.indexOf('2')]);
+
+const problemA1 = {
+	kind: 'problem',
+	stem:
+		'Directed weighted graph on vertices 1, 2, 3, 4 with edges ' +
+		'1→2(3), 1→4(7), 2→3(1), 3→1(2), 3→4(2), 4→2(5). ' +
+		'Run Floyd-Warshall (the triple loop over intermediate vertices k = 1..4).',
+	parts: [
+		{
+			kind: 'numeric',
+			prompt:
+				'In the FINAL distance matrix, what is d[1][3], the shortest distance ' +
+				'from vertex 1 to vertex 3?',
+			answer: A1_D13,
+			placeholder: 'a distance',
+			explanation:
+				`d[1][3] = ${A1_D13}, along 1 → 2 → 3 (3 + 1). No shorter route through ` +
+				'any intermediate exists.',
+		},
+		{
+			kind: 'order',
+			prompt:
+				'Pair each destination with its FINAL shortest distance from vertex 1. ' +
+				'Drag the four cells into the row order d[1][1], d[1][2], d[1][3], d[1][4].',
+			// Labeled cells so the task is a real arrangement even when the distances
+			// happen to be monotonic; items are presented in a non-answer order.
+			items: [
+				`d[1][3] = ${A1_D13}`,
+				`d[1][1] = 0`,
+				`d[1][4] = ${A1_D14}`,
+				`d[1][2] = ${A1_D12}`,
+			],
+			answer: [
+				`d[1][1] = 0`,
+				`d[1][2] = ${A1_D12}`,
+				`d[1][3] = ${A1_D13}`,
+				`d[1][4] = ${A1_D14}`,
+			],
+			explanation:
+				`Row 1 settles to [0, ${A1_D12}, ${A1_D13}, ${A1_D14}]: d[1][1] = 0, ` +
+				`d[1][2] = ${A1_D12} (direct), d[1][3] = ${A1_D13} (via 2), and d[1][4] = ` +
+				`${A1_D14} (via 2 → 3, since 3 → 4 is only 2).`,
+		},
+		{
+			kind: 'numeric',
+			prompt:
+				'After the k = 1 round (intermediates restricted to {1}), what is d[4][2]? ' +
+				'Ask only: does routing 4 → 1 → 2 beat the direct edge?',
+			answer: A1_L1_42,
+			placeholder: 'a distance',
+			explanation:
+				`d[4][2] = ${A1_L1_42}. With only vertex 1 allowed as an intermediate, ` +
+				'there is no 4 → 1 path yet, so d[4][2] keeps its direct edge weight 5. It ' +
+				'only drops later, once vertex 3 is admitted (4 → 2 stays the shortest here).',
+		},
+		{
+			kind: 'choice',
+			prompt:
+				'Why is the loop order k OUTERMOST (above i and j) essential to ' +
+				'correctness?',
+			options: [
+				'd[i][j] through {1..k} is built from the {1..k−1} layer, so all of k−1 must finish first',
+				'It makes the algorithm run in Θ(V²) instead of Θ(V³)',
+				'It lets the matrix be filled column by column',
+				'It avoids needing a predecessor matrix',
+			],
+			answer:
+				'd[i][j] through {1..k} is built from the {1..k−1} layer, so all of k−1 must finish first',
+			misconceptions: {
+				'It makes the algorithm run in Θ(V²) instead of Θ(V³)':
+					'The triple loop is Θ(V³) regardless of which index is outermost. Loop order is about correctness of the DP recurrence, not the asymptotic cost.',
+			},
+			explanation:
+				'The recurrence d_k[i][j] = min(d_{k−1}[i][j], d_{k−1}[i][k] + d_{k−1}[k][j]) ' +
+				'reads the previous k-layer. Finishing all of k before any of k+1 guarantees ' +
+				'every cell it reads is already the {1..k} answer.',
+		},
+	],
+};
+
+// =============================================================================
+// SHORTEST PATHS — a full per-pass Bellman-Ford dist[] hand-trace (negative
+// edges, no negative cycle), derived from bellmanFordTrace's frames.
+// =============================================================================
+
+// Problem S3: dist[] after pass 1, and the final dist[], read off the trace.
+const S3_GRAPH = {
+	nodes: [{ id: 'S' }, { id: 'A' }, { id: 'B' }, { id: 'C' }, { id: 'D' }],
+	edges: [
+		{ from: 'S', to: 'A', weight: 6 },
+		{ from: 'S', to: 'B', weight: 7 },
+		{ from: 'A', to: 'B', weight: 8 },
+		{ from: 'A', to: 'C', weight: 5 },
+		{ from: 'A', to: 'D', weight: -4 },
+		{ from: 'B', to: 'C', weight: -3 },
+		{ from: 'B', to: 'D', weight: 9 },
+		{ from: 'C', to: 'A', weight: -2 },
+		{ from: 'D', to: 'S', weight: 2 },
+	],
+};
+const S3_BF = bellmanFordTrace(S3_GRAPH, { source: 'S' });
+const S3_DIST = S3_BF.dist; // final distances
+// The relaxation order is the edge list order above; after pass 1, A→D(-4) has
+// fired (dist[D] = 2) but C→A(-2) has not yet lowered A, so dist[D] is still 2.
+const S3_PASS1 = distAfterPass(S3_BF.frames, 1);
+const S3_P1_D = distVal(S3_PASS1.D);
+const S3_FINAL_D = distVal(S3_DIST.D);
+const S3_FINAL_C = distVal(S3_DIST.C);
+
+const problemS3 = {
+	kind: 'problem',
+	stem:
+		'Directed graph with negative edges (no negative cycle): ' +
+		'S→A(6), S→B(7), A→B(8), A→C(5), A→D(−4), B→C(−3), B→D(9), C→A(−2), D→S(2). ' +
+		'Run Bellman-Ford from S, relaxing the edges in the listed order each pass.',
+	parts: [
+		{
+			kind: 'numeric',
+			prompt:
+				'After ONE full pass (relax all nine edges once), what is dist[D]?',
+			answer: S3_P1_D,
+			placeholder: 'a distance',
+			explanation:
+				`dist[D] = ${S3_P1_D} after pass 1: S→A sets dist[A] = 6, then A→D(−4) gives ` +
+				'dist[D] = 2. Edges later in the order have not yet improved A, so D rests at 2 ' +
+				'for now.',
+		},
+		{
+			kind: 'numeric',
+			prompt:
+				'After the algorithm finishes all |V|−1 passes, what is the FINAL dist[D]?',
+			answer: S3_FINAL_D,
+			placeholder: 'a distance',
+			explanation:
+				`Final dist[D] = ${S3_FINAL_D}. Later passes propagate S→B→C→A (7 − 3 − 2 = 2), ` +
+				'lowering dist[A] to 2, so A→D gives dist[D] = 2 − 4 = −2.',
+		},
+		{
+			kind: 'numeric',
+			prompt: 'What is the FINAL dist[C]?',
+			answer: S3_FINAL_C,
+			placeholder: 'a distance',
+			explanation:
+				`Final dist[C] = ${S3_FINAL_C}, via S→B→C (7 + (−3) = 4), which beats S→A→C ` +
+				'(6 + 5 = 11).',
+		},
+		{
+			kind: 'choice',
+			prompt:
+				'Bellman-Ford runs |V|−1 = 4 passes here. Why exactly |V|−1, not fewer?',
+			options: [
+				'A shortest path has at most |V|−1 edges, and each pass extends correct distances by one more edge',
+				'Because the graph has 4 vertices and one pass per vertex is a coincidence',
+				'To give every edge a chance to be the source edge once',
+				'Negative edges require one pass each to cancel out',
+			],
+			answer:
+				'A shortest path has at most |V|−1 edges, and each pass extends correct distances by one more edge',
+			explanation:
+				'After pass k, all shortest paths using ≤ k edges are correct. A simple ' +
+				'shortest path visits at most |V| vertices, so ≤ |V|−1 edges — |V|−1 passes ' +
+				'settle them all.',
+		},
+	],
+};
+
+// =============================================================================
+// LINEAR-TIME SORTING — a full counting-sort pass and a radix-stability
+// modification analysis, both derived from the real generators.
+// =============================================================================
+
+// Problem L1: Counting sort on a small array of small keys. We grade the count[]
+// histogram after the tally and the fully reconstructed array.
+const L1_INPUT = [2, 5, 3, 0, 2, 3, 0, 3];
+const L1_STEPS = getCountingSortStepsWithStats(L1_INPUT).steps;
+const L1_LAST = L1_STEPS[L1_STEPS.length - 1];
+const L1_SORTED = L1_LAST.array; // final sorted array
+const L1_SORTED_STR = `[${L1_SORTED.join(', ')}]`;
+// The count[] array after the counting phase finishes (last 'counting' step).
+const L1_COUNTING = L1_STEPS.filter(s => s.metadata.phase === 'counting');
+const L1_COUNT = L1_COUNTING[L1_COUNTING.length - 1].metadata.countArray;
+const L1_K = L1_LAST.metadata.k; // range size = max + 1
+const L1_COUNT0 = L1_COUNT[0]; // how many keys equal 0
+
+const problemL1 = {
+	kind: 'problem',
+	stem:
+		`Counting-sort the array [${L1_INPUT.join(', ')}]. The keys are integers in ` +
+		`0..${Math.max(...L1_INPUT)}, so the count array has indices 0..${
+			Math.max(...L1_INPUT)
+		}.`,
+	parts: [
+		{
+			kind: 'numeric',
+			prompt:
+				'Counting sort allocates count[0..k−1] where k is the key range. What is ' +
+				'k (the number of count slots)?',
+			answer: L1_K,
+			placeholder: 'a count',
+			explanation:
+				`The largest key is ${Math.max(...L1_INPUT)}, so the slots are 0..${
+					Math.max(...L1_INPUT)
+				} — that is k = ${L1_K} slots.`,
+		},
+		{
+			kind: 'numeric',
+			prompt:
+				'After the tally pass, what is count[0] (the number of keys equal to 0)?',
+			answer: L1_COUNT0,
+			placeholder: 'a count',
+			explanation:
+				`There are ${L1_COUNT0} zeros in the input, so count[0] = ${L1_COUNT0}.`,
+		},
+		{
+			kind: 'choice',
+			prompt: 'What is the final array after counting sort completes?',
+			options: [
+				L1_SORTED_STR,
+				`[${[...L1_INPUT].sort((a, b) => b - a).join(', ')}]`,
+				`[${L1_INPUT.join(', ')}]`,
+				`[${[...new Set(L1_INPUT)].sort((a, b) => a - b).join(', ')}]`,
+			],
+			answer: L1_SORTED_STR,
+			explanation:
+				`Replaying the counts in increasing key order rebuilds ${L1_SORTED_STR}. ` +
+				'Counting sort emits each key value count[v] times, so duplicates are kept, not ' +
+				'deduplicated.',
+		},
+		{
+			kind: 'choice',
+			prompt:
+				'Counting sort runs in Θ(n + k). When is that genuinely linear in n, ' +
+				'beating the Θ(n log n) comparison lower bound?',
+			options: [
+				'When k is O(n), i.e. the key range is not much larger than the array',
+				'Whenever the array has no duplicates',
+				'Only when the input is already sorted',
+				'Always, for any integer keys',
+			],
+			answer:
+				'When k is O(n), i.e. the key range is not much larger than the array',
+			misconceptions: {
+				'Always, for any integer keys':
+					'If k dominates n (e.g. 32-bit keys with a tiny array) the k term blows up. Counting sort is only linear when the range k is O(n).',
+			},
+			explanation:
+				'Θ(n + k) is Θ(n) exactly when k = O(n). For a huge key range counting sort ' +
+				'wastes time and space on empty slots; that is why radix sort decomposes large ' +
+				'keys into small-range digits.',
+		},
+	],
+};
+
+// Problem L2: a radix-stability MODIFICATION ANALYSIS. LSD radix sorts by digit,
+// least-significant first; each pass MUST be stable. Swapping in an unstable
+// per-digit subroutine breaks the final order — derived by re-running the
+// generator with the unstable subroutine.
+const L2_VALUES = [53, 17, 31, 58, 11, 35];
+const L2_STABLE = radixWithSubroutine(L2_VALUES, true);
+const L2_UNSTABLE = radixWithSubroutine(L2_VALUES, false);
+// The array after the FIRST (ones-digit) stable pass.
+const L2_ONES_AFTER = L2_STABLE.passes[0].after;
+const L2_ONES_STR = `[${L2_ONES_AFTER.join(', ')}]`;
+const L2_STABLE_RESULT_STR = `[${L2_STABLE.result.join(', ')}]`;
+const L2_UNSTABLE_RESULT_STR = `[${L2_UNSTABLE.result.join(', ')}]`;
+
+const problemL2 = {
+	kind: 'problem',
+	stem:
+		`LSD radix sort on the two-digit numbers [${L2_VALUES.join(', ')}]: one pass ` +
+		'on the ones digit, then one pass on the tens digit, each pass a stable ' +
+		'counting sort.',
+	parts: [
+		{
+			kind: 'choice',
+			prompt:
+				'What is the array AFTER the first pass (sorting by the ONES digit only)?',
+			options: [
+				L2_ONES_STR,
+				`[${[...L2_VALUES].sort((a, b) => a - b).join(', ')}]`,
+				`[${[...L2_VALUES]
+					.sort((a, b) => Math.floor(a / 10) - Math.floor(b / 10))
+					.join(', ')}]`,
+				`[${L2_VALUES.join(', ')}]`,
+			],
+			answer: L2_ONES_STR,
+			explanation:
+				`Ordering by the ones digit (keeping ties in input order) gives ${L2_ONES_STR}: ` +
+				'31, 11 (digit 1), then 53, 35 (digit 3/5), and so on. The tens digit is ' +
+				'ignored on this pass.',
+		},
+		{
+			kind: 'choice',
+			prompt: 'After BOTH passes, what is the final array?',
+			options: [
+				L2_STABLE_RESULT_STR,
+				L2_UNSTABLE_RESULT_STR,
+				`[${[...L2_VALUES].sort((a, b) => b - a).join(', ')}]`,
+				L2_ONES_STR,
+			],
+			answer: L2_STABLE_RESULT_STR,
+			explanation:
+				`The tens pass, applied stably, finishes the sort: ${L2_STABLE_RESULT_STR}. ` +
+				'Equal tens digits keep the ones-digit order established by the previous pass.',
+		},
+		{
+			kind: 'choice',
+			prompt:
+				'Suppose we replace the per-digit pass with an UNSTABLE counting sort ' +
+				'(equal digits may be reordered). What happens to the final array?',
+			options: [
+				`It is no longer sorted, e.g. ${L2_UNSTABLE_RESULT_STR}`,
+				'It is still fully sorted; stability only affects speed',
+				'It is sorted but in descending order',
+				'The algorithm crashes on equal digits',
+			],
+			answer: `It is no longer sorted, e.g. ${L2_UNSTABLE_RESULT_STR}`,
+			misconceptions: {
+				'It is still fully sorted; stability only affects speed':
+					'Stability is not a performance detail in radix sort — it is load-bearing for correctness. An unstable per-digit pass destroys the ordering the earlier digit established.',
+			},
+			explanation:
+				'Radix relies on each pass preserving the order set by less-significant digits. ' +
+				`An unstable tens pass scrambles equal-tens records, yielding ${L2_UNSTABLE_RESULT_STR}, ` +
+				'which is not sorted. Stability per digit is mandatory.',
+		},
+	],
+};
+
+// =============================================================================
+// TREES — a full BST hand-trace: build from an insertion order, read the
+// in-order traversal, then a delete operation. Derived from treeUtils.
+// =============================================================================
+
+// Problem B1: insert in a fixed order, then delete a two-child node.
+const B1_INSERT = [50, 30, 70, 20, 40, 60, 80, 35];
+const B1_ROOT = buildBst(B1_INSERT);
+const B1_INORDER = inorderValues(B1_ROOT); // ascending by the BST invariant
+const B1_PRE = (() => {
+	const steps = getTraversalSteps(B1_ROOT, 'preorder');
+	return steps[steps.length - 1].output.map(Number);
+})();
+// Delete 30 (two children); its in-order successor 35 replaces it.
+const B1_AFTER_DEL = deleteValue(B1_ROOT, 30);
+const B1_DEL_INORDER = inorderValues(B1_AFTER_DEL);
+const B1_SUCCESSOR = B1_INORDER[B1_INORDER.indexOf(30) + 1]; // 35
+const B1_REMOVES_30 = !containsValue(B1_AFTER_DEL, 30);
+
+const problemB1 = {
+	kind: 'problem',
+	stem:
+		`Insert the keys ${B1_INSERT.join(', ')} into an initially empty binary ` +
+		'search tree, in that order (each key goes left if smaller than the current ' +
+		'node, right if larger).',
+	parts: [
+		{
+			kind: 'order',
+			prompt:
+				'List the keys in the order an IN-ORDER traversal visits them. Drag them ' +
+				'into that sequence.',
+			items: [...B1_INSERT].sort((a, b) => b - a).map(String),
+			answer: B1_INORDER.map(String),
+			explanation:
+				`An in-order walk of any BST yields its keys in ascending order: ` +
+				`${B1_INORDER.join(', ')}. This is exactly why an in-order traversal sorts.`,
+		},
+		{
+			kind: 'choice',
+			prompt:
+				'Which key is the ROOT of the tree, and which is its left child?',
+			options: [
+				`root ${B1_PRE[0]}, left child ${B1_PRE[1]}`,
+				`root ${B1_INORDER[0]}, left child ${B1_INORDER[1]}`,
+				`root ${B1_PRE[1]}, left child ${B1_PRE[0]}`,
+				`root ${B1_INORDER[B1_INORDER.length - 1]}, left child ${B1_PRE[1]}`,
+			],
+			answer: `root ${B1_PRE[0]}, left child ${B1_PRE[1]}`,
+			misconceptions: {
+				[`root ${B1_INORDER[0]}, left child ${B1_INORDER[1]}`]:
+					'The smallest key is the leftmost LEAF, not the root. The root is whatever was inserted first (here 50); the BST shape is fixed by insertion order.',
+			},
+			explanation:
+				`The first key inserted, ${B1_PRE[0]}, is the root. The next key ` +
+				`${B1_PRE[1]} is smaller, so it becomes the root's left child. A pre-order ` +
+				`traversal (root first) reads ${B1_PRE.join(', ')}.`,
+		},
+		{
+			kind: 'numeric',
+			prompt:
+				'Now DELETE the key 30. It has two children, so it is replaced by its ' +
+				'in-order successor (the smallest key in its right subtree). Which key ' +
+				'moves up to take its place?',
+			answer: B1_SUCCESSOR,
+			placeholder: 'a key',
+			explanation:
+				`The successor of 30 is the minimum of its right subtree, which is ` +
+				`${B1_SUCCESSOR}. It moves up so the BST ordering is preserved; deleting a ` +
+				`two-child node always splices in the successor (or predecessor).`,
+		},
+		{
+			kind: 'order',
+			prompt:
+				'After deleting 30, list the remaining keys in in-order sequence.',
+			items: [...B1_DEL_INORDER].sort((a, b) => b - a).map(String),
+			answer: B1_DEL_INORDER.map(String),
+			explanation:
+				`30 is gone and ${B1_SUCCESSOR} takes its slot, so the in-order sequence is ` +
+				`${B1_DEL_INORDER.join(', ')} — still sorted, still without 30 (removed: ` +
+				`${B1_REMOVES_30}).`,
+		},
+	],
+};
+
+// =============================================================================
+// GRAPHS — one graph, two traversal disciplines: BFS visit order + BFS depths,
+// and the DFS visit order. Derived from genericTraverse (the shared frontier).
+// =============================================================================
+
+// Problem G1: an undirected graph; FIFO frontier → BFS, LIFO frontier → DFS.
+// Adjacency is built alphabetically, so the orders are deterministic.
+const G1_GRAPH = {
+	nodes: [
+		{ id: 'A' },
+		{ id: 'B' },
+		{ id: 'C' },
+		{ id: 'D' },
+		{ id: 'E' },
+		{ id: 'F' },
+	],
+	edges: [
+		{ from: 'A', to: 'B' },
+		{ from: 'A', to: 'C' },
+		{ from: 'B', to: 'D' },
+		{ from: 'C', to: 'D' },
+		{ from: 'C', to: 'E' },
+		{ from: 'D', to: 'F' },
+		{ from: 'E', to: 'F' },
+	],
+};
+const G1_BFS = genericTraverse(G1_GRAPH, { discipline: 'fifo', start: 'A' });
+const G1_DFS = genericTraverse(G1_GRAPH, { discipline: 'lifo', start: 'A' });
+const G1_BFS_ORDER = G1_BFS.visitOrder;
+const G1_DFS_ORDER = G1_DFS.visitOrder;
+// BFS depth = shortest unweighted hop count from A.
+const G1_DEPTH_F = distVal(G1_BFS.dist.F);
+
+const problemG1 = {
+	kind: 'problem',
+	stem:
+		'Undirected graph with vertices A..F and edges A–B, A–C, B–D, C–D, C–E, ' +
+		'D–F, E–F. Traverse from A. When a vertex has several unvisited neighbours, ' +
+		'consider them in alphabetical order.',
+	parts: [
+		{
+			kind: 'order',
+			prompt:
+				'Give the order BFS (a FIFO queue frontier) VISITS the vertices.',
+			items: ['F', 'E', 'D', 'C', 'B', 'A'],
+			answer: G1_BFS_ORDER,
+			explanation:
+				`BFS drains the queue oldest-first, so it sweeps level by level: ` +
+				`${G1_BFS_ORDER.join(' → ')}. A (level 0), then B, C (level 1), then D, E ` +
+				'(level 2), then F (level 3).',
+		},
+		{
+			kind: 'numeric',
+			prompt:
+				'BFS labels each vertex with its depth (hop count from A). What is the ' +
+				'BFS depth of F?',
+			answer: G1_DEPTH_F,
+			placeholder: 'a depth',
+			explanation:
+				`F sits at depth ${G1_DEPTH_F}: the shortest unweighted route from A reaches it ` +
+				'in that many hops (e.g. A → C → D → F or A → C → E → F). BFS finds shortest ' +
+				'paths in unweighted graphs.',
+		},
+		{
+			kind: 'order',
+			prompt:
+				'Give the order DFS (a LIFO stack frontier) VISITS the vertices, with ' +
+				'the same alphabetical tie-breaking.',
+			items: ['F', 'E', 'D', 'C', 'B', 'A'],
+			answer: G1_DFS_ORDER,
+			explanation:
+				`DFS plunges down one branch before backtracking: ${G1_DFS_ORDER.join(' → ')}. ` +
+				'The stack hands back the most recently added vertex, so it dives deep first.',
+		},
+		{
+			kind: 'choice',
+			prompt:
+				'Both traversals settle all six vertices and run in Θ(V + E). What ' +
+				'single thing differs between them?',
+			options: [
+				'The frontier discipline: a FIFO queue (BFS) vs a LIFO stack (DFS)',
+				'BFS visits more vertices than DFS',
+				'DFS cannot reach every vertex',
+				'BFS uses edge weights and DFS does not',
+			],
+			answer:
+				'The frontier discipline: a FIFO queue (BFS) vs a LIFO stack (DFS)',
+			explanation:
+				'It is the same loop over the same graph; only the rule for which frontier ' +
+				'vertex leaves next changes. Queue → breadth-first, stack → depth-first.',
+		},
+	],
+};
+
+// =============================================================================
+// HASHING — a full chaining hand-trace: hash several keys, place them in buckets,
+// observe a collision, read the load factor. Bucket indices are DERIVED by the
+// HashMap module's own hash (polynomial: hash=7, ·31 per char, % capacity).
+// =============================================================================
+
+// Problem HM1: insert five string keys into a capacity-7 table with separate
+// chaining. We grade a derived bucket index, the collision count, and α.
+const HM1_KEYS = ['cat', 'dog', 'bird', 'fish', 'ant'];
+const HM1_CAPACITY = 7;
+const HM1_ENTRIES = HM1_KEYS.map(k => ({ key: k, value: k.length }));
+const HM1_BUCKETS = createBucketsFromEntries(HM1_ENTRIES, HM1_CAPACITY);
+// Find the bucket holding a specific key (derived, not hand-typed).
+const HM1_BUCKET_OF = key => HM1_BUCKETS.findIndex(b => b.some(e => e.key === key));
+const HM1_CAT_BUCKET = HM1_BUCKET_OF('cat');
+// The number of buckets that hold more than one key (a real chained collision).
+const HM1_COLLISION_BUCKETS = HM1_BUCKETS.filter(b => b.length > 1).length;
+// Load factor α = n / m after all insertions.
+const HM1_ALPHA = (HM1_KEYS.length / HM1_CAPACITY).toFixed(2);
+// The longest chain length (how many keys share one bucket at most).
+const HM1_MAX_CHAIN = Math.max(...HM1_BUCKETS.map(b => b.length));
+
+const problemHM1 = {
+	kind: 'problem',
+	stem:
+		`A hash table with m = ${HM1_CAPACITY} buckets uses separate chaining. The ` +
+		'hash of a string is h = 7, then h = h·31 + charCode for each character, and ' +
+		`the bucket is h mod ${HM1_CAPACITY}. Insert the keys ` +
+		`${HM1_KEYS.map(k => `"${k}"`).join(', ')} in that order.`,
+	parts: [
+		{
+			kind: 'numeric',
+			prompt:
+				'After inserting all five keys, how many buckets hold a COLLISION (more ' +
+				'than one key chained together)?',
+			answer: HM1_COLLISION_BUCKETS,
+			placeholder: 'a count',
+			explanation:
+				`${HM1_COLLISION_BUCKETS} bucket holds two keys: "cat" and "ant" hash to the ` +
+				`same index ${HM1_CAT_BUCKET}, so they share a chain. The other keys land ` +
+				'alone. Separate chaining absorbs the collision in a linked list.',
+		},
+		{
+			kind: 'numeric',
+			prompt:
+				'What is the length of the LONGEST chain (the most keys in any single ' +
+				'bucket)?',
+			answer: HM1_MAX_CHAIN,
+			placeholder: 'a length',
+			explanation:
+				`The longest chain has ${HM1_MAX_CHAIN} keys (the colliding pair in bucket ` +
+				`${HM1_CAT_BUCKET}). A lookup that hits this bucket scans the whole chain.`,
+		},
+		{
+			kind: 'choice',
+			prompt:
+				`The table holds ${HM1_KEYS.length} keys in ${HM1_CAPACITY} buckets. What ` +
+				'is the load factor α = n / m?',
+			options: [
+				HM1_ALPHA,
+				(HM1_CAPACITY / HM1_KEYS.length).toFixed(2),
+				String(HM1_KEYS.length),
+				'1.00',
+			],
+			answer: HM1_ALPHA,
+			explanation:
+				`α = n / m = ${HM1_KEYS.length} / ${HM1_CAPACITY} = ${HM1_ALPHA}. The expected ` +
+				'chain length is α, so the average successful search is Θ(1 + α).',
+		},
+		{
+			kind: 'choice',
+			prompt:
+				'As we keep inserting and α grows past a threshold, the table RESIZES ' +
+				'(rehashes into a larger table). Why must every key be rehashed, not just ' +
+				'copied to the same index?',
+			options: [
+				'The bucket index is h mod m, and m changes — so the index of each key changes too',
+				'Because the hash function itself changes during a resize',
+				'To put the keys into sorted order',
+				'Only colliding keys need rehashing; the rest keep their index',
+			],
+			answer:
+				'The bucket index is h mod m, and m changes — so the index of each key changes too',
+			misconceptions: {
+				'Because the hash function itself changes during a resize':
+					'The hash h of a key is fixed. What changes on resize is the table size m in the compression step h mod m, which is why every index must be recomputed.',
+			},
+			explanation:
+				'A key’s slot is h mod m. Doubling m (to a new prime) changes h mod m for ' +
+				'essentially every key, so the whole table is rebuilt to spread the chains out ' +
+				'again and restore O(1) average operations.',
+		},
+	],
+};
+
+// =============================================================================
+// MAXIMUM FLOW — a full Edmonds-Karp hand-trace: the maximum-flow value and the
+// minimum cut. Derived from edmondsKarpTrace (value + extracted min cut).
+// =============================================================================
+
+// Problem MF1: a 6-vertex flow network. We grade the max-flow value, the min-cut
+// capacity (equal to it), and the size of the source side S of the min cut.
+const MF1_NETWORK = {
+	nodes: [
+		{ id: 'S' },
+		{ id: 'A' },
+		{ id: 'B' },
+		{ id: 'C' },
+		{ id: 'D' },
+		{ id: 'T' },
+	],
+	source: 'S',
+	sink: 'T',
+	edges: [
+		{ from: 'S', to: 'A', capacity: 10 },
+		{ from: 'S', to: 'B', capacity: 10 },
+		{ from: 'A', to: 'B', capacity: 2 },
+		{ from: 'A', to: 'C', capacity: 4 },
+		{ from: 'A', to: 'D', capacity: 8 },
+		{ from: 'B', to: 'D', capacity: 9 },
+		{ from: 'C', to: 'T', capacity: 10 },
+		{ from: 'D', to: 'C', capacity: 6 },
+		{ from: 'D', to: 'T', capacity: 10 },
+	],
+};
+const MF1_RUN = edmondsKarpTrace(MF1_NETWORK);
+const MF1_VALUE = MF1_RUN.value;
+const MF1_CUT = MF1_RUN.minCut;
+const MF1_CUT_CAP = MF1_CUT.capacity;
+const MF1_CUT_S_SIZE = MF1_CUT.S.length; // vertices on the source side
+const MF1_CUT_EDGES = MF1_CUT.edges
+	.map(e => `${e.from}→${e.to}(${e.capacity})`)
+	.join(', ');
+
+const problemMF1 = {
+	kind: 'problem',
+	stem:
+		'Flow network from source S to sink T with capacities ' +
+		'S→A(10), S→B(10), A→B(2), A→C(4), A→D(8), B→D(9), C→T(10), D→C(6), D→T(10). ' +
+		'Run Edmonds-Karp (augment along shortest residual paths) to maximum flow.',
+	parts: [
+		{
+			kind: 'numeric',
+			prompt: 'What is the value of the maximum flow from S to T?',
+			answer: MF1_VALUE,
+			placeholder: 'a flow value',
+			explanation:
+				`The maximum flow is ${MF1_VALUE}. Augmenting paths push flow until no ` +
+				'residual S→T path remains; the value out of S then equals ' +
+				`${MF1_VALUE}.`,
+		},
+		{
+			kind: 'numeric',
+			prompt:
+				'By the max-flow / min-cut theorem, the minimum-cut capacity equals the ' +
+				'max-flow value. What is the capacity of the minimum cut?',
+			answer: MF1_CUT_CAP,
+			placeholder: 'a capacity',
+			explanation:
+				`The min cut crosses ${MF1_CUT_EDGES}, total capacity ${MF1_CUT_CAP} — equal ` +
+				`to the max-flow value ${MF1_VALUE}, as the theorem guarantees.`,
+		},
+		{
+			kind: 'numeric',
+			prompt:
+				'The min cut splits the vertices into S-side and T-side. How many ' +
+				'vertices are on the SOURCE side (the set reachable from S in the final ' +
+				'residual network)?',
+			answer: MF1_CUT_S_SIZE,
+			placeholder: 'a count',
+			explanation:
+				`The source side is {${MF1_CUT.S.join(', ')}} — ${MF1_CUT_S_SIZE} vertices. ` +
+				'These are exactly the vertices still reachable from S once no augmenting path ' +
+				'remains; the cut edges leave this set.',
+		},
+		{
+			kind: 'choice',
+			prompt:
+				'Edmonds-Karp differs from plain Ford-Fulkerson in ONE rule. Which?',
+			options: [
+				'It always augments along a SHORTEST residual path (BFS), giving an O(V·E²) bound',
+				'It augments along the path of largest bottleneck',
+				'It never uses back edges in the residual network',
+				'It finds the min cut first, then the flow',
+			],
+			answer:
+				'It always augments along a SHORTEST residual path (BFS), giving an O(V·E²) bound',
+			misconceptions: {
+				'It never uses back edges in the residual network':
+					'Both algorithms use residual back edges to reroute flow. Edmonds-Karp’s only change is choosing the shortest augmenting path (BFS) instead of any path.',
+			},
+			explanation:
+				'Choosing the fewest-edge augmenting path each round (BFS) makes the running ' +
+				'time polynomial, O(V·E²), independent of the capacity magnitudes — unlike ' +
+				'generic Ford-Fulkerson, whose DFS path choice can depend on |f*|.',
+		},
+	],
+};
+
+// =============================================================================
+// MST MODIFICATION ANALYSIS — does adding a constant to every edge weight change
+// the MST? Derived by re-running Kruskal on the perturbed input.
+// =============================================================================
+
+const M3_VERTICES = ['A', 'B', 'C', 'D', 'E'];
+const M3_EDGES = [
+	{ u: 'A', v: 'B', w: 2 },
+	{ u: 'A', v: 'C', w: 3 },
+	{ u: 'B', v: 'C', w: 1 },
+	{ u: 'B', v: 'D', w: 4 },
+	{ u: 'C', v: 'D', w: 5 },
+	{ u: 'C', v: 'E', w: 6 },
+	{ u: 'D', v: 'E', w: 2 },
+];
+const M3_W = weightMap(M3_EDGES);
+const M3_BASE = kruskalTrace({ vertices: M3_VERTICES, edges: M3_EDGES });
+const M3_BASE_ACCEPT = M3_BASE.treeEdges.map(id => mstEdgeLabel(id, M3_W));
+const M3_SHIFT = 10;
+const M3_SHIFTED_EDGES = M3_EDGES.map(e => ({ ...e, w: e.w + M3_SHIFT }));
+const M3_SHIFTED = kruskalTrace({ vertices: M3_VERTICES, edges: M3_SHIFTED_EDGES });
+// Same tree? Compare the (sorted) accepted edge-id sets.
+const M3_SAME_TREE =
+	JSON.stringify([...M3_BASE.treeEdges].sort()) ===
+	JSON.stringify([...M3_SHIFTED.treeEdges].sort());
+const M3_BASE_WEIGHT = M3_BASE.totalWeight;
+const M3_SHIFTED_WEIGHT = M3_SHIFTED.totalWeight;
+const M3_DELTA = M3_SHIFTED_WEIGHT - M3_BASE_WEIGHT; // = shift * (n - 1)
+
+const problemM3 = {
+	kind: 'problem',
+	stem:
+		'Undirected weighted graph on A, B, C, D, E with edges ' +
+		'A–B(2), A–C(3), B–C(1), B–D(4), C–D(5), C–E(6), D–E(2). ' +
+		`Now suppose we add a constant ${M3_SHIFT} to the weight of EVERY edge.`,
+	parts: [
+		{
+			kind: 'choice',
+			prompt:
+				`Does adding ${M3_SHIFT} to every edge weight change WHICH edges form the ` +
+				'minimum spanning tree?',
+			options: [
+				'No — the same edges form the MST',
+				'Yes — heavier edges are now avoided',
+				'Yes — the MST gains an extra edge',
+				'It depends on whether the graph has a cycle',
+			],
+			answer: 'No — the same edges form the MST',
+			misconceptions: {
+				'Yes — heavier edges are now avoided':
+					'Every spanning tree has exactly n−1 edges, so a uniform shift adds the same constant·(n−1) to all of them. The relative ordering of spanning-tree totals is unchanged, so the MST is the same.',
+			},
+			explanation:
+				'A spanning tree on n vertices always uses n−1 edges, so adding c to every ' +
+				`weight raises every spanning tree's total by exactly c·(n−1). The minimizer is ` +
+				`unchanged — the same edges (${M3_SAME_TREE ? 'confirmed by re-running Kruskal' : 'see below'}).`,
+		},
+		{
+			kind: 'numeric',
+			prompt: 'What is the total weight of the MST on the ORIGINAL graph?',
+			answer: M3_BASE_WEIGHT,
+			placeholder: 'total weight',
+			explanation:
+				`The MST edges are ${M3_BASE_ACCEPT.join(', ')}, summing to ${M3_BASE_WEIGHT}.`,
+		},
+		{
+			kind: 'numeric',
+			prompt:
+				`After adding ${M3_SHIFT} to every edge, by how much does the MST's total ` +
+				'weight INCREASE?',
+			answer: M3_DELTA,
+			placeholder: 'an increase',
+			explanation:
+				`The tree has n−1 = ${M3_VERTICES.length - 1} edges, each now ${M3_SHIFT} ` +
+				`heavier, so the total rises by ${M3_SHIFT} × ${M3_VERTICES.length - 1} = ` +
+				`${M3_DELTA} (from ${M3_BASE_WEIGHT} to ${M3_SHIFTED_WEIGHT}).`,
+		},
+		{
+			kind: 'choice',
+			prompt:
+				'Contrast: if instead we MULTIPLIED every weight by a positive constant, ' +
+				'would the MST edges change?',
+			options: [
+				'No — scaling by a positive constant preserves the order of all edge weights',
+				'Yes — multiplication reorders the edges',
+				'Only if some weights are below 1',
+				'Yes — it can introduce a cycle',
+			],
+			answer:
+				'No — scaling by a positive constant preserves the order of all edge weights',
+			explanation:
+				'Both adding a constant and multiplying by a positive constant are monotonic ' +
+				'transforms: they preserve the relative order of edge weights, and the greedy ' +
+				'MST choices depend only on that order. So the MST edge set is unchanged either way.',
+		},
+	],
+};
+
+// =============================================================================
 // THE EXAM SET REGISTRY
 // =============================================================================
 //
@@ -659,6 +1516,60 @@ export const EXAM_SETS = [
 		topicId: 'master-theorem',
 		topicName: 'Recursion & the master theorem',
 		problem: problemT2,
+	},
+	{
+		id: 'mst-3',
+		topicId: 'mst',
+		topicName: 'Minimum spanning trees',
+		problem: problemM3,
+	},
+	{
+		id: 'sssp-3',
+		topicId: 'shortest-paths',
+		topicName: 'Shortest paths (single-source)',
+		problem: problemS3,
+	},
+	{
+		id: 'apsp-1',
+		topicId: 'apsp',
+		topicName: 'All-pairs shortest paths',
+		problem: problemA1,
+	},
+	{
+		id: 'linsort-1',
+		topicId: 'linear-time-sorting',
+		topicName: 'Linear-time sorting',
+		problem: problemL1,
+	},
+	{
+		id: 'linsort-2',
+		topicId: 'linear-time-sorting',
+		topicName: 'Linear-time sorting',
+		problem: problemL2,
+	},
+	{
+		id: 'trees-1',
+		topicId: 'trees',
+		topicName: 'Trees',
+		problem: problemB1,
+	},
+	{
+		id: 'graphs-1',
+		topicId: 'graphs',
+		topicName: 'Graphs',
+		problem: problemG1,
+	},
+	{
+		id: 'hashing-1',
+		topicId: 'hashing',
+		topicName: 'Hashing',
+		problem: problemHM1,
+	},
+	{
+		id: 'maxflow-1',
+		topicId: 'max-flow',
+		topicName: 'Maximum flow',
+		problem: problemMF1,
 	},
 ];
 
