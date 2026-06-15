@@ -4,6 +4,7 @@ import {
 	Activity,
 	ArrowDownNarrowWide,
 	BarChart3,
+	BookOpen,
 	Brain,
 	Check,
 	FileCheck,
@@ -66,11 +67,49 @@ const Sidebar = () => {
 	return (
 		<nav className={styles.sidebar} aria-label="Primary">
 			<div className={styles.logo}>
-				<svg width="22" height="22" viewBox="0 0 22 22" fill="none" aria-hidden="true">
-					<rect x="1" y="1" width="8" height="8" rx="1.5" fill="var(--topic-sorting)" opacity="0.9" />
-					<rect x="13" y="1" width="8" height="8" rx="1.5" fill="var(--topic-graphs)" opacity="0.9" />
-					<rect x="1" y="13" width="8" height="8" rx="1.5" fill="var(--topic-hashing)" opacity="0.9" />
-					<rect x="13" y="13" width="8" height="8" rx="1.5" fill="var(--topic-trees)" opacity="0.9" />
+				<svg
+					width="22"
+					height="22"
+					viewBox="0 0 22 22"
+					fill="none"
+					aria-hidden="true"
+				>
+					<rect
+						x="1"
+						y="1"
+						width="8"
+						height="8"
+						rx="1.5"
+						fill="var(--topic-sorting)"
+						opacity="0.9"
+					/>
+					<rect
+						x="13"
+						y="1"
+						width="8"
+						height="8"
+						rx="1.5"
+						fill="var(--topic-graphs)"
+						opacity="0.9"
+					/>
+					<rect
+						x="1"
+						y="13"
+						width="8"
+						height="8"
+						rx="1.5"
+						fill="var(--topic-hashing)"
+						opacity="0.9"
+					/>
+					<rect
+						x="13"
+						y="13"
+						width="8"
+						height="8"
+						rx="1.5"
+						fill="var(--topic-trees)"
+						opacity="0.9"
+					/>
 				</svg>
 				<span className={styles.logoText}>AlgDatViz</span>
 			</div>
@@ -117,6 +156,20 @@ const Sidebar = () => {
 							<FileCheck size={16} strokeWidth={2.2} />
 						</span>
 						<span className={styles.label}>Exam</span>
+					</NavLink>
+				</li>
+				<li>
+					<NavLink
+						to="/reference"
+						className={({ isActive }) =>
+							`${styles.navLink} ${isActive ? styles.activeLink : ''}`
+						}
+					>
+						<span className={styles.navBar} aria-hidden="true" />
+						<span className={styles.icon} aria-hidden="true">
+							<BookOpen size={16} strokeWidth={2.2} />
+						</span>
+						<span className={styles.label}>Reference</span>
 					</NavLink>
 				</li>
 				<li>
@@ -251,7 +304,11 @@ const Sidebar = () => {
 										title={statusLabel}
 									>
 										{completed ? (
-											<Check size={12} strokeWidth={3} className={styles.statusCheck} />
+											<Check
+												size={12}
+												strokeWidth={3}
+												className={styles.statusCheck}
+											/>
 										) : (
 											<span className={styles.statusDot} />
 										)}

@@ -1,0 +1,540 @@
+/* =============================================================================
+   ReferencePage — exam reference / cheat sheet (route /reference).
+   Mirrors ExamPage / ProgressPage: scrollable .page shell, sticky crumb bar,
+   hero, then token-built blocks. Every value comes from src/styles/theme.css;
+   no hex, no raw white/black, 1px hairlines, no decorative shadows. --q-accent
+   is set inline to the owning topic's signature hue.
+   ============================================================================ */
+
+.page {
+	flex: 1;
+	overflow-y: auto;
+	overflow-x: hidden;
+	color: var(--color-text-primary);
+	background: var(--color-bg-app);
+}
+
+/* ---------- Sticky breadcrumb bar (mirrors ExamPage) ---------- */
+
+.topBar {
+	position: sticky;
+	top: 0;
+	z-index: 5;
+	background: var(--color-bg-app);
+	border-bottom: 1px solid var(--color-border-subtle);
+	padding: var(--space-md) clamp(var(--space-lg), 4vw, var(--space-3xl));
+}
+
+.crumbs {
+	display: flex;
+	align-items: center;
+	gap: 7px;
+	max-width: 1100px;
+	margin: 0 auto;
+	font-family: var(--font-family-mono);
+	font-size: var(--font-size-caption);
+	color: var(--color-text-muted);
+}
+
+.crumbLink {
+	color: var(--color-text-secondary);
+	text-decoration: none;
+	border-radius: var(--radius-sm);
+	transition: color var(--duration-instant) var(--ease-quiet);
+}
+
+.crumbLink:hover {
+	color: var(--color-text-primary);
+}
+
+.crumbLink:focus-visible {
+	outline: none;
+	box-shadow: var(--shadow-focus);
+}
+
+.crumbCurrent {
+	color: var(--color-text-secondary);
+}
+
+/* ---------- Hero ---------- */
+
+.hero {
+	max-width: 1100px;
+	margin: 0 auto;
+	padding: clamp(var(--space-2xl), 6vw, var(--space-4xl))
+		clamp(var(--space-lg), 6vw, var(--space-4xl))
+		clamp(var(--space-lg), 4vw, var(--space-2xl));
+	display: flex;
+	flex-direction: column;
+	gap: var(--space-md);
+}
+
+.eyebrow {
+	margin: 0;
+	font-family: var(--font-family-mono);
+	font-size: var(--font-size-caption);
+	font-weight: var(--font-weight-bold);
+	letter-spacing: var(--tracking-caps);
+	text-transform: uppercase;
+	color: var(--color-text-muted);
+}
+
+.title {
+	margin: 0;
+	font-family: var(--font-family-display);
+	font-size: var(--font-size-display-2xl);
+	font-weight: var(--font-weight-display);
+	line-height: var(--line-height-display);
+	letter-spacing: var(--tracking-display);
+	color: var(--color-text-primary);
+	max-width: 18ch;
+	text-wrap: balance;
+	overflow-wrap: break-word;
+}
+
+.lede {
+	margin: 0;
+	max-width: 62ch;
+	font-size: var(--font-size-body-lg);
+	line-height: var(--line-height-body);
+	color: var(--color-text-secondary);
+}
+
+/* ---------- Blocks ---------- */
+
+.block {
+	max-width: 1100px;
+	margin: 0 auto;
+	padding: var(--space-lg) clamp(var(--space-lg), 6vw, var(--space-4xl));
+}
+
+.blockTitle {
+	margin: 0 0 var(--space-2xs);
+	font-family: var(--font-family-display);
+	font-size: var(--font-size-heading-md);
+	font-weight: var(--font-weight-semibold);
+	color: var(--color-text-primary);
+}
+
+.blockLede {
+	margin: 0 0 var(--space-md);
+	max-width: 60ch;
+	font-size: var(--font-size-label);
+	line-height: var(--line-height-snug);
+	color: var(--color-text-muted);
+}
+
+/* ---------- Complexity at a glance ---------- */
+
+.complexityGrid {
+	list-style: none;
+	margin: 0;
+	padding: 0;
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+	gap: var(--space-sm);
+}
+
+.complexityCard {
+	--q-accent: var(--color-accent-blue);
+}
+
+.complexityLink {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: var(--space-md);
+	padding: var(--space-sm) var(--space-md);
+	border: 1px solid var(--color-border);
+	border-radius: var(--radius-md);
+	background: var(--surface-1);
+	text-decoration: none;
+	color: var(--color-text-primary);
+	/* A quiet accent rail so the topic reads at a glance, never colour alone:
+	   the number + name carry the text, the rail is decoration. */
+	border-left: 3px solid color-mix(in srgb, var(--q-accent) 60%, transparent);
+	transition:
+		background-color var(--transition),
+		border-color var(--transition);
+}
+
+.complexityLink:hover {
+	background: var(--surface-hover);
+	border-color: color-mix(in srgb, var(--q-accent) 45%, transparent);
+	border-left-color: var(--q-accent);
+}
+
+.complexityLink:focus-visible {
+	outline: none;
+	box-shadow: var(--shadow-focus);
+}
+
+.complexityHead {
+	display: flex;
+	align-items: baseline;
+	gap: var(--space-sm);
+	min-width: 0;
+}
+
+.complexityNum {
+	flex-shrink: 0;
+	font-family: var(--font-family-mono);
+	font-size: var(--font-size-caption);
+	font-weight: var(--font-weight-bold);
+	color: var(--q-accent-ink);
+}
+
+.complexityName {
+	font-size: var(--font-size-label);
+	font-weight: var(--font-weight-medium);
+	line-height: var(--line-height-snug);
+}
+
+.complexityValue {
+	flex-shrink: 0;
+	font-family: var(--font-family-mono);
+	font-size: var(--font-size-caption);
+	color: var(--color-text-secondary);
+	white-space: nowrap;
+}
+
+/* ---------- Sort comparison table ---------- */
+
+.tableScroll {
+	overflow-x: auto;
+	border: 1px solid var(--color-border);
+	border-radius: var(--radius-lg);
+	background: var(--surface-1);
+}
+
+.table {
+	width: 100%;
+	border-collapse: collapse;
+	font-size: var(--font-size-label);
+}
+
+.table thead th {
+	padding: var(--space-sm) var(--space-md);
+	text-align: left;
+	font-family: var(--font-family-mono);
+	font-size: var(--font-size-caption);
+	font-weight: var(--font-weight-bold);
+	letter-spacing: var(--tracking-caps);
+	text-transform: uppercase;
+	color: var(--color-text-muted);
+	border-bottom: 1px solid var(--color-border);
+	white-space: nowrap;
+}
+
+.table tbody tr + tr th,
+.table tbody tr + tr td {
+	border-top: 1px solid var(--color-border-subtle);
+}
+
+.table tbody tr:hover th,
+.table tbody tr:hover td {
+	background: var(--surface-hover);
+}
+
+.table td,
+.table tbody th {
+	padding: var(--space-sm) var(--space-md);
+	vertical-align: middle;
+}
+
+.thName {
+	font-family: var(--font-family-display);
+	font-size: var(--font-size-body);
+	font-weight: var(--font-weight-semibold);
+	color: var(--color-text-primary);
+	white-space: nowrap;
+}
+
+.cellCode {
+	font-family: var(--font-family-mono);
+	font-size: var(--font-size-caption);
+	color: var(--color-text-secondary);
+	white-space: nowrap;
+}
+
+/* Yes/No flag: a glyph AND a word, so the answer is never carried by hue alone
+   (color-blind safe, redundant by shape + text). */
+.flag {
+	display: inline-flex;
+	align-items: center;
+	gap: 5px;
+	font-family: var(--font-family-mono);
+	font-size: var(--font-size-caption);
+	font-weight: var(--font-weight-medium);
+	white-space: nowrap;
+}
+
+.flagYes {
+	color: var(--color-success);
+}
+
+.flagNo {
+	color: var(--color-text-muted);
+}
+
+.flag svg {
+	flex-shrink: 0;
+}
+
+/* ---------- Decision cards ---------- */
+
+.decisionGrid {
+	list-style: none;
+	margin: 0;
+	padding: 0;
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+	gap: var(--space-md);
+}
+
+.decisionCard {
+	--q-accent: var(--color-accent-blue);
+	display: flex;
+	flex-direction: column;
+	gap: var(--space-md);
+	padding: var(--space-lg);
+	border: 1px solid var(--color-border);
+	border-radius: var(--radius-xl);
+	background: var(--surface-1);
+}
+
+.decisionHead {
+	display: flex;
+	flex-direction: column;
+	gap: var(--space-2xs);
+	padding-bottom: var(--space-sm);
+	border-bottom: 1px solid var(--color-border-subtle);
+}
+
+.decisionTitle {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	align-self: flex-start;
+	font-family: var(--font-family-display);
+	font-size: var(--font-size-heading-sm);
+	font-weight: var(--font-weight-semibold);
+	color: var(--color-text-primary);
+	text-decoration: none;
+	border-radius: var(--radius-sm);
+	transition: color var(--transition);
+}
+
+.decisionTitle svg {
+	color: var(--q-accent-ink);
+	transition: transform var(--transition);
+}
+
+.decisionTitle:hover {
+	color: var(--q-accent-ink);
+}
+
+.decisionTitle:hover svg {
+	transform: translateX(2px);
+}
+
+.decisionTitle:focus-visible {
+	outline: none;
+	box-shadow: var(--shadow-focus);
+}
+
+.decisionQuestion {
+	margin: 0;
+	font-size: var(--font-size-label);
+	line-height: var(--line-height-snug);
+	color: var(--color-text-muted);
+}
+
+.optionList {
+	list-style: none;
+	margin: 0;
+	padding: 0;
+	display: flex;
+	flex-direction: column;
+	gap: var(--space-sm);
+}
+
+.option {
+	display: grid;
+	gap: 2px;
+	padding-left: var(--space-md);
+	/* The crossing-edge cue: a hairline rail, then the condition, the pick, the
+	   reason. Reads top-to-bottom like a worked rule. */
+	border-left: 2px solid color-mix(in srgb, var(--q-accent) 45%, transparent);
+}
+
+.optionWhen {
+	font-family: var(--font-family-mono);
+	font-size: var(--font-size-caption);
+	letter-spacing: var(--tracking-wide);
+	color: var(--color-text-muted);
+}
+
+.optionPick {
+	font-family: var(--font-family-display);
+	font-size: var(--font-size-body);
+	font-weight: var(--font-weight-semibold);
+	color: var(--q-accent-ink);
+}
+
+.optionBecause {
+	font-size: var(--font-size-label);
+	line-height: var(--line-height-snug);
+	color: var(--color-text-secondary);
+}
+
+.decisionNote {
+	margin: 0;
+	padding: var(--space-sm) var(--space-md);
+	border-radius: var(--radius-md);
+	background: color-mix(in srgb, var(--q-accent) 8%, transparent);
+	font-size: var(--font-size-caption);
+	line-height: var(--line-height-snug);
+	color: var(--color-text-secondary);
+}
+
+/* ---------- Greedy rule ---------- */
+
+.greedyColumns {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+	gap: var(--space-md);
+}
+
+.greedyCol {
+	display: flex;
+	flex-direction: column;
+	gap: var(--space-md);
+	padding: var(--space-lg);
+	border: 1px solid var(--color-border);
+	border-radius: var(--radius-xl);
+	background: var(--surface-1);
+}
+
+/* Safe vs unsafe: tinted wells AND a leading glyph in the heading, never colour
+   alone — the Check / X and the heading text both say which column this is. */
+.greedySafe {
+	background: var(--color-success-wash);
+	border-color: color-mix(in srgb, var(--color-success) 30%, transparent);
+}
+
+.greedyUnsafe {
+	background: var(--color-error-wash);
+	border-color: color-mix(in srgb, var(--color-error) 30%, transparent);
+}
+
+.greedyColTitle {
+	display: flex;
+	align-items: center;
+	gap: var(--space-xs);
+	margin: 0;
+	font-family: var(--font-family-display);
+	font-size: var(--font-size-heading-sm);
+	font-weight: var(--font-weight-semibold);
+	color: var(--color-text-primary);
+}
+
+.greedySafe .greedyColTitle svg {
+	color: var(--color-success);
+}
+
+.greedyUnsafe .greedyColTitle svg {
+	color: var(--color-error);
+}
+
+.greedyList {
+	list-style: none;
+	margin: 0;
+	padding: 0;
+	display: flex;
+	flex-direction: column;
+	gap: var(--space-md);
+}
+
+.greedyItem {
+	display: flex;
+	flex-direction: column;
+	gap: 2px;
+}
+
+.greedyLabel {
+	align-self: flex-start;
+	font-family: var(--font-family-display);
+	font-size: var(--font-size-body);
+	font-weight: var(--font-weight-semibold);
+	color: var(--color-text-primary);
+	text-decoration: none;
+	border-radius: var(--radius-sm);
+	transition: color var(--transition);
+}
+
+.greedyLabel:hover {
+	color: var(--color-text-secondary);
+	text-decoration: underline;
+	text-underline-offset: 2px;
+}
+
+.greedyLabel:focus-visible {
+	outline: none;
+	box-shadow: var(--shadow-focus);
+}
+
+.greedyWhy {
+	margin: 0;
+	font-size: var(--font-size-label);
+	line-height: var(--line-height-snug);
+	color: var(--color-text-secondary);
+}
+
+/* ---------- Footer ---------- */
+
+.foot {
+	max-width: 1100px;
+	margin: 0 auto;
+	padding: var(--space-lg) clamp(var(--space-lg), 6vw, var(--space-4xl))
+		clamp(var(--space-3xl), 8vw, var(--space-4xl));
+}
+
+.footText {
+	margin: 0;
+	font-size: var(--font-size-label);
+	color: var(--color-text-muted);
+}
+
+.footLink {
+	color: var(--review-brand-ink);
+	text-decoration: underline;
+	text-underline-offset: 2px;
+	border-radius: var(--radius-sm);
+	transition: color var(--transition);
+}
+
+.footLink:hover {
+	color: var(--color-text-primary);
+}
+
+.footLink:focus-visible {
+	outline: none;
+	box-shadow: var(--shadow-focus);
+}
+
+/* ---------- Reduced motion ---------- */
+
+@media (prefers-reduced-motion: reduce) {
+	.decisionTitle:hover svg {
+		transform: none;
+	}
+}
+
+/* ---------- Responsive ---------- */
+
+@media (max-width: 540px) {
+	.title {
+		font-size: var(--font-size-display-xl);
+	}
+}

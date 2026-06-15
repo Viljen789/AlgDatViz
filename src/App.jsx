@@ -16,22 +16,25 @@ const TreePage = lazy(() => import('./pages/TreePage.jsx'));
 const MasterTheoremPage = lazy(() => import('./pages/MasterTheoremPage.jsx'));
 const StacksQueuesPage = lazy(() => import('./pages/StacksQueuesPage.jsx'));
 const StrategiesPage = lazy(() => import('./pages/StrategiesPage.jsx'));
-const LinearTimeSortingPage = lazy(() =>
-	import('./pages/LinearTimeSortingPage.jsx')
+const LinearTimeSortingPage = lazy(
+	() => import('./pages/LinearTimeSortingPage.jsx')
 );
 const HeapsPage = lazy(() => import('./pages/HeapsPage.jsx'));
 const MstPage = lazy(() => import('./pages/MstPage.jsx'));
 const ShortestPathsPage = lazy(() => import('./pages/ShortestPathsPage.jsx'));
-const AllPairsShortestPathsPage = lazy(() =>
-	import('./pages/AllPairsShortestPathsPage.jsx')
+const AllPairsShortestPathsPage = lazy(
+	() => import('./pages/AllPairsShortestPathsPage.jsx')
 );
 const MaxFlowPage = lazy(() => import('./pages/MaxFlowPage.jsx'));
 const NpCompletenessPage = lazy(() => import('./pages/NpCompletenessPage.jsx'));
-const MergeSortLessonPage = lazy(() => import('./pages/MergeSortLessonPage.jsx'));
+const MergeSortLessonPage = lazy(
+	() => import('./pages/MergeSortLessonPage.jsx')
+);
 const StyleGuide = lazy(() => import('./styles/styleguide/StyleGuide.jsx'));
 const ReviewPage = lazy(() => import('./pages/ReviewPage.jsx'));
 const ProgressPage = lazy(() => import('./pages/ProgressPage.jsx'));
 const ExamPage = lazy(() => import('./pages/ExamPage.jsx'));
+const ReferencePage = lazy(() => import('./pages/ReferencePage.jsx'));
 
 const RouteFallback = () => (
 	<div className={styles.routeFallback} role="status" aria-live="polite">
@@ -91,6 +94,7 @@ const ROUTES_WITH_HERO = new Set([
 	'/review',
 	'/progress',
 	'/exam',
+	'/reference',
 	...Object.keys(TOPIC_BY_ROUTE),
 ]);
 
@@ -166,7 +170,10 @@ const AppLayout = () => {
 										path="/np-completeness"
 										element={<NpCompletenessPage />}
 									/>
-									<Route path="/master-theorem" element={<MasterTheoremPage />} />
+									<Route
+										path="/master-theorem"
+										element={<MasterTheoremPage />}
+									/>
 									<Route
 										path="/lessons/merge-sort"
 										element={<MergeSortLessonPage />}
@@ -174,6 +181,7 @@ const AppLayout = () => {
 									<Route path="/review" element={<ReviewPage />} />
 									<Route path="/progress" element={<ProgressPage />} />
 									<Route path="/exam" element={<ExamPage />} />
+									<Route path="/reference" element={<ReferencePage />} />
 									<Route path="/styleguide" element={<StyleGuide />} />
 								</Routes>
 							</Suspense>
