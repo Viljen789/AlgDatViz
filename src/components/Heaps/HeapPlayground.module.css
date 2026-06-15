@@ -40,7 +40,9 @@
 	font-size: var(--font-size-label);
 	font-weight: var(--font-weight-medium);
 	cursor: pointer;
-	transition: color var(--transition), background-color var(--transition);
+	transition:
+		color var(--transition),
+		background-color var(--transition);
 }
 
 .opTab:hover {
@@ -120,7 +122,9 @@
 	font-family: var(--font-family-sans);
 	font-size: var(--font-size-label);
 	cursor: pointer;
-	transition: color var(--transition), border-color var(--transition),
+	transition:
+		color var(--transition),
+		border-color var(--transition),
 		background-color var(--transition);
 }
 

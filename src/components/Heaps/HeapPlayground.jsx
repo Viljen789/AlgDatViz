@@ -1,18 +1,16 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import gsap from 'gsap';
 import { Play, RotateCcw } from 'lucide-react';
 import Button from '../../common/Button/Button.jsx';
 import Input from '../../common/Input/Input.jsx';
 import StepControlBar from '../../common/StepControlBar/StepControlBar.jsx';
+import useReducedMotion from '../../hooks/useReducedMotion.js';
 import {
 	usePlayback,
 	FrameTrace,
 	PseudoState,
 } from '../../common/PlaybackEngine/index.js';
-import {
-	HEAP_OPERATIONS,
-	HEAP_OP_ORDER,
-	HEAP_PRESETS,
-} from './heapMeta.js';
+import { HEAP_OPERATIONS, HEAP_OP_ORDER, HEAP_PRESETS } from './heapMeta.js';
 import {
 	HEAP_PSEUDO,
 	buildOperationTrace,
@@ -89,6 +87,14 @@ const layoutOf = (values, width) => {
  */
 const HeapPlayground = ({ onUserInteract }) => {
 	const playerRef = useRef(null);
+	const reducedMotion = useReducedMotion();
+
+	// The dual view animates in lockstep: each tree node's <g> and its backing
+	// array cell are captured by index so one timeline can travel both together.
+	const canvasRef = useRef(null);
+	const nodeRefs = useRef([]);
+	const cellRefs = useRef([]);
+	const lastSwapKeyRef = useRef('');
 
 	const [liveHeap, setLiveHeap] = useState(() => [...INITIAL_PRESET.heap]);
 	const [presetId, setPresetId] = useState(INITIAL_PRESET.id);
@@ -209,11 +215,170 @@ const HeapPlayground = ({ onUserInteract }) => {
 	const sortedSet = new Set(frame?.sorted || []);
 	const activeIdx = frame?.active;
 
+	// ── The travel: a value physically SINKS (or rises) along its tree edge,
+	// welded to its backing-array cell. One gsap.timeline drives the tree <g>
+	// and the array cell in lockstep so the tree↔array duality never inverts.
+	//
+	// The frame already carries the POST-move array, so a token at its
+	// destination slot is animated as if it had just crossed FROM its source
+	// slot — `travel(from, to)` means "the token now sitting at `to` arrives
+	// from `from`'s position". Tree offset comes from layoutOf's index math (no
+	// measurement); the array offset is the BarView offsetLeft delta verbatim.
+	const layoutNodes = layout.nodes;
+	const swapPair = frame?.swap;
+	const phase = frame?.phase;
+
+	// One persistent gsap.context, scoped to the canvas, created on mount and
+	// reverted only on unmount. Every travel is add()-ed into it so normal frame
+	// advances never kill an in-flight tween (only overwrite:'auto' supersedes a
+	// re-stepped target), yet unmount tears everything down cleanly.
+	const ctxRef = useRef(null);
+	useEffect(() => {
+		ctxRef.current = gsap.context(() => {}, canvasRef);
+		return () => {
+			ctxRef.current?.revert();
+			ctxRef.current = null;
+		};
+	}, []);
+
+	useEffect(() => {
+		const ctx = ctxRef.current;
+		if (!ctx) return;
+		const nodes = nodeRefs.current;
+		const cells = cellRefs.current;
+		const swapKey = `${phase}:${(swapPair || []).join('-')}`;
+		// Only fire on a *fresh* move beat — scrubbing back onto the same frame,
+		// or any non-moving beat (compare/settle/idle), leaves the layout to CSS.
+		const isMove =
+			(phase === 'swap' || phase === 'replace') &&
+			Array.isArray(swapPair) &&
+			swapPair.length === 2;
+		if (!isMove || swapKey === lastSwapKeyRef.current) {
+			lastSwapKeyRef.current = swapKey;
+			return;
+		}
+		lastSwapKeyRef.current = swapKey;
+
+		// expo.out to match BarView; reduced motion shrinks travel to a near-zero
+		// crossfade-with-nudge so the sink DIRECTION still reads.
+		const dur = reducedMotion ? 0.16 : 0.52;
+		const ease = 'expo.out';
+
+		ctx.add(() => {
+			const tl = gsap.timeline({ defaults: { ease, overwrite: 'auto' } });
+
+			// Move one value token (its tree <g> + its array cell) from `from`→`to`,
+			// crossing the connecting edge. `dip` lifts/shrinks mid-flight like the
+			// sorting bars; reduced motion flattens the spatial part to a nudge.
+			const travel = (from, to, dip) => {
+				const treeEl = nodes[to];
+				const cellFrom = cells[from];
+				const cellTo = cells[to];
+				const nFrom = layoutNodes[from];
+				const nTo = layoutNodes[to];
+				if (treeEl && nFrom && nTo) {
+					const dx = reducedMotion ? 0 : nFrom.x - nTo.x;
+					const dy = reducedMotion ? 0 : nFrom.y - nTo.y;
+					const nudge = reducedMotion ? (to < from ? -4 : 4) : 0;
+					tl.fromTo(
+						treeEl,
+						{
+							x: dx,
+							y: dy + nudge,
+							scale: dip && !reducedMotion ? 0.82 : 1,
+							transformOrigin: '50% 50%',
+						},
+						{
+							x: 0,
+							y: 0,
+							scale: 1,
+							duration: dur,
+							clearProps: 'transform',
+						},
+						0
+					);
+				}
+				if (cellFrom && cellTo) {
+					// BarView idiom: the horizontal gap between the two cells.
+					const fromX = reducedMotion
+						? 0
+						: cellFrom.offsetLeft - cellTo.offsetLeft;
+					tl.fromTo(
+						cellTo,
+						{
+							x: fromX,
+							y: dip && !reducedMotion ? -10 : 0,
+							scaleX: dip && !reducedMotion ? 0.86 : 1,
+							transformOrigin: '50% 100%',
+						},
+						{
+							x: 0,
+							y: 0,
+							scaleX: 1,
+							duration: dur,
+							clearProps: 'transform',
+						},
+						0
+					);
+				}
+			};
+
+			if (phase === 'replace') {
+				// EXTRACT-MAX: the last leaf rises up its leaf→root edge to the now
+				// empty root slot (mirrored in the array). The old maximum has just
+				// been parked at the tail (cellSorted) — lift+fade it in from above
+				// so it reads as having risen straight OUT of the heap. The sift
+				// travel from a later `swap` frame only yields AFTER this.
+				const [root, last] = swapPair;
+				travel(last, root, true);
+				const parked = cells[last];
+				if (parked) {
+					tl.fromTo(
+						parked,
+						{
+							y: reducedMotion ? 0 : -14,
+							opacity: reducedMotion ? 0.4 : 0,
+						},
+						{
+							y: 0,
+							opacity: 1,
+							duration: dur,
+							// Release opacity + transform so the cellSorted / cellOut
+							// classes own the resting look once the lift lands.
+							clearProps: 'opacity,transform',
+						},
+						0
+					);
+				}
+				const rootNode = nodes[root];
+				if (rootNode && reducedMotion) {
+					// Reduced motion: one brightness blink stands in for the lift.
+					tl.fromTo(
+						rootNode,
+						{ filter: 'brightness(1.4)' },
+						{ filter: 'brightness(1)', duration: 0.18, clearProps: 'filter' },
+						0
+					);
+				}
+			} else {
+				// SIFT SWAP: the larger child RISES to the parent slot while the
+				// too-small parent SINKS to the child slot, crossing mid-edge.
+				const [parent, child] = swapPair;
+				travel(child, parent, true); // child → parent (rises)
+				travel(parent, child, true); // parent → child (sinks)
+			}
+		});
+	}, [phase, swapPair, layoutNodes, reducedMotion]);
+
 	return (
 		<div className={styles.shell} ref={playerRef}>
 			{/* ---------- Controls ---------- */}
 			<div className={styles.controls}>
-				<div className={styles.opTabs} role="tablist" aria-label="Heap operation">
+				<div
+					className={styles.opTabs}
+					role="tablist"
+					aria-label="Heap operation"
+				>
 					{HEAP_OP_ORDER.map(id => {
 						const item = HEAP_OPERATIONS[id];
 						const active = id === operationId;
@@ -316,7 +481,11 @@ const HeapPlayground = ({ onUserInteract }) => {
 
 			{/* ---------- Canvas + trace ---------- */}
 			<div className={styles.body}>
-				<section className={styles.canvas} aria-label="Max-heap dual view">
+				<section
+					className={styles.canvas}
+					aria-label="Max-heap dual view"
+					ref={canvasRef}
+				>
 					<div className={styles.canvasOverlay} aria-hidden="true">
 						<span className={styles.mono}>n = {renderHeap.length}</span>
 						{frame?.title && (
@@ -357,18 +526,20 @@ const HeapPlayground = ({ onUserInteract }) => {
 								if (swapSet.has(node.i)) cls.push(styles.nodeSwap);
 								if (node.i === activeIdx) cls.push(styles.nodeActive);
 								return (
-									<g
-										key={node.i}
-										transform={`translate(${node.x}, ${node.y})`}
-									>
-										<circle r={NODE_R} className={cls.join(' ')} />
-										<text
-											className={styles.nodeText}
-											textAnchor="middle"
-											dy="4"
-										>
-											{node.value}
-										</text>
+									// Outer <g> holds the layout translate (index math, React
+									// owns it). The inner <g> starts at identity so GSAP can own
+									// its transform outright — no fighting the attribute baseline.
+									<g key={node.i} transform={`translate(${node.x}, ${node.y})`}>
+										<g ref={el => (nodeRefs.current[node.i] = el)}>
+											<circle r={NODE_R} className={cls.join(' ')} />
+											<text
+												className={styles.nodeText}
+												textAnchor="middle"
+												dy="4"
+											>
+												{node.value}
+											</text>
+										</g>
 									</g>
 								);
 							})}
@@ -387,7 +558,12 @@ const HeapPlayground = ({ onUserInteract }) => {
 							if (i === activeIdx) cls.push(styles.cellActive);
 							return (
 								<div key={i} className={styles.cellWrap}>
-									<div className={cls.join(' ')}>{value}</div>
+									<div
+										ref={el => (cellRefs.current[i] = el)}
+										className={cls.join(' ')}
+									>
+										{value}
+									</div>
 									<span className={styles.cellIdx}>{i}</span>
 								</div>
 							);
