@@ -150,6 +150,22 @@
 	fill: var(--color-text-on-accent);
 }
 
+/* Spatial-orientation captions under s and t; recede in secondary ink. */
+.nodeRole {
+	font-family: var(--font-family-mono);
+	font-size: 3.4px;
+	letter-spacing: var(--tracking-wide);
+	fill: var(--color-text-secondary);
+	pointer-events: none;
+	user-select: none;
+}
+
+/* ---------- Legend ---------- */
+
+.legend {
+	max-width: min(100%, 700px);
+}
+
 /* ---------- Badges ---------- */
 
 .badge {

@@ -6,6 +6,7 @@ import {
 } from './maxFlowTrace.js';
 import { CLRS_NETWORK, MATCHING_NETWORK } from './maxFlowMeta.js';
 import { buildEdges, projectNodes, VIEW_H, VIEW_W } from './graphLayout.js';
+import StateLegend from '../../common/StateLegend/StateLegend.jsx';
 import styles from './MaxFlowStage.module.css';
 
 // Canonical run on the classic network, measured once and shared by the scenes.
@@ -117,6 +118,53 @@ const SCENE_VIEW = activeScene => {
 	}
 };
 
+// Per-scene legend: only the meanings actually drawn in that scene, named in
+// words for the spoken key. Swatch colours mirror the on-canvas edge/node
+// styling above (resting edge, topic-accent for flow, warning for the cut) so
+// the picture and the key never disagree.
+const ACCENT = 'var(--topic-accent)';
+const WARNING = 'var(--color-warning)';
+const RESTING = 'var(--color-border-strong)';
+
+const SCENE_LEGEND = activeScene => {
+	switch (activeScene) {
+		// 0 flow network — bare capacities, nothing flowing yet.
+		case 0:
+			return [{ label: 'number = capacity c', swatch: RESTING, aria: 'grey edge' }];
+		// 1 residual network — the label is the spare forward capacity; the back
+		//   residual (f, cancellable) lives on the same edge.
+		case 1:
+			return [
+				{ label: 'forward residual = c − f', swatch: RESTING, aria: 'grey edge' },
+				{ label: 'back residual = f', swatch: RESTING, aria: 'cancellable' },
+			];
+		// 2 augmenting path — the chosen residual s→t path is the only highlight.
+		case 2:
+			return [
+				{ label: 'augmenting path', swatch: ACCENT, aria: 'green dashed' },
+				{ label: 'residual = c − f', swatch: RESTING, aria: 'grey edge' },
+			];
+		// 3-4, 6 flow on the network — flowing vs. saturated edges.
+		case 3:
+		case 4:
+		case 6:
+			return [
+				{ label: 'label = f / c', swatch: ACCENT, aria: 'green' },
+				{ label: 'saturated (f = c)', swatch: ACCENT, aria: 'bold green' },
+			];
+		// 5 min cut — the source side and the saturated cut edges.
+		case 5:
+			return [
+				{ label: 'source side S', swatch: ACCENT, aria: 'green' },
+				{ label: 'cut edge', swatch: WARNING, aria: 'amber' },
+			];
+		// 7 bipartite matching — unit-capacity matched edges.
+		case 7:
+		default:
+			return [{ label: 'matched edge', swatch: ACCENT, aria: 'green' }];
+	}
+};
+
 /**
  * MaxFlowStage — the synchronized flow-network view for the max-flow scrolly.
  *
@@ -165,6 +213,7 @@ const MaxFlowStage = ({ activeScene = 0 }) => {
 	}, [minCut]);
 
 	const flowOf = e => view.flow[edgeKey(e.from, e.to)] || 0;
+	const legend = useMemo(() => SCENE_LEGEND(activeScene), [activeScene]);
 
 	return (
 		<div
@@ -279,10 +328,24 @@ const MaxFlowStage = ({ activeScene = 0 }) => {
 							>
 								{node.id}
 							</text>
+							{/* Spatial orientation for a student new to flow networks:
+							    s is the origin, t the drain. Recedes in secondary ink. */}
+							{(isSource || isSink) && (
+								<text
+									className={styles.nodeRole}
+									y={NODE_R + 5.5}
+									textAnchor="middle"
+									dominantBaseline="central"
+								>
+									{isSource ? 'source' : 'sink'}
+								</text>
+							)}
 						</g>
 					);
 				})}
 			</svg>
+
+			<StateLegend className={styles.legend} items={legend} />
 
 			{view.bottleneck != null && (
 				<div className={styles.badge} aria-hidden="true">
