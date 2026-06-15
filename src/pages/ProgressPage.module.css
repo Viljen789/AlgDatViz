@@ -189,11 +189,31 @@
 }
 
 /* ---- Heatmap ---- */
+/* Each week is a 13px column with a 3px gutter (16px pitch). The month strip and
+   the legend below reuse that geometry so labels sit over the right columns. */
+.heatScroll {
+	overflow-x: auto;
+	padding-bottom: var(--space-xs);
+}
+
+.heatMonths {
+	display: flex;
+	gap: 3px;
+	margin-bottom: var(--space-2xs);
+}
+
+.heatMonth {
+	flex: 0 0 13px;
+	font-family: var(--font-family-mono);
+	font-size: var(--font-size-caption);
+	color: var(--color-text-muted);
+	white-space: nowrap;
+	overflow: visible;
+}
+
 .heatmap {
 	display: flex;
 	gap: 3px;
-	overflow-x: auto;
-	padding-bottom: var(--space-xs);
 }
 
 .heatCol {
@@ -206,6 +226,34 @@
 	width: 13px;
 	height: 13px;
 	border-radius: 3px;
+}
+
+.heatLegend {
+	display: flex;
+	align-items: center;
+	gap: var(--space-2xs);
+	margin-top: var(--space-sm);
+	font-family: var(--font-family-mono);
+	font-size: var(--font-size-caption);
+	color: var(--color-text-muted);
+}
+
+.heatLegendLabel {
+	margin: 0 var(--space-2xs);
+}
+
+.heatLegendSwatch {
+	width: 13px;
+	height: 13px;
+	border-radius: 3px;
+}
+
+.heatCaption {
+	margin: var(--space-sm) 0 0;
+	max-width: 60ch;
+	font-size: var(--font-size-label);
+	line-height: var(--line-height-snug);
+	color: var(--color-text-muted);
 }
 
 /* ---- Weak spots ---- */
@@ -276,6 +324,50 @@
 	font-variant-numeric: tabular-nums;
 	color: var(--color-text-secondary);
 	text-align: right;
+}
+
+/* ---- First-run guidance (zero activity) ---- */
+.firstRun {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	justify-content: space-between;
+	gap: var(--space-md);
+	margin: -4px 0 var(--space-md);
+	padding: var(--space-md) var(--space-lg);
+	background: var(--surface-1);
+	border: 1px solid var(--color-border);
+	border-radius: var(--radius-lg);
+}
+
+.firstRunText {
+	margin: 0;
+	font-size: var(--font-size-body);
+	color: var(--color-text-secondary);
+}
+
+.firstRunLink {
+	display: inline-flex;
+	align-items: center;
+	gap: var(--space-xs);
+	padding: var(--space-sm) var(--space-lg);
+	background: var(--brand);
+	color: var(--color-text-on-accent);
+	border-radius: var(--radius-pill);
+	text-decoration: none;
+	font-family: var(--font-family-sans);
+	font-size: var(--font-size-label);
+	font-weight: var(--font-weight-semibold);
+	transition: filter var(--transition);
+}
+
+.firstRunLink:hover {
+	filter: brightness(1.05);
+}
+
+.firstRunLink:focus-visible {
+	outline: none;
+	box-shadow: var(--shadow-focus);
 }
 
 /* ---- Topic grid ---- */
@@ -355,6 +447,41 @@
 	font-family: var(--font-family-mono);
 	font-size: var(--font-size-caption);
 	color: var(--color-text-muted);
+}
+
+/* Untouched topics recede: a flat surface and dimmer body so the grid reads as a
+   priority map (work-to-do up top, untouched below) — state by contrast, never a
+   coloured side-stripe. They brighten to full strength on hover/focus. */
+.cardIdle {
+	background: transparent;
+}
+
+.cardIdle .cardName {
+	color: var(--color-text-secondary);
+}
+
+.cardIdle .cardMeta {
+	opacity: 0.75;
+}
+
+.cardIdle:hover,
+.cardIdle:focus-visible {
+	background: var(--surface-1);
+}
+
+.cardIdle:hover .cardName,
+.cardIdle:focus-visible .cardName {
+	color: var(--color-text-primary);
+}
+
+/* The quiet "Start here" tag on topic 01 when the dashboard is blank. */
+.cardStart {
+	font-family: var(--font-family-mono);
+	font-size: var(--font-size-caption);
+	font-weight: var(--font-weight-bold);
+	letter-spacing: var(--tracking-caps);
+	text-transform: uppercase;
+	color: var(--brand-ink);
 }
 
 /* ---- Footer / reset ---- */

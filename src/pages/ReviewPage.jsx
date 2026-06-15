@@ -6,6 +6,7 @@ import {
 	REVIEW_TOPIC_IDS,
 	sampleSession,
 } from '../components/Review/reviewBank.js';
+import { BUILT_TOPICS, FIRST_TOPIC } from '../data/curriculum.js';
 import ReviewSession from '../components/Review/ReviewSession.jsx';
 import { logActivity } from '../lib/activityLog.js';
 import useProgress from '../hooks/useProgress.js';
@@ -52,6 +53,13 @@ const ReviewPage = () => {
 		[plan, isNewEligible]
 	);
 	const dueTotal = duePlan.dueCount + duePlan.freshCount;
+
+	// Where "Study a topic" sends you: the first built topic you haven't opened
+	// yet (so review keeps unlocking new material), falling back to topic 01.
+	const studyTopic = useMemo(
+		() => BUILT_TOPICS.find(t => !isVisited(t.id)) ?? FIRST_TOPIC,
+		[isVisited]
+	);
 
 	const startDue = useCallback(() => {
 		// Snapshot the queue at start so it doesn't reshuffle mid-session as cards
@@ -112,7 +120,11 @@ const ReviewPage = () => {
 				</p>
 
 				<dl className={styles.stats}>
-					<div className={`${styles.stat} ${styles.statDue}`}>
+					{/* The amber accent only fires when there's something to act on; a
+					    zero should not be the loudest thing on the screen. */}
+					<div
+						className={`${styles.stat} ${dueTotal > 0 ? styles.statDue : ''}`}
+					>
 						<dt className={styles.statLabel}>Due now</dt>
 						<dd className={styles.statValue}>{dueTotal}</dd>
 					</div>
@@ -125,7 +137,7 @@ const ReviewPage = () => {
 						<dd className={styles.statValue}>{bankSize}</dd>
 					</div>
 					<div className={styles.stat}>
-						<dt className={styles.statLabel}>Topics</dt>
+						<dt className={styles.statLabel}>Review topics</dt>
 						<dd className={styles.statValue}>{topicCount}</dd>
 					</div>
 				</dl>
@@ -144,8 +156,11 @@ const ReviewPage = () => {
 								</button>
 							) : (
 								<p className={styles.caughtUp}>
-									You're caught up — nothing due right now. Study a topic, or
-									practice a mixed set below.
+									You're caught up, nothing due right now.{' '}
+									<Link to={studyTopic.to} className={styles.caughtUpLink}>
+										Study {studyTopic.name}
+									</Link>
+									, or practice a mixed set below.
 								</p>
 							)}
 							<button

@@ -1,7 +1,7 @@
 import { useCallback, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowRight, ChevronRight, Flame, RotateCcw } from 'lucide-react';
-import { BUILT_TOPICS } from '../data/curriculum.js';
+import { BUILT_TOPICS, FIRST_TOPIC } from '../data/curriculum.js';
 import { REVIEW_BANK } from '../components/Review/reviewBank.js';
 import { allMastery } from '../lib/mastery.js';
 import { addDays, todayKey } from '../lib/activityLog.js';
@@ -12,6 +12,36 @@ import styles from './ProgressPage.module.css';
 
 const HEAT_WEEKS = 13;
 const pct = s => Math.round(s * 100);
+
+// The heatmap colour ramp, brightest at the right: empty, then three brand-tinted
+// steps. The legend and every day-cell read from this one array so "Less → More"
+// always matches the squares above it. Both themes inherit the brand hue.
+const HEAT_RAMP = [
+	'var(--color-border-subtle)',
+	'hsl(var(--brand-h) var(--brand-s) var(--brand-l) / 0.3)',
+	'hsl(var(--brand-h) var(--brand-s) var(--brand-l) / 0.6)',
+	'hsl(var(--brand-h) var(--brand-s) var(--brand-l) / 0.95)',
+];
+
+// One day's count → its ramp colour (0 answered → empty; thresholds at 3 and 6).
+const heat = c => HEAT_RAMP[c <= 0 ? 0 : c < 3 ? 1 : c < 6 ? 2 : 3];
+
+// Month labels keyed to the first week-column that begins in each month, so the
+// strip above the heatmap reads like a calendar without one label per week.
+const MONTHS = [
+	'Jan',
+	'Feb',
+	'Mar',
+	'Apr',
+	'May',
+	'Jun',
+	'Jul',
+	'Aug',
+	'Sep',
+	'Oct',
+	'Nov',
+	'Dec',
+];
 
 /**
  * ProgressPage (/progress) — the mastery dashboard.
@@ -71,6 +101,27 @@ const ProgressPage = () => {
 		[topics]
 	);
 
+	// "Touched" = the student has answered a check or finished the topic. We sort
+	// the grid by mastery ascending so the cards that need work float to the top
+	// (the grid becomes a prioritization map, not 15 identical tiles); untouched
+	// topics, which all sit at 0, keep their teaching order beneath the rest.
+	// Anything with any progress (a visited 0.3, a completed 1, or real check data)
+	// counts as touched, so a card that shows a bar also floats above the 0% cards
+	// and wears the active style — bar, prominence, and order stay consistent.
+	const isTouched = useCallback(t => t.hasData || t.score > 0, []);
+
+	const orderedTopics = useMemo(
+		() =>
+			[...topics].sort((a, b) => {
+				const ta = isTouched(a);
+				const tb = isTouched(b);
+				if (ta !== tb) return ta ? -1 : 1; // touched first
+				if (ta) return a.score - b.score; // weakest of the touched first
+				return 0; // untouched keep teaching order (stable sort)
+			}),
+		[topics, isTouched]
+	);
+
 	const today = todayKey();
 	const weeks = useMemo(() => {
 		const dow = new Date(`${today}T00:00:00`).getDay();
@@ -85,14 +136,27 @@ const ProgressPage = () => {
 
 	const daysStudied = Object.keys(days).length;
 
-	const heat = c =>
-		c <= 0
-			? 'var(--color-border-subtle)'
-			: c < 3
-				? 'hsl(var(--brand-h) var(--brand-s) var(--brand-l) / 0.3)'
-				: c < 6
-					? 'hsl(var(--brand-h) var(--brand-s) var(--brand-l) / 0.6)'
-					: 'hsl(var(--brand-h) var(--brand-s) var(--brand-l) / 0.95)';
+	// A label for each week-column that opens a new month (blank otherwise), so the
+	// strip above the heatmap reads as a calendar without crowding every week.
+	const monthLabels = useMemo(
+		() =>
+			weeks.map((col, w) => {
+				const first = col.find(cell => !cell.future) ?? col[0];
+				const month = new Date(`${first.k}T00:00:00`).getMonth();
+				const prev =
+					w === 0
+						? null
+						: new Date(
+								`${(weeks[w - 1].find(c => !c.future) ?? weeks[w - 1][0]).k}T00:00:00`
+							).getMonth();
+				return month !== prev ? MONTHS[month] : '';
+			}),
+		[weeks]
+	);
+
+	// First-run: nothing answered and nothing finished. Drives the guidance card,
+	// the "Start here" tag, and the empty heatmap caption.
+	const hasNoActivity = daysStudied === 0 && overall.completed === 0;
 
 	const handleReset = useCallback(() => {
 		if (
@@ -143,6 +207,7 @@ const ProgressPage = () => {
 							{overall.completed}
 							<span className={styles.statOf}>/{overall.total}</span>
 						</dd>
+						<p className={styles.statSub}>curriculum topics</p>
 					</div>
 					<div className={`${styles.stat} ${styles.statExam}`}>
 						<dt className={styles.statLabel}>Exam</dt>
@@ -171,23 +236,53 @@ const ProgressPage = () => {
 				<h2 id="heatmap-title" className={styles.blockTitle}>
 					Activity
 				</h2>
-				<div className={styles.heatmap} role="img" aria-label={`${daysStudied} days studied`}>
-					{weeks.map((col, w) => (
-						<div key={w} className={styles.heatCol}>
-							{col.map(cell => (
-								<span
-									key={cell.k}
-									className={styles.heatCell}
-									title={`${cell.k}: ${cell.count} answered`}
-									style={{
-										background: cell.future ? 'transparent' : heat(cell.count),
-										opacity: cell.future ? 0 : 1,
-									}}
-								/>
-							))}
-						</div>
-					))}
+				<div className={styles.heatScroll}>
+					<div className={styles.heatMonths} aria-hidden="true">
+						{monthLabels.map((label, w) => (
+							<span key={w} className={styles.heatMonth}>
+								{label}
+							</span>
+						))}
+					</div>
+					<div
+						className={styles.heatmap}
+						role="img"
+						aria-label={`${daysStudied} days studied`}
+					>
+						{weeks.map((col, w) => (
+							<div key={w} className={styles.heatCol}>
+								{col.map(cell => (
+									<span
+										key={cell.k}
+										className={styles.heatCell}
+										title={`${cell.k}: ${cell.count} answered`}
+										style={{
+											background: cell.future ? 'transparent' : heat(cell.count),
+											opacity: cell.future ? 0 : 1,
+										}}
+									/>
+								))}
+							</div>
+						))}
+					</div>
 				</div>
+				<div className={styles.heatLegend} aria-hidden="true">
+					<span className={styles.heatLegendLabel}>Less</span>
+					{HEAT_RAMP.map((swatch, i) => (
+						<span
+							key={i}
+							className={styles.heatLegendSwatch}
+							style={{ background: swatch }}
+						/>
+					))}
+					<span className={styles.heatLegendLabel}>More</span>
+				</div>
+				{hasNoActivity && (
+					<p className={styles.heatCaption}>
+						No study days logged yet. Each square is a day; answer a review or a
+						topic check to light one up.
+					</p>
+				)}
 			</section>
 
 			{weak.length > 0 && (
@@ -227,35 +322,66 @@ const ProgressPage = () => {
 				<h2 id="topics-title" className={styles.blockTitle}>
 					All topics
 				</h2>
+
+				{hasNoActivity && (
+					<div className={styles.firstRun}>
+						<p className={styles.firstRunText}>
+							Nothing tracked yet. Open a topic to start.
+						</p>
+						<Link
+							to={FIRST_TOPIC.to}
+							className={styles.firstRunLink}
+							style={{ '--accent': FIRST_TOPIC.accent }}
+						>
+							<span>Start with {FIRST_TOPIC.name}</span>
+							<ArrowRight size={14} strokeWidth={2.2} aria-hidden="true" />
+						</Link>
+					</div>
+				)}
+
 				<ul className={styles.grid}>
-					{topics.map(t => (
-						<li key={t.id}>
-							<Link
-								to={t.to}
-								className={styles.card}
-								style={{ '--accent': t.accent }}
-							>
-								<div className={styles.cardHead}>
-									<span className={styles.cardNum}>{t.number}</span>
-									<span className={styles.cardPct}>{pct(t.score)}%</span>
-								</div>
-								<span className={styles.cardName}>{t.name}</span>
-								<span className={styles.cardBar}>
-									<span
-										className={styles.cardFill}
-										style={{ width: `${pct(t.score)}%` }}
-									/>
-								</span>
-								<span className={styles.cardMeta}>
-									{t.hasData
-										? `${t.answered}/${t.total} checks`
-										: isCompleted(t.id)
-											? 'completed'
-											: 'not started'}
-								</span>
-							</Link>
-						</li>
-					))}
+					{orderedTopics.map(t => {
+						const touched = isTouched(t);
+						// Topic 01 carries a quiet "Start here" tag until the student has
+						// touched anything, so a blank dashboard names its own first move.
+						const startHere = hasNoActivity && t.id === FIRST_TOPIC.id;
+						return (
+							<li key={t.id}>
+								<Link
+									to={t.to}
+									className={`${styles.card} ${touched ? '' : styles.cardIdle}`}
+									style={{ '--accent': t.accent }}
+								>
+									<div className={styles.cardHead}>
+										<span className={styles.cardNum}>{t.number}</span>
+										{startHere ? (
+											<span className={styles.cardStart}>Start here</span>
+										) : (
+											<span className={styles.cardPct}>{pct(t.score)}%</span>
+										)}
+									</div>
+									<span className={styles.cardName}>{t.name}</span>
+									{/* The progress track only appears once a topic has data; an
+									    empty rail on every untouched card was just noise. */}
+									{touched && (
+										<span className={styles.cardBar}>
+											<span
+												className={styles.cardFill}
+												style={{ width: `${pct(t.score)}%` }}
+											/>
+										</span>
+									)}
+									<span className={styles.cardMeta}>
+										{t.hasData
+											? `${t.answered}/${t.total} checks`
+											: isCompleted(t.id)
+												? 'completed'
+												: 'not started'}
+									</span>
+								</Link>
+							</li>
+						);
+					})}
 				</ul>
 			</section>
 
