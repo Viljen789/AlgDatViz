@@ -13,11 +13,31 @@
 	display: flex;
 	flex-direction: column;
 	gap: var(--space-md);
-	transition: border-color var(--duration-step) var(--ease-quiet);
+	transition: border-color var(--duration-step) var(--ease-quiet),
+		box-shadow var(--duration-step) var(--ease-quiet);
 }
 
 .checkAnswered {
 	border-color: var(--color-border-strong);
+}
+
+/* Retrieval gate: the active, still-unanswered check holds progress back, so it
+   wears a quiet accent ring drawing the eye to where the answer is owed. The
+   ring (and the .gateHint line) clear the instant a status is set. No red. */
+.checkGated {
+	border-color: color-mix(in srgb, var(--topic-accent) 55%, var(--color-border));
+	box-shadow: 0 0 0 1px
+		color-mix(in srgb, var(--topic-accent) 32%, transparent);
+}
+
+.gateHint {
+	margin: calc(var(--space-xs) * -1) 0 0;
+	font-family: var(--font-family-mono);
+	font-size: var(--font-size-caption);
+	font-weight: var(--font-weight-bold);
+	letter-spacing: var(--tracking-caps);
+	text-transform: uppercase;
+	color: var(--topic-accent-ink);
 }
 
 .head {

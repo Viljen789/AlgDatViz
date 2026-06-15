@@ -271,13 +271,18 @@ const SpotbugLines = ({ lines, isAnswered, answer, selected, onPick }) => (
  *   check            the check object.
  *   state            { status?: 'correct'|'incorrect', selected?, value?,
  *                      order?, assignment?, perItem? } controlled by the host.
+ *   gated            true when this is the active check holding progress back.
+ *                    Shows a calm "Answer to continue." affordance and an accent
+ *                    ring while still unanswered; both clear once a status is set.
  *   onAnswer         (payload) => void — generic submit for every kind.
  *   onChoiceAnswer   (value) => void — backward-compatible alias of onAnswer
  *                    (kept so existing topics keep working).
  */
-const LessonCheck = ({ check, state, onAnswer, onChoiceAnswer }) => {
+const LessonCheck = ({ check, state, gated, onAnswer, onChoiceAnswer }) => {
 	const isAnswered = state?.status != null;
 	const status = state?.status;
+	// Only an unanswered, still-gating check shows the hint; answering clears it.
+	const showGateHint = gated && !isAnswered;
 	// onAnswer is the generic path; onChoiceAnswer remains as a back-compat alias.
 	const submit = onAnswer || onChoiceAnswer || (() => {});
 
@@ -291,7 +296,9 @@ const LessonCheck = ({ check, state, onAnswer, onChoiceAnswer }) => {
 
 	return (
 		<aside
-			className={`${styles.check} ${isAnswered ? styles.checkAnswered : ''}`}
+			className={`${styles.check} ${isAnswered ? styles.checkAnswered : ''} ${
+				showGateHint ? styles.checkGated : ''
+			}`}
 			aria-label="Check your understanding"
 		>
 			<div className={styles.head}>
@@ -313,6 +320,10 @@ const LessonCheck = ({ check, state, onAnswer, onChoiceAnswer }) => {
 			</div>
 
 			<p className={styles.prompt}>{check.prompt}</p>
+
+			{showGateHint && (
+				<p className={styles.gateHint}>Answer to continue.</p>
+			)}
 
 			{check.kind === 'choice' && (
 				<ChoiceRow

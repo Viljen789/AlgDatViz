@@ -180,6 +180,11 @@ const TopicScrolly = ({
 							<LessonCheck
 								check={scene.check}
 								state={checkStates?.[scene.id]}
+								// The active scene's unanswered check is what holds
+								// progress back; surface that affordance on the card
+								// itself, where the student is reading, rather than
+								// only in the control bar's muted caption.
+								gated={activeScene === idx && Boolean(blockedReason)}
 								onAnswer={payload =>
 									handleAnswer?.(scene.id, payload)
 								}
