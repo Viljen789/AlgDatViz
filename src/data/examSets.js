@@ -54,6 +54,12 @@ import {
 import { genericTraverse } from '../components/Graph/oneFrontier.js';
 import { createBucketsFromEntries } from '../components/HashMap/hashMapTrace.js';
 import { edmondsKarpTrace } from '../components/MaxFlow/maxFlowTrace.js';
+import { sqFrames } from '../components/StacksQueues/sqFrames.js';
+import { getMergeSortStepsWithStats } from '../utils/sorting/algorithms/mergeSort.js';
+import {
+	buildCoinChangeFrames,
+	buildClimbingStairsFrames,
+} from '../components/Strategies/coinChangeFrames.js';
 
 // ── small derivation helpers (pure) ──────────────────────────────────────────
 
@@ -1461,6 +1467,838 @@ const problemM3 = {
 };
 
 // =============================================================================
+// FOUNDATIONS (arrays & complexity) — counting loop work, big-O simplification,
+// and the best/worst/amortized distinction. Conceptual, so numeric keys are
+// computed with an EXPLICIT arithmetic expression in the module (never typed).
+// =============================================================================
+
+// Problem F1: a nested loop whose body runs 1 + 2 + … + n times. We count it with
+// the closed form n(n+1)/2 for a concrete n, then a big-O simplification choice.
+const F1_N = 8;
+// Inner body executes for j = i..n−1 on each i, i.e. n + (n−1) + … + 1 times.
+// That sum is n(n+1)/2, computed here as an explicit expression (the answer key).
+const F1_BODY_COUNT = (F1_N * (F1_N + 1)) / 2; // 8·9/2 = 36
+// A single-loop linear baseline for contrast (n iterations).
+const F1_LINEAR_COUNT = F1_N;
+
+const problemF1 = {
+	kind: 'problem',
+	stem:
+		`Consider this nested loop on an array of length n = ${F1_N}: ` +
+		'"for i from 0 to n−1, then for j from i to n−1, do one unit of work". ' +
+		'Count how the inner work grows, then simplify it to a Θ class.',
+	parts: [
+		{
+			kind: 'numeric',
+			prompt:
+				`For n = ${F1_N}, how many times does the inner "one unit of work" line ` +
+				'run in total? (The inner loop runs n times when i = 0, n−1 times when ' +
+				'i = 1, and so on down to 1.)',
+			answer: F1_BODY_COUNT,
+			placeholder: 'a count',
+			explanation:
+				`The body runs n + (n−1) + … + 1 = n(n+1)/2 times. For n = ${F1_N} that is ` +
+				`${F1_N}·${F1_N + 1}/2 = ${F1_BODY_COUNT}.`,
+		},
+		{
+			kind: 'choice',
+			prompt:
+				'The exact count is n(n+1)/2 = n²/2 + n/2. What is its Θ class (drop ' +
+				'constant factors and lower-order terms)?',
+			options: ['Θ(n²)', 'Θ(n)', 'Θ(n log n)', 'Θ(n³)'],
+			answer: 'Θ(n²)',
+			misconceptions: {
+				'Θ(n)':
+					'The n/2 term is dominated by n²/2 for large n. Big-O keeps only the ' +
+					'fastest-growing term, which here is the quadratic one.',
+			},
+			explanation:
+				'n²/2 + n/2 is dominated by the n² term, and the constant 1/2 is dropped, ' +
+				'so the count is Θ(n²). A doubly-nested loop over the same range is the ' +
+				'classic quadratic shape.',
+		},
+		{
+			kind: 'choice',
+			prompt:
+				'Simplify O(3n² + 100n + 7) to its tightest standard big-O class.',
+			options: ['O(n²)', 'O(n)', 'O(3n²)', 'O(n² + n)'],
+			answer: 'O(n²)',
+			misconceptions: {
+				'O(3n²)':
+					'Constant factors are dropped in big-O: 3n² is O(n²). The notation ' +
+					'describes growth rate, not the exact coefficient.',
+			},
+			explanation:
+				'Drop the constant factor 3 and the lower-order 100n + 7 terms: the ' +
+				'growth is governed by n², so O(3n² + 100n + 7) = O(n²).',
+		},
+		{
+			kind: 'choice',
+			prompt:
+				'A dynamic array doubles its capacity when full. Any single push can ' +
+				'cost Θ(n) (a full copy), yet we still call push "Θ(1) amortized". What ' +
+				'does amortized mean here?',
+			options: [
+				'Averaged over a sequence of operations, each push costs Θ(1); the rare Θ(n) copies are paid for by the many cheap pushes',
+				'Every individual push is guaranteed to cost Θ(1) in the worst case',
+				'It is the best-case cost of a single push',
+				'It is the cost only when the array never resizes',
+			],
+			answer:
+				'Averaged over a sequence of operations, each push costs Θ(1); the rare Θ(n) copies are paid for by the many cheap pushes',
+			misconceptions: {
+				'Every individual push is guaranteed to cost Θ(1) in the worst case':
+					'That is worst-case per operation, which is Θ(n) here (the resize copy). Amortized cost averages the total over the whole sequence, which is Θ(1) per push.',
+			},
+			explanation:
+				'n pushes do at most ~2n total work (geometric resizing: 1 + 2 + 4 + … ' +
+				'< 2n copies), so the average per push is Θ(1). Worst-case for one push ' +
+				`is still Θ(n); a plain linear scan instead costs Θ(${F1_LINEAR_COUNT}) ` +
+				'work for n = ' +
+				`${F1_N}.`,
+		},
+	],
+};
+
+// Problem F2: the growth-rate race (ordering functions by asymptotic growth) and
+// the best/worst-case distinction for a concrete algorithm. Conceptual choices
+// with one unambiguous correct option; the linear-search count key below is a
+// plain arithmetic expression, not a guessed number.
+const F2_N = 100;
+// Linear search worst case: the target is absent (or last), so all n elements are
+// inspected. The count is exactly n, written as an explicit expression.
+const F2_LINEAR_WORST = F2_N; // n comparisons in the worst case
+// Best case: the target is the first element, one comparison.
+const F2_LINEAR_BEST = 1;
+
+const problemF2 = {
+	kind: 'problem',
+	stem:
+		'Asymptotic growth and case analysis. Order functions by how fast they grow, ' +
+		'then reason about linear search on an array of n elements.',
+	parts: [
+		{
+			kind: 'order',
+			prompt:
+				'Arrange these growth rates from SLOWEST-growing to FASTEST-growing (the ' +
+				'order in which they would win the "growth-rate race" for large n).',
+			items: ['O(n²)', 'O(log n)', 'O(2ⁿ)', 'O(n)', 'O(n log n)'],
+			answer: ['O(log n)', 'O(n)', 'O(n log n)', 'O(n²)', 'O(2ⁿ)'],
+			explanation:
+				'For large n the order is log n < n < n log n < n² < 2ⁿ. Logarithmic grows ' +
+				'slowest, exponential explodes fastest; n log n sits just above linear and ' +
+				'below quadratic.',
+		},
+		{
+			kind: 'numeric',
+			prompt:
+				`Linear search scans an array of n = ${F2_N} elements for a target. In the ` +
+				'WORST case (target absent), how many elements does it inspect?',
+			answer: F2_LINEAR_WORST,
+			placeholder: 'a count',
+			explanation:
+				`The worst case inspects all n = ${F2_LINEAR_WORST} elements, since the ` +
+				'target is only ruled out after the last one. That is the Θ(n) worst-case ' +
+				'cost.',
+		},
+		{
+			kind: 'numeric',
+			prompt:
+				'For the SAME linear search, how many elements does it inspect in the ' +
+				'BEST case (target is the first element)?',
+			answer: F2_LINEAR_BEST,
+			placeholder: 'a count',
+			explanation:
+				`The best case is ${F2_LINEAR_BEST}: the very first comparison finds the ` +
+				'target. Best, worst, and average are different questions about the SAME ' +
+				'algorithm.',
+		},
+		{
+			kind: 'choice',
+			prompt:
+				'Why do we usually quote the WORST-case (big-O) bound rather than the ' +
+				'best case when comparing algorithms?',
+			options: [
+				'It is a guarantee: the algorithm never does worse, so it bounds performance for any input',
+				'The best case is impossible to compute',
+				'The worst case is always the same as the average case',
+				'Best-case analysis would make every algorithm look identical',
+			],
+			answer:
+				'It is a guarantee: the algorithm never does worse, so it bounds performance for any input',
+			misconceptions: {
+				'The worst case is always the same as the average case':
+					'They often differ: linear search is Θ(n) worst case but Θ(n) average ' +
+					'too, while quicksort is Θ(n²) worst case yet Θ(n log n) average. The ' +
+					'worst case is quoted because it is a hard guarantee, not because it ' +
+					'equals the average.',
+			},
+			explanation:
+				'The worst case gives an upper bound that holds for every input, so it is ' +
+				'a safety guarantee. Best-case bounds are optimistic and rarely useful for ' +
+				'comparing real performance.',
+		},
+	],
+};
+
+// =============================================================================
+// STACKS & QUEUES — trace a concrete op sequence on each structure (final state
+// + what comes out next), derived by SIMULATING the sequence with sqFrames, plus
+// a LIFO-vs-FIFO use-case choice.
+// =============================================================================
+
+// Problem SQ1: the SAME op-log on a stack and on a queue, so the LIFO/FIFO
+// contrast is concrete. Ops: push/enqueue A, B, C, then remove, push/enqueue D,
+// then remove. Final contents are read straight off the simulated frames.
+const SQ_OPS = [
+	{ type: 'add', value: 'A' },
+	{ type: 'add', value: 'B' },
+	{ type: 'add', value: 'C' },
+	{ type: 'remove' },
+	{ type: 'add', value: 'D' },
+	{ type: 'remove' },
+];
+const SQ_STACK_FRAMES = sqFrames('stack', [], SQ_OPS);
+const SQ_QUEUE_FRAMES = sqFrames('queue', [], SQ_OPS);
+// Final contents: stack listed bottom→top, queue listed front→rear.
+const SQ_STACK_FINAL = SQ_STACK_FRAMES[SQ_STACK_FRAMES.length - 1].items; // ['A','B']
+const SQ_QUEUE_FINAL = SQ_QUEUE_FRAMES[SQ_QUEUE_FRAMES.length - 1].items; // ['C','D']
+const SQ_STACK_FINAL_STR = `[${SQ_STACK_FINAL.join(', ')}]`;
+const SQ_QUEUE_FINAL_STR = `[${SQ_QUEUE_FINAL.join(', ')}]`;
+// What the NEXT remove would output: stack pops the top (last of the list),
+// queue dequeues the front (first of the list). Derived by simulating one more op.
+const SQ_STACK_NEXT = sqFrames('stack', SQ_STACK_FINAL, [{ type: 'remove' }]);
+const SQ_QUEUE_NEXT = sqFrames('queue', SQ_QUEUE_FINAL, [{ type: 'remove' }]);
+const SQ_STACK_POPS = SQ_STACK_FINAL[SQ_STACK_FINAL.length - 1]; // 'B'
+const SQ_QUEUE_DEQ = SQ_QUEUE_FINAL[0]; // 'C'
+// Confirm the simulated removes agree with the read-off endpoints (defensive).
+const SQ_STACK_AFTER_STR = `[${SQ_STACK_NEXT[SQ_STACK_NEXT.length - 1].items.join(', ')}]`;
+const SQ_QUEUE_AFTER_STR = `[${SQ_QUEUE_NEXT[SQ_QUEUE_NEXT.length - 1].items.join(', ')}]`;
+
+const problemSQ1 = {
+	kind: 'problem',
+	stem:
+		'Apply the SAME operation sequence to an empty stack and an empty queue: ' +
+		'add A, add B, add C, remove, add D, remove. For the stack "add" is push and ' +
+		'"remove" is pop; for the queue "add" is enqueue and "remove" is dequeue.',
+	parts: [
+		{
+			kind: 'choice',
+			prompt:
+				'After the full sequence, what does the STACK contain, listed bottom to ' +
+				'top? (A stack removes the most recently added element.)',
+			options: [
+				SQ_STACK_FINAL_STR,
+				SQ_QUEUE_FINAL_STR,
+				'[A, D]',
+				'[B, D]',
+			],
+			answer: SQ_STACK_FINAL_STR,
+			explanation:
+				'Push A, B, C leaves [A, B, C]. Pop removes C (the top). Push D gives ' +
+				`[A, B, D]. Pop removes D. Final: ${SQ_STACK_FINAL_STR}.`,
+		},
+		{
+			kind: 'choice',
+			prompt:
+				'After the full sequence, what does the QUEUE contain, listed front to ' +
+				'rear? (A queue removes the earliest added element.)',
+			options: [
+				SQ_QUEUE_FINAL_STR,
+				SQ_STACK_FINAL_STR,
+				'[A, D]',
+				'[B, D]',
+			],
+			answer: SQ_QUEUE_FINAL_STR,
+			explanation:
+				'Enqueue A, B, C leaves [A, B, C]. Dequeue removes A (the front). ' +
+				`Enqueue D gives [B, C, D]. Dequeue removes B. Final: ${SQ_QUEUE_FINAL_STR}.`,
+		},
+		{
+			kind: 'choice',
+			prompt:
+				`From the final states (stack ${SQ_STACK_FINAL_STR}, queue ` +
+				`${SQ_QUEUE_FINAL_STR}), which value comes out on the NEXT remove from ` +
+				'each structure?',
+			options: [
+				`Stack pops ${SQ_STACK_POPS}, queue dequeues ${SQ_QUEUE_DEQ}`,
+				`Stack pops ${SQ_QUEUE_DEQ}, queue dequeues ${SQ_STACK_POPS}`,
+				`Both return ${SQ_STACK_POPS}`,
+				`Both return ${SQ_QUEUE_DEQ}`,
+			],
+			answer: `Stack pops ${SQ_STACK_POPS}, queue dequeues ${SQ_QUEUE_DEQ}`,
+			explanation:
+				`The stack returns its top, ${SQ_STACK_POPS}, leaving ${SQ_STACK_AFTER_STR}. ` +
+				`The queue returns its front, ${SQ_QUEUE_DEQ}, leaving ${SQ_QUEUE_AFTER_STR}. ` +
+				'LIFO takes the newest, FIFO takes the oldest.',
+		},
+	],
+};
+
+// Problem SQ2: choose the right discipline for two use cases (LIFO vs FIFO),
+// plus the depth-first / breadth-first frontier consequence.
+const problemSQ2 = {
+	kind: 'problem',
+	stem:
+		'Two scenarios, two disciplines. Decide whether each wants a stack (LIFO, ' +
+		'last in first out) or a queue (FIFO, first in first out).',
+	parts: [
+		{
+			kind: 'choice',
+			prompt:
+				'You implement UNDO in an editor: each action is recorded, and undo must ' +
+				'reverse the MOST RECENT action first. Which structure fits?',
+			options: [
+				'A stack (LIFO) — the last action recorded is the first undone',
+				'A queue (FIFO) — the first action recorded is the first undone',
+				'Either works identically',
+				'Neither; undo needs a sorted list',
+			],
+			answer: 'A stack (LIFO) — the last action recorded is the first undone',
+			explanation:
+				'Undo reverses actions newest-first, which is exactly LIFO. Push each ' +
+				'action; undo pops the most recent. A queue would undo the oldest action ' +
+				'first, the wrong order.',
+		},
+		{
+			kind: 'choice',
+			prompt:
+				'A print server must serve jobs in the ORDER they were submitted ' +
+				'(fairness, first come first served). Which structure fits?',
+			options: [
+				'A queue (FIFO) — jobs leave in submission order',
+				'A stack (LIFO) — the newest job prints first',
+				'Either works identically',
+				'Neither; printing needs a priority heap by default',
+			],
+			answer: 'A queue (FIFO) — jobs leave in submission order',
+			explanation:
+				'First-come-first-served IS FIFO: enqueue on submit, dequeue to print, so ' +
+				'the earliest job is served first. A stack would let a late job jump ahead ' +
+				'of everything waiting.',
+		},
+		{
+			kind: 'choice',
+			prompt:
+				'Graph search reuses these exact disciplines for its frontier. A FIFO ' +
+				'queue frontier gives which traversal, and a LIFO stack frontier gives ' +
+				'which?',
+			options: [
+				'Queue → breadth-first search; stack → depth-first search',
+				'Queue → depth-first search; stack → breadth-first search',
+				'Both give breadth-first search',
+				'Both give depth-first search',
+			],
+			answer: 'Queue → breadth-first search; stack → depth-first search',
+			explanation:
+				'A FIFO frontier hands back the oldest discovered vertex, sweeping level ' +
+				'by level (BFS). A LIFO frontier hands back the newest, plunging down one ' +
+				'branch (DFS). Same loop, different frontier discipline.',
+		},
+	],
+};
+
+// =============================================================================
+// SORTING (merge sort) — a full hand-trace derived from getMergeSortStepsWithStats:
+// an intermediate merged subarray, the final array, the comparison count, and the
+// recurrence/complexity. Every key is read off the real generator's steps.
+// =============================================================================
+
+const MS1_INPUT = [5, 2, 8, 1, 9, 3, 7, 4];
+const MS1_RUN = getMergeSortStepsWithStats(MS1_INPUT);
+const MS1_STEPS = MS1_RUN.steps;
+const MS1_FINAL = MS1_STEPS[MS1_STEPS.length - 1].array; // fully sorted array
+const MS1_FINAL_STR = `[${MS1_FINAL.join(', ')}]`;
+const MS1_COMPARISONS = MS1_RUN.finalStats.comparisons;
+// The completed merges, keyed by their target range. We read the merged snapshot
+// for the LEFT half [0,3] and the very first leaf-pair merge [0,1], straight off
+// the generator (never hand-typed).
+const MS1_MERGES = MS1_STEPS.filter(
+	s => s.metadata && s.metadata.operation === 'merge_complete'
+);
+const MS1_MERGE_OF = (start, end) =>
+	MS1_MERGES.find(
+		m => m.metadata.target[0] === start && m.metadata.target[1] === end
+	).metadata.outputSnapshot;
+const MS1_LEFT_HALF = MS1_MERGE_OF(0, 3); // merge of the left four elements
+const MS1_LEFT_HALF_STR = `[${MS1_LEFT_HALF.join(', ')}]`;
+const MS1_RIGHT_HALF = MS1_MERGE_OF(4, 7); // merge of the right four elements
+const MS1_RIGHT_HALF_STR = `[${MS1_RIGHT_HALF.join(', ')}]`;
+
+const problemMS1 = {
+	kind: 'problem',
+	stem:
+		`Merge-sort the array [${MS1_INPUT.join(', ')}]. Merge sort splits the array ` +
+		'in half, recursively sorts each half, then merges the two sorted halves.',
+	parts: [
+		{
+			kind: 'choice',
+			prompt:
+				`The array splits into a left half [${MS1_INPUT.slice(0, 4).join(', ')}] ` +
+				`and a right half [${MS1_INPUT.slice(4).join(', ')}]. After the left half ` +
+				'is fully sorted (recursively), what does it look like?',
+			options: [
+				MS1_LEFT_HALF_STR,
+				`[${MS1_INPUT.slice(0, 4).join(', ')}]`,
+				MS1_RIGHT_HALF_STR,
+				`[${[...MS1_INPUT.slice(0, 4)].sort((a, b) => b - a).join(', ')}]`,
+			],
+			answer: MS1_LEFT_HALF_STR,
+			explanation:
+				`Sorting the left four elements [${MS1_INPUT.slice(0, 4).join(', ')}] ` +
+				`yields ${MS1_LEFT_HALF_STR}. Each half is sorted independently before the ` +
+				'final merge combines them.',
+		},
+		{
+			kind: 'choice',
+			prompt:
+				`Both halves are now sorted: left ${MS1_LEFT_HALF_STR}, right ` +
+				`${MS1_RIGHT_HALF_STR}. What is the FINAL array after the top-level merge?`,
+			options: [
+				MS1_FINAL_STR,
+				`[${MS1_INPUT.join(', ')}]`,
+				`[${[...MS1_INPUT].sort((a, b) => b - a).join(', ')}]`,
+				`${MS1_LEFT_HALF_STR.slice(0, -1)}, ${MS1_RIGHT_HALF_STR.slice(1)}`,
+			],
+			answer: MS1_FINAL_STR,
+			explanation:
+				'Merging the two sorted halves by repeatedly taking the smaller front ' +
+				`element gives ${MS1_FINAL_STR}. Concatenating the halves without merging ` +
+				'would not be sorted.',
+		},
+		{
+			kind: 'numeric',
+			prompt:
+				'Exactly how many element-to-element COMPARISONS does this merge sort ' +
+				'perform on the array? (Count each "is left front ≤ right front?" test.)',
+			answer: MS1_COMPARISONS,
+			placeholder: 'a count',
+			explanation:
+				`This run performs ${MS1_COMPARISONS} comparisons across all the merges. ` +
+				'Merge sort makes Θ(n log n) comparisons; for n = ' +
+				`${MS1_INPUT.length} the worst case is about n·log₂n = ` +
+				`${MS1_INPUT.length} × ${Math.log2(MS1_INPUT.length)} = ` +
+				`${MS1_INPUT.length * Math.log2(MS1_INPUT.length)}.`,
+		},
+		{
+			kind: 'choice',
+			prompt:
+				'Merge sort obeys the recurrence T(n) = 2·T(n/2) + Θ(n): two half-size ' +
+				'subproblems plus a linear merge. What does it solve to?',
+			options: ['Θ(n log n)', 'Θ(n²)', 'Θ(n)', 'Θ(log n)'],
+			answer: 'Θ(n log n)',
+			misconceptions: {
+				'Θ(n²)':
+					'Θ(n²) is the bound for the simple quadratic sorts (insertion, ' +
+					'selection). Merge sort halves the problem and merges in linear time, ' +
+					'so it is Θ(n log n).',
+			},
+			explanation:
+				'By the Master Theorem with a = 2, b = 2, f(n) = Θ(n): log_b(a) = 1 = d, ' +
+				'so this is Case 2 and T(n) = Θ(n log n). The log n factor is the number of ' +
+				'halving levels; each level does Θ(n) merge work.',
+		},
+	],
+};
+
+// Problem MS2: the MERGE step in isolation, plus the divide-and-conquer recursion
+// depth. The merged output is DERIVED from the generator's top-level merge of the
+// concatenated sorted lists (each half is already sorted, so the recursion's final
+// merge reproduces the hand merge of the two lists).
+const MS2_LEFT = [1, 4, 6, 8];
+const MS2_RIGHT = [2, 3, 5, 7];
+const MS2_RUN = getMergeSortStepsWithStats([...MS2_LEFT, ...MS2_RIGHT]);
+const MS2_STEPS = MS2_RUN.steps;
+const MS2_TOP_MERGE = MS2_STEPS.filter(
+	s =>
+		s.metadata &&
+		s.metadata.operation === 'merge_complete' &&
+		s.metadata.target[0] === 0 &&
+		s.metadata.target[1] === MS2_LEFT.length + MS2_RIGHT.length - 1
+);
+const MS2_MERGED = MS2_TOP_MERGE[MS2_TOP_MERGE.length - 1].metadata.outputSnapshot;
+const MS2_MERGED_STR = `[${MS2_MERGED.join(', ')}]`;
+// Recursion depth (number of halving levels) for n elements = ⌈log₂ n⌉, computed
+// with an explicit expression so the key is derived, not guessed.
+const MS2_N = MS2_LEFT.length + MS2_RIGHT.length; // 8
+const MS2_DEPTH = Math.ceil(Math.log2(MS2_N)); // ⌈log₂ 8⌉ = 3
+
+const problemMS2 = {
+	kind: 'problem',
+	stem:
+		`Merge sort's MERGE step combines two already-sorted runs into one. You are ` +
+		`handed the sorted runs [${MS2_LEFT.join(', ')}] and [${MS2_RIGHT.join(', ')}].`,
+	parts: [
+		{
+			kind: 'choice',
+			prompt:
+				'Merge the two sorted runs by repeatedly taking the smaller of the two ' +
+				'front elements. What is the merged result?',
+			options: [
+				MS2_MERGED_STR,
+				`[${[...MS2_LEFT, ...MS2_RIGHT].join(', ')}]`,
+				`[${[...MS2_LEFT, ...MS2_RIGHT].sort((a, b) => b - a).join(', ')}]`,
+				`[${[...MS2_RIGHT, ...MS2_LEFT].join(', ')}]`,
+			],
+			answer: MS2_MERGED_STR,
+			explanation:
+				`Taking the smaller front element each step interleaves the runs into ` +
+				`${MS2_MERGED_STR}. Merging two sorted lists of total length m costs Θ(m) ` +
+				'comparisons, never more than m − 1.',
+		},
+		{
+			kind: 'numeric',
+			prompt:
+				`Merge sort halves the array until each piece has one element. For ` +
+				`n = ${MS2_N} elements, how many halving LEVELS (the recursion depth) are ` +
+				'there? (Each level halves the subproblem size.)',
+			answer: MS2_DEPTH,
+			placeholder: 'a depth',
+			explanation:
+				`Halving ${MS2_N} → 4 → 2 → 1 takes ⌈log₂ ${MS2_N}⌉ = ${MS2_DEPTH} levels. ` +
+				'Each level does Θ(n) total merge work, giving the Θ(n log n) bound.',
+		},
+		{
+			kind: 'choice',
+			prompt:
+				'The merge takes the LEFT element when the two fronts are EQUAL. What ' +
+				'property of merge sort does this tie-breaking rule give?',
+			options: [
+				'Stability — equal keys keep their original relative order',
+				'In-place sorting — no extra array is needed',
+				'A lower comparison count',
+				'Worst-case Θ(n) overall time',
+			],
+			answer: 'Stability — equal keys keep their original relative order',
+			misconceptions: {
+				'In-place sorting — no extra array is needed':
+					'Standard merge sort is NOT in place; the merge writes into an ' +
+					'auxiliary array. The left-on-tie rule is about stability, not space.',
+			},
+			explanation:
+				'Preferring the left run on ties means an earlier equal element is emitted ' +
+				'first, so equal keys keep their input order. That makes merge sort stable, ' +
+				'which matters when sorting records by a secondary key.',
+		},
+	],
+};
+
+// =============================================================================
+// STRATEGIES (greedy / divide-and-conquer / DP) — a coin-change DP table value
+// and the greedy-vs-DP comparison, derived by SIMULATING buildCoinChangeFrames on
+// a coin set where greedy FAILS; plus a Fibonacci DP value from climbing stairs.
+// =============================================================================
+
+// Problem P1: coins {1, 3, 4} making 6. Greedy (largest-first) takes 4 + 1 + 1 = 3
+// coins; the DP optimum is 3 + 3 = 2 coins. The classic greedy counterexample.
+const P1_COINS = [1, 3, 4];
+const P1_TARGET = 6;
+const P1_RUN = buildCoinChangeFrames({ target: P1_TARGET, coins: P1_COINS });
+const P1_DP_TABLE = P1_RUN.frames[P1_RUN.frames.length - 1].dpTable; // dp[0..target]
+const P1_DP_OPT = P1_RUN.summary.dpFinal; // optimal coin count for the target = 2
+const P1_GREEDY = P1_RUN.summary.greedyFinal; // greedy coin count = 3
+const P1_DP_AT_4 = P1_DP_TABLE[4]; // dp[4] = 1 (the single 4-coin)
+
+// Problem P2: climbing stairs n = 6 (Fibonacci DP). ways(6) read off the table.
+const P2_N = 6;
+const P2_RUN = buildClimbingStairsFrames(P2_N);
+const P2_DP_TABLE = P2_RUN.frames[P2_RUN.frames.length - 1].dpTable; // dp[0..n]
+const P2_WAYS = P2_DP_TABLE[P2_N]; // ways(6) = 13
+
+const problemP1 = {
+	kind: 'problem',
+	stem:
+		`Make ${P1_TARGET}¢ using the coin denominations {${P1_COINS.join(', ')}}, with ` +
+		'unlimited coins of each. Two approaches: a greedy that always takes the ' +
+		'largest coin that fits, and a dynamic-programming table dp[a] = the fewest ' +
+		'coins to make amount a.',
+	parts: [
+		{
+			kind: 'numeric',
+			prompt:
+				`In the DP table, what is dp[4], the minimum number of coins to make 4¢ ` +
+				`with {${P1_COINS.join(', ')}}?`,
+			answer: P1_DP_AT_4,
+			placeholder: 'a coin count',
+			explanation:
+				`dp[4] = ${P1_DP_AT_4}: the single coin 4 makes 4¢ directly, so one coin ` +
+				'suffices. dp[a] = 1 + min over coins c of dp[a − c].',
+		},
+		{
+			kind: 'numeric',
+			prompt:
+				`What is dp[${P1_TARGET}], the minimum number of coins to make ` +
+				`${P1_TARGET}¢ optimally?`,
+			answer: P1_DP_OPT,
+			placeholder: 'a coin count',
+			explanation:
+				`dp[${P1_TARGET}] = ${P1_DP_OPT}, achieved by 3 + 3 (two coins). The DP ` +
+				'examines every coin for every amount, so it never misses the optimum.',
+		},
+		{
+			kind: 'numeric',
+			prompt:
+				`The GREEDY method takes the largest coin ≤ the remaining amount, ` +
+				`repeatedly. How many coins does greedy use to make ${P1_TARGET}¢ here?`,
+			answer: P1_GREEDY,
+			placeholder: 'a coin count',
+			explanation:
+				`Greedy takes 4 (remaining 2), then 1, then 1 — that is ${P1_GREEDY} coins. ` +
+				`The optimum is only ${P1_DP_OPT} (3 + 3), so greedy OVERSHOOTS here.`,
+		},
+		{
+			kind: 'choice',
+			prompt:
+				`On coins {${P1_COINS.join(', ')}} making ${P1_TARGET}¢, greedy used ` +
+				`${P1_GREEDY} coins but the optimum is ${P1_DP_OPT}. What does this ` +
+				'counterexample show?',
+			options: [
+				'Greedy coin change is not optimal for arbitrary coin sets; only some (canonical) systems make it optimal',
+				'Greedy is always optimal; the DP must be wrong',
+				'The problem has no optimal solution',
+				'DP and greedy always agree on coin change',
+			],
+			answer:
+				'Greedy coin change is not optimal for arbitrary coin sets; only some (canonical) systems make it optimal',
+			misconceptions: {
+				'DP and greedy always agree on coin change':
+					`They agree on canonical systems (like {1, 5, 10, 25}) but not here: on ` +
+					`{${P1_COINS.join(', ')}} greedy commits to the 4 and needs ${P1_GREEDY} ` +
+					`coins, while DP finds ${P1_DP_OPT}.`,
+			},
+			explanation:
+				'Taking the biggest coin first can strand you with an expensive ' +
+				'remainder. DP considers every option for every sub-amount, so it is ' +
+				'always optimal; greedy is optimal only for special (canonical) coin sets.',
+		},
+	],
+};
+
+const problemP2 = {
+	kind: 'problem',
+	stem:
+		`Climbing stairs: you may take 1 or 2 steps at a time. The number of distinct ` +
+		`ways to reach stair n satisfies ways(n) = ways(n−1) + ways(n−2), with ` +
+		'ways(0) = ways(1) = 1. This is divide-and-conquer with OVERLAPPING ' +
+		'subproblems, so DP (memoize each ways(k) once) replaces exponential ' +
+		'recursion.',
+	parts: [
+		{
+			kind: 'numeric',
+			prompt:
+				'Filling the table bottom-up, what is ways(4), the number of ways to ' +
+				'climb 4 stairs?',
+			answer: P2_DP_TABLE[4],
+			placeholder: 'a count',
+			explanation:
+				`ways(4) = ways(3) + ways(2) = ${P2_DP_TABLE[3]} + ${P2_DP_TABLE[2]} = ` +
+				`${P2_DP_TABLE[4]}. Each entry sums the two below it (a Fibonacci sequence).`,
+		},
+		{
+			kind: 'numeric',
+			prompt: `What is ways(${P2_N})?`,
+			answer: P2_WAYS,
+			placeholder: 'a count',
+			explanation:
+				`ways(${P2_N}) = ways(${P2_N - 1}) + ways(${P2_N - 2}) = ` +
+				`${P2_DP_TABLE[P2_N - 1]} + ${P2_DP_TABLE[P2_N - 2]} = ${P2_WAYS}. The DP ` +
+				`table dp[0..${P2_N}] is [${P2_DP_TABLE.join(', ')}].`,
+		},
+		{
+			kind: 'choice',
+			prompt:
+				'Naive recursion for ways(n) recomputes the same ways(k) many times. Why ' +
+				'does memoization (DP) make it efficient?',
+			options: [
+				'Each subproblem ways(k) is computed once and cached, turning exponential recomputation into Θ(n) work',
+				'Memoization changes the recurrence to a faster one',
+				'It avoids the base cases entirely',
+				'It sorts the subproblems before solving them',
+			],
+			answer:
+				'Each subproblem ways(k) is computed once and cached, turning exponential recomputation into Θ(n) work',
+			misconceptions: {
+				'Memoization changes the recurrence to a faster one':
+					'The recurrence is unchanged. Memoization just stores each ways(k) the ' +
+					'first time it is computed, so the naive tree of repeated calls collapses ' +
+					'to n distinct subproblems solved once each.',
+			},
+			explanation:
+				'There are only n + 1 distinct subproblems ways(0..n). Solving each once ' +
+				'and reusing the stored value makes the whole computation Θ(n) instead of ' +
+				'the exponential blow-up of recomputing shared subproblems.',
+		},
+	],
+};
+
+// =============================================================================
+// NP-COMPLETENESS — conceptual classification (P / NP / NP-hard / NP-complete),
+// the reduction DIRECTION for proving NP-hardness, and the verifier-in-polynomial-
+// time definition of NP. All 'choice'/'classify' with unambiguous correct options.
+// =============================================================================
+
+const problemNP1 = {
+	kind: 'problem',
+	stem:
+		'Place four decision problems in their tightest standard complexity class. ' +
+		'Recall: P = solvable in polynomial time; NP = a YES-certificate is ' +
+		'checkable in polynomial time; NP-hard = at least as hard as every problem ' +
+		'in NP; NP-complete = in NP AND NP-hard.',
+	parts: [
+		{
+			kind: 'classify',
+			prompt:
+				'Classify each problem. (SAT and HALTING are the textbook landmarks; ' +
+				'SORTING is the easy baseline.)',
+			items: [
+				{ id: 'sorting', label: 'Sorting n numbers' },
+				{ id: 'sat', label: 'Boolean satisfiability (SAT)' },
+				{ id: 'halting', label: 'The halting problem' },
+				{ id: 'tsp', label: 'Travelling-salesman decision (tour ≤ B?)' },
+			],
+			categories: [
+				{ id: 'p', label: 'In P (polynomial-time solvable)' },
+				{ id: 'npc', label: 'NP-complete' },
+				{ id: 'undecidable', label: 'Undecidable (not even computable)' },
+			],
+			answer: {
+				sorting: 'p',
+				sat: 'npc',
+				halting: 'undecidable',
+				tsp: 'npc',
+			},
+			explanation:
+				'Sorting runs in O(n log n), so it is in P. SAT (Cook-Levin) and the ' +
+				'TSP decision problem are NP-complete: in NP and NP-hard. The halting ' +
+				'problem is undecidable, harder still — no algorithm decides it at all.',
+		},
+		{
+			kind: 'choice',
+			prompt:
+				'What is NP-complete, precisely?',
+			options: [
+				'A problem that is BOTH in NP AND NP-hard',
+				'Any problem that takes exponential time',
+				'A problem in P that also happens to be in NP',
+				'A problem that is NP-hard but provably not in NP',
+			],
+			answer: 'A problem that is BOTH in NP AND NP-hard',
+			misconceptions: {
+				'Any problem that takes exponential time':
+					'NP-complete is about membership in NP plus NP-hardness, not a raw ' +
+					'running time. Some NP-hard problems (like halting) are not in NP at ' +
+					'all, so they are not NP-complete.',
+			},
+			explanation:
+				'NP-complete = in NP (a certificate is poly-time checkable) AND NP-hard ' +
+				'(everything in NP reduces to it). They are the hardest problems IN NP; if ' +
+				'any one is in P then P = NP.',
+		},
+		{
+			kind: 'choice',
+			prompt:
+				'NP is defined by what a VERIFIER can do. Which statement captures the ' +
+				'definition of NP?',
+			options: [
+				'A problem is in NP if a given YES-certificate can be CHECKED in polynomial time',
+				'A problem is in NP if it can be SOLVED in polynomial time',
+				'A problem is in NP if it can be solved in nondeterministic exponential time',
+				'A problem is in NP if no polynomial-time algorithm can exist for it',
+			],
+			answer:
+				'A problem is in NP if a given YES-certificate can be CHECKED in polynomial time',
+			misconceptions: {
+				'A problem is in NP if it can be SOLVED in polynomial time':
+					'That defines P. NP is about VERIFYING a proposed solution quickly, not ' +
+					'finding one. P ⊆ NP, but the open question is whether the inclusion is ' +
+					'strict.',
+			},
+			explanation:
+				'NP = problems whose YES-instances have a short certificate verifiable in ' +
+				'polynomial time. Finding the certificate may need exponential search; the ' +
+				'definition only requires that CHECKING one is fast.',
+		},
+	],
+};
+
+const problemNP2 = {
+	kind: 'problem',
+	stem:
+		'Reductions prove hardness, and the DIRECTION matters. To prove a target ' +
+		'problem B is NP-hard, you reduce a KNOWN NP-hard problem A to B (written ' +
+		'A ≤p B): an instance of A is transformed, in polynomial time, into an ' +
+		'equivalent instance of B.',
+	parts: [
+		{
+			kind: 'choice',
+			prompt:
+				'You want to prove that INDEPENDENT-SET is NP-hard. You already know ' +
+				'3-SAT is NP-hard. Which reduction do you build?',
+			options: [
+				'Reduce 3-SAT to INDEPENDENT-SET (3-SAT ≤p INDEPENDENT-SET)',
+				'Reduce INDEPENDENT-SET to 3-SAT (INDEPENDENT-SET ≤p 3-SAT)',
+				'Reduce INDEPENDENT-SET to a problem in P',
+				'Either direction proves NP-hardness equally',
+			],
+			answer:
+				'Reduce 3-SAT to INDEPENDENT-SET (3-SAT ≤p INDEPENDENT-SET)',
+			misconceptions: {
+				'Reduce INDEPENDENT-SET to 3-SAT (INDEPENDENT-SET ≤p 3-SAT)':
+					'That direction only shows INDEPENDENT-SET is no harder than 3-SAT (an ' +
+					'upper bound). To prove it is HARD you must map the KNOWN-hard problem ' +
+					'INTO it: 3-SAT ≤p INDEPENDENT-SET.',
+			},
+			explanation:
+				'To prove B is NP-hard you reduce a known-hard A INTO B (A ≤p B), so a ' +
+				'fast solver for B would solve A too. The classic 3-SAT ≤p INDEPENDENT-SET ' +
+				'clause-gadget construction does exactly this.',
+		},
+		{
+			kind: 'choice',
+			prompt:
+				'A reduction A ≤p B used for hardness proofs must satisfy two properties. ' +
+				'Which pair is required?',
+			options: [
+				'It runs in polynomial time, and it preserves the answer (YES maps to YES, NO maps to NO)',
+				'It runs in polynomial time, and it makes the instance smaller',
+				'It can take exponential time as long as the answer is preserved',
+				'It only needs to map YES instances of A to YES instances of B',
+			],
+			answer:
+				'It runs in polynomial time, and it preserves the answer (YES maps to YES, NO maps to NO)',
+			explanation:
+				'A polynomial-time many-one reduction transforms instances in poly time ' +
+				'AND is answer-preserving in both directions, so B’s answer reveals A’s. ' +
+				'Without poly time the reduction proves nothing about polynomial hardness.',
+		},
+		{
+			kind: 'choice',
+			prompt:
+				'Suppose someone exhibits a polynomial-time algorithm for ONE ' +
+				'NP-complete problem. What follows?',
+			options: [
+				'P = NP — every problem in NP is then solvable in polynomial time',
+				'Only that one problem becomes easy; the rest are unaffected',
+				'The halting problem becomes decidable',
+				'Nothing follows without checking each problem separately',
+			],
+			answer:
+				'P = NP — every problem in NP is then solvable in polynomial time',
+			misconceptions: {
+				'Only that one problem becomes easy; the rest are unaffected':
+					'Every NP problem reduces to any NP-complete problem in poly time, so a ' +
+					'poly-time algorithm for one gives a poly-time algorithm for all of NP. ' +
+					'That is the whole point of completeness.',
+			},
+			explanation:
+				'Because every NP problem reduces to an NP-complete one in polynomial ' +
+				'time, solving any single NP-complete problem in P collapses P and NP into ' +
+				'the same class.',
+		},
+	],
+};
+
+// =============================================================================
 // THE EXAM SET REGISTRY
 // =============================================================================
 //
@@ -1570,6 +2408,66 @@ export const EXAM_SETS = [
 		topicId: 'max-flow',
 		topicName: 'Maximum flow',
 		problem: problemMF1,
+	},
+	{
+		id: 'foundations-1',
+		topicId: 'foundations',
+		topicName: 'Arrays & complexity',
+		problem: problemF1,
+	},
+	{
+		id: 'foundations-2',
+		topicId: 'foundations',
+		topicName: 'Arrays & complexity',
+		problem: problemF2,
+	},
+	{
+		id: 'stacks-queues-1',
+		topicId: 'stacks-queues',
+		topicName: 'Stacks & queues',
+		problem: problemSQ1,
+	},
+	{
+		id: 'stacks-queues-2',
+		topicId: 'stacks-queues',
+		topicName: 'Stacks & queues',
+		problem: problemSQ2,
+	},
+	{
+		id: 'sorting-1',
+		topicId: 'sorting',
+		topicName: 'Sorting',
+		problem: problemMS1,
+	},
+	{
+		id: 'sorting-2',
+		topicId: 'sorting',
+		topicName: 'Sorting',
+		problem: problemMS2,
+	},
+	{
+		id: 'strategies-1',
+		topicId: 'strategies',
+		topicName: 'Strategies',
+		problem: problemP1,
+	},
+	{
+		id: 'strategies-2',
+		topicId: 'strategies',
+		topicName: 'Strategies',
+		problem: problemP2,
+	},
+	{
+		id: 'np-1',
+		topicId: 'np-completeness',
+		topicName: 'NP-completeness',
+		problem: problemNP1,
+	},
+	{
+		id: 'np-2',
+		topicId: 'np-completeness',
+		topicName: 'NP-completeness',
+		problem: problemNP2,
 	},
 ];
 
