@@ -73,6 +73,14 @@ export const SCENES = [
 				'Anywhere',
 			],
 			answer: 'At the root',
+			misconceptions: {
+				'In a leaf':
+					'Leaves hold the smallest elements, not the largest. The heap rule pushes big values up toward the root, so the maximum cannot end up stranded at the bottom.',
+				'In the left subtree':
+					'A max-heap has no left/right ordering, so neither subtree is favored. The parent-over-child rule alone forces the maximum all the way to the root, not to a side.',
+				'Anywhere':
+					'The heap property pins the maximum precisely. Since every parent dominates its children, no element can sit above the largest one, so it must be the root, not just somewhere.',
+			},
 			explanation:
 				'Since every parent dominates its children, the largest element can have no parent larger than it — so it must be the root. That single guarantee is what makes a heap a priority queue: the best element is one lookup away.',
 		},
@@ -114,6 +122,14 @@ export const SCENES = [
 				'Insert appends the new key at the last leaf. Which way does it then travel to find its place?',
 			options: ['Sift up toward the root', 'Sift down toward the leaves', 'It stays put', 'Re-build the whole heap'],
 			answer: 'Sift up toward the root',
+			misconceptions: {
+				'Sift down toward the leaves':
+					'Sifting down is the extract-max repair, where a too-small root sinks. A freshly inserted leaf is potentially too LARGE for its parent, so it moves the other way, upward.',
+				'It stays put':
+					'A new leaf can violate the property against its parent, so it cannot simply stay. It must bubble up until it is no larger than its parent, restoring the rule.',
+				'Re-build the whole heap':
+					'Rebuilding the whole heap is O(n) and wasteful here. Insert disturbs the property at one spot, so repairing along a single leaf-to-root path of length log n is enough.',
+			},
 			explanation:
 				'A freshly appended leaf may be larger than its parent, so it bubbles UP, swapping with its parent until it is no longer too big. Extract-max is the mirror image: the replacement root is too small, so it sinks DOWN. Each is one path of length ≤ log n.',
 		},

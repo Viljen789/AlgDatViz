@@ -61,6 +61,14 @@ export const SCENES = [
 				'The vertex sends flow only to the sink',
 			],
 			answer: 'Total flow in equals total flow out',
+			misconceptions: {
+				'Every edge is fully saturated':
+					'That confuses conservation with saturation. A valid flow can leave many edges far below capacity; conservation only balances the totals at a vertex, it does not demand any edge be filled. Saturation is a property of the min-cut edges at maximum flow, not of every flow.',
+				'Flow out is at most the capacity':
+					'That is the capacity constraint on a single edge (0 ≤ f ≤ c), a different rule. Conservation is about balancing flow in against flow out at a vertex, not about comparing one edge’s flow to its capacity.',
+				'The vertex sends flow only to the sink':
+					'Flow routes through whichever intermediate edges lead toward t; an interior vertex usually forwards to other interior vertices, not straight to the sink. Conservation just requires the amounts in and out to match, wherever the flow goes next.',
+			},
 			explanation:
 				'Conservation: no intermediate vertex creates or destroys flow, so flow in = flow out there. Only s (a net producer) and t (a net consumer) are exempt. Because of this, the value of a flow can be measured either as the net flow out of s or the net flow into t — they are equal.',
 		},
@@ -95,6 +103,14 @@ export const SCENES = [
 			],
 			answer:
 				'The minimum residual capacity along the path (its bottleneck)',
+			misconceptions: {
+				'The maximum capacity on the path':
+					'Pushing the maximum would overflow the tightest edge. The same amount must flow along every edge of the path, so the smallest residual capacity, not the largest, is the binding limit.',
+				'The capacity of the first edge':
+					'The first edge has no special status. Any edge further along the path could be tighter, and that tightest edge, wherever it sits, is what caps the augmentation.',
+				'Exactly one unit, always':
+					'One unit is only the guaranteed MINIMUM gain with integer capacities, not the amount actually pushed. When the bottleneck is larger you push the whole bottleneck at once, which is why the algorithm does not need |f*| separate single-unit steps.',
+			},
 			explanation:
 				'The bottleneck — the smallest residual capacity on the path — caps how much you can push, because every edge on the path must accommodate the same amount. Adding the bottleneck keeps the flow feasible and saturates at least one edge, which is why progress is always made.',
 		},
@@ -115,6 +131,14 @@ export const SCENES = [
 			],
 			answer:
 				'When no augmenting path exists in the residual network',
+			misconceptions: {
+				'When every edge is saturated':
+					'A maximum flow rarely saturates every edge; only the edges crossing the min cut must be full. Many edges can sit below capacity at the optimum, so saturation of all edges is not the stopping signal.',
+				'After exactly |V| − 1 iterations':
+					'Ford-Fulkerson has no fixed iteration count. Its number of augmentations depends on the path choices and the flow value |f*|, not on |V|. The fixed |V|−1 count belongs to Bellman-Ford’s passes, a different algorithm.',
+				'When the source has no outgoing edges':
+					'The source keeps its outgoing edges throughout; what changes is their residual capacity. The algorithm halts when t is unreachable from s in the residual network, which can happen while s still has edges that are simply saturated.',
+			},
 			explanation:
 				'No augmenting path in G_f means the sink is unreachable from the source through spare capacity, so no more flow can be sent — the flow is maximum. (Not every edge need be saturated; only the edges crossing the min cut are.)',
 		},
@@ -136,6 +160,14 @@ export const SCENES = [
 			],
 			answer:
 				'It always picks the shortest augmenting path (by edge count), via BFS',
+			misconceptions: {
+				'It does not use a residual network':
+					'Edmonds-Karp runs its BFS ON the residual network and augments there, exactly like Ford-Fulkerson. The residual network, with its back edges, is essential to both; only the path-selection rule differs.',
+				'It allows fractional flow':
+					'Neither method introduces fractions. With integer capacities both keep the flow integral; the BFS rule changes which path is chosen, not whether the amounts are whole.',
+				'It never uses back edges':
+					'Back edges are what let any augmenting-path method undo earlier routing, and Edmonds-Karp relies on them just as Ford-Fulkerson does. The BFS path can and does traverse back edges; that is unchanged.',
+			},
 			explanation:
 				'Both augment until stuck over the same residual network. Edmonds-Karp simply fixes the path choice to the BFS shortest path, which makes the augmentation count — and thus the running time O(V·E²) — independent of the capacity sizes.',
 		},
@@ -172,6 +204,14 @@ export const SCENES = [
 			],
 			answer:
 				'Each augmentation adds an integer bottleneck, starting from zero flow',
+			misconceptions: {
+				'It rounds the final flow to the nearest integer':
+					'No rounding ever happens, and rounding could break conservation or capacity anyway. The flow is integral at every step by construction, so the final answer is already whole without any adjustment.',
+				'Residual capacities are always 1':
+					'Residual capacities take whatever integer values the capacities allow, often far larger than 1. Integrality holds because the bottleneck is a minimum of integers, not because those integers are all 1.',
+				'It only works on graphs with unit capacities':
+					'The integrality theorem covers ALL integer capacities, not just unit ones. Unit capacities are merely the special case used for matching; the same induction gives an integer flow for any integer-capacity network.',
+			},
 			explanation:
 				'Flow begins at 0, every bottleneck is the minimum of integer residual capacities (hence an integer), and augmenting adds that integer everywhere on the path. By induction the flow is integral at every step — no rounding needed. This integrality is what lets max-flow solve combinatorial problems exactly.',
 		},

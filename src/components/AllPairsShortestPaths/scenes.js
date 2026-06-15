@@ -63,6 +63,14 @@ export const SCENES = [
 			],
 			answer:
 				'The shortest i→j path whose intermediate vertices all come from {1, …, k}',
+			misconceptions: {
+				'The shortest path that uses exactly k edges':
+					'This confuses the intermediate-vertex index k with an edge count. Floyd-Warshall’s k bounds WHICH vertices a path may pass through, not how many edges it has; the matrix-multiplication APSP variant counts edges, but that is a different algorithm.',
+				'The k-th shortest path from i to j':
+					'k is not a ranking of paths. There is one shortest distance per pair at each stage; k names the set of allowed intermediate vertices {1, …, k}, not the k-th best route.',
+				'The shortest path that visits vertex k':
+					'A path counted in d_k is allowed to use {1, …, k} but is not required to pass through k. The k-round considers both the route that ignores k and the route that uses it, then keeps the smaller.',
+			},
 			explanation:
 				'd_k[i][j] is the best i→j distance allowed to route only through the first k vertices. At k = 0 that is the direct edge; at k = n every vertex is permitted, so d_n is the real all-pairs answer. Growing k by one is exactly "now you may also pass through vertex k."',
 		},
@@ -143,6 +151,14 @@ export const SCENES = [
 			prompt: 'What is the running time of Floyd-Warshall?',
 			options: ['Θ(V³)', 'Θ(V²)', 'Θ(V⁴)', 'Θ(E log V)'],
 			answer: 'Θ(V³)',
+			misconceptions: {
+				'Θ(V²)':
+					'Θ(V²) is the size of the distance matrix, not the cost of filling it. Each of the V² cells is relaxed once per k-round, and there are V rounds, so the work is V × V² = Θ(V³).',
+				'Θ(V⁴)':
+					'Θ(V⁴) is the Slow-APSP bound, which redoes a full matrix-multiplication pass V−1 times. Floyd-Warshall avoids that by reusing each k-layer in place, so it needs only the three nested loops, Θ(V³).',
+				'Θ(E log V)':
+					'Θ(E log V) is the cost of one Dijkstra run, an edge-driven single-source bound. Floyd-Warshall is vertex-driven and computes ALL pairs at once; its cost depends on V, not on the edge count E.',
+			},
 			explanation:
 				'Three nested loops over the n vertices — k, then i, then j — each Θ(V), give Θ(V³), independent of how many edges there are. That beats the O(V⁴) Slow-APSP and the O(V³ log V) repeated-squaring variants, and it is competitive with running Dijkstra from every vertex on dense graphs (while also handling negative edges).',
 		},

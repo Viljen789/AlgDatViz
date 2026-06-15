@@ -26,6 +26,10 @@ export const SCENES = [
 				'Which strategy keeps a record of every subproblem it has already solved?',
 			options: ['Greedy', 'Dynamic programming'],
 			answer: 'Dynamic programming',
+			misconceptions: {
+				'Greedy':
+					'Greedy keeps no record of past subproblems. It makes one local decision and moves on, so there is nothing to look up later; it is DP that stores every subproblem result in a table.',
+			},
 			explanation:
 				'DP names a state, then fills a table so each subproblem is solved exactly once. Greedy keeps no such memory — it makes one local decision and moves on, which is why it is faster but riskier.',
 		},
@@ -68,6 +72,12 @@ export const SCENES = [
 				'required by both greedy and DP',
 			],
 			answer: 'required by both greedy and DP',
+			misconceptions: {
+				'unique to dynamic programming':
+					'This treats optimal substructure as the DP signature, but greedy relies on it too. Building an optimum from optimal sub-solutions is the shared base, so it cannot single out DP.',
+				'unique to greedy':
+					'Optimal substructure is not what makes greedy work; the greedy-choice property is. Optimal substructure is equally required by DP, so it is shared, not greedy-only.',
+			},
 			explanation:
 				'Optimal substructure is the shared base. It is necessary for both strategies and therefore cannot, by itself, decide which to use. The distinguishing question comes next: does a local choice provably stay optimal (greedy), or do subproblems overlap (DP)?',
 		},
@@ -103,6 +113,12 @@ export const SCENES = [
 				'Earliest finish time',
 			],
 			answer: 'Earliest finish time',
+			misconceptions: {
+				'Earliest start time':
+					'Earliest-start can pick a long activity that blocks many others, and a counterexample breaks it. It is finishing early, not starting early, that leaves the most room for what follows.',
+				'Shortest duration':
+					'A short activity can still straddle two others and knock both out, so shortest-duration has an easy counterexample. Only earliest-finish carries the exchange-argument proof.',
+			},
 			explanation:
 				'Earliest-finish is the rule with an exchange-argument proof: any optimal schedule can swap its first activity for the earliest-finishing one without losing any activities. That proof IS the greedy-choice property. Earliest-start and shortest-duration both have easy counterexamples.',
 		},

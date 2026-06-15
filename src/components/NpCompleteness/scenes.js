@@ -34,6 +34,12 @@ export const SCENES = [
 				'it has no known polynomial algorithm',
 			],
 			answer: 'it can be solved in polynomial time',
+			misconceptions: {
+				'a proposed answer can be checked in polynomial time':
+					'That is the definition of NP, not P. P demands you can FIND the answer fast; checking a handed-to-you answer fast is the weaker NP promise. Conflating verifying with solving is the exact slip this topic exists to fix.',
+				'it has no known polynomial algorithm':
+					'That describes a problem we suspect is NOT in P, the opposite of the definition. P is membership by a positive guarantee (a poly-time algorithm exists), not by the absence of one.',
+			},
 			explanation:
 				'P is the class of problems SOLVABLE in polynomial time. "Checkable in polynomial time" is the definition of NP — a related but weaker promise, which is exactly the distinction the next scene makes.',
 		},
@@ -54,6 +60,12 @@ export const SCENES = [
 			],
 			answer:
 				'Every yes-instance has a polynomial-time-verifiable certificate',
+			misconceptions: {
+				'It can be solved by brute force':
+					'Nearly every problem yields to brute force given enough time, so that says nothing special. NP is about CHECKING a certificate in polynomial time, not about whether an exponential search eventually finds one.',
+				'It is harder than every problem in P':
+					'NP does not sit above P; it contains it (P ⊆ NP). Many NP problems are easy, and membership in NP is a verification promise, not a hardness ranking.',
+			},
 			explanation:
 				'NP is defined by polynomial-time VERIFICATION of a certificate, not by how the certificate is found. Every problem in P is also in NP (you can verify by just re-solving), so P ⊆ NP. Whether P = NP is the open question.',
 		},
@@ -89,6 +101,12 @@ export const SCENES = [
 				'in P and in NP',
 			],
 			answer: 'in NP and NP-hard',
+			misconceptions: {
+				'NP-hard but not in NP':
+					'Dropping membership in NP leaves only NP-hard, which can be far harder, even undecidable (the halting problem is NP-hard). NP-completeness specifically requires the problem to also be verifiable, i.e. in NP.',
+				'in P and in NP':
+					'Every P problem is already in NP, so this just describes an easy problem. NP-complete needs NP-HARDNESS too, and an NP-complete problem is known to be in P only if P = NP.',
+			},
 			explanation:
 				'NP-complete = in NP AND NP-hard. Drop "in NP" and you have only NP-hard (could be far harder, even unsolvable). The membership in NP is what keeps an NP-complete problem "checkable" — that is the whole point of the class.',
 		},
@@ -137,6 +155,12 @@ export const SCENES = [
 				'prove A is NP-hard first',
 			],
 			answer: 'reduce A to B (A ≤p B), then run B’s solver',
+			misconceptions: {
+				'reduce B to A (B ≤p A)':
+					'That points the arrow backward: B ≤p A would let B’s instances be solved by A, but you have a solver for B, not A. To USE B you must feed it A’s instances, i.e. A ≤p B.',
+				'prove A is NP-hard first':
+					'Hardness is irrelevant when you just want an answer. You already hold a fast solver for B, so the task is to route A into it (A ≤p B); proving A NP-hard is the separate, opposite-direction activity of the next scene.',
+			},
 			explanation:
 				'To SOLVE A using B, map A’s instances into B (A ≤p B) and let B’s solver answer. The arrow points from the problem you want to solve toward the tool you already have. Proving hardness points the arrow the OTHER way — that is the next scene.',
 		},
@@ -177,6 +201,12 @@ export const SCENES = [
 				'easier than 3-SAT',
 			],
 			answer: 'NP-hard (and, being in NP, NP-complete)',
+			misconceptions: {
+				'in P':
+					'A reduction FROM a known-hard problem can only push a problem up, never into P. Concluding Independent-Set is in P would actually imply P = NP, since 3-SAT reduces into it.',
+				'easier than 3-SAT':
+					'The reduction direction proves the reverse: 3-SAT ≤p Independent-Set means Independent-Set is at least as hard as 3-SAT, not easier. Reading the inequality backward is the classic direction error.',
+			},
 			explanation:
 				'Reducing the known-hard 3-SAT INTO Independent-Set proves Independent-Set is at least as hard as 3-SAT, i.e. NP-hard. Independent-Set is also in NP (a candidate vertex set is verified in polynomial time), so it is NP-complete. Direction + membership = the full argument.',
 		},

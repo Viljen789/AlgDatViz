@@ -50,6 +50,14 @@ export const SCENES = [
 			prompt: 'A node in a binary tree can have at most how many children?',
 			options: [1, 2, 3, 'any number'],
 			answer: 2,
+			misconceptions: {
+				'1':
+					'One child describes a linked list, not a binary tree. Binary allows a left and a right child, so the fan-out is two, which is what gives a balanced tree its log-height.',
+				'3':
+					'Three children is a ternary tree. The word binary fixes the maximum fan-out at two: a left child and a right child, never a third.',
+				'any number':
+					'Unbounded children describes a general tree. A binary tree caps each node at two children, and that fixed cap is what bounds the height the search walks.',
+			},
 			explanation:
 				'Binary means two: each node has at most a left child and a right child. That fixed fan-out is what makes the height — and therefore the cost of a search — roughly log₂(n) when the tree stays balanced.',
 		},
@@ -65,6 +73,14 @@ export const SCENES = [
 				'In a BST, where do all values smaller than the current node live?',
 			options: ['left subtree', 'right subtree', 'the root', 'anywhere'],
 			answer: 'left subtree',
+			misconceptions: {
+				'right subtree':
+					'This reverses the invariant. Right holds the larger values; the smaller ones live left, which is the direction a search descends when the target is below the node.',
+				'the root':
+					'The root is a single node, not a region for all smaller values. Smaller values fill an entire subtree (the left one), which is what lets a search discard half the tree at once.',
+				'anywhere':
+					'If smaller values could sit anywhere the structure would not be a search tree at all. The whole point of the BST property is that smaller values are confined to the left subtree of every node.',
+			},
 			explanation:
 				'Smaller goes left, larger goes right — and because it holds at every node, an entire subtree is guaranteed to be on one side of a value. That guarantee is the whole reason a BST can skip half the tree on each step.',
 		},
@@ -95,6 +111,14 @@ export const SCENES = [
 			prompt: `Inserting ${INSERT_KEY}: the search ends at an empty pointer below which node?`,
 			options: [23, 31, 12, 42],
 			answer: 31,
+			misconceptions: {
+				'23':
+					'The search does not stop at 23. Since 29 > 23 it must descend right to 31, and only there does it reach an empty pointer, so the new node hangs below 31, not 23.',
+				'12':
+					'12 sits on the wrong side. From 23 the value 29 goes right (29 > 23), so it never visits 12 in the left subtree at all.',
+				'42':
+					'42 is only the root where the search begins, not where it ends. The walk continues down (29 < 42, then 29 > 23, then 29 < 31) until it falls off the tree below 31.',
+			},
 			explanation:
 				'29 < 42 → left to 23; 29 > 23 → right to 31; 29 < 31 → left, which is empty. So 29 becomes 31’s left child. Insertion is a failed search plus a single link at the first empty pointer it reaches.',
 		},

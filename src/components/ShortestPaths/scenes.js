@@ -64,6 +64,14 @@ export const SCENES = [
 				'Nothing — subpaths can be anything',
 			],
 			answer: 'It is a shortest path from S to A',
+			misconceptions: {
+				'It is the longest path from S to A':
+					'This inverts the property: a shortest path is built from shortest subpaths, never longest. Splicing in a longer S → A prefix could only make the S → B path longer, so a longest subpath would contradict optimality.',
+				'It has the same length as S → B':
+					'A prefix S → A is part of the larger path S → B, so it is generally shorter, not equal. The claim confuses the length of a subpath with the length of the whole path it sits inside.',
+				'Nothing — subpaths can be anything':
+					'This denies optimal substructure outright. If a subpath could be anything, you could replace the S → A prefix with a cheaper route and beat the supposed shortest S → B, which is impossible. Subpaths of shortest paths are forced to be shortest.',
+			},
 			explanation:
 				'Optimal substructure: every subpath of a shortest path is a shortest path between its own endpoints. Swap in a cheaper S → A and the whole S → B would get cheaper, contradicting that it was shortest. This property is what lets a one-edge Relax build global shortest paths from local improvements.',
 		},
@@ -83,6 +91,14 @@ export const SCENES = [
 				'When dist[s] reaches 0',
 			],
 			answer: 'When no edge can be relaxed any further',
+			misconceptions: {
+				'When every vertex has been visited once':
+					'Visiting a vertex does not mean its distance is final. In Bellman-Ford a vertex can be relaxed again on a later pass, and only the no-edge-relaxes test, not a visit count, proves convergence.',
+				'When the priority queue is full':
+					'A full or empty queue is a Dijkstra implementation detail, not the stopping condition for shortest paths in general. Bellman-Ford and DAG-SP use no priority queue at all yet still finish; convergence is defined by relaxation, not by queue state.',
+				'When dist[s] reaches 0':
+					'dist[s] is 0 from the very first line of initialization, before any work happens. That tells you nothing about the rest of the vertices, so it cannot be a termination test.',
+			},
 			explanation:
 				'If dist[u] + w < dist[v] for some edge, that edge still improves something, so you are not done. When every edge satisfies dist[v] ≤ dist[u] + w (the triangle inequality), no relaxation helps and the distances are final. That convergence test is exactly Bellman-Ford’s extra pass.',
 		},
@@ -117,6 +133,14 @@ export const SCENES = [
 			],
 			answer:
 				'Every predecessor is processed before its successors, so dist[u] is final when you relax out of u',
+			misconceptions: {
+				'Topological sort sorts the vertices by distance':
+					'Topological order ranks vertices by edge dependency, not by tentative distance. The order is fixed before any relaxation runs, so it cannot reflect distances it has not computed yet. Sorting by distance is Dijkstra, a different idea.',
+				'DAGs have no edges':
+					'A DAG has plenty of edges; it just has no directed cycles. The single pass works because of the acyclic order of those edges, not because they are absent.',
+				'It only works for non-negative weights':
+					'This borrows Dijkstra’s restriction by mistake. DAG-SP tolerates negative edges freely, because a DAG has no cycle for a negative weight to loop around. The acyclic structure, not the sign of the weights, is what makes one pass enough.',
+			},
 			explanation:
 				'In topological order, by the time you process u, every path into u has already been relaxed, so dist[u] is correct. Relaxing u’s out-edges then extends correct prefixes by one edge — no vertex ever needs revisiting. Negative weights don’t break this; only a cycle would (and a DAG has none).',
 		},

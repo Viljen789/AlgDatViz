@@ -24,6 +24,11 @@ export const SCENES = [
 				'In T(n) = 2·T(n/2) + n, how many subproblems does one call create?',
 			options: ['1', '2', '4', 'n'],
 			answer: '2',
+			misconceptions: {
+				'1': 'You read off one recursive call from the single T term, but the coefficient in front of it, a = 2, is the count. The term T(n/2) appears, yet the 2 multiplying it says it happens twice.',
+				'4': 'You squared the branching instead of reading it. a² = 4 is the number of calls two levels down, not the one call splitting into a = 2 children at a single step.',
+				n: 'You mistook the work term for the branching count. The +n is the combine cost f(n), not the number of subproblems; the branching factor is the coefficient a = 2 on T.',
+			},
 			explanation:
 				'The coefficient a in front of T is the branching factor. Here a = 2, so every call splits into two half-sized calls — exactly what merge sort does when it halves the array.',
 		},
@@ -38,6 +43,11 @@ export const SCENES = [
 			prompt: 'Each level down, the number of calls is multiplied by…',
 			options: ['a', 'b', 'a/b', 'log n'],
 			answer: 'a',
+			misconceptions: {
+				b: 'You picked the shrink factor, not the branch factor. b divides the subproblem size each level (n to n/b); the number of calls is multiplied by a, the branching count.',
+				'a/b': 'You blended the two roles into one ratio. a/b = r is the per-level work multiplier in the sum, not the call-count growth; the call count alone scales by a each level.',
+				'log n': 'You named the number of levels, not the per-level growth. log_b(n) is how deep the tree goes; the calls grow by a at every one of those levels.',
+			},
 			explanation:
 				'Level 0 has 1 call, level 1 has a, level 2 has a², and so on. After log_b(n) levels the calls are size 1. So the leaf count is a^(log_b n) = n^(log_b a) — that exponent log_b(a) is the whole game.',
 		},
@@ -53,6 +63,11 @@ export const SCENES = [
 				'For merge sort, c = log₂(2) = 1 and d = 1. How do they compare?',
 			options: ['c > d', 'c = d', 'c < d', 'cannot tell'],
 			answer: 'c = d',
+			misconceptions: {
+				'c > d': 'You read the leaves as winning, but both exponents equal 1. c > d would mean the leaf count outgrows the combine work; here log₂(2) = 1 exactly matches d = 1, so neither pulls ahead.',
+				'c < d': 'You read the root combine as winning, but the two exponents are equal. c < d would put f(n) ahead; with c = d = 1 the per-level work stays flat instead.',
+				'cannot tell': 'You hesitated although both numbers are given. c = log₂(2) = 1 and d = 1 are concrete, so the comparison is fully decidable: they are equal.',
+			},
 			explanation:
 				'Both exponents are 1, so neither side runs away from the other. When c = d the work is balanced — the leaves and the root pull equally hard. That balance is exactly Case 2.',
 		},
@@ -68,6 +83,11 @@ export const SCENES = [
 				'a = 8, b = 2, f(n) = n. Then c = log₂(8) = 3 and d = 1. Which case?',
 			options: ['Case 1', 'Case 2', 'Case 3', 'none apply'],
 			answer: 'Case 1',
+			misconceptions: {
+				'Case 2': 'You assumed a tie, but c = 3 and d = 1 are far apart. Case 2 needs c = d so every level does equal work; here the leaves grow as n³ while combine is only n.',
+				'Case 3': 'You let the root combine win, but it is the smaller side. Case 3 needs c < d; here c = 3 exceeds d = 1, so the leaves dominate, not the combine work.',
+				'none apply': 'You expected a gap the theorem cannot cover, but this is a clean polynomial split. c = 3 is polynomially larger than d = 1, so Case 1 applies squarely.',
+			},
 			explanation:
 				'c = 3 is greater than d = 1, so the leaves vastly outnumber the combine work and dominate the total: T(n) = Θ(n³). The leaf level alone carries the cost.',
 		},
@@ -101,6 +121,11 @@ export const SCENES = [
 				'When every level does the same amount of work, the total picks up an extra factor of…',
 			options: ['a', 'n', 'log n', 'b'],
 			answer: 'log n',
+			misconceptions: {
+				a: 'You reached for the branching factor, but a counts children per node, not levels. The extra factor comes from how many levels stack up, which is log_b(n), not a.',
+				n: 'You multiplied by the input size itself, but n is already inside the per-level n^d work. The new factor is the level count log_b(n), which is much smaller than n.',
+				b: 'You picked the shrink factor, but b only sets how fast size drops per level. The number of levels it produces is log_b(n), and that log is the factor that rides along.',
+			},
 			explanation:
 				'There are about log_b(n) levels, each costing the same n^d. Multiply shared per-level work by the number of levels and you get the Θ(n^d log n) of Case 2 — the merge-sort O(n log n).',
 		},

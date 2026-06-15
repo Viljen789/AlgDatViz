@@ -24,6 +24,12 @@ export const SCENES = [
 				'By how many lines of code it has',
 			],
 			answer: 'By how the number of steps grows with input size n',
+			misconceptions: {
+				'In seconds on your machine':
+					'You are timing the hardware, not the algorithm. The same code clocks different seconds on a faster CPU or a different language, so seconds describe your laptop, not the method.',
+				'By how many lines of code it has':
+					'You are confusing source length with run cost. Three tight lines can hide a triple-nested loop, and a hundred lines can run in constant time, so line count says nothing about how the work scales.',
+			},
 			explanation:
 				'Wall-clock seconds depend on the hardware, the language, the weather. Complexity is machine-independent: it describes how the step count scales with n, so it holds on any computer, today and in ten years.',
 		},
@@ -39,6 +45,11 @@ export const SCENES = [
 				'A loop nested inside another, each running n times, performs about how many steps?',
 			options: ['n', '2n', 'n log n', 'n²'],
 			answer: 'n²',
+			misconceptions: {
+				n: 'You counted one loop and forgot it runs inside another. A single pass is n; nesting one loop inside the other repeats that whole pass n times.',
+				'2n': 'You added the loops instead of nesting them. Two loops run one after the other cost n + n = 2n, but a loop inside a loop multiplies: each outer pass pays the full inner n.',
+				'n log n': 'You imported the merge-sort shape. n log n comes from halving the work each level, not from nesting two full-length loops, where every outer step pays the entire inner n.',
+			},
 			explanation:
 				'The inner loop runs n times for every one of the n outer passes: n × n = n². Two separate (not nested) loops would be n + n = 2n. Nesting multiplies; sequencing adds.',
 		},
@@ -53,6 +64,11 @@ export const SCENES = [
 			prompt: 'Simplify 3n² + 5n + 2 for large n.',
 			options: ['O(n)', 'O(n²)', 'O(3n²)', 'O(n³)'],
 			answer: 'O(n²)',
+			misconceptions: {
+				'O(n)': 'You kept a lower-order term instead of the dominant one. The 5n loses to 3n² for large n, so the n² term, not the linear one, sets the growth class.',
+				'O(3n²)': 'You kept the constant factor. Big-O deliberately drops constant multipliers, since tripling every step does not change how the cost scales with n; only the n² shape survives.',
+				'O(n³)': 'You inflated the exponent. Nothing in 3n² + 5n + 2 grows like n³; the highest power present is n², so the bound cannot exceed it.',
+			},
 			explanation:
 				'Keep the dominant term (n²), drop lower-order terms (5n, 2) and constant factors (the 3). Constants and small terms matter for tuning, but they don’t change how the cost scales — and scaling is what complexity describes.',
 		},
@@ -67,6 +83,10 @@ export const SCENES = [
 			prompt: 'Saying an algorithm is O(n) means it takes ___ about n steps.',
 			options: ['at most', 'exactly', 'at least'],
 			answer: 'at most',
+			misconceptions: {
+				exactly: 'You read O as a tight bound. Exactly is Θ, which pins growth from above and below at once; plain O only promises a ceiling, so the true cost may be lower.',
+				'at least': 'You swapped the ceiling for the floor. At least is Ω, the lower bound; O points the other way and caps the cost from above.',
+			},
 			explanation:
 				'O is the ceiling (at most). Ω is the floor (at least). Θ is both — the curve is sandwiched between c₁·n and c₂·n, so the growth is exactly linear up to constants.',
 		},
@@ -103,6 +123,10 @@ export const SCENES = [
 				'Appending to a dynamic array is O(n) on the rare resize, but across many appends it is ___.',
 			options: ['O(n) amortized', 'O(1) amortized', 'O(log n) amortized'],
 			answer: 'O(1) amortized',
+			misconceptions: {
+				'O(n) amortized': 'You let the rare worst case define the average. The O(n) resize is the single-append worst case; amortized cost spreads that spike across the ~n cheap appends that precede it.',
+				'O(log n) amortized': 'You assumed resizes pile up logarithmically per append. The doublings are few and their total cost is linear across n appends, so spread out it is constant per append, not log n.',
+			},
 			explanation:
 				'Doubling means a resize of cost n happens only every ~n appends, so the total for n appends is about 2n — that’s O(1) per append, amortized. Worst-case for a single append is still O(n); amortized describes the run, not the rare spike.',
 		},

@@ -55,6 +55,14 @@ export const SCENES = [
 				.join(', ')}. Which edge is the safe one to add?`,
 			options: [...new Set(CUT.crossing.map(e => `${e.u}–${e.v} (${e.w})`))],
 			answer: `${CUT_LIGHT.u}–${CUT_LIGHT.v} (${CUT_LIGHT.w})`,
+			misconceptions: Object.fromEntries(
+				CUT.crossing
+					.filter(e => !(e.u === CUT_LIGHT.u && e.v === CUT_LIGHT.v))
+					.map(e => [
+						`${e.u}–${e.v} (${e.w})`,
+						`${e.u}–${e.v} crosses the cut, but at weight ${e.w} it is heavier than ${CUT_LIGHT.u}–${CUT_LIGHT.v} (${CUT_LIGHT.w}). The cut property is about the LIGHTEST crossing edge, not just any crossing edge, so this one is not the safe one.`,
+					])
+			),
 			explanation: `The light edge is the minimum-weight crossing edge: ${CUT_LIGHT.u}–${CUT_LIGHT.v} at weight ${CUT_LIGHT.w}. The cut property guarantees a minimum spanning tree contains it, so adding it is always safe. Every step of both Kruskal and Prim is secretly this same move.`,
 		},
 	},

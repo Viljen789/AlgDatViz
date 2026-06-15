@@ -76,6 +76,12 @@ export const SCENES = [
 				'With more keys than buckets, are collisions avoidable by a smarter hash?',
 			options: ['Yes, always', 'No, never', 'Only sometimes'],
 			answer: 'No, never',
+			misconceptions: {
+				'Yes, always':
+					'This blames the hash for collisions, but the cause is counting, not the function: with more keys than buckets no mapping can give each key its own slot, so a smarter hash cannot make collisions vanish.',
+				'Only sometimes':
+					'There is no lucky case once keys outnumber buckets. The pigeonhole principle forces a shared bucket every time, so collisions are guaranteed here, not merely occasional.',
+			},
 			explanation:
 				'By the pigeonhole principle, once you have more keys than buckets at least two must share. A good hash spreads keys evenly so collisions stay rare and short — but it can never eliminate them. The data structure has to handle them gracefully.',
 		},
@@ -90,6 +96,14 @@ export const SCENES = [
 			prompt: `To look up "${COLLISION_KEYS[1]}", how many of the ${STAGE_CAPACITY} buckets does the map have to scan?`,
 			options: ['1', '2', `${STAGE_CAPACITY}`, 'All non-empty'],
 			answer: '1',
+			misconceptions: {
+				'2':
+					'Two is the chain length in the colliding bucket, not the number of buckets scanned. Hashing jumps to one bucket; walking its chain is comparing keys inside that single bucket, not scanning a second bucket.',
+				'7':
+					'Scanning all 7 buckets is the linear-search picture a hash table avoids. The hash gives the bucket directly, so the other buckets are never visited.',
+				'All non-empty':
+					'A lookup does not survey every occupied bucket. The hash selects exactly one bucket up front, so only that chain is touched regardless of how many other buckets hold entries.',
+			},
 			explanation: `Just one. Hashing jumps straight to bucket ${COLLISION_BUCKET}; the map then compares keys inside that single chain. The rest of the table is never touched. That is why the average cost is O(1) — work depends on the chain length, not on n.`,
 		},
 	},
@@ -104,6 +118,14 @@ export const SCENES = [
 				'Above which load factor do most hash maps decide it is time to grow?',
 			options: ['≈ 0.25', '≈ 0.5', '≈ 0.75', '≈ 2.0'],
 			answer: '≈ 0.75',
+			misconceptions: {
+				'≈ 0.25':
+					'Growing this early wastes space for no payoff: at α near 0.25 chains are still essentially length one, so the table mostly sits empty and resizes far more often than the cost warrants.',
+				'≈ 0.5':
+					'Half full sounds like the natural trigger, but chains are still short at α near 0.5; most implementations let the table fill a bit more before paying the O(n) rehash.',
+				'≈ 2.0':
+					'Waiting until α near 2 means the average chain is already about two entries, so lookups have slowed well before this point. The threshold exists to act before that, not after.',
+			},
 			explanation:
 				'Around α ≈ 0.75 the expected chain length starts to hurt, so most implementations resize there. Keeping α bounded by a constant is precisely what keeps the average operation O(1): bounded α means bounded chain length means bounded scan.',
 		},
@@ -124,6 +146,14 @@ export const SCENES = [
 				'To re-sort the entries',
 			],
 			answer: 'hash % capacity changes',
+			misconceptions: {
+				'The keys change':
+					'The key and its raw hash are fixed; nothing about the entry changes on resize. What changes is the compression step, hash % capacity, because capacity grew.',
+				'Chaining is recreated':
+					'Rebuilding chains is a side effect, not the reason. Entries move because their bucket index hash % capacity shifts when capacity changes; the new chains are just where they land.',
+				'To re-sort the entries':
+					'A hash table never orders its entries. Rehashing is not sorting; it re-places each entry into the bucket its hash maps to under the new, larger capacity.',
+			},
 			explanation:
 				'The raw hash of a key never changes, but the bucket index is hash % capacity, and capacity just changed. An entry that lived in bucket 3 of 7 may belong in bucket 10 of 17. Every entry has to be re-placed, which is what makes resize O(n).',
 		},

@@ -126,6 +126,14 @@ export const SCENES = [
 				'Any order works',
 			],
 			answer: 'Least significant first',
+			misconceptions: {
+				'Most significant first':
+					'You reasoned that the biggest digit matters most, but starting there splits the data into buckets you must then sort recursively. LSD radix avoids that by letting each later, more-significant pass refine the order the earlier ones set.',
+				'Largest value first':
+					'You sorted by magnitude of the whole key, not by digit position. Radix never compares values; it processes fixed digit positions, and it starts at the least-significant one.',
+				'Any order works':
+					'You assumed the passes are independent, but they are not. Only least-significant-first lets each stable pass preserve and refine the previous ordering; reorder the passes and earlier work is overwritten.',
+			},
 			explanation:
 				'Least-significant digit (LSD) first. Each pass refines the order set by the previous, less-significant passes — but only if each pass is STABLE, so ties from earlier passes are preserved. That requirement is the whole point of the next scene.',
 		},
@@ -167,6 +175,14 @@ export const SCENES = [
 				'When there are few buckets',
 			],
 			answer: 'When keys are uniformly distributed',
+			misconceptions: {
+				Always:
+					'You treated linear time as guaranteed, but it is only an average-case expectation. Skewed keys can pile into one bucket and drag the sort down to its inner sort cost, O(n²) with insertion sort.',
+				'When the array is already sorted':
+					'You confused presortedness with even spread. A sorted but tightly clustered array still lands mostly in one bucket; what bucket sort needs is keys spread across the range, not in order.',
+				'When there are few buckets':
+					'You reasoned fewer buckets means less overhead, but it means each bucket holds more items, so the inner sort dominates. Linear time needs about n buckets so each stays small, plus a uniform spread to fill them evenly.',
+			},
 			explanation:
 				'Bucket sort is fast in expectation when keys spread evenly, so each bucket stays small (≈ n/m). Skewed input that piles everything into one bucket reduces it to the inner sort\'s cost — O(n²) with insertion sort in the worst case. The linear time is an average-case assumption, not a guarantee.',
 		},

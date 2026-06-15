@@ -25,6 +25,12 @@ export const SCENES = [
 				'What is the one thing that separates a stack from a queue?',
 			options: ['Where you add', 'Where you remove', 'The values stored'],
 			answer: 'Where you remove',
+			misconceptions: {
+				'Where you add':
+					'You looked at the wrong end. Both structures add at the same single end; it is the removal end that differs, so insertion cannot be what tells them apart.',
+				'The values stored':
+					'You think the contents define the structure. A stack and a queue can hold the exact same values in the same arrival order; the discipline, not the data, is what makes them different.',
+			},
 			explanation:
 				'Both add at one end. The difference is the removal end: a stack removes from the same end it adds to (the top), while a queue removes from the opposite end (the front). That single choice changes everything downstream.',
 		},
@@ -74,6 +80,10 @@ export const SCENES = [
 				'Which data structure makes a graph search explore in expanding layers (breadth-first)?',
 			options: ['Stack', 'Queue'],
 			answer: 'Queue',
+			misconceptions: {
+				Stack:
+					'You matched the wrong discipline to layers. A stack serves the newest pending node, so the search plunges down one branch before backtracking; that is depth-first, the opposite of expanding layers.',
+			},
 			explanation:
 				'A queue serves the oldest pending node first, so a whole layer is explored before the next one begins — that is breadth-first search. A stack serves the newest pending node, plunging down one branch before backtracking — that is depth-first search. The container is the algorithm.',
 		},
