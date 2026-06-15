@@ -49,6 +49,40 @@ const sortedAtoms = VALUES.map((v, i) => ({
 	scale: 1,
 }));
 
+// ── Stack (the array stood on one end: a single column, one open top) ────────
+// Atom 0 (the accent core) sits at the TOP, the end you push to and pop from.
+const STACK_X = W / 2;
+const STACK_TOP = 84;
+const STACK_GAP = 27;
+const stackAtoms = VALUES.map((_, i) => ({
+	x: STACK_X,
+	y: STACK_TOP + i * STACK_GAP,
+	scale: 1,
+}));
+
+// ── Matrix (every pair in a grid: the O(n²) / adjacency-matrix view) ─────────
+// The same company laid into a 4-wide grid; each row is centered so the last
+// short row sits symmetric. No edges: the lattice itself is the structure.
+const MATRIX_COLS = 4;
+const MATRIX_GAP_X = 96;
+const MATRIX_GAP_Y = 88;
+const MATRIX_MID_Y = 256;
+const matrixAtoms = (() => {
+	const rows = Math.ceil(N / MATRIX_COLS);
+	const topY = MATRIX_MID_Y - ((rows - 1) * MATRIX_GAP_Y) / 2;
+	return Array.from({ length: N }, (_, i) => {
+		const row = Math.floor(i / MATRIX_COLS);
+		const col = i % MATRIX_COLS;
+		const inRow = Math.min(MATRIX_COLS, N - row * MATRIX_COLS);
+		const rowStartX = W / 2 - ((inRow - 1) * MATRIX_GAP_X) / 2;
+		return {
+			x: rowStartX + col * MATRIX_GAP_X,
+			y: topY + row * MATRIX_GAP_Y,
+			scale: 0.95,
+		};
+	});
+})();
+
 // ── Binary tree / heap (same topology, different packing) ───────────────────
 // Node i: level = floor(log2(i+1)); children at 2i+1, 2i+2. A parent sits exactly
 // above the midpoint of its children when x = marginX + (slot+0.5)*usable/2^level.
@@ -150,23 +184,36 @@ const bucketEdges = [];
 export const STATES = {
 	array: { atoms: arrayAtoms, bars: BARS, edges: [] },
 	sorted: { atoms: sortedAtoms, bars: BARS, edges: [] },
+	stack: { atoms: stackAtoms, bars: null, edges: [] },
 	tree: { atoms: treeAtoms, bars: null, edges: treeEdges },
 	heap: { atoms: heapAtoms, bars: null, edges: treeEdges },
 	graph: { atoms: graphAtoms, bars: null, edges: graphEdges },
+	matrix: { atoms: matrixAtoms, bars: null, edges: [] },
 	buckets: { atoms: bucketAtoms, bars: null, edges: bucketEdges },
 };
 
 // The loop order. It returns to 'array', and graph→array lands EXACTLY on the
 // array coords, so the loop is seamless by construction.
-export const ORDER = ['array', 'sorted', 'tree', 'heap', 'graph', 'buckets'];
+export const ORDER = [
+	'array',
+	'sorted',
+	'stack',
+	'tree',
+	'heap',
+	'graph',
+	'matrix',
+	'buckets',
+];
 
 // A topic-hue wash names the active concept (subtle, ≤0.08 alpha in CSS).
 export const WASH_HUE = {
 	array: 226, // foundations blue
 	sorted: 210, // sorting azure
+	stack: 254, // stacks indigo
 	tree: 286, // trees violet
 	heap: 312, // heaps magenta
 	graph: 162, // graphs teal
+	matrix: 134, // all-pairs green
 	buckets: 38, // hashing amber — one warm note among the cools
 };
 
@@ -179,9 +226,11 @@ export const WASH_HUE = {
 export const PHASES = {
 	array: { name: 'Array', note: '14 values, one order' },
 	sorted: { name: 'Sorted run', note: 'rearranged by value' },
+	stack: { name: 'Stack', note: 'one open end, last in first out' },
 	tree: { name: 'Binary tree', note: 'children of i at 2i+1, 2i+2' },
 	heap: { name: 'Heap', note: 'same array, parent/child by index' },
 	graph: { name: 'Graph', note: 'edges, no inherent root' },
+	matrix: { name: 'Matrix', note: 'rows and columns, n by n' },
 	buckets: { name: 'Hash buckets', note: 'each value into bucket v mod 5' },
 };
 
