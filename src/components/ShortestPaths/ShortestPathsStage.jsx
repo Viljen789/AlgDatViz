@@ -1,4 +1,6 @@
-import { useMemo } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
+import gsap from 'gsap';
+import { MotionPathPlugin } from 'gsap/MotionPathPlugin';
 import {
 	bellmanFordTrace,
 	dijkstraTrace,
@@ -7,7 +9,11 @@ import {
 } from './relaxTrace.js';
 import { SHARED_GRAPH, SHARED_SOURCE } from './ssspMeta.js';
 import { buildEdges, projectNodes, VIEW_H, VIEW_W } from './graphLayout.js';
+import useReducedMotion from '../../hooks/useReducedMotion.js';
 import styles from './ShortestPathsStage.module.css';
+
+// Same idempotent-registration pattern HomePage uses for ScrollTrigger.
+gsap.registerPlugin(MotionPathPlugin);
 
 // Canonical answers measured once from the generators (shared by every scene).
 const BF = bellmanFordTrace(SHARED_GRAPH, { source: SHARED_SOURCE });
@@ -47,7 +53,11 @@ const SCENE_VIEW = activeScene => {
 				dist: { S: 0, A: 7, B: formatDist(null), C: 3, D: formatDist(null) },
 				pred: { S: null, A: 'C', B: null, C: 'S', D: null },
 				relaxEdge: 'C->A',
-				caption: 'Relax C → A: dist[C] + 4 = 7 < 10, so dist[A] = 7, pred[A] = C',
+				// dist[A] before this relax: the direct S→A edge = 10. The count
+				// starts here so the estimate is seen to fall to 7, not appear.
+				relaxFrom: 10,
+				caption:
+					'Relax C → A: dist[C] + 4 = 7 < 10, so dist[A] = 7, pred[A] = C',
 			};
 		// 1 optimal substructure — the S→C→A→B path; subpath S→C→A glows.
 		case 1:
@@ -124,7 +134,8 @@ const NODE_R = 6;
  */
 const ShortestPathsStage = ({ activeScene = 0 }) => {
 	const view = useMemo(() => SCENE_VIEW(activeScene), [activeScene]);
-	const ids = SHARED_GRAPH.nodes.map(n => n.id);
+	const ids = useMemo(() => SHARED_GRAPH.nodes.map(n => n.id), []);
+	const reducedMotion = useReducedMotion();
 
 	const relaxEdge = view.relaxEdge;
 	const pathSet = view.pathSet || new Set();
@@ -134,6 +145,171 @@ const ShortestPathsStage = ({ activeScene = 0 }) => {
 
 	// Which node is the relax target (gets a glow) for scene 0.
 	const relaxTarget = relaxEdge ? relaxEdge.split('->')[1] : null;
+
+	// The Relax primitive, staged. The edge fires, the target glows, then the
+	// distance counts DOWN to its new estimate — so the drop reads as an arrival
+	// caused by THIS edge, not a flicker. One shared timeline keeps it lockstep.
+	const svgRef = useRef(null);
+	const dotRef = useRef(null);
+	const edgeLineRefs = useRef({});
+	const nodeRef = useRef({});
+	const distTextRefs = useRef({});
+	// The numeric distance shown the previous render, per node, so the count knows
+	// where to fall FROM (∞ is held as null and triggers the count-UP variant).
+	const prevDistRef = useRef({});
+
+	useEffect(() => {
+		const target = relaxTarget;
+		const numeric = target == null ? null : view.dist[target];
+		const finalN =
+			numeric == null || numeric === Infinity ? null : Number(numeric);
+		// A finite previous value means "found shorter" (count down); null/∞ means
+		// "first ever reached" (fade ∞, count up from a held start). On a cold mount
+		// the scene can name the pre-relax estimate (relaxFrom) so the canonical
+		// relax still reads as a fall rather than an appearance.
+		const tracked = target == null ? null : prevDistRef.current[target];
+		const fromRaw = tracked == null ? view.relaxFrom : tracked;
+		const fromN =
+			fromRaw == null || fromRaw === Infinity ? null : Number(fromRaw);
+
+		const distEl = target ? distTextRefs.current[target] : null;
+		const lineEl = relaxEdge ? edgeLineRefs.current[relaxEdge] : null;
+		const nodeEl = target ? nodeRef.current[target] : null;
+		const dotEl = dotRef.current;
+
+		// Record what this render is now showing for next time, regardless of path.
+		ids.forEach(id => {
+			const d = view.dist[id];
+			prevDistRef.current[id] = d == null || d === Infinity ? null : Number(d);
+		});
+
+		// No relax to stage (later scenes have no relaxEdge): leave the resting CSS
+		// state untouched and make sure no stray dot/proxy lingers.
+		if (!relaxEdge || finalN == null) {
+			if (dotEl) gsap.set(dotEl, { opacity: 0 });
+			return;
+		}
+
+		const ctx = gsap.context(() => {
+			if (reducedMotion) {
+				// Keep the lesson, drop only travel + digit-roll: snap the number,
+				// flash the edge, blink the target once so cause↔effect still reads.
+				if (distEl) distEl.textContent = String(finalN);
+				if (lineEl) {
+					gsap.fromTo(
+						lineEl,
+						{ strokeWidth: 3.4 },
+						{
+							strokeWidth: 2,
+							duration: 0.2,
+							ease: 'power1.out',
+							overwrite: 'auto',
+						}
+					);
+				}
+				if (nodeEl) {
+					gsap.fromTo(
+						nodeEl,
+						{ filter: 'brightness(1.35)' },
+						{
+							filter: 'brightness(1)',
+							duration: 0.26,
+							ease: 'power1.out',
+							overwrite: 'auto',
+							clearProps: 'filter',
+						}
+					);
+				}
+				return;
+			}
+
+			const firstReach = fromN == null;
+			// Hold the number at its starting point so React's already-rendered final
+			// value doesn't flash before the count plays.
+			if (distEl) {
+				distEl.textContent = firstReach ? '∞' : String(fromN);
+			}
+
+			const tl = gsap.timeline();
+
+			// 1 — a single small ink dot rides the relaxing edge from u to v.
+			if (dotEl && lineEl) {
+				// MotionPath needs a path string (or point array), not a raw <line>
+				// element: a <line> carries no path geometry, so the plugin's align
+				// step dereferences undefined and throws. Build the segment from the
+				// line's own endpoints so the dot rides u -> v in the same SVG space.
+				const mx1 = lineEl.getAttribute('x1');
+				const my1 = lineEl.getAttribute('y1');
+				const mx2 = lineEl.getAttribute('x2');
+				const my2 = lineEl.getAttribute('y2');
+				tl.fromTo(
+					dotEl,
+					{ opacity: 0 },
+					{ opacity: 1, duration: 0.12, ease: 'power1.out' },
+					0
+				).to(
+					dotEl,
+					{
+						duration: 0.46,
+						ease: 'power2.inOut',
+						motionPath: {
+							path: `M${mx1},${my1} L${mx2},${my2}`,
+							alignOrigin: [0.5, 0.5],
+							start: 0,
+							end: 1,
+						},
+					},
+					0
+				);
+			}
+
+			// 2 — on arrival the target node glows (nodeRelax does the resting tint;
+			// this is the moment-of-arrival brightening on top of it).
+			if (nodeEl) {
+				tl.fromTo(
+					nodeEl,
+					{ filter: 'brightness(1.32)' },
+					{
+						filter: 'brightness(1)',
+						duration: 0.34,
+						ease: 'power2.out',
+						clearProps: 'filter',
+					},
+					'>-0.04'
+				);
+			}
+			if (dotEl) {
+				tl.to(dotEl, { opacity: 0, duration: 0.14, ease: 'power1.out' }, '<');
+			}
+
+			// 3 — the distance settles to its new estimate. Count DOWN for a shorter
+			// route found; for the first-ever reach, fade ∞ and count UP from 0 so
+			// "newly reachable" reads differently from "improved".
+			if (distEl) {
+				const proxy = { n: firstReach ? 0 : fromN };
+				if (firstReach) distEl.textContent = '0';
+				tl.to(
+					proxy,
+					{
+						n: finalN,
+						duration: 0.3,
+						ease: 'power2.out',
+						snap: { n: 1 },
+						overwrite: 'auto',
+						onUpdate: () => {
+							distEl.textContent = String(Math.round(proxy.n));
+						},
+						onComplete: () => {
+							distEl.textContent = String(finalN);
+						},
+					},
+					'<0.02'
+				);
+			}
+		}, svgRef);
+
+		return () => ctx.revert();
+	}, [relaxEdge, relaxTarget, activeScene, reducedMotion, view, ids]);
 
 	return (
 		<div
@@ -149,6 +325,7 @@ const ShortestPathsStage = ({ activeScene = 0 }) => {
 			<div className={styles.layout}>
 				{/* ---------- Graph ---------- */}
 				<svg
+					ref={svgRef}
 					viewBox={`0 0 ${VIEW_W} ${VIEW_H}`}
 					className={styles.svg}
 					preserveAspectRatio="xMidYMid meet"
@@ -194,6 +371,10 @@ const ShortestPathsStage = ({ activeScene = 0 }) => {
 						return (
 							<g key={key}>
 								<line
+									ref={el => {
+										if (el) edgeLineRefs.current[key] = el;
+										else delete edgeLineRefs.current[key];
+									}}
 									x1={edge.x1}
 									y1={edge.y1}
 									x2={edge.x2}
@@ -216,6 +397,18 @@ const ShortestPathsStage = ({ activeScene = 0 }) => {
 						);
 					})}
 
+					{/* The relax pulse: one small ink dot that rides the firing edge from
+					    u to v. Hidden (opacity 0) at rest so the picture is unchanged. */}
+					<circle
+						ref={dotRef}
+						className={styles.relaxDot}
+						r={1.7}
+						cx={0}
+						cy={0}
+						opacity={0}
+						aria-hidden="true"
+					/>
+
 					{NODES.map(node => {
 						const isSource = node.id === SHARED_SOURCE;
 						const isRelaxTarget = node.id === relaxTarget;
@@ -229,7 +422,14 @@ const ShortestPathsStage = ({ activeScene = 0 }) => {
 						const distText = d == null || d === Infinity ? '∞' : d;
 						return (
 							<g key={node.id} transform={`translate(${node.px}, ${node.py})`}>
-								<circle r={NODE_R} className={cls.join(' ')} />
+								<circle
+									ref={el => {
+										if (el) nodeRef.current[node.id] = el;
+										else delete nodeRef.current[node.id];
+									}}
+									r={NODE_R}
+									className={cls.join(' ')}
+								/>
 								<text
 									className={styles.nodeText}
 									textAnchor="middle"
@@ -238,6 +438,10 @@ const ShortestPathsStage = ({ activeScene = 0 }) => {
 									{node.id}
 								</text>
 								<text
+									ref={el => {
+										if (el) distTextRefs.current[node.id] = el;
+										else delete distTextRefs.current[node.id];
+									}}
 									className={`${styles.nodeDist} ${
 										isRelaxTarget ? styles.nodeDistActive : ''
 									}`}
@@ -267,10 +471,7 @@ const ShortestPathsStage = ({ activeScene = 0 }) => {
 								const p = view.pred[id];
 								const isTarget = id === relaxTarget;
 								return (
-									<tr
-										key={id}
-										className={isTarget ? styles.rowActive : ''}
-									>
+									<tr key={id} className={isTarget ? styles.rowActive : ''}>
 										<th scope="row" className={styles.rowKey}>
 											{id}
 										</th>

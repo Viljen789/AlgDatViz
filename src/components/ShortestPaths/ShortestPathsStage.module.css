@@ -71,7 +71,11 @@
 }
 
 .edgeAll {
-	stroke: color-mix(in srgb, var(--topic-accent) 55%, var(--color-border-strong));
+	stroke: color-mix(
+		in srgb,
+		var(--topic-accent) 55%,
+		var(--color-border-strong)
+	);
 	stroke-width: 1.1;
 }
 
@@ -140,6 +144,14 @@
 	fill: var(--color-text-primary);
 	pointer-events: none;
 	user-select: none;
+}
+
+/* The relax pulse: a single small ink dot in the active-state hue that travels
+   the firing edge. No trail, no glow — opacity is driven entirely by GSAP and
+   sits at 0 at rest, so the resting picture is pixel-identical. */
+.relaxDot {
+	fill: var(--state-active);
+	pointer-events: none;
 }
 
 .nodeSource .nodeText {

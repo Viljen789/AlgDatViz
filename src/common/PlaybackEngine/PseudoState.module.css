@@ -62,11 +62,30 @@
 }
 
 .lineList {
+	position: relative;
 	margin: 0;
 	padding: 0;
 	list-style: none;
 	display: flex;
 	flex-direction: column;
+}
+
+/* The instruction pointer: ONE shared 2px ink rule that glides between active
+   lines so control flow is legible as motion — a short downward slide for
+   fall-through, an upward travel for a loop-back. GSAP drives its `y`/`height`
+   (see PseudoState.jsx); CSS only owns the resting look (color + width). It is
+   hidden until the first activation positions it, and stays out of the layout so
+   it never shoves the line grid around. */
+.pointer {
+	position: absolute;
+	left: 0;
+	top: 0;
+	width: 2px;
+	height: 0;
+	background: var(--topic-accent, var(--color-accent-blue));
+	opacity: 0;
+	pointer-events: none;
+	will-change: transform, height;
 }
 
 .line {
@@ -76,7 +95,8 @@
 	align-items: baseline;
 	padding: var(--space-xs) var(--space-md) var(--space-xs) 0;
 	opacity: 0.55;
-	transition: opacity var(--duration-step) var(--ease-quiet),
+	transition:
+		opacity var(--duration-step) var(--ease-quiet),
 		background-color var(--duration-step) var(--ease-quiet);
 }
 
@@ -89,6 +109,10 @@
 	);
 }
 
+/* No-JS / pre-mount fallback marker. Once the shared traveling .pointer takes
+   over (root gets .hasPointer in PseudoState.jsx), this per-line bar is removed
+   so the two never stack. Reduced motion keeps the shared pointer too — it just
+   teleports instead of gliding — so this stays purely a no-JS safety net. */
 .lineActive::before {
 	content: '';
 	position: absolute;
@@ -97,6 +121,10 @@
 	bottom: 0;
 	width: 2px;
 	background: var(--topic-accent, var(--color-accent-blue));
+}
+
+.hasPointer .lineActive::before {
+	content: none;
 }
 
 /* Flash the newly-arrived executing line: a quick accent wash that settles back
@@ -175,7 +203,8 @@
 	border: 1px solid var(--color-border);
 	border-radius: var(--radius-md);
 	background: var(--surface-input);
-	transition: border-color var(--duration-step) var(--ease-quiet),
+	transition:
+		border-color var(--duration-step) var(--ease-quiet),
 		background-color var(--duration-step) var(--ease-quiet);
 }
 

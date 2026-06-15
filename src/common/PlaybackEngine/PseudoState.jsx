@@ -46,8 +46,18 @@
 //   className    string            — extra class on the root.
 
 import { useEffect, useRef } from 'react';
+import gsap from 'gsap';
 import useReducedMotion from '../../hooks/useReducedMotion.js';
 import styles from './PseudoState.module.css';
+
+// The traveling instruction-pointer glide lands in this window regardless of how
+// far control jumped: a 1-line fall-through and a 12-line loop-back both settle
+// in ~0.18–0.26s. We scale duration gently with distance, then clamp.
+const POINTER_MIN_DURATION = 0.18;
+const POINTER_MAX_DURATION = 0.26;
+// Roughly one line-height of travel per 0.01s before the clamp bites; tuned so a
+// short hop reads as quick and a long loop-back still feels deliberate.
+const POINTER_PX_PER_SECOND = 1600;
 
 // Stable identity for a state row across frames. We diff by label/id — never by
 // array index — so reordering or scrubbing doesn't smear "what changed" onto the
@@ -120,6 +130,18 @@ const PseudoState = ({
 	const railRef = useRef(null);
 	const activeRef = useRef(null);
 
+	// The single shared instruction-pointer hairline and the bookkeeping that
+	// lets it glide FROM its last resting box. pointerBoxRef holds the previous
+	// active line's { top, height } in <ol> coordinates; pointerSeenRef gates the
+	// first activation (scale-in from the line's center) vs. a slide between
+	// lines. The gsap.context is scoped to the rail so every tween is reverted on
+	// unmount and overwrite:'auto' keeps rapid stepping from stacking tweens.
+	const panelRef = useRef(null);
+	const pointerRef = useRef(null);
+	const pointerBoxRef = useRef(null);
+	const pointerSeenRef = useRef(false);
+	const pointerCtxRef = useRef(null);
+
 	const reducedMotion = useReducedMotion();
 
 	// ── Delta tracking ──────────────────────────────────────────────────────
@@ -153,10 +175,111 @@ const PseudoState = ({
 		rail.scrollTo({ top: offset, behavior: 'smooth' });
 	}, [activeLine]);
 
+	// One persistent gsap.context scoped to the rail: every pointer tween is
+	// add()-ed into it, so a normal frame advance only supersedes the prior glide
+	// (overwrite:'auto'), while unmount reverts the lot cleanly. Flagging the root
+	// here (not in the static markup) means the per-line ::before fallback stays
+	// the marker until JS is live, so a no-JS render still shows the active line.
+	useEffect(() => {
+		pointerCtxRef.current = gsap.context(() => {}, railRef);
+		const panel = panelRef.current;
+		panel?.classList.add(styles.hasPointer);
+		return () => {
+			pointerCtxRef.current?.revert();
+			pointerCtxRef.current = null;
+			panel?.classList.remove(styles.hasPointer);
+		};
+	}, []);
+
+	// Glide the shared instruction-pointer hairline from its last box to the new
+	// active line. This is a Flip-in-spirit move done by hand: we keep the prior
+	// box in a ref and tween `y` + `height` from old to new. The control-flow
+	// SHAPE becomes the gesture — a short downward slide for fall-through, an
+	// upward travel for a loop-back. It rides inside the same smooth scrollTo
+	// above, so the two compose. Reduced motion teleports (no glide) but always
+	// lands on the right line; the lesson — where execution is — is preserved.
+	const lineIsLive = isRunning && typeof activeLine === 'number';
+	useEffect(() => {
+		const pointer = pointerRef.current;
+		const ctx = pointerCtxRef.current;
+		if (!pointer || !ctx) return;
+
+		const active = lineIsLive ? activeRef.current : null;
+		// No live line (idle / paused / no frame): retire the pointer and reset
+		// the first-activation flag so the next entry scales in fresh rather than
+		// sliding from a stale box.
+		if (!active) {
+			gsap.set(pointer, { opacity: 0 });
+			pointerSeenRef.current = false;
+			pointerBoxRef.current = null;
+			return;
+		}
+
+		const top = active.offsetTop;
+		const height = active.clientHeight;
+		const prev = pointerBoxRef.current;
+
+		ctx.add(() => {
+			if (reducedMotion) {
+				// Reduced motion: snap to the active line, identical in spirit to
+				// the old per-line ::before. Destination is always correct; only
+				// the connective glide drops.
+				gsap.set(pointer, { y: top, height, scaleY: 1, opacity: 1 });
+			} else if (!pointerSeenRef.current || !prev) {
+				// First activation: draw the rule in from the line's own vertical
+				// center (scaleY 0 -> 1) rather than sliding in from nowhere.
+				gsap.set(pointer, {
+					y: top,
+					height,
+					transformOrigin: '50% 50%',
+					opacity: 1,
+				});
+				gsap.fromTo(
+					pointer,
+					{ scaleY: 0 },
+					{
+						scaleY: 1,
+						duration: POINTER_MIN_DURATION,
+						ease: 'power2.out',
+						overwrite: 'auto',
+					}
+				);
+			} else {
+				// Steady-state: slide `y` + `height` from the previous box to the
+				// new one. Duration scales with how far the pointer travels, then
+				// clamps so a 1-line hop and a 12-line loop-back both land in band.
+				const prevCenter = prev.top + prev.height / 2;
+				const nextCenter = top + height / 2;
+				const distance = Math.abs(nextCenter - prevCenter);
+				const duration = gsap.utils.clamp(
+					POINTER_MIN_DURATION,
+					POINTER_MAX_DURATION,
+					distance / POINTER_PX_PER_SECOND
+				);
+				gsap.fromTo(
+					pointer,
+					{ y: prev.top, height: prev.height },
+					{
+						y: top,
+						height,
+						scaleY: 1,
+						opacity: 1,
+						duration,
+						ease: 'power2.out',
+						overwrite: 'auto',
+					}
+				);
+			}
+		});
+
+		pointerSeenRef.current = true;
+		pointerBoxRef.current = { top, height };
+	}, [activeLine, lineIsLive, reducedMotion]);
+
 	const hasState = Array.isArray(rows) && rows.length > 0;
 
 	return (
-		<div className={`${styles.panel} ${className}`}>
+		<div className={`${styles.panel} ${className}`} ref={panelRef}>
 			<section className={styles.rail} aria-label="Pseudocode">
 				<header className={styles.head}>
 					<span className={styles.label}>{label}</span>
@@ -170,6 +293,14 @@ const PseudoState = ({
 				</header>
 				<div className={styles.railScroll} ref={railRef}>
 					<ol className={styles.lineList}>
+						{/* The single traveling instruction-pointer hairline. GSAP
+						    drives its y/height between active lines; it sits out of
+						    the layout (absolute) so it never shifts the line grid. */}
+						<div
+							className={styles.pointer}
+							ref={pointerRef}
+							aria-hidden="true"
+						/>
 						{lines.map((text, idx) => {
 							const isActive = isRunning && idx === activeLine;
 							const trimmed = String(text ?? '').trim();
@@ -236,9 +367,7 @@ const PseudoState = ({
 										.filter(Boolean)
 										.join(' ')}
 									data-changed={
-										reducedMotion && row.active
-											? 'true'
-											: undefined
+										reducedMotion && row.active ? 'true' : undefined
 									}
 								>
 									<dt className={styles.stateKey}>{row.label}</dt>
