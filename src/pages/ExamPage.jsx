@@ -1,6 +1,6 @@
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowRight, Check, ChevronRight, RotateCcw } from 'lucide-react';
+import { ArrowRight, Check, ChevronRight, Clock, RotateCcw } from 'lucide-react';
 import LessonCheck from '../common/TopicTemplate/LessonCheck.jsx';
 import { checkAnswer } from '../common/TopicTemplate/checkAnswer.js';
 import { accentTokens } from '../components/Review/reviewBank.js';
@@ -62,8 +62,32 @@ const verdictFor = ratio => {
 
 const pct = ratio => Math.round(ratio * 100);
 
+// ── Timed mode ────────────────────────────────────────────────────────────────
+// A calm, optional clock. The budget is derived from the run length: about two
+// minutes of working time per problem, so the total scales with the chosen set
+// and never needs a hand-typed number.
+const SECONDS_PER_PROBLEM = 120;
+const budgetFor = count => count * SECONDS_PER_PROBLEM;
+
+// Below this per-topic ratio the summary nudges the learner back to the lesson.
+const STUDY_THRESHOLD = 0.7;
+
+// "16 min" for a whole-minute budget, or "8:30" when it is not a round minute.
+const formatBudgetLabel = seconds => {
+	const mins = seconds / 60;
+	if (Number.isInteger(mins)) return `${mins} min`;
+	return `${Math.floor(mins)}:${String(seconds % 60).padStart(2, '0')}`;
+};
+
+// "MM:SS" for the live countdown, clamped at zero.
+const formatClock = seconds => {
+	const s = Math.max(0, seconds);
+	const m = Math.floor(s / 60);
+	return `${m}:${String(s % 60).padStart(2, '0')}`;
+};
+
 // ── The summary, scored BY TOPIC ──────────────────────────────────────────────
-const ExamSummary = ({ runSets, scores, onRestart }) => {
+const ExamSummary = ({ runSets, scores, onRestart, endedOnClock = false }) => {
 	// Aggregate the per-problem partial-credit scores into a per-topic average.
 	const topics = useMemo(() => {
 		const map = new Map();
@@ -107,6 +131,12 @@ const ExamSummary = ({ runSets, scores, onRestart }) => {
 					<span className={styles.scoreFill} style={{ width: `${pct(overall)}%` }} />
 				</div>
 				<p className={styles.verdict}>{verdictFor(overall)}</p>
+				{endedOnClock && (
+					<p className={styles.timeNote}>
+						<Clock size={13} strokeWidth={2.2} aria-hidden="true" />
+						Time ran out. Unanswered problems scored zero.
+					</p>
+				)}
 			</header>
 
 			<div className={styles.block}>
@@ -150,6 +180,16 @@ const ExamSummary = ({ runSets, scores, onRestart }) => {
 											className={styles.topicArrow}
 										/>
 									</Link>
+									{t.ratio < STUDY_THRESHOLD && (
+										<Link to={t.to} className={styles.studyLink}>
+											Study {t.name}
+											<ArrowRight
+												size={12}
+												strokeWidth={2.2}
+												aria-hidden="true"
+											/>
+										</Link>
+									)}
 								</li>
 							);
 						})}
@@ -170,11 +210,15 @@ const ExamSummary = ({ runSets, scores, onRestart }) => {
 };
 
 // ── The running session: one problem at a time ────────────────────────────────
-const ExamSession = ({ runSets, onExit }) => {
+const ExamSession = ({ runSets, onExit, timed = false }) => {
 	const [index, setIndex] = useState(0);
 	// Per-problem controlled check state, keyed by set id: { status, score, perPart }.
 	const [states, setStates] = useState({});
 	const [finished, setFinished] = useState(false);
+	// Timed mode: seconds left on the clock, and whether the run ended on the clock.
+	const budget = useMemo(() => budgetFor(runSets.length), [runSets.length]);
+	const [secondsLeft, setSecondsLeft] = useState(budget);
+	const [endedOnClock, setEndedOnClock] = useState(false);
 
 	const total = runSets.length;
 	const current = runSets[index];
@@ -212,6 +256,26 @@ const ExamSession = ({ runSets, onExit }) => {
 		setIndex(i => Math.min(i + 1, total - 1));
 	}, [index, total]);
 
+	// Timed mode: a single interval that ticks the clock down once per second.
+	// It runs only while a timed run is in progress; reaching zero auto-ends the
+	// run into the summary (unanswered problems already score zero). The interval
+	// is cleared on unmount, on End exam, and the moment the run finishes.
+	useEffect(() => {
+		if (!timed || finished) return undefined;
+		const id = setInterval(() => {
+			setSecondsLeft(s => {
+				if (s <= 1) {
+					clearInterval(id);
+					setEndedOnClock(true);
+					setFinished(true);
+					return 0;
+				}
+				return s - 1;
+			});
+		}, 1000);
+		return () => clearInterval(id);
+	}, [timed, finished]);
+
 	if (total === 0) {
 		return (
 			<div className={styles.empty} role="status">
@@ -223,7 +287,14 @@ const ExamSession = ({ runSets, onExit }) => {
 	if (finished) {
 		// Order scores to match runSets so the summary aggregates correctly.
 		const scores = runSets.map(s => states[s.id]?.score ?? 0);
-		return <ExamSummary runSets={runSets} scores={scores} onRestart={onExit} />;
+		return (
+			<ExamSummary
+				runSets={runSets}
+				scores={scores}
+				onRestart={onExit}
+				endedOnClock={endedOnClock}
+			/>
+		);
 	}
 
 	const progressPercent = Math.round((index / total) * 100);
@@ -254,6 +325,21 @@ const ExamSession = ({ runSets, onExit }) => {
 					<span className={styles.progressLabel}>
 						Problem <strong>{index + 1}</strong> / {total}
 					</span>
+					{timed && (
+						<span
+							className={`${styles.clock}${
+								secondsLeft <= 60 ? ` ${styles.clockLow}` : ''
+							}`}
+						>
+							<Clock size={12} strokeWidth={2.2} aria-hidden="true" />
+							<span aria-hidden="true">{formatClock(secondsLeft)} left</span>
+							<span className={styles.srOnly} aria-live="polite">
+								{secondsLeft <= 60
+									? `${secondsLeft} seconds left`
+									: `${Math.ceil(secondsLeft / 60)} minutes left`}
+							</span>
+						</span>
+					)}
 				</div>
 				<button type="button" className={styles.exitLink} onClick={onExit}>
 					End exam
@@ -307,6 +393,7 @@ const ExamPage = () => {
 	const groups = useMemo(() => groupByTopic(EXAM_SETS), []);
 	const [runSets, setRunSets] = useState(null); // null = picker, [] used as guard
 	const [runId, setRunId] = useState(0);
+	const [timed, setTimed] = useState(false); // Untimed is the default.
 
 	const startAll = useCallback(() => {
 		setRunSets(EXAM_SETS);
@@ -366,6 +453,35 @@ const ExamPage = () => {
 
 				{!started && (
 					<div className={styles.launch}>
+						<div
+							className={styles.modeToggle}
+							role="radiogroup"
+							aria-label="Exam timing"
+						>
+							<button
+								type="button"
+								role="radio"
+								aria-checked={!timed}
+								className={`${styles.modeOption}${
+									!timed ? ` ${styles.modeOptionActive}` : ''
+								}`}
+								onClick={() => setTimed(false)}
+							>
+								Untimed
+							</button>
+							<button
+								type="button"
+								role="radio"
+								aria-checked={timed}
+								className={`${styles.modeOption}${
+									timed ? ` ${styles.modeOptionActive}` : ''
+								}`}
+								onClick={() => setTimed(true)}
+							>
+								<Clock size={13} strokeWidth={2.2} aria-hidden="true" />
+								Timed, {formatBudgetLabel(budgetFor(problemCount))}
+							</button>
+						</div>
 						<button type="button" className={styles.primaryBtn} onClick={startAll}>
 							<span>Start the full exam</span>
 							<ArrowRight size={16} strokeWidth={2.2} aria-hidden="true" />
@@ -373,6 +489,9 @@ const ExamPage = () => {
 						<p className={styles.launchMeta}>
 							{problemCount} problems across {topicCount} topics, or pick one topic
 							below.
+							{timed
+								? ` The clock matches the run, about two minutes per problem.`
+								: ''}
 						</p>
 					</div>
 				)}
@@ -451,7 +570,7 @@ const ExamPage = () => {
 
 			{started && (
 				<section className={styles.sessionWrap} aria-label="Exam session">
-					<ExamSession key={runId} runSets={runSets} onExit={exit} />
+					<ExamSession key={runId} runSets={runSets} onExit={exit} timed={timed} />
 				</section>
 			)}
 		</div>
