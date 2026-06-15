@@ -209,6 +209,89 @@ const HeroRecompose = ({ className, onState }) => {
 					svg.classList.remove('motion');
 				};
 			});
+
+			// Reduced motion: still tell the whole story — one dataset re-read as five
+			// structures, each named — but with NO sliding, scaling, or draw-on. Every
+			// frame is positioned while invisible, then revealed with an opacity-only
+			// dissolve (prefers-reduced-motion targets motion, not fades). The static
+			// drawn tree below remains the no-JS fallback.
+			mm.add('(prefers-reduced-motion: reduce)', () => {
+				const atoms = gsap.utils.toArray('[data-atom]', svg);
+				const bars = gsap.utils.toArray('[data-bar]', svg);
+				const lines = gsap.utils.toArray('[data-edge]', svg);
+				const emit = state => onStateRef.current?.(state);
+
+				gsap.set(atoms, { transformOrigin: '0px 0px' });
+				// Hide the authored frame before first paint so it doesn't flash ahead
+				// of the dissolve cycle. (.motion is NOT added here — edges stay solid,
+				// no draw-on.)
+				gsap.set(atoms, { autoAlpha: 0 });
+				gsap.set(bars, { autoAlpha: 0 });
+				gsap.set(lines, { autoAlpha: 0 });
+
+				const FADE_IN = 0.8;
+				const FADE_OUT = 0.5;
+				const DWELL = 2.6;
+
+				const cycle = gsap.timeline({ repeat: -1 });
+				['array', 'sorted', 'tree', 'heap', 'graph'].forEach(state => {
+					const sb = STATES[state].bars;
+					// Reposition while invisible — pure attribute sets, no animated motion.
+					cycle.set(atoms, {
+						x: i => STATES[state].atoms[i].x,
+						y: i => STATES[state].atoms[i].y,
+						scale: i => STATES[state].atoms[i].scale,
+					});
+					cycle.set(lines, {
+						attr: {
+							x1: k => edgeFrame(state, k).x1,
+							y1: k => edgeFrame(state, k).y1,
+							x2: k => edgeFrame(state, k).x2,
+							y2: k => edgeFrame(state, k).y2,
+						},
+					});
+					cycle.set(bars, { attr: { height: i => (sb ? sb[i].h : 0) } });
+					cycle.set(svg, { '--wash-h': WASH_HUE[state] });
+					cycle.call(() => emit(state));
+					// Dissolve the new frame in.
+					cycle.to(atoms, { autoAlpha: 1, duration: FADE_IN, ease: 'power1.out' });
+					cycle.to(
+						lines,
+						{
+							autoAlpha: k => (edgeFrame(state, k).active ? EDGE_OP : 0),
+							duration: FADE_IN,
+							ease: 'power1.out',
+						},
+						'<'
+					);
+					cycle.to(
+						bars,
+						{ autoAlpha: sb ? BAR_OP : 0, duration: FADE_IN, ease: 'power1.out' },
+						'<'
+					);
+					cycle.to({}, { duration: DWELL }); // dwell so the legend can be read
+					// Dissolve out before the next frame repositions (while invisible).
+					cycle.to([...atoms, ...lines, ...bars], {
+						autoAlpha: 0,
+						duration: FADE_OUT,
+						ease: 'power1.in',
+					});
+				});
+
+				const io = new IntersectionObserver(
+					([entry]) => (entry.isIntersecting ? cycle.resume() : cycle.pause()),
+					{ threshold: 0 }
+				);
+				if (root) io.observe(root);
+				const onVisibility = () =>
+					document.hidden ? cycle.pause() : cycle.resume();
+				document.addEventListener('visibilitychange', onVisibility);
+
+				return () => {
+					io.disconnect();
+					document.removeEventListener('visibilitychange', onVisibility);
+				};
+			});
 		}, svgRef);
 
 		return () => ctx.revert();
