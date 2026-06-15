@@ -25,7 +25,9 @@
 	font-size: var(--font-size-label);
 	font-weight: var(--font-weight-medium);
 	cursor: pointer;
-	transition: color var(--transition), background-color var(--transition);
+	transition:
+		color var(--transition),
+		background-color var(--transition);
 }
 
 .toggleBtn:hover {
@@ -41,4 +43,11 @@
 .toggleBtn:focus-visible {
 	outline: none;
 	box-shadow: var(--shadow-focus);
+}
+
+/* Marker only — a stable hook the Flip orchestrator uses to find Compare's
+   revealed Prim pane (the calm fade-in sibling). No rest-state paint: the
+   declaration is inert so the two-up looks pixel-identical to before. */
+.flipSibling {
+	position: relative;
 }

@@ -25,7 +25,11 @@
 
 /* Frontier / candidate crossing edges (Prim). */
 .edgeFrontier {
-	stroke: color-mix(in srgb, var(--topic-accent) 55%, var(--color-border-strong));
+	stroke: color-mix(
+		in srgb,
+		var(--topic-accent) 55%,
+		var(--color-border-strong)
+	);
 	stroke-width: 1.4;
 	stroke-dasharray: 2.4 2;
 }

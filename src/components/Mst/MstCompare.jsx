@@ -38,14 +38,24 @@ const buildEdgeSets = frame => {
 	};
 };
 
-const ComparePane = ({ title, rule, frame, done, doneSteps }) => {
+const ComparePane = ({
+	title,
+	rule,
+	frame,
+	done,
+	doneSteps,
+	flipId,
+	className = '',
+}) => {
 	const edgeSets = useMemo(() => buildEdgeSets(frame), [frame]);
 	const nodeSets = useMemo(
 		() => ({ tree: new Set(frame?.treeNodes || []) }),
 		[frame]
 	);
 	return (
-		<div className={`${styles.pane} ${done ? styles.paneDone : ''}`}>
+		<div
+			className={`${styles.pane} ${done ? styles.paneDone : ''} ${className}`}
+		>
 			<div className={styles.paneHead}>
 				<span className={styles.paneTitle}>{title}</span>
 				{done ? (
@@ -54,7 +64,9 @@ const ComparePane = ({ title, rule, frame, done, doneSteps }) => {
 					<span className={styles.paneBeat}>{frame?.title}</span>
 				)}
 			</div>
-			<div className={styles.graphBox}>
+			{/* The LEFT pane carries the shared flip-id: it is the continuation of the
+			    Single graph, so the mode switch re-anchors the SAME element here. */}
+			<div className={styles.graphBox} data-flip-id={flipId || undefined}>
 				<MstGraph edges={ALL_EDGES} edgeSets={edgeSets} nodeSets={nodeSets} />
 			</div>
 			<div className={styles.paneFoot}>
@@ -70,7 +82,7 @@ const ComparePane = ({ title, rule, frame, done, doneSteps }) => {
 	);
 };
 
-const MstCompare = ({ onUserInteract }) => {
+const MstCompare = ({ onUserInteract, rightPaneClass = '' }) => {
 	const playerRef = useRef(null);
 
 	const left = useMemo(
@@ -126,6 +138,7 @@ const MstCompare = ({ onUserInteract }) => {
 					frame={leftFrame}
 					done={leftDone}
 					doneSteps={lf.length - 1}
+					flipId="mst-shared-graph"
 				/>
 				<ComparePane
 					title="Prim (from A)"
@@ -133,6 +146,7 @@ const MstCompare = ({ onUserInteract }) => {
 					frame={rightFrame}
 					done={rightDone}
 					doneSteps={rf.length - 1}
+					className={rightPaneClass}
 				/>
 			</div>
 
