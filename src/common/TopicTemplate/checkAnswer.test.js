@@ -128,3 +128,98 @@ test('pair and unknown kinds are not graded here (correct: null)', () => {
 	assert.equal(checkAnswer({ kind: 'mystery' }, 1).correct, null);
 	assert.equal(checkAnswer(null, 1).correct, null);
 });
+
+test('problem — all parts correct → score 1, correct true', () => {
+	const check = {
+		kind: 'problem',
+		stem: 'Run Dijkstra from s on the given graph.',
+		parts: [
+			{ kind: 'numeric', prompt: 'd(t)?', answer: 8 },
+			{ kind: 'choice', prompt: 'First settled?', options: ['s', 'a'], answer: 's' },
+			{ kind: 'text', prompt: 'Predecessor of t?', answer: 'a' },
+		],
+	};
+	const result = checkAnswer(check, [8, 's', 'A']);
+	assert.equal(result.correct, true);
+	assert.equal(result.score, 1);
+	assert.equal(result.perPart.length, 3);
+	assert.deepEqual(result.perPart.map(p => p.correct), [true, true, true]);
+});
+
+test('problem — partial credit (2/3) → score 2/3, correct false', () => {
+	const check = {
+		kind: 'problem',
+		stem: 'Heap facts.',
+		parts: [
+			{ kind: 'numeric', prompt: 'Parent index of 5 (1-based)?', answer: 2 },
+			{ kind: 'numeric', prompt: 'Left child of 2?', answer: 4 },
+			{ kind: 'choice', prompt: 'A max-heap root holds the…', options: ['min', 'max'], answer: 'max' },
+		],
+	};
+	const result = checkAnswer(check, [2, 99, 'max']);
+	assert.equal(result.correct, false);
+	assert.equal(result.score, 2 / 3);
+	assert.deepEqual(result.perPart.map(p => p.correct), [true, false, true]);
+});
+
+test('problem — mixed leaf kinds graded together', () => {
+	const check = {
+		kind: 'problem',
+		stem: 'A grab-bag of leaf kinds.',
+		parts: [
+			{ kind: 'order', prompt: 'Phases?', items: ['a', 'b'], answer: ['a', 'b'] },
+			{
+				kind: 'classify',
+				prompt: 'Sort edges',
+				items: [{ id: 'e1', label: 'u→v' }],
+				categories: [{ id: 'tree', label: 'tree' }],
+				answer: { e1: 'tree' },
+			},
+			{ kind: 'numeric', prompt: 'Count?', answer: 3, tolerance: 1 },
+		],
+	};
+	const all = checkAnswer(check, [['a', 'b'], { e1: 'tree' }, 4]);
+	assert.equal(all.correct, true);
+	assert.equal(all.score, 1);
+	assert.deepEqual(all.perPart.map(p => p.correct), [true, true, true]);
+
+	const some = checkAnswer(check, [['b', 'a'], { e1: 'tree' }, 4]);
+	assert.equal(some.correct, false);
+	assert.equal(some.score, 2 / 3);
+	assert.deepEqual(some.perPart.map(p => p.correct), [false, true, true]);
+});
+
+test('problem — pair parts are tolerated, excluded from the denominator', () => {
+	const check = {
+		kind: 'problem',
+		stem: 'One auto-graded part, one host-graded part.',
+		parts: [
+			{ kind: 'numeric', prompt: 'd(t)?', answer: 8 },
+			{ kind: 'pair', prompt: 'Select the relaxing edge on the stage.' },
+		],
+	};
+	const result = checkAnswer(check, [8, ['x', 'y']]);
+	// Only the numeric part counts toward the score; the pair part is null.
+	assert.equal(result.score, 1);
+	assert.equal(result.correct, true);
+	assert.equal(result.perPart[1].correct, null, 'pair part not auto-graded');
+
+	const wrong = checkAnswer(check, [7, ['x', 'y']]);
+	assert.equal(wrong.score, 0);
+	assert.equal(wrong.correct, false);
+});
+
+test('problem — missing/empty payload grades every part as incorrect', () => {
+	const check = {
+		kind: 'problem',
+		stem: 'No answers given.',
+		parts: [
+			{ kind: 'numeric', prompt: 'x?', answer: 1 },
+			{ kind: 'text', prompt: 'y?', answer: 'foo' },
+		],
+	};
+	const result = checkAnswer(check, undefined);
+	assert.equal(result.correct, false);
+	assert.equal(result.score, 0);
+	assert.deepEqual(result.perPart.map(p => p.correct), [false, false]);
+});

@@ -246,6 +246,238 @@ const SpotbugLines = ({ lines, isAnswered, answer, selected, onPick }) => (
 	</ol>
 );
 
+// Resolve a predict check's effective mode (choice / numeric / text). Shared by
+// the top-level component and the LeafInput so a predict part inside a problem
+// renders the same widget it would on its own.
+const resolvePredictMode = check => {
+	if (check.mode) return check.mode;
+	if (Array.isArray(check.options)) return 'choice';
+	if (typeof check.answer === 'number') return 'numeric';
+	return 'text';
+};
+
+// ── LeafInput — the per-kind input widget for ONE leaf check. ──
+// Extracted so a 'problem' can render each of its parts WITHOUT forking the
+// widgets: the top-level component and each problem part both route through here.
+// Renders exactly the same markup the inline branches used before. 'pair' is the
+// only kind LeafInput cannot host on its own (it needs the stage), so it shows a
+// calm note inside a problem; standalone 'pair' is still handled by LessonCheck.
+const LeafInput = ({ check, state, submit }) => {
+	const isAnswered = state?.status != null;
+	const predictMode = check.kind === 'predict' ? resolvePredictMode(check) : null;
+
+	if (check.kind === 'choice') {
+		return (
+			<ChoiceRow
+				options={check.options}
+				answer={check.answer}
+				selected={state?.selected}
+				isAnswered={isAnswered}
+				onPick={submit}
+			/>
+		);
+	}
+
+	if (check.kind === 'numeric' || check.kind === 'text') {
+		return (
+			<InputForm
+				kind={check.kind}
+				placeholder={check.placeholder}
+				isAnswered={isAnswered}
+				value={state?.value}
+				onSubmit={submit}
+			/>
+		);
+	}
+
+	if (check.kind === 'order') {
+		return (
+			<OrderList
+				items={check.items}
+				isAnswered={isAnswered}
+				answer={check.answer}
+				onSubmit={submit}
+			/>
+		);
+	}
+
+	if (check.kind === 'classify') {
+		return (
+			<ClassifyGrid
+				items={check.items}
+				categories={check.categories}
+				isAnswered={isAnswered}
+				answer={check.answer}
+				perItem={state?.perItem}
+				onSubmit={submit}
+			/>
+		);
+	}
+
+	if (check.kind === 'predict' && predictMode === 'choice') {
+		return (
+			<ChoiceRow
+				options={check.options}
+				answer={check.answer}
+				selected={state?.value}
+				isAnswered={isAnswered}
+				onPick={submit}
+			/>
+		);
+	}
+
+	if (check.kind === 'predict' && predictMode !== 'choice') {
+		return (
+			<InputForm
+				kind={predictMode}
+				placeholder={check.placeholder}
+				isAnswered={isAnswered}
+				value={state?.value}
+				onSubmit={submit}
+			/>
+		);
+	}
+
+	if (check.kind === 'spotbug' && Array.isArray(check.lines)) {
+		return (
+			<SpotbugLines
+				lines={check.lines}
+				isAnswered={isAnswered}
+				answer={check.answer}
+				selected={state?.selected}
+				onPick={submit}
+			/>
+		);
+	}
+
+	if (check.kind === 'spotbug' && !check.lines) {
+		return (
+			<ChoiceRow
+				options={check.options}
+				answer={check.answer}
+				selected={state?.selected}
+				isAnswered={isAnswered}
+				onPick={submit}
+			/>
+		);
+	}
+
+	if (check.kind === 'pair') {
+		return (
+			<p className={styles.partPairNote}>
+				Graded on the stage. Make the selection there.
+			</p>
+		);
+	}
+
+	return null;
+};
+
+const PART_LABELS = 'abcdefghijklmnopqrstuvwxyz';
+
+// ── ProblemBlock — a multi-part exam question (stem + labelled sub-questions). ──
+// Each part reuses LeafInput for its widget (no forked inputs). A per-part answer
+// array is collected and submitted as one payload; the host grades via
+// checkAnswer('problem', payload) and feeds the result back through `state`
+// ({ status, score, perPart }). Per-part correct/incorrect and the overall score
+// reveal with the same calm styling as every other kind.
+const ProblemBlock = ({ check, state, submit }) => {
+	const parts = Array.isArray(check.parts) ? check.parts : [];
+	const isAnswered = state?.status != null;
+	const perPart = state?.perPart;
+	const [answers, setAnswers] = useState(() => parts.map(() => undefined));
+
+	const setPartAnswer = (idx, value) =>
+		setAnswers(prev => {
+			const next = [...prev];
+			next[idx] = value;
+			return next;
+		});
+
+	// A part is ready once it has an answer, or it is a 'pair' (host-graded, so it
+	// never blocks the problem-level submit).
+	const allReady = parts.every(
+		(part, idx) => part.kind === 'pair' || answers[idx] !== undefined
+	);
+
+	const scorePct =
+		state?.score == null ? null : Math.round(state.score * 100);
+
+	return (
+		<div className={styles.problem}>
+			<ol className={styles.partList}>
+				{parts.map((part, idx) => {
+					const partResult = perPart?.[idx];
+					const partStatus = !isAnswered
+						? null
+						: partResult?.correct === true
+						? 'correct'
+						: partResult?.correct === null
+						? null
+						: 'incorrect';
+					// The leaf widget reads its own state slice. Before submit, only
+					// the draft answer matters; after submit, status drives the reveal.
+					const partState = {
+						status: partStatus,
+						selected: answers[idx],
+						value: answers[idx],
+						order: answers[idx],
+						assignment: answers[idx],
+						perItem: partResult?.perItem,
+					};
+					return (
+						<li key={idx} className={styles.part}>
+							<div className={styles.partHead}>
+								<span className={styles.partLabel} aria-hidden="true">
+									{PART_LABELS[idx] || idx + 1}
+								</span>
+								<p className={styles.partPrompt}>{part.prompt}</p>
+								{partStatus && (
+									<span
+										className={`${styles.partStatus} ${
+											partStatus === 'correct'
+												? styles.statusCorrect
+												: styles.statusIncorrect
+										}`}
+									>
+										{partStatus === 'correct' && (
+											<Check size={12} strokeWidth={2.5} aria-hidden="true" />
+										)}
+										{STATUS_LABEL[partStatus]}
+									</span>
+								)}
+							</div>
+							<LeafInput
+								check={part}
+								state={partState}
+								submit={value => setPartAnswer(idx, value)}
+							/>
+							{isAnswered && part.explanation && (
+								<p className={styles.partExplanation}>{part.explanation}</p>
+							)}
+						</li>
+					);
+				})}
+			</ol>
+			{!isAnswered && (
+				<button
+					type="button"
+					className={styles.submit}
+					onClick={() => submit(answers)}
+					disabled={!allReady}
+				>
+					Check answers
+				</button>
+			)}
+			{isAnswered && scorePct != null && (
+				<p className={styles.problemScore} aria-live="polite">
+					Score: {scorePct}%
+				</p>
+			)}
+		</div>
+	);
+};
+
 /**
  * LessonCheck — the reusable inline comprehension check for TopicTemplate.
  *
@@ -273,6 +505,8 @@ const SpotbugLines = ({ lines, isAnswered, answer, selected, onPick }) => (
  *   'classify' : { prompt, items[{id,label}], categories[{id,label}], answer{}, explanation }
  *   'predict'  : { prompt, (options/answer per mode), explanation }
  *   'spotbug'  : { prompt, lines[]+answer(index) | options[]+answer, explanation }
+ *   'problem'  : { stem, parts[] } — a stem plus 3-5 labelled leaf sub-questions,
+ *                graded with partial credit. State carries { status, score, perPart }.
  *
  * Props
  *   check            the check object.
@@ -293,13 +527,10 @@ const LessonCheck = ({ check, state, gated, onAnswer, onChoiceAnswer }) => {
 	// onAnswer is the generic path; onChoiceAnswer remains as a back-compat alias.
 	const submit = onAnswer || onChoiceAnswer || (() => {});
 
-	const predictMode = useMemo(() => {
-		if (check.kind !== 'predict') return null;
-		if (check.mode) return check.mode;
-		if (Array.isArray(check.options)) return 'choice';
-		if (typeof check.answer === 'number') return 'numeric';
-		return 'text';
-	}, [check]);
+	const predictMode = useMemo(
+		() => (check.kind === 'predict' ? resolvePredictMode(check) : null),
+		[check]
+	);
 
 	// Per-distractor feedback: when a choice-style answer is wrong and the chosen
 	// option has a `misconceptions` entry, surface the line that engages THAT
@@ -338,20 +569,12 @@ const LessonCheck = ({ check, state, gated, onAnswer, onChoiceAnswer }) => {
 				)}
 			</div>
 
-			<p className={styles.prompt}>{check.prompt}</p>
+			<p className={styles.prompt}>
+				{check.kind === 'problem' ? check.stem : check.prompt}
+			</p>
 
 			{showGateHint && (
 				<p className={styles.gateHint}>Answer to continue.</p>
-			)}
-
-			{check.kind === 'choice' && (
-				<ChoiceRow
-					options={check.options}
-					answer={check.answer}
-					selected={state?.selected}
-					isAnswered={isAnswered}
-					onPick={submit}
-				/>
 			)}
 
 			{check.kind === 'pair' && !isAnswered && (
@@ -361,77 +584,15 @@ const LessonCheck = ({ check, state, gated, onAnswer, onChoiceAnswer }) => {
 				/>
 			)}
 
-			{(check.kind === 'numeric' || check.kind === 'text') && (
-				<InputForm
-					kind={check.kind}
-					placeholder={check.placeholder}
-					isAnswered={isAnswered}
-					value={state?.value}
-					onSubmit={submit}
-				/>
+			{check.kind === 'problem' ? (
+				<ProblemBlock check={check} state={state} submit={submit} />
+			) : (
+				check.kind !== 'pair' && (
+					<LeafInput check={check} state={state} submit={submit} />
+				)
 			)}
 
-			{check.kind === 'order' && (
-				<OrderList
-					items={check.items}
-					isAnswered={isAnswered}
-					answer={check.answer}
-					onSubmit={submit}
-				/>
-			)}
-
-			{check.kind === 'classify' && (
-				<ClassifyGrid
-					items={check.items}
-					categories={check.categories}
-					isAnswered={isAnswered}
-					answer={check.answer}
-					perItem={state?.perItem}
-					onSubmit={submit}
-				/>
-			)}
-
-			{check.kind === 'predict' && predictMode === 'choice' && (
-				<ChoiceRow
-					options={check.options}
-					answer={check.answer}
-					selected={state?.value}
-					isAnswered={isAnswered}
-					onPick={submit}
-				/>
-			)}
-
-			{check.kind === 'predict' && predictMode !== 'choice' && (
-				<InputForm
-					kind={predictMode}
-					placeholder={check.placeholder}
-					isAnswered={isAnswered}
-					value={state?.value}
-					onSubmit={submit}
-				/>
-			)}
-
-			{check.kind === 'spotbug' && Array.isArray(check.lines) && (
-				<SpotbugLines
-					lines={check.lines}
-					isAnswered={isAnswered}
-					answer={check.answer}
-					selected={state?.selected}
-					onPick={submit}
-				/>
-			)}
-
-			{check.kind === 'spotbug' && !check.lines && (
-				<ChoiceRow
-					options={check.options}
-					answer={check.answer}
-					selected={state?.selected}
-					isAnswered={isAnswered}
-					onPick={submit}
-				/>
-			)}
-
-			{isAnswered && (
+			{isAnswered && check.kind !== 'problem' && (
 				<div className={styles.reveal}>
 					{misconception && (
 						<p className={styles.misconception}>

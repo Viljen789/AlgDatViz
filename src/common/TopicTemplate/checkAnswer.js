@@ -75,6 +75,22 @@
 //                and accepts the same optional `misconceptions` map.
 //                payload: number (line index) | string (option).
 //                -> { correct, selected }
+//
+//   'problem'  : { stem, parts: Check[] }
+//                A multi-part exam-style question: a `stem` of shared context
+//                followed by 3-5 linked sub-questions, each a normal LEAF check
+//                ({ kind, prompt, ... }). Graded with partial credit by mapping
+//                checkAnswer over the parts.
+//                payload: an ARRAY of per-part payloads (payload[i] feeds
+//                parts[i] in that leaf kind's own payload shape).
+//                A part of kind 'pair' (external grading) is tolerated: it is
+//                graded as { correct: null } and EXCLUDED from the score
+//                denominator, so a problem never crashes on a non-auto-graded
+//                part. Mirrors checkClassify's per-item style.
+//                -> { correct, score, perPart: [{correct, ...}, ...] }
+//                  `correct` is true only when every auto-graded part is correct;
+//                  `score` is (#correct) / (#auto-graded parts), in [0, 1], and is
+//                  0 when there are no auto-graded parts.
 
 const isNil = v => v === undefined || v === null;
 
@@ -178,6 +194,21 @@ const checkSpotbug = (check, payload) => {
 	return checkChoice(check, payload);
 };
 
+// Grade a multi-part problem: map checkAnswer over each leaf part with its own
+// per-part payload. A 'pair' part (host-graded) returns { correct: null } and is
+// excluded from the score denominator so the kind never crashes. Declared as a
+// hoisted function so it can call checkAnswer, which is defined below.
+function checkProblem(check, payload) {
+	const parts = Array.isArray(check.parts) ? check.parts : [];
+	const payloads = Array.isArray(payload) ? payload : [];
+	const perPart = parts.map((part, i) => checkAnswer(part, payloads[i]));
+	const graded = perPart.filter(r => r.correct !== null);
+	const correctCount = graded.filter(r => r.correct === true).length;
+	const score = graded.length === 0 ? 0 : correctCount / graded.length;
+	const correct = graded.length > 0 && correctCount === graded.length;
+	return { correct, score, perPart };
+}
+
 const GRADERS = {
 	choice: checkChoice,
 	numeric: checkNumeric,
@@ -186,6 +217,7 @@ const GRADERS = {
 	classify: checkClassify,
 	predict: checkPredict,
 	spotbug: checkSpotbug,
+	problem: checkProblem,
 };
 
 /**
