@@ -1,12 +1,4 @@
 import { useEffect, useMemo, useRef } from 'react';
-import {
-	Bar,
-	BarChart,
-	Cell,
-	ResponsiveContainer,
-	XAxis,
-	YAxis,
-} from 'recharts';
 import { usePlayback, PseudoState } from '../../common/PlaybackEngine/index.js';
 import StepControlBar from '../../common/StepControlBar/StepControlBar.jsx';
 import { SPEED_OPTIONS } from '../../utils/sorting/algorithmMeta.js';
@@ -58,7 +50,7 @@ const NumberControl = ({ label, hint, value, min, max, step = 1, onChange }) => 
  *
  * The student sets a, b, d, k for T(n) = a·T(n/b) + f(n). The playback engine
  * then "reveals" the recursion tree one level at a time: each frame uncovers a
- * deeper level so the leaves-vs-combine comparison builds up visibly. A recharts
+ * deeper level so the leaves-vs-combine comparison builds up visibly. A hand-built
  * bar chart shows relative work per level, the dominant side is highlighted, and
  * the Master Theorem verdict updates live.
  */
@@ -118,6 +110,12 @@ const MasterTheoremPlayground = ({ onUserInteract, params, onParamsChange }) => 
 			})),
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 		[levels, revealed, dominant]
+	);
+
+	// Linear y-scale (the tallest level fills the track), matching the old chart.
+	const maxWork = useMemo(
+		() => Math.max(1e-9, ...chartData.map(d => d.work)),
+		[chartData]
 	);
 
 	return (
@@ -200,41 +198,35 @@ const MasterTheoremPlayground = ({ onUserInteract, params, onParamsChange }) => 
 							</span>
 						</div>
 						<div className={styles.chartArea}>
-							<ResponsiveContainer width="100%" height="100%">
-								<BarChart
-									data={chartData}
-									margin={{ top: 8, right: 8, bottom: 4, left: 8 }}
-								>
-									<XAxis
-										dataKey="name"
-										tick={{
-											fill: 'var(--color-text-muted)',
-											fontSize: 11,
-											fontFamily: 'var(--font-family-mono)',
-										}}
-										tickLine={false}
-										axisLine={{ stroke: 'var(--color-border)' }}
-									/>
-									<YAxis hide domain={[0, 'dataMax']} />
-									<Bar
-										dataKey="work"
-										radius={[3, 3, 0, 0]}
-										isAnimationActive={false}
-									>
-										{chartData.map(entry => (
-											<Cell
-												key={entry.name}
-												fill={
-													entry.dominant
+							<div
+								className={styles.barChart}
+								role="img"
+								aria-label={`Relative work per recursion level L0 to L${TREE_DEPTH}; ${dominant} dominate`}
+							>
+								<div className={styles.barRow}>
+									{chartData.map(entry => (
+										<div className={styles.barTrack} key={entry.name}>
+											<div
+												className={styles.bar}
+												style={{
+													height: `${(entry.work / maxWork) * 100}%`,
+													background: entry.dominant
 														? 'var(--topic-accent)'
-														: 'var(--color-text-dim)'
-												}
-												fillOpacity={entry.revealed ? 1 : 0.18}
+														: 'var(--color-text-dim)',
+													opacity: entry.revealed ? 1 : 0.18,
+												}}
 											/>
-										))}
-									</Bar>
-								</BarChart>
-							</ResponsiveContainer>
+										</div>
+									))}
+								</div>
+								<div className={styles.barLabels} aria-hidden="true">
+									{chartData.map(entry => (
+										<span className={styles.barLabel} key={entry.name}>
+											{entry.name}
+										</span>
+									))}
+								</div>
+							</div>
 						</div>
 					</div>
 
