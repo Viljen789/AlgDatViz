@@ -4,7 +4,19 @@ import {
 	recursionTreeToLevels,
 } from './climbingStairsRecursion.js';
 import { SCENES } from './scenes.js';
+import StateLegend from '../../common/StateLegend/StateLegend';
 import styles from './StrategiesStage.module.css';
+
+// Swatch colours mirror what StrategiesStage.module.css actually paints. Greedy
+// "take" coins ride --color-warning; a stranded greedy coin is the Quartet's
+// --state-special (a poisoned local choice, not an app error); DP cells, repeated
+// recursion nodes and the DP decision row ride the topic accent; the safe greedy
+// choices (intervals, decision row) read --color-success.
+const SW_GREEDY = 'var(--color-warning)';
+const SW_WASTE = 'var(--state-special)';
+const SW_DP = 'var(--topic-accent)';
+const SW_SAFE = 'var(--color-success)';
+const SW_SKIP = 'var(--color-text-muted)';
 
 // The synchronized concept stage. It reacts to the active scrolly scene (by id,
 // not a fragile integer index) and visualizes the greedy-vs-DP fork on three
@@ -336,10 +348,48 @@ const BOARD_META = {
 	},
 };
 
+// Scene-aware colour key: only the states the active board paints right now.
+// The coin board shifts meaning across its scenes, so it is keyed by id, not by
+// board: greedy "take" before the trap, the stranded waste once it is sprung,
+// the DP table once it settles. Boards that are purely structural carry no key.
+const buildLegend = sceneId => {
+	switch (sceneId) {
+		case 'two-shapes':
+			return [{ swatch: SW_GREEDY, label: 'greedy: take biggest', aria: 'amber' }];
+		case 'greedy-trap':
+			return [
+				{ swatch: SW_GREEDY, label: 'greedy: take', aria: 'amber' },
+				{ swatch: SW_WASTE, label: 'greedy: stranded', aria: 'special hue' },
+			];
+		case 'dp-remembers':
+			return [{ swatch: SW_DP, label: 'DP: filled cell', aria: 'accent' }];
+		case 'choose-what':
+			return [
+				{ swatch: SW_WASTE, label: 'greedy: stranded', aria: 'special hue' },
+				{ swatch: SW_DP, label: 'DP: answer', aria: 'accent' },
+			];
+		case 'overlapping-subproblems':
+			return [{ swatch: SW_DP, label: 'repeated subproblem', aria: 'accent' }];
+		case 'greedy-safe':
+			return [
+				{ swatch: SW_SAFE, label: 'chosen (earliest finish)', aria: 'green' },
+				{ swatch: SW_SKIP, label: 'skipped', aria: 'muted' },
+			];
+		case 'two-properties':
+			return [
+				{ swatch: SW_SAFE, label: 'leads to greedy', aria: 'green' },
+				{ swatch: SW_DP, label: 'leads to DP', aria: 'accent' },
+			];
+		default:
+			return [];
+	}
+};
+
 const StrategiesStage = ({ activeScene = 0 }) => {
 	const sceneId = SCENES[activeScene]?.id ?? SCENES[0].id;
 	const board = SCENE_BOARDS[sceneId] ?? 'coin';
 	const meta = BOARD_META[board];
+	const legend = buildLegend(sceneId);
 
 	return (
 		<div
@@ -352,6 +402,8 @@ const StrategiesStage = ({ activeScene = 0 }) => {
 			{board === 'recursion' && <RecursionBoard />}
 			{board === 'interval' && <IntervalBoard />}
 			{board === 'decision' && <DecisionBoard />}
+
+			<StateLegend items={legend} />
 
 			<div className={styles.notation} aria-hidden="true">
 				{meta.notation}

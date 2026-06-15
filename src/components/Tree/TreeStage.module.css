@@ -182,6 +182,14 @@
 	fill: color-mix(in srgb, var(--color-warning) 7%, transparent);
 }
 
+/* ---------- State legend ---------- */
+
+/* Sits under the tree as a compact colour key for the live scene. The shared
+   StateLegend owns its swatch + label layout; this only spaces it from the SVG. */
+.legend {
+	margin-top: var(--space-md);
+}
+
 /* ---------- Inorder output strip (traversal scene) ---------- */
 
 .outputStrip {

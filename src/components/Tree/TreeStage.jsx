@@ -1,7 +1,17 @@
 import { useMemo } from 'react';
 import { buildBst, getTreeLayout } from './treeUtils.js';
 import { INSERT_KEY, SEARCH_KEY, STAGE_VALUES } from './scenes.js';
+import StateLegend from '../../common/StateLegend/StateLegend';
 import styles from './TreeStage.module.css';
+
+// Swatch colours mirror what TreeStage.module.css actually paints, so the shared
+// key reads the same as the picture. The invariant wash uses --color-info (left,
+// smaller) vs --color-warning (right, larger); search/insert path lighting and
+// the inorder visit ride the topic accent; a found node turns success-green.
+const SW_SMALLER = 'color-mix(in srgb, var(--color-info) 16%, var(--surface-2))';
+const SW_LARGER = 'color-mix(in srgb, var(--color-warning) 16%, var(--surface-2))';
+const SW_PATH = 'var(--topic-accent)';
+const SW_FOUND = 'var(--color-success)';
 
 // The scrolly stage. One fixed BST, re-lit per scene so the same picture builds
 // the concept step by step. It mirrors MergeSortStage: a single SVG whose node
@@ -123,6 +133,29 @@ const TreeStage = ({ activeScene = 0 }) => {
 	})();
 
 	const revealLevels = activeScene === 0;
+
+	// Scene-aware key: only the states this scene actually paints. Scene 0
+	// (hierarchy reveal) is monochrome structure, so it carries no legend.
+	const legend = (() => {
+		switch (activeScene) {
+			case 1:
+				return [
+					{ swatch: SW_SMALLER, label: 'left subtree (smaller)', aria: 'cyan tint' },
+					{ swatch: SW_LARGER, label: 'right subtree (larger)', aria: 'amber tint' },
+				];
+			case 2:
+				return [
+					{ swatch: SW_PATH, label: 'comparison path', aria: 'accent' },
+					{ swatch: SW_FOUND, label: 'found', aria: 'green' },
+				];
+			case 3:
+				return [{ swatch: SW_PATH, label: 'search path + new slot', aria: 'accent' }];
+			case 4:
+				return [{ swatch: SW_PATH, label: 'visited (inorder)', aria: 'accent' }];
+			default:
+				return [];
+		}
+	})();
 
 	return (
 		<div
@@ -257,6 +290,8 @@ const TreeStage = ({ activeScene = 0 }) => {
 					);
 				})}
 			</svg>
+
+			<StateLegend items={legend} className={styles.legend} />
 
 			{isTraversal && (
 				<div className={styles.outputStrip} aria-hidden="true">

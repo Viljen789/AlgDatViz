@@ -2,7 +2,20 @@ import { useMemo } from 'react';
 import { leftChild, parentIndex, rightChild } from './heapTrace.js';
 import { BUILD_OPS, INSERT_OPS, STAGE_HEAP } from './scenes.js';
 import { COMPARE_INPUT } from './heapMeta.js';
+import StateLegend from '../../common/StateLegend/StateLegend';
 import styles from './HeapStage.module.css';
+
+// Swatch colours mirror what HeapStage.module.css actually paints. The max/root,
+// focus, child and sift states all ride the topic accent (heaps = magenta) at
+// different intensities; the parent direction borrows --color-warning; the E1
+// bars contrast --color-success (cheap build) against --color-warning (costly).
+const SW_MAX = 'var(--topic-accent)';
+const SW_FOCUS = 'color-mix(in srgb, var(--topic-accent) 20%, var(--surface-2))';
+const SW_CHILD = 'color-mix(in srgb, var(--topic-accent) 14%, var(--surface-2))';
+const SW_PARENT = 'color-mix(in srgb, var(--color-warning) 18%, var(--surface-2))';
+const SW_SIFT = 'color-mix(in srgb, var(--topic-accent) 22%, var(--surface-2))';
+const SW_BUILD = 'color-mix(in srgb, var(--color-success) 32%, transparent)';
+const SW_INSERT = 'color-mix(in srgb, var(--color-warning) 32%, transparent)';
 
 // ── Implicit-tree layout from array indices ──
 //
@@ -129,6 +142,36 @@ const HeapStage = ({ activeScene = 0 }) => {
 	if (isAsArray) highlightSet.add(focusI);
 	if (isParent && parentChild != null) highlightSet.add(parentChild);
 	siftPath.forEach(i => highlightSet.add(i));
+
+	// Scene-aware key: only the states this scene actually paints. Scene 3 (sift)
+	// and the dual-view scenes each name their 2-3 live colours; no invented hue.
+	const legend = (() => {
+		switch (activeScene) {
+			case 0:
+				return [{ swatch: SW_MAX, label: 'maximum (A[0])', aria: 'accent' }];
+			case 1:
+				return [
+					{ swatch: SW_FOCUS, label: 'node i', aria: 'accent tint' },
+					{ swatch: SW_CHILD, label: 'children 2i+1, 2i+2', aria: 'accent wash' },
+				];
+			case 2:
+				return [
+					{ swatch: SW_CHILD, label: 'node i', aria: 'accent' },
+					{ swatch: SW_PARENT, label: 'parent ⌊(i−1)/2⌋', aria: 'amber tint' },
+				];
+			case 3:
+				return [{ swatch: SW_SIFT, label: 'sift path (root → leaf)', aria: 'accent' }];
+			case 4:
+				return [{ swatch: SW_MAX, label: 'extract-max (A[0])', aria: 'accent' }];
+			case 5:
+				return [
+					{ swatch: SW_BUILD, label: 'build Θ(n)', aria: 'green' },
+					{ swatch: SW_INSERT, label: 'insert ×n Θ(n log n)', aria: 'amber' },
+				];
+			default:
+				return [];
+		}
+	})();
 
 	const caption = (() => {
 		switch (activeScene) {
@@ -278,6 +321,8 @@ const HeapStage = ({ activeScene = 0 }) => {
 					)}
 				</>
 			)}
+
+			<StateLegend items={legend} />
 
 			<p className={styles.caption}>{caption}</p>
 		</div>
