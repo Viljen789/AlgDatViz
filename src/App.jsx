@@ -31,6 +31,7 @@ const MergeSortLessonPage = lazy(() => import('./pages/MergeSortLessonPage.jsx')
 const StyleGuide = lazy(() => import('./styles/styleguide/StyleGuide.jsx'));
 const ReviewPage = lazy(() => import('./pages/ReviewPage.jsx'));
 const ProgressPage = lazy(() => import('./pages/ProgressPage.jsx'));
+const ExamPage = lazy(() => import('./pages/ExamPage.jsx'));
 
 const RouteFallback = () => (
 	<div className={styles.routeFallback} role="status" aria-live="polite">
@@ -89,6 +90,7 @@ const ROUTES_WITH_HERO = new Set([
 	'/',
 	'/review',
 	'/progress',
+	'/exam',
 	...Object.keys(TOPIC_BY_ROUTE),
 ]);
 
@@ -171,6 +173,7 @@ const AppLayout = () => {
 									/>
 									<Route path="/review" element={<ReviewPage />} />
 									<Route path="/progress" element={<ProgressPage />} />
+									<Route path="/exam" element={<ExamPage />} />
 									<Route path="/styleguide" element={<StyleGuide />} />
 								</Routes>
 							</Suspense>

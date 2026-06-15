@@ -6,6 +6,7 @@ import {
 	BarChart3,
 	Brain,
 	Check,
+	FileCheck,
 	GitBranch,
 	GraduationCap,
 	Grid3x3,
@@ -102,6 +103,20 @@ const Sidebar = () => {
 							<GraduationCap size={16} strokeWidth={2.2} />
 						</span>
 						<span className={styles.label}>Review</span>
+					</NavLink>
+				</li>
+				<li>
+					<NavLink
+						to="/exam"
+						className={({ isActive }) =>
+							`${styles.navLink} ${isActive ? styles.activeLink : ''}`
+						}
+					>
+						<span className={styles.navBar} aria-hidden="true" />
+						<span className={styles.icon} aria-hidden="true">
+							<FileCheck size={16} strokeWidth={2.2} />
+						</span>
+						<span className={styles.label}>Exam</span>
 					</NavLink>
 				</li>
 				<li>
