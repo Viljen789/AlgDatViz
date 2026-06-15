@@ -1,12 +1,21 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
-import { ArrowRight, Check, ChevronRight, Clock, RotateCcw } from 'lucide-react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import {
+	ArrowRight,
+	Check,
+	ChevronRight,
+	Clock,
+	LayoutGrid,
+	RotateCcw,
+} from 'lucide-react';
 import LessonCheck from '../common/TopicTemplate/LessonCheck.jsx';
 import { checkAnswer } from '../common/TopicTemplate/checkAnswer.js';
 import { accentTokens } from '../components/Review/reviewBank.js';
 import { TOPIC_BY_ID } from '../data/curriculum.js';
 import { EXAM_SETS, EXAM_TOPIC_IDS } from '../data/examSets.js';
 import { logActivity } from '../lib/activityLog.js';
+import { recordExamTopic } from '../lib/examLog.js';
+import { WEAK_THRESHOLD } from '../lib/weakTopics.js';
 import styles from './ExamPage.module.css';
 
 /**
@@ -54,9 +63,10 @@ const groupByTopic = sets => {
 
 // A short, honest read on the by-topic result (mirrors ReviewSummary's tone).
 const verdictFor = ratio => {
-	if (ratio >= 0.9) return 'Exam-ready across these topics. Keep the recall warm.';
+	if (ratio >= 0.9)
+		return 'Exam-ready across these topics. Keep the recall warm.';
 	if (ratio >= 0.7) return 'Solid. Tighten the topics scored below.';
-	if (ratio >= 0.4) return 'Coming along — the topics below need another pass.';
+	if (ratio >= 0.4) return 'Coming along. The topics below need another pass.';
 	return 'Early days. Work the topics below, then run it again.';
 };
 
@@ -70,7 +80,32 @@ const SECONDS_PER_PROBLEM = 120;
 const budgetFor = count => count * SECONDS_PER_PROBLEM;
 
 // Below this per-topic ratio the summary nudges the learner back to the lesson.
-const STUDY_THRESHOLD = 0.7;
+// Shared with /progress's weakness ranking so the two surfaces agree on "weak".
+const STUDY_THRESHOLD = WEAK_THRESHOLD;
+
+// Aggregate the per-problem partial-credit scores into a per-topic average,
+// preserving teaching order. `scores[i]` aligns with `runSets[i]`. This is the
+// single source the summary renders AND the persist effect records from, so the
+// number stored to examLog is exactly the number the learner sees.
+const aggregateByTopic = (runSets, scores) => {
+	const map = new Map();
+	runSets.forEach((set, i) => {
+		if (!map.has(set.topicId)) {
+			map.set(set.topicId, {
+				...topicMeta(set.topicId, set.topicName),
+				sum: 0,
+				count: 0,
+			});
+		}
+		const t = map.get(set.topicId);
+		t.sum += scores[i] ?? 0;
+		t.count += 1;
+	});
+	return [...map.values()].map(t => ({
+		...t,
+		ratio: t.count ? t.sum / t.count : 0,
+	}));
+};
 
 // "16 min" for a whole-minute budget, or "8:30" when it is not a round minute.
 const formatBudgetLabel = seconds => {
@@ -87,30 +122,33 @@ const formatClock = seconds => {
 };
 
 // ── The summary, scored BY TOPIC ──────────────────────────────────────────────
-const ExamSummary = ({ runSets, scores, onRestart, endedOnClock = false }) => {
-	// Aggregate the per-problem partial-credit scores into a per-topic average.
-	const topics = useMemo(() => {
-		const map = new Map();
-		runSets.forEach((set, i) => {
-			if (!map.has(set.topicId)) {
-				map.set(set.topicId, {
-					...topicMeta(set.topicId, set.topicName),
-					sum: 0,
-					count: 0,
-				});
-			}
-			const t = map.get(set.topicId);
-			t.sum += scores[i] ?? 0;
-			t.count += 1;
-		});
-		return [...map.values()].map(t => ({ ...t, ratio: t.count ? t.sum / t.count : 0 }));
-	}, [runSets, scores]);
+const ExamSummary = ({
+	runSets,
+	scores,
+	onRetake,
+	onBackToSets,
+	onStudyTopic,
+	onRetakeTopic,
+	endedOnClock = false,
+	endedEarly = false,
+}) => {
+	// Aggregate the per-problem partial-credit scores into a per-topic average,
+	// weakest-first for the rows below.
+	const topics = useMemo(
+		() => aggregateByTopic(runSets, scores).sort((a, b) => a.ratio - b.ratio),
+		[runSets, scores]
+	);
 
 	const overall = useMemo(() => {
 		const valid = scores.filter(s => typeof s === 'number');
 		const sum = valid.reduce((a, b) => a + b, 0);
 		return valid.length ? sum / valid.length : 0;
 	}, [scores]);
+
+	// The single weakest topic that fell below the shared study threshold, if any.
+	// When it exists it earns the primary action (the most productive next step
+	// past the weakness the run just surfaced); otherwise "Retake this exam" leads.
+	const weakest = topics.find(t => t.ratio < STUDY_THRESHOLD) ?? null;
 
 	return (
 		<section className={styles.summary} aria-labelledby="exam-summary-heading">
@@ -128,7 +166,10 @@ const ExamSummary = ({ runSets, scores, onRestart, endedOnClock = false }) => {
 					aria-valuemax={100}
 					aria-label={`Overall score ${pct(overall)} percent`}
 				>
-					<span className={styles.scoreFill} style={{ width: `${pct(overall)}%` }} />
+					<span
+						className={styles.scoreFill}
+						style={{ width: `${pct(overall)}%` }}
+					/>
 				</div>
 				<p className={styles.verdict}>{verdictFor(overall)}</p>
 				{endedOnClock && (
@@ -137,50 +178,69 @@ const ExamSummary = ({ runSets, scores, onRestart, endedOnClock = false }) => {
 						Time ran out. Unanswered problems scored zero.
 					</p>
 				)}
+				{endedEarly && !endedOnClock && (
+					<p className={styles.timeNote}>
+						<Clock size={13} strokeWidth={2.2} aria-hidden="true" />
+						You ended early. Unanswered problems scored zero.
+					</p>
+				)}
 			</header>
 
 			<div className={styles.block}>
 				<h3 className={styles.blockTitle}>By topic</h3>
 				<ul className={styles.topicList}>
-					{topics
-						.slice()
-						.sort((a, b) => a.ratio - b.ratio)
-						.map(t => {
-							const tones = accentTokens(t.accent);
-							return (
-								<li
-									key={t.topicId}
-									className={styles.topicRow}
-									style={{
-										'--q-accent': tones.accent,
-										'--q-accent-ink': tones.ink,
-									}}
-								>
-									<Link to={t.to} className={styles.topicLink}>
-										{t.number && (
-											<span className={styles.topicNum}>{t.number}</span>
-										)}
-										<span className={styles.topicMeta}>
-											<span className={styles.topicName}>{t.name}</span>
-											<span className={styles.topicScore}>
-												{pct(t.ratio)}% · {t.count} problem
-												{t.count === 1 ? '' : 's'}
-											</span>
+					{topics.map(t => {
+						const tones = accentTokens(t.accent);
+						const isWeak = t.ratio < STUDY_THRESHOLD;
+						return (
+							<li
+								key={t.topicId}
+								className={styles.topicRow}
+								style={{
+									'--q-accent': tones.accent,
+									'--q-accent-ink': tones.ink,
+								}}
+							>
+								<Link to={t.to} className={styles.topicLink}>
+									{t.number && (
+										<span className={styles.topicNum}>{t.number}</span>
+									)}
+									<span className={styles.topicMeta}>
+										<span className={styles.topicName}>{t.name}</span>
+										<span className={styles.topicScore}>
+											{pct(t.ratio)}% · {t.count} problem
+											{t.count === 1 ? '' : 's'}
 										</span>
-										<span className={styles.topicBar} aria-hidden="true">
-											<span
-												className={styles.topicBarFill}
-												style={{ width: `${pct(t.ratio)}%` }}
-											/>
-										</span>
-										<ArrowRight
-											size={15}
-											strokeWidth={2}
-											aria-hidden="true"
-											className={styles.topicArrow}
+									</span>
+									<span className={styles.topicBar} aria-hidden="true">
+										<span
+											className={styles.topicBarFill}
+											style={{ width: `${pct(t.ratio)}%` }}
 										/>
-									</Link>
-									{t.ratio < STUDY_THRESHOLD && (
+									</span>
+									<ArrowRight
+										size={15}
+										strokeWidth={2}
+										aria-hidden="true"
+										className={styles.topicArrow}
+									/>
+								</Link>
+								{isWeak && (
+									<div className={styles.topicActions}>
+										{/* Retrieval: run this topic's problems again, cold. */}
+										<button
+											type="button"
+											className={styles.retakeLink}
+											onClick={() => onRetakeTopic(t.topicId)}
+										>
+											<RotateCcw
+												size={12}
+												strokeWidth={2.2}
+												aria-hidden="true"
+											/>
+											Retake {t.name}
+										</button>
+										{/* Re-read: open the lesson for this topic. */}
 										<Link to={t.to} className={styles.studyLink}>
 											Study {t.name}
 											<ArrowRight
@@ -189,16 +249,47 @@ const ExamSummary = ({ runSets, scores, onRestart, endedOnClock = false }) => {
 												aria-hidden="true"
 											/>
 										</Link>
-									)}
-								</li>
-							);
-						})}
+									</div>
+								)}
+							</li>
+						);
+					})}
 				</ul>
 			</div>
 
 			<div className={styles.summaryActions}>
-				<button type="button" className={styles.primaryBtn} onClick={onRestart}>
-					<RotateCcw size={15} strokeWidth={2.2} aria-hidden="true" />
+				{weakest ? (
+					<button
+						type="button"
+						className={styles.primaryBtn}
+						onClick={() => onStudyTopic(weakest.topicId)}
+					>
+						<ArrowRight size={15} strokeWidth={2.2} aria-hidden="true" />
+						<span>Study {weakest.name}</span>
+					</button>
+				) : (
+					<button
+						type="button"
+						className={styles.primaryBtn}
+						onClick={onRetake}
+					>
+						<RotateCcw size={15} strokeWidth={2.2} aria-hidden="true" />
+						<span>Retake this exam</span>
+					</button>
+				)}
+				{/* When a weak topic took primary, keep the honest replay reachable. */}
+				{weakest && (
+					<button type="button" className={styles.retakeBtn} onClick={onRetake}>
+						<RotateCcw size={14} strokeWidth={2.2} aria-hidden="true" />
+						<span>Retake this exam</span>
+					</button>
+				)}
+				<button
+					type="button"
+					className={styles.ghostBtn}
+					onClick={onBackToSets}
+				>
+					<LayoutGrid size={13} strokeWidth={2} aria-hidden="true" />
 					<span>Back to exam sets</span>
 				</button>
 				<Link to="/review" className={styles.ghostLink}>
@@ -210,15 +301,29 @@ const ExamSummary = ({ runSets, scores, onRestart, endedOnClock = false }) => {
 };
 
 // ── The running session: one problem at a time ────────────────────────────────
-const ExamSession = ({ runSets, onExit, timed = false }) => {
+const ExamSession = ({
+	runSets,
+	onRetake,
+	onBackToSets,
+	onStudyTopic,
+	onRetakeTopic,
+	timed = false,
+}) => {
 	const [index, setIndex] = useState(0);
 	// Per-problem controlled check state, keyed by set id: { status, score, perPart }.
 	const [states, setStates] = useState({});
 	const [finished, setFinished] = useState(false);
+	// True when the run ended before every problem was answered (clock or End exam),
+	// so the summary can show an honest "unanswered scored zero" note.
+	const [endedEarly, setEndedEarly] = useState(false);
 	// Timed mode: seconds left on the clock, and whether the run ended on the clock.
 	const budget = useMemo(() => budgetFor(runSets.length), [runSets.length]);
 	const [secondsLeft, setSecondsLeft] = useState(budget);
 	const [endedOnClock, setEndedOnClock] = useState(false);
+	// Focus target: the problem heading, moved to on each advance for SR continuity.
+	const headingRef = useRef(null);
+	// Guard the one-time persist of results when the run finishes.
+	const persistedRef = useRef(false);
 
 	const total = runSets.length;
 	const current = runSets[index];
@@ -254,7 +359,33 @@ const ExamSession = ({ runSets, onExit, timed = false }) => {
 			return;
 		}
 		setIndex(i => Math.min(i + 1, total - 1));
+		// Move focus to the new problem heading so the keyboard / SR caret follows
+		// the run instead of falling to <body> (mirrors ReviewSession).
+		requestAnimationFrame(() => headingRef.current?.focus());
 	}, [index, total]);
+
+	// Guarded exit. Ending mid-run silently destroys a near-complete attempt, so
+	// require a confirm once at least one problem is answered (matches the guarded
+	// reset on /progress). A finished run exits freely. Answered problems keep
+	// their score; the rest count as zero, which the summary states.
+	const requestExit = useCallback(() => {
+		const answeredCount = Object.values(states).filter(
+			s => s?.status != null
+		).length;
+		if (
+			!finished &&
+			answeredCount > 0 &&
+			!window.confirm(
+				'End this exam now? Answered problems keep their score, the rest count as zero.'
+			)
+		) {
+			return;
+		}
+		// Only flag "ended early" when problems genuinely remain unanswered, so the
+		// summary note is honest if the run was effectively complete.
+		if (answeredCount < total) setEndedEarly(true);
+		setFinished(true);
+	}, [states, finished, total]);
 
 	// Timed mode: a single interval that ticks the clock down once per second.
 	// It runs only while a timed run is in progress; reaching zero auto-ends the
@@ -267,6 +398,7 @@ const ExamSession = ({ runSets, onExit, timed = false }) => {
 				if (s <= 1) {
 					clearInterval(id);
 					setEndedOnClock(true);
+					setEndedEarly(true);
 					setFinished(true);
 					return 0;
 				}
@@ -275,6 +407,21 @@ const ExamSession = ({ runSets, onExit, timed = false }) => {
 		}, 1000);
 		return () => clearInterval(id);
 	}, [timed, finished]);
+
+	// Persist the result the moment the run finishes (by finishing, by the clock,
+	// or by End exam). This is the whole point of the page: it records the exam's
+	// per-topic partial-credit signal so the mastery dashboard can fold it in and
+	// show decay. The ref guards against a double-write across re-renders, and the
+	// number recorded is exactly the per-topic ratio the summary shows (same
+	// aggregateByTopic). Unanswered problems already score zero.
+	useEffect(() => {
+		if (!finished || persistedRef.current) return;
+		persistedRef.current = true;
+		const scores = runSets.map(s => states[s.id]?.score ?? 0);
+		aggregateByTopic(runSets, scores).forEach(t => {
+			recordExamTopic(t.topicId, t.ratio, { score: t.sum, total: t.count });
+		});
+	}, [finished, runSets, states]);
 
 	if (total === 0) {
 		return (
@@ -291,13 +438,33 @@ const ExamSession = ({ runSets, onExit, timed = false }) => {
 			<ExamSummary
 				runSets={runSets}
 				scores={scores}
-				onRestart={onExit}
+				onRetake={onRetake}
+				onBackToSets={onBackToSets}
+				onStudyTopic={onStudyTopic}
+				onRetakeTopic={onRetakeTopic}
 				endedOnClock={endedOnClock}
+				endedEarly={endedEarly}
 			/>
 		);
 	}
 
-	const progressPercent = Math.round((index / total) * 100);
+	// Fill as the learner answers: the bar reaches 100% on answering the LAST
+	// problem (not one behind), matching the 1-based label and aria value.
+	const progressPercent = Math.round(
+		((index + (isAnswered ? 1 : 0)) / total) * 100
+	);
+
+	// Quantize the timed countdown for assistive tech: the visible MM:SS still
+	// ticks every second, but the live-region text only changes at meaningful
+	// thresholds so it does not re-announce every second under a minute.
+	const clockAnnouncement = (() => {
+		if (secondsLeft > 60) return `${Math.ceil(secondsLeft / 60)} minutes left`;
+		if (secondsLeft === 60) return '1 minute left';
+		if (secondsLeft === 30) return '30 seconds left';
+		if (secondsLeft === 10) return '10 seconds left';
+		if (secondsLeft <= 5) return `${secondsLeft} seconds left`;
+		return '';
+	})();
 
 	return (
 		<div
@@ -334,14 +501,12 @@ const ExamSession = ({ runSets, onExit, timed = false }) => {
 							<Clock size={12} strokeWidth={2.2} aria-hidden="true" />
 							<span aria-hidden="true">{formatClock(secondsLeft)} left</span>
 							<span className={styles.srOnly} aria-live="polite">
-								{secondsLeft <= 60
-									? `${secondsLeft} seconds left`
-									: `${Math.ceil(secondsLeft / 60)} minutes left`}
+								{clockAnnouncement}
 							</span>
 						</span>
 					)}
 				</div>
-				<button type="button" className={styles.exitLink} onClick={onExit}>
+				<button type="button" className={styles.exitLink} onClick={requestExit}>
 					End exam
 				</button>
 			</div>
@@ -351,7 +516,7 @@ const ExamSession = ({ runSets, onExit, timed = false }) => {
 					<Link
 						to={meta.to}
 						className={styles.topicTag}
-						aria-label={`From ${meta.name} — open this topic`}
+						aria-label={`From ${meta.name}, open this topic`}
 					>
 						{meta.number && (
 							<span className={styles.topicTagNum}>{meta.number}</span>
@@ -360,6 +525,11 @@ const ExamSession = ({ runSets, onExit, timed = false }) => {
 						<ArrowRight size={12} strokeWidth={2.2} aria-hidden="true" />
 					</Link>
 				</div>
+
+				{/* The problem heading — focus target on advance for SR continuity. */}
+				<h2 className={styles.srHeading} tabIndex={-1} ref={headingRef}>
+					Problem {index + 1} of {total}, from {meta.name}
+				</h2>
 
 				<LessonCheck
 					key={current.id}
@@ -370,15 +540,8 @@ const ExamSession = ({ runSets, onExit, timed = false }) => {
 
 				<div className={styles.actions}>
 					{isAnswered && (
-						<button
-							type="button"
-							className={styles.nextBtn}
-							onClick={goNext}
-							autoFocus
-						>
-							<span>
-								{index + 1 >= total ? 'See results' : 'Next problem'}
-							</span>
+						<button type="button" className={styles.nextBtn} onClick={goNext}>
+							<span>{index + 1 >= total ? 'See results' : 'Next problem'}</span>
 							<ArrowRight size={15} strokeWidth={2.2} aria-hidden="true" />
 						</button>
 					)}
@@ -390,6 +553,7 @@ const ExamSession = ({ runSets, onExit, timed = false }) => {
 
 // ── The page ──────────────────────────────────────────────────────────────────
 const ExamPage = () => {
+	const navigate = useNavigate();
 	const groups = useMemo(() => groupByTopic(EXAM_SETS), []);
 	const [runSets, setRunSets] = useState(null); // null = picker, [] used as guard
 	const [runId, setRunId] = useState(0);
@@ -411,6 +575,17 @@ const ExamPage = () => {
 	}, []);
 
 	const exit = useCallback(() => setRunSets(null), []);
+
+	// Re-run the SAME sets, fresh: bump runId so ExamSession remounts with cleared
+	// state. (The summary's honest replay.)
+	const retake = useCallback(() => setRunId(r => r + 1), []);
+
+	// Open a topic's lesson from the summary (re-read), or run its exam set again
+	// (retrieval). startTopic already remounts the session via runId.
+	const studyTopic = useCallback(
+		topicId => navigate(topicMeta(topicId).to),
+		[navigate]
+	);
 
 	const started = runSets !== null;
 	const problemCount = EXAM_SETS.length;
@@ -435,9 +610,10 @@ const ExamPage = () => {
 				</h1>
 				<p className={styles.lede}>
 					Each problem gives a concrete input, a graph, an array, a recurrence,
-					then asks you to run the algorithm by hand. Every answer key is derived
-					from the same generators the lessons use, so the marking is exactly what
-					the algorithm does. Wrong parts always reveal the explanation.
+					then asks you to run the algorithm by hand. Every answer key is
+					derived from the same generators the lessons use, so the marking is
+					exactly what the algorithm does. Wrong parts always reveal the
+					explanation.
 				</p>
 
 				<dl className={styles.stats}>
@@ -453,15 +629,17 @@ const ExamPage = () => {
 
 				{!started && (
 					<div className={styles.launch}>
+						{/* Two-state toggle. A pair of aria-pressed buttons (not a
+						    radiogroup) so each is in the tab order with native button
+						    semantics, no roving-tabindex / arrow-key contract to honor. */}
 						<div
 							className={styles.modeToggle}
-							role="radiogroup"
+							role="group"
 							aria-label="Exam timing"
 						>
 							<button
 								type="button"
-								role="radio"
-								aria-checked={!timed}
+								aria-pressed={!timed}
 								className={`${styles.modeOption}${
 									!timed ? ` ${styles.modeOptionActive}` : ''
 								}`}
@@ -471,8 +649,7 @@ const ExamPage = () => {
 							</button>
 							<button
 								type="button"
-								role="radio"
-								aria-checked={timed}
+								aria-pressed={timed}
 								className={`${styles.modeOption}${
 									timed ? ` ${styles.modeOptionActive}` : ''
 								}`}
@@ -482,13 +659,17 @@ const ExamPage = () => {
 								Timed, {formatBudgetLabel(budgetFor(problemCount))}
 							</button>
 						</div>
-						<button type="button" className={styles.primaryBtn} onClick={startAll}>
+						<button
+							type="button"
+							className={styles.primaryBtn}
+							onClick={startAll}
+						>
 							<span>Start the full exam</span>
 							<ArrowRight size={16} strokeWidth={2.2} aria-hidden="true" />
 						</button>
 						<p className={styles.launchMeta}>
-							{problemCount} problems across {topicCount} topics, or pick one topic
-							below.
+							{problemCount} problems across {topicCount} topics, or pick one
+							topic below.
 							{timed
 								? ` The clock matches the run, about two minutes per problem.`
 								: ''}
@@ -524,7 +705,11 @@ const ExamPage = () => {
 											onClick={() => startTopic(group.topicId)}
 										>
 											Run all {group.sets.length}
-											<ArrowRight size={13} strokeWidth={2.2} aria-hidden="true" />
+											<ArrowRight
+												size={13}
+												strokeWidth={2.2}
+												aria-hidden="true"
+											/>
 										</button>
 									</div>
 									<ul className={styles.setList}>
@@ -538,7 +723,9 @@ const ExamPage = () => {
 													<span className={styles.setIndex} aria-hidden="true">
 														{i + 1}
 													</span>
-													<span className={styles.setStem}>{set.problem.stem}</span>
+													<span className={styles.setStem}>
+														{set.problem.stem}
+													</span>
 													<span className={styles.setMeta}>
 														{set.problem.parts.length} parts
 													</span>
@@ -570,7 +757,15 @@ const ExamPage = () => {
 
 			{started && (
 				<section className={styles.sessionWrap} aria-label="Exam session">
-					<ExamSession key={runId} runSets={runSets} onExit={exit} timed={timed} />
+					<ExamSession
+						key={runId}
+						runSets={runSets}
+						onRetake={retake}
+						onBackToSets={exit}
+						onStudyTopic={studyTopic}
+						onRetakeTopic={startTopic}
+						timed={timed}
+					/>
 				</section>
 			)}
 		</div>
