@@ -49,6 +49,11 @@ export const SCENES = [
 				'How many split steps before every piece is just one element, for n = 8?',
 			options: [2, 3, 4, 8],
 			answer: 3,
+			misconceptions: {
+				2: 'You stopped one halving early, at pieces of size 2. Those still need one more split to reach single elements, so the count is 8 → 4 → 2 → 1, which is 3 steps.',
+				4: 'That counts the pieces at the bottom, not the splits taken to get there. Reaching four pieces of size 2 is only the second split; one more produces the singletons, for 3 splits in all.',
+				8: '8 is how many one-element pieces you end with, not how many splits it took. Halving 8 down to singletons takes log₂(8) = 3 splits.',
+			},
 			explanation:
 				'Each split halves the problem: 8 → 4, 4 → 2, 2 → 1. That is log₂(8) = 3 levels of splitting. The key insight: log₂ n levels is also why the total cost stays at O(n log n) — the tree is shallow, even for huge n.',
 		},
@@ -63,6 +68,11 @@ export const SCENES = [
 			prompt: 'How many leaves does the recursion tree have for n = 8?',
 			options: [3, 4, 8, 16],
 			answer: 8,
+			misconceptions: {
+				3: 'That is the height of the tree, the number of levels, not the count of leaves. Each level doubles the pieces, so the bottom level holds 8 leaves, one per element.',
+				4: 'You may be counting the pairs just above the bottom, where there are four pieces of size 2. Splitting each of those once more gives the leaves, and there are 8 of them.',
+				16: 'A merge-sort tree branches in two, not four, so it does not double past the elements. With 8 elements there are exactly 8 leaves, since each leaf is a single original value.',
+			},
 			explanation:
 				'One leaf per original element — eight in, eight leaves. In general, the tree has exactly n leaves. That is why the total work at the leaf level is n, not n log n. Most of the cost lives in the merges above, where each level still scans n elements.',
 		},

@@ -13,8 +13,15 @@
 // CHECK KINDS + DATA SHAPES (the contract Phase 1b topics author against)
 //   All kinds share: { kind, prompt, explanation }. Kind-specific fields below.
 //
-//   'choice'   : { options: string[], answer: string }
+//   'choice'   : { options: string[], answer: string, misconceptions?: object }
 //                payload: the chosen option string.
+//                `misconceptions` is OPTIONAL: a map from a wrong option (keyed
+//                by its String() form, so numeric options work) to a one-line
+//                "why that was wrong" note. checkAnswer does not read it, so
+//                grading is unaffected, but it travels on the check so the host
+//                (LessonCheck) can surface the line that engages the chosen
+//                distractor's misconception. Backward-compatible: checks without
+//                it grade and render exactly as before.
 //                -> { correct, selected }
 //
 //   'pair'     : host-graded stage interaction (selection on the visualization).
@@ -64,7 +71,8 @@
 //   'spotbug'  : { lines: string[], answer: number } | { options, answer }
 //                Pick the wrong line / wrong claim. With `lines`, `answer` is the
 //                index of the buggy line; payload is the chosen index. With
-//                `options`, behaves like choice with the buggy claim as `answer`.
+//                `options`, behaves like choice with the buggy claim as `answer`
+//                and accepts the same optional `misconceptions` map.
 //                payload: number (line index) | string (option).
 //                -> { correct, selected }
 

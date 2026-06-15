@@ -256,9 +256,16 @@ const SpotbugLines = ({ lines, isAnswered, answer, selected, onPick }) => (
  * only renders the interaction and calls `onAnswer(payload)` with the kind's
  * payload. The host grades + stores the result in `state` and feeds it back.
  *
+ * Per-distractor feedback: a choice-style check (choice / spotbug claim-mode /
+ * predict choice-mode) may carry an OPTIONAL `misconceptions` map from a wrong
+ * option (keyed by its String() form) to a one-line "why that was wrong" note.
+ * When the answer is incorrect and the chosen option has an entry, that line is
+ * shown above the canonical explanation, framed as why the choice misfired —
+ * calm, in the topic accent, never red. Checks without the map render unchanged.
+ *
  * check kinds (data shapes documented in checkAnswer.js)
  * -----------
- *   'choice'   : { prompt, options[], answer, explanation }
+ *   'choice'   : { prompt, options[], answer, misconceptions?, explanation }
  *   'pair'     : { prompt, hint?, explanation } — host-graded stage interaction.
  *   'numeric'  : { prompt, answer, tolerance?, placeholder?, explanation }
  *   'text'     : { prompt, answer?/accept?/match?, placeholder?, explanation }
@@ -293,6 +300,18 @@ const LessonCheck = ({ check, state, gated, onAnswer, onChoiceAnswer }) => {
 		if (typeof check.answer === 'number') return 'numeric';
 		return 'text';
 	}, [check]);
+
+	// Per-distractor feedback: when a choice-style answer is wrong and the chosen
+	// option has a `misconceptions` entry, surface the line that engages THAT
+	// misconception above the canonical explanation. Predict choice-mode stores
+	// the pick in state.value; choice and spotbug claim-mode store it in
+	// state.selected. Options can be numbers, so look up by String() form.
+	const misconception = useMemo(() => {
+		if (status !== 'incorrect' || !check.misconceptions) return null;
+		const picked = predictMode === 'choice' ? state?.value : state?.selected;
+		if (picked == null) return null;
+		return check.misconceptions[String(picked)] ?? null;
+	}, [status, check.misconceptions, predictMode, state]);
 
 	return (
 		<aside
@@ -414,6 +433,12 @@ const LessonCheck = ({ check, state, gated, onAnswer, onChoiceAnswer }) => {
 
 			{isAnswered && (
 				<div className={styles.reveal}>
+					{misconception && (
+						<p className={styles.misconception}>
+							<span className={styles.misconceptionLabel}>Why that was wrong</span>
+							{misconception}
+						</p>
+					)}
 					<p className={styles.explanation}>{check.explanation}</p>
 				</div>
 			)}

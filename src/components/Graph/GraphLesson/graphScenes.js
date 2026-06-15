@@ -76,6 +76,11 @@ export const SCENES = [
 			prompt: 'How many neighbours does node A have in this graph?',
 			options: [1, 2, 3, 6],
 			answer: 2,
+			misconceptions: {
+				1: 'You counted one edge and stopped. A sits on two edges, A–B and A–C, so both B and C are neighbours.',
+				3: 'You likely counted a node two edges away, such as D, as if it touched A. Degree counts only the nodes one edge from A, which are B and C.',
+				6: '6 is the total node count, not A’s neighbours. Degree counts the edges touching A, which is 2.',
+			},
 			explanation:
 				'A connects to B and C, so it has degree 2. A node’s neighbours are exactly the nodes one edge away — that adjacency is the only thing every graph algorithm ever asks about.',
 		},
@@ -91,6 +96,14 @@ export const SCENES = [
 				'For a graph with few edges (sparse), which representation usually wastes the least memory?',
 			options: ['Adjacency list', 'Adjacency matrix', 'Always equal', 'Neither'],
 			answer: 'Adjacency list',
+			misconceptions: {
+				'Adjacency matrix':
+					'You may be picturing the matrix’s fast lookups, but speed is not memory. A matrix reserves V² cells no matter how few edges exist, so on a sparse graph most of those cells sit at 0 and waste space.',
+				'Always equal':
+					'The two representations are not interchangeable on cost. A list grows with the edges you actually have, O(V + E), while a matrix is fixed at V² regardless, so on a sparse graph they diverge sharply.',
+				Neither:
+					'There is a clear winner here. When edges are few, the list stores only what exists and the matrix still pays for every possible pair, so the list wastes less.',
+			},
 			explanation:
 				'A list stores only the edges that exist — O(V + E) space. A matrix always reserves V² cells, so a sparse graph leaves most of them at 0. Matrices win only when the graph is dense or you need O(1) “is there an edge?” checks.',
 		},
@@ -106,6 +119,13 @@ export const SCENES = [
 				'A traversal has started at A and marked it. What does the frontier hold next?',
 			options: ['A', 'B and C', 'D and E', 'Every node'],
 			answer: 'B and C',
+			misconceptions: {
+				A: 'A is already marked, so it has left the frontier rather than waiting in it. The frontier holds the nodes discovered but not yet visited, which after A are its neighbours B and C.',
+				'D and E':
+					'D and E are two edges from A, so they are not reachable yet. The frontier only ever holds nodes adjacent to what has already been visited, and right now that is just A’s neighbours B and C.',
+				'Every node':
+					'A traversal discovers nodes gradually, not all at once. The frontier grows one edge at a time, so just after A it holds only A’s direct neighbours, B and C.',
+			},
 			explanation:
 				'After A is marked, its unvisited neighbours B and C enter the frontier. They are the only nodes one edge away, so they are the candidates for the next visit — whichever order you pull them in.',
 		},
@@ -121,6 +141,11 @@ export const SCENES = [
 				'BFS from A has visited A, then B, then C. With a queue (alphabetical neighbours), which node does it visit next?',
 			options: ['D', 'E', 'F', 'A'],
 			answer: 'D',
+			misconceptions: {
+				E: 'E is C’s neighbour, and C was queued after B. A queue serves the longest waiter first, so B is dequeued before C, and B’s neighbour D is visited ahead of E.',
+				F: 'F sits two layers out, at distance 3 from A. A queue finishes every node at distance 2 before reaching distance 3, so D comes well before F.',
+				A: 'A was the very first node out of the queue and is already visited, so it cannot be visited again. The queue moves forward to B’s unvisited neighbour D.',
+			},
 			explanation:
 				'B was queued before C, so B is dequeued first; its unvisited neighbour D enters the queue ahead of C’s neighbour E. The queue preserves arrival order, so the visit sequence is A, B, C, D, E, F — strictly by distance from A.',
 		},
@@ -153,6 +178,12 @@ export const SCENES = [
 				'Swap the queue for a stack. Starting at A → B, which node does DFS dive to before it ever touches C?',
 			options: ['C', 'D', 'E', 'It visits C next'],
 			answer: 'D',
+			misconceptions: {
+				C: 'That is the breadth-first instinct of finishing A’s neighbours first. A stack serves the newest node, so after stepping to B, DFS dives into B’s branch and reaches D long before it returns to C.',
+				E: 'E lives at the far end of B’s branch, past D and F. DFS reaches it eventually, but it descends into D first, since D is the neighbour pushed most recently from B.',
+				'It visits C next':
+					'That would be breadth-first behaviour. A stack returns the newest node rather than the oldest, so DFS commits to B’s branch through D before it ever backtracks to C.',
+			},
 			explanation:
 				'A stack returns the newest node, so after pushing B’s neighbours DFS dives into D, then F, then back up to E — exploring B’s whole branch before it ever returns to C. Same graph, same start, completely different order: the data structure is the algorithm.',
 		},
