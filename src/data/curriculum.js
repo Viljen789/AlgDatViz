@@ -16,6 +16,9 @@
 // Field reference (KEEP STABLE — read by components/MergeSortLesson and others):
 //   id          stable topic id (matches useProgress completion ids)
 //   number      two-digit teaching-order label ('01'…'08')
+//   phase       macro-arc the topic belongs to ('Foundations', 'Sorting &
+//               search', 'Structures', 'Graphs', 'Intractability') — groups the
+//               sidebar nav so the course's shape is legible
 //   name        full display name
 //   navLabel    compact label for the sidebar
 //   pullQuote   one-line "why this matters"
@@ -42,8 +45,11 @@ export const CURRICULUM = [
 	{
 		id: 'foundations',
 		number: '01',
+		phase: 'Foundations',
 		name: 'Arrays & complexity',
-		navLabel: 'Foundations',
+		// Matches the breadcrumb/path/CTA name (the old 'Foundations' label both
+		// contradicted that name and duplicated this topic's phase header).
+		navLabel: 'Arrays & complexity',
 		pullQuote:
 			'Where every algorithm lives. The cost of one operation, multiplied.',
 		complexity: 'O(1) … O(2ⁿ)',
@@ -61,6 +67,7 @@ export const CURRICULUM = [
 	{
 		id: 'stacks-queues',
 		number: '02',
+		phase: 'Foundations',
 		name: 'Stacks & queues',
 		navLabel: 'Stacks / queues',
 		pullQuote: 'The two simplest disciplines for "what to do next."',
@@ -75,6 +82,7 @@ export const CURRICULUM = [
 	{
 		id: 'master-theorem',
 		number: '03',
+		phase: 'Foundations',
 		name: 'Recursion & the master theorem',
 		navLabel: 'Master theorem',
 		pullQuote:
@@ -90,6 +98,7 @@ export const CURRICULUM = [
 	{
 		id: 'sorting',
 		number: '04',
+		phase: 'Sorting & search',
 		name: 'Sorting',
 		navLabel: 'Sorting',
 		pullQuote: 'Five algorithms, one task. The differences are the lesson.',
@@ -107,6 +116,7 @@ export const CURRICULUM = [
 	{
 		id: 'linear-time-sorting',
 		number: '05',
+		phase: 'Sorting & search',
 		name: 'Linear-time sorting',
 		navLabel: 'Linear-time sort',
 		pullQuote:
@@ -122,6 +132,7 @@ export const CURRICULUM = [
 	{
 		id: 'hashing',
 		number: '06',
+		phase: 'Sorting & search',
 		name: 'Hashing',
 		navLabel: 'Hash maps',
 		pullQuote: 'Constant-time lookup, when collisions cooperate.',
@@ -136,6 +147,7 @@ export const CURRICULUM = [
 	{
 		id: 'trees',
 		number: '07',
+		phase: 'Structures',
 		name: 'Trees',
 		navLabel: 'Trees',
 		pullQuote:
@@ -151,6 +163,7 @@ export const CURRICULUM = [
 	{
 		id: 'heaps',
 		number: '08',
+		phase: 'Structures',
 		name: 'Heaps & priority queues',
 		navLabel: 'Heaps',
 		pullQuote:
@@ -166,6 +179,7 @@ export const CURRICULUM = [
 	{
 		id: 'graphs',
 		number: '09',
+		phase: 'Graphs',
 		name: 'Graphs',
 		navLabel: 'Graphs',
 		pullQuote:
@@ -181,6 +195,7 @@ export const CURRICULUM = [
 	{
 		id: 'strategies',
 		number: '10',
+		phase: 'Graphs',
 		name: 'Strategies',
 		navLabel: 'Strategies',
 		pullQuote:
@@ -196,6 +211,7 @@ export const CURRICULUM = [
 	{
 		id: 'mst',
 		number: '11',
+		phase: 'Graphs',
 		name: 'Minimum spanning trees',
 		navLabel: 'Spanning trees',
 		pullQuote:
@@ -211,6 +227,7 @@ export const CURRICULUM = [
 	{
 		id: 'shortest-paths',
 		number: '12',
+		phase: 'Graphs',
 		name: 'Shortest paths (single-source)',
 		navLabel: 'Shortest paths',
 		pullQuote:
@@ -226,6 +243,7 @@ export const CURRICULUM = [
 	{
 		id: 'apsp',
 		number: '13',
+		phase: 'Graphs',
 		name: 'All-pairs shortest paths',
 		navLabel: 'All-pairs SP',
 		pullQuote:
@@ -241,6 +259,7 @@ export const CURRICULUM = [
 	{
 		id: 'max-flow',
 		number: '14',
+		phase: 'Graphs',
 		name: 'Maximum flow',
 		navLabel: 'Max flow',
 		pullQuote:
@@ -256,6 +275,7 @@ export const CURRICULUM = [
 	{
 		id: 'np-completeness',
 		number: '15',
+		phase: 'Intractability',
 		name: 'NP-completeness',
 		navLabel: 'NP-completeness',
 		pullQuote:

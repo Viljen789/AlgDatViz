@@ -1,3 +1,4 @@
+import { Fragment } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import {
 	Activity,
@@ -118,33 +119,61 @@ const Sidebar = () => {
 					</NavLink>
 				</li>
 
-				{CURRICULUM.map(topic => {
+				{CURRICULUM.map((topic, index) => {
 					const Icon = ICONS[topic.icon] ?? List;
+
+					// The five curriculum phases group the flat 15-item list so the
+					// course's macro-shape reads at a glance. A non-interactive phase
+					// header is emitted whenever the phase changes (the list is already
+					// in teaching order, so a phase is one contiguous run of rows). The
+					// header is decorative chrome (aria-hidden); each row still carries
+					// its own full a11y label below.
+					const phaseHeader =
+						topic.phase !== CURRICULUM[index - 1]?.phase ? (
+							<li
+								key={`phase-${topic.phase}`}
+								className={styles.phaseHead}
+								aria-hidden="true"
+							>
+								{topic.phase}
+							</li>
+						) : null;
+
+					// The teaching-order number, prefixing the label in muted mono.
+					const numberPrefix = (
+						<span className={styles.number} aria-hidden="true">
+							{topic.number}
+						</span>
+					);
 
 					// 'soon' placeholders are locked: rendered muted and inert (no
 					// route, not focusable as a link, clearly labelled "coming soon").
 					if (topic.status === 'soon') {
 						return (
-							<li key={topic.id}>
-								<span
-									className={`${styles.navLink} ${styles.locked}`}
-									aria-disabled="true"
-									aria-label={`${topic.name} — coming soon`}
-								>
-									<span className={styles.navBar} aria-hidden="true" />
-									<span className={styles.icon} aria-hidden="true">
-										<Lock size={14} strokeWidth={2.2} />
-									</span>
-									<span className={styles.label}>{topic.navLabel}</span>
+							<Fragment key={topic.id}>
+								{phaseHeader}
+								<li>
 									<span
-										className={styles.soonBadge}
-										aria-hidden="true"
-										title="Coming soon"
+										className={`${styles.navLink} ${styles.locked}`}
+										aria-disabled="true"
+										aria-label={`${topic.name}, coming soon`}
 									>
-										Soon
+										<span className={styles.navBar} aria-hidden="true" />
+										{numberPrefix}
+										<span className={styles.icon} aria-hidden="true">
+											<Lock size={14} strokeWidth={2.2} />
+										</span>
+										<span className={styles.label}>{topic.navLabel}</span>
+										<span
+											className={styles.soonBadge}
+											aria-hidden="true"
+											title="Coming soon"
+										>
+											Soon
+										</span>
 									</span>
-								</span>
-							</li>
+								</li>
+							</Fragment>
 						);
 					}
 
@@ -172,45 +201,49 @@ const Sidebar = () => {
 					const ownsRoute = TOPIC_BY_ROUTE[topic.to]?.id === topic.id;
 					const active = ownsRoute && pathname === topic.to;
 					return (
-						<li key={topic.id}>
-							<NavLink
-								to={topic.to}
-								className={`${styles.navLink} ${
-									active ? styles.activeLink : ''
-								} ${completed ? styles.completed : ''} ${
-									visited ? styles.visited : ''
-								} ${isNext ? styles.next : ''}`}
-								aria-current={active ? 'page' : undefined}
-								style={{ '--accent': topic.accent }}
-								aria-label={rowLabel}
-							>
-								<span className={styles.navBar} aria-hidden="true" />
-								<span className={styles.icon} aria-hidden="true">
-									<Icon size={16} strokeWidth={2.2} />
-								</span>
-								<span className={styles.label}>{topic.navLabel}</span>
-								{isNext && (
-									<span
-										className={styles.nextChip}
-										aria-hidden="true"
-										title="Next up"
-									>
-										Next
-									</span>
-								)}
-								<span
-									className={styles.status}
-									aria-hidden="true"
-									title={statusLabel}
+						<Fragment key={topic.id}>
+							{phaseHeader}
+							<li>
+								<NavLink
+									to={topic.to}
+									className={`${styles.navLink} ${
+										active ? styles.activeLink : ''
+									} ${completed ? styles.completed : ''} ${
+										visited ? styles.visited : ''
+									} ${isNext ? styles.next : ''}`}
+									aria-current={active ? 'page' : undefined}
+									style={{ '--accent': topic.accent }}
+									aria-label={rowLabel}
 								>
-									{completed ? (
-										<Check size={12} strokeWidth={3} className={styles.statusCheck} />
-									) : (
-										<span className={styles.statusDot} />
+									<span className={styles.navBar} aria-hidden="true" />
+									{numberPrefix}
+									<span className={styles.icon} aria-hidden="true">
+										<Icon size={16} strokeWidth={2.2} />
+									</span>
+									<span className={styles.label}>{topic.navLabel}</span>
+									{isNext && (
+										<span
+											className={styles.nextChip}
+											aria-hidden="true"
+											title="Next up"
+										>
+											Next
+										</span>
 									)}
-								</span>
-							</NavLink>
-						</li>
+									<span
+										className={styles.status}
+										aria-hidden="true"
+										title={statusLabel}
+									>
+										{completed ? (
+											<Check size={12} strokeWidth={3} className={styles.statusCheck} />
+										) : (
+											<span className={styles.statusDot} />
+										)}
+									</span>
+								</NavLink>
+							</li>
+						</Fragment>
 					);
 				})}
 			</ul>
