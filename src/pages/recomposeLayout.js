@@ -133,10 +133,16 @@ const graphEdges = [
 const spanningTreeEdges = graphEdges.slice(0, N - 1);
 
 // ── Shortest path (light one fewest-hops route, dim the rest) ───────────────
-// Each consecutive pair in SP_PATH is a real graph edge, so the lit route exists
-// in the constellation; every other edge is dimmed. Same atoms + edges as the
-// graph — only the per-edge `highlight` / `dim` flag changes.
-const SP_PATH = [10, 1, 4, 8, 9];
+// The route runs from a clear SOURCE (atom 0, top) to a clear SINK (atom 8,
+// bottom) — both marked with a ring by the hero — so the state reads as "the
+// shortest path between these two nodes," not just "some bold edges." Each
+// consecutive pair in SP_PATH is a real graph edge. The graph family (graph,
+// shortestPath, spanningTree, maxFlow) shares these two endpoints.
+export const SP_PATH = [0, 12, 1, 4, 8];
+export const GRAPH_ENDS = {
+	source: SP_PATH[0],
+	sink: SP_PATH[SP_PATH.length - 1],
+};
 const spOnPath = (a, b) => {
 	for (let i = 0; i < SP_PATH.length - 1; i += 1) {
 		const u = SP_PATH[i];

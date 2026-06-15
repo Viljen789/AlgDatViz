@@ -57,6 +57,17 @@
 	pointer-events: none;
 }
 
+/* Endpoint marker: a hollow indigo ring the hero fades in around the source and
+   sink atoms during the graph family (shortest path / max flow), so "from here
+   to there" reads without a label. Indigo matches the reading-cursor language. */
+.ring {
+	fill: none;
+	stroke: hsl(var(--brand-h) var(--brand-s) var(--brand-l));
+	stroke-width: 1.5;
+	opacity: 0;
+	pointer-events: none;
+}
+
 @media (prefers-reduced-motion: reduce) {
 	.svg * {
 		transition: none !important;

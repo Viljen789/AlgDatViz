@@ -4,8 +4,10 @@ import {
 	BARS,
 	BFS_ORDER,
 	EDGE_POOL,
+	GRAPH_ENDS,
 	HEAPIFY_PATH,
 	ORDER,
+	SP_PATH,
 	STATES,
 	VIEWBOX,
 	WASH_HUE,
@@ -82,10 +84,11 @@ const HeroRecompose = ({ className, onState }) => {
 				const bars = gsap.utils.toArray('[data-bar]', svg);
 				const cores = gsap.utils.toArray('[data-core]', svg);
 				const halos = gsap.utils.toArray('[data-halo]', svg);
+				const rings = gsap.utils.toArray('[data-ring]', svg);
 				const lines = gsap.utils.toArray('[data-edge]', svg);
 
 				// Scale/rotate about each element's own origin (the atom centre).
-				gsap.set([...atoms, ...cores, ...halos], {
+				gsap.set([...atoms, ...cores, ...halos, ...rings], {
 					transformOrigin: '0px 0px',
 				});
 
@@ -108,6 +111,7 @@ const HeroRecompose = ({ className, onState }) => {
 					strokeDashoffset: 1,
 				});
 				gsap.set(halos, { autoAlpha: 0, scale: 1 });
+				gsap.set(rings, { autoAlpha: 0, scale: 0.6 });
 				gsap.set(svg, { '--wash-h': WASH_HUE.array });
 
 				// Opt the edges into draw-on ink (stroke-dasharray gated by .motion,
@@ -246,6 +250,18 @@ const HeroRecompose = ({ className, onState }) => {
 					return tl;
 				};
 
+				// Ring (or un-ring) the source + sink endpoints — shared by the graph
+				// family so shortest path and max flow read as "from here to there"
+				// without a label.
+				const { source: SRC, sink: SNK } = GRAPH_ENDS;
+				const endpoints = on =>
+					loop.to([rings[SRC], rings[SNK]], {
+						autoAlpha: on ? 0.95 : 0,
+						scale: on ? 1 : 0.6,
+						duration: on ? 0.5 : 0.35,
+						ease: on ? 'power2.out' : 'power1.in',
+					});
+
 				hold(); // dwell on the array
 				morphTo('sorted'); // the same dots slide into rank order (bars stay)
 				hold();
@@ -256,12 +272,18 @@ const HeroRecompose = ({ className, onState }) => {
 				morphTo('graph', { ink: 'draw' }); // fly to the constellation; cycle edges ink on
 				loop.add(beat(BFS_ORDER, { step: 0.1, pop: 1.32 })); // BFS frontier wave
 				hold();
-				morphTo('shortestPath'); // light the fewest-hops route, dim the rest
+				morphTo('shortestPath'); // light the route between the two endpoints
+				endpoints(true); // ring the source + sink
+				loop.add(beat(SP_PATH, { step: 0.16, pop: 1.45 })); // a pulse runs source → sink
 				hold();
+				endpoints(false);
 				morphTo('spanningTree'); // trim the cycles to a tree that still spans all
 				hold();
 				morphTo('maxFlow', { ink: 'flow' }); // re-densify; fill each pipe to flow / cap
+				endpoints(true); // same source + sink
+				loop.add(beat(BFS_ORDER, { step: 0.07, pop: 1.28 })); // flow spreads from the source
 				hold();
+				endpoints(false);
 				morphTo('array', { ink: 'undraw' }); // un-ink, collapse to baseline — lands on start
 
 				master.add(loop);
@@ -430,6 +452,13 @@ const HeroRecompose = ({ className, onState }) => {
 								width={BAR_W}
 								height={BARS[i].h}
 								rx={1.5}
+							/>
+							<circle
+								data-ring
+								className={styles.ring}
+								cx={0}
+								cy={0}
+								r={ATOM_R * 2.3}
 							/>
 							<circle
 								data-halo
