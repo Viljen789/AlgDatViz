@@ -1,9 +1,12 @@
 import { useCallback, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowRight, ChevronRight, Flame, RotateCcw } from 'lucide-react';
-import { BUILT_TOPICS, FIRST_TOPIC } from '../data/curriculum.js';
+import { BUILT_TOPICS, FIRST_TOPIC, TOPIC_BY_ID } from '../data/curriculum.js';
 import { REVIEW_BANK } from '../components/Review/reviewBank.js';
 import { allMastery } from '../lib/mastery.js';
+import { rankWeakTopics } from '../lib/weakTopics.js';
+import { buildRevisionPlan } from '../lib/revisionPlan.js';
+import { clearExamLog, useExamLog } from '../lib/examLog.js';
 import { addDays, todayKey } from '../lib/activityLog.js';
 import useProgress from '../hooks/useProgress.js';
 import useSrs from '../hooks/useSrs.js';
@@ -12,6 +15,9 @@ import styles from './ProgressPage.module.css';
 
 const HEAT_WEEKS = 13;
 const pct = s => Math.round(s * 100);
+
+// A revision-plan day's short label: "Today" for the first day, "+1"/"+2"… after.
+const dayOffsetLabel = index => (index === 0 ? 'Today' : `+${index}`);
 
 // The heatmap colour ramp, brightest at the right: empty, then three brand-tinted
 // steps. The legend and every day-cell read from this one array so "Less → More"
@@ -23,8 +29,11 @@ const HEAT_RAMP = [
 	'hsl(var(--brand-h) var(--brand-s) var(--brand-l) / 0.95)',
 ];
 
-// One day's count → its ramp colour (0 answered → empty; thresholds at 3 and 6).
-const heat = c => HEAT_RAMP[c <= 0 ? 0 : c < 3 ? 1 : c < 6 ? 2 : 3];
+// One day's count → its ramp bucket 0..3 (0 answered → empty; thresholds at 3
+// and 6). The bucket drives BOTH the fill colour and a redundant inset ring, so
+// the heatmap never encodes intensity by hue alone (colour-blind safe).
+const heatLevel = c => (c <= 0 ? 0 : c < 3 ? 1 : c < 6 ? 2 : 3);
+const heat = c => HEAT_RAMP[heatLevel(c)];
 
 // Month labels keyed to the first week-column that begins in each month, so the
 // strip above the heatmap reads like a calendar without one label per week.
@@ -43,6 +52,13 @@ const MONTHS = [
 	'Dec',
 ];
 
+// "Mon 16 Jun" for a YYYY-MM-DD key — the calendar date beside each plan day.
+const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+const formatPlanDate = key => {
+	const d = new Date(`${key}T00:00:00`);
+	return `${WEEKDAYS[d.getDay()]} ${d.getDate()} ${MONTHS[d.getMonth()]}`;
+};
+
 /**
  * ProgressPage (/progress) — the mastery dashboard.
  *
@@ -51,9 +67,15 @@ const MONTHS = [
  * topics have decayed, how the streak is doing, and how long until the exam.
  */
 const ProgressPage = () => {
-	const { checks, isCompleted, isVisited, overall, reset: resetProgress } =
-		useProgress();
+	const {
+		checks,
+		isCompleted,
+		isVisited,
+		overall,
+		reset: resetProgress,
+	} = useProgress();
 	const { cards, reset: resetSrs } = useSrs();
+	const { examScores } = useExamLog();
 	const {
 		days,
 		examDate,
@@ -64,9 +86,16 @@ const ProgressPage = () => {
 		reset: resetActivity,
 	} = useActivity();
 
+	// One "today" (local YYYY-MM-DD) drives the heatmap window AND the revision
+	// plan's day buckets, so both read the same calendar day.
+	const today = todayKey();
+
+	// Fold the /exam outcomes into mastery: a recent, exam-shaped "could I do this
+	// cold?" signal. This is also what makes an exam-only topic (e.g. graphs, with
+	// no review bank) carry a real score rather than reading as "not started".
 	const mastery = useMemo(
-		() => allMastery({ bank: REVIEW_BANK, checks, cards }),
-		[checks, cards]
+		() => allMastery({ bank: REVIEW_BANK, checks, cards, examScores }),
+		[checks, cards, examScores]
 	);
 
 	const topics = useMemo(
@@ -74,31 +103,33 @@ const ProgressPage = () => {
 			BUILT_TOPICS.map(t => {
 				const m = mastery[t.id];
 				const completed = isCompleted(t.id);
-				const score = m
-					? m.score
-					: completed
-						? 1
-						: isVisited(t.id)
-							? 0.3
-							: 0;
+				const score = m ? m.score : completed ? 1 : isVisited(t.id) ? 0.3 : 0;
 				return {
 					...t,
 					score,
 					answered: m?.answered ?? 0,
 					total: m?.total ?? 0,
 					hasData: m?.hasData ?? false,
+					fromExam: m?.fromExam ?? false,
 				};
 			}),
 		[mastery, isCompleted, isVisited]
 	);
 
+	// One shared weakness ranking (lib/weakTopics.js) at the shared WEAK_THRESHOLD,
+	// so "Shore these up" agrees with the exam summary's study nudge.
 	const weak = useMemo(
-		() =>
-			topics
-				.filter(t => t.hasData && t.score < 0.6)
-				.sort((a, b) => a.score - b.score)
-				.slice(0, 4),
-		[topics]
+		() => rankWeakTopics({ topics, mastery, limit: 4 }),
+		[topics, mastery]
+	);
+
+	// Day-by-day revision plan, only when an exam date is set. Weakest topics are
+	// front-loaded across the remaining days (lib/revisionPlan.js); a plan day
+	// carries {id, name, number, accent, score} per topic but not its route, so we
+	// resolve `to` from the curriculum model when linking.
+	const revisionPlan = useMemo(
+		() => buildRevisionPlan({ topics, mastery, daysUntilExam, today }),
+		[topics, mastery, daysUntilExam, today]
 	);
 
 	// "Touched" = the student has answered a check or finished the topic. We sort
@@ -122,7 +153,6 @@ const ProgressPage = () => {
 		[topics, isTouched]
 	);
 
-	const today = todayKey();
 	const weeks = useMemo(() => {
 		const dow = new Date(`${today}T00:00:00`).getDay();
 		const start = addDays(today, -(dow + (HEAT_WEEKS - 1) * 7));
@@ -167,6 +197,7 @@ const ProgressPage = () => {
 			resetProgress();
 			resetSrs();
 			resetActivity();
+			clearExamLog();
 		}
 	}, [resetProgress, resetSrs, resetActivity]);
 
@@ -228,6 +259,11 @@ const ProgressPage = () => {
 								onChange={e => setExamDate(e.target.value)}
 							/>
 						</label>
+						{daysUntilExam == null && (
+							<p className={styles.statSub}>
+								Set a date for a day-by-day plan.
+							</p>
+						)}
 					</div>
 				</dl>
 			</section>
@@ -246,22 +282,51 @@ const ProgressPage = () => {
 					</div>
 					<div
 						className={styles.heatmap}
-						role="img"
-						aria-label={`${daysStudied} days studied`}
+						role="group"
+						aria-labelledby="heatmap-title"
 					>
+						{/* A spoken summary up front; the grid below carries per-day labels
+						    for screen-reader users who navigate into it. */}
+						<span className={styles.srOnly}>
+							{daysStudied === 0
+								? 'No study days logged in the last 13 weeks.'
+								: `${daysStudied} day${
+										daysStudied === 1 ? '' : 's'
+									} studied in the last 13 weeks. Each cell is one day.`}
+						</span>
 						{weeks.map((col, w) => (
 							<div key={w} className={styles.heatCol}>
-								{col.map(cell => (
-									<span
-										key={cell.k}
-										className={styles.heatCell}
-										title={`${cell.k}: ${cell.count} answered`}
-										style={{
-											background: cell.future ? 'transparent' : heat(cell.count),
-											opacity: cell.future ? 0 : 1,
-										}}
-									/>
-								))}
+								{col.map(cell => {
+									// Intensity rides on TWO channels: the fill colour and a
+									// data-level the CSS turns into an inset ring (for count > 0).
+									// So a colour-blind reader still distinguishes the busier days.
+									const level = cell.future ? 0 : heatLevel(cell.count);
+									return (
+										<span
+											key={cell.k}
+											className={styles.heatCell}
+											data-level={level}
+											data-future={cell.future ? '' : undefined}
+											role={cell.future ? undefined : 'img'}
+											aria-hidden={cell.future ? 'true' : undefined}
+											aria-label={
+												cell.future
+													? undefined
+													: `${cell.k}: ${cell.count} answered`
+											}
+											title={
+												cell.future
+													? undefined
+													: `${cell.k}: ${cell.count} answered`
+											}
+											style={{
+												background: cell.future
+													? 'transparent'
+													: heat(cell.count),
+											}}
+										/>
+									);
+								})}
 							</div>
 						))}
 					</div>
@@ -272,6 +337,7 @@ const ProgressPage = () => {
 						<span
 							key={i}
 							className={styles.heatLegendSwatch}
+							data-level={i}
 							style={{ background: swatch }}
 						/>
 					))}
@@ -284,6 +350,62 @@ const ProgressPage = () => {
 					</p>
 				)}
 			</section>
+
+			{revisionPlan && revisionPlan.topicCount > 0 && (
+				<section className={styles.block} aria-labelledby="plan-title">
+					<h2 id="plan-title" className={styles.blockTitle}>
+						Your revision plan
+					</h2>
+					<p className={styles.blockLede}>
+						{revisionPlan.topicCount} topics across the{' '}
+						{daysUntilExam === 1
+							? 'day before the exam'
+							: `${daysUntilExam} days until the exam`}
+						, weakest first.
+					</p>
+					<ol className={styles.plan}>
+						{revisionPlan.days.map(day => (
+							<li key={day.dateKey} className={styles.planDay}>
+								<div className={styles.planMeta}>
+									<span className={styles.planOffset}>
+										{dayOffsetLabel(day.index)}
+									</span>
+									<span className={styles.planDate}>
+										{formatPlanDate(day.dateKey)}
+									</span>
+								</div>
+								{day.topics.length > 0 ? (
+									<ul className={styles.planTopics}>
+										{day.topics.map(topic => (
+											<li key={topic.id}>
+												<Link
+													to={TOPIC_BY_ID[topic.id]?.to ?? '/'}
+													className={styles.planTopic}
+													style={{ '--accent': topic.accent }}
+												>
+													<span className={styles.planTopicNum}>
+														{topic.number}
+													</span>
+													<span className={styles.planTopicName}>
+														{topic.name}
+													</span>
+													<ArrowRight
+														size={13}
+														strokeWidth={2.2}
+														aria-hidden="true"
+													/>
+												</Link>
+											</li>
+										))}
+									</ul>
+								) : (
+									<p className={styles.planRest}>Buffer or rest.</p>
+								)}
+							</li>
+						))}
+					</ol>
+				</section>
+			)}
 
 			{weak.length > 0 && (
 				<section className={styles.block} aria-labelledby="weak-title">
@@ -373,10 +495,17 @@ const ProgressPage = () => {
 									)}
 									<span className={styles.cardMeta}>
 										{t.hasData
-											? `${t.answered}/${t.total} checks`
+											? t.total > 0
+												? `${t.answered}/${t.total} checks`
+												: 'exam only'
 											: isCompleted(t.id)
 												? 'completed'
 												: 'not started'}
+										{/* A quiet marker when the exam, not the review bank,
+										    set this score (a topic can be exam-only). */}
+										{t.fromExam && (
+											<span className={styles.cardFromExam}>from exam</span>
+										)}
 									</span>
 								</Link>
 							</li>
