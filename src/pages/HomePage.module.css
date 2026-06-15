@@ -798,9 +798,12 @@
 
 .nodeRing {
 	position: absolute;
-	top: 8px;
+	/* Centre on the dot, not the marker box: the marker's padding-top (18px) drops
+	   the dot, so the dot's centre is 18px + half the 18px dot. translate keeps the
+	   ring and its pulse centred on that point regardless of the ring's size. */
+	top: calc(18px + 9px);
 	left: 50%;
-	transform: translateX(-50%);
+	transform: translate(-50%, -50%);
 	width: 26px;
 	height: 26px;
 	border-radius: 50%;
@@ -812,11 +815,11 @@
 @keyframes tracerPulse {
 	0%,
 	100% {
-		transform: translateX(-50%) scale(1);
+		transform: translate(-50%, -50%) scale(1);
 		opacity: 0.65;
 	}
 	50% {
-		transform: translateX(-50%) scale(1.18);
+		transform: translate(-50%, -50%) scale(1.18);
 		opacity: 0.25;
 	}
 }

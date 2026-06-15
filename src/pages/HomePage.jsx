@@ -733,7 +733,9 @@ const HomePage = () => {
 							scroller: pageEl,
 							start: 'top 72%',
 							end: 'bottom 60%',
-							scrub: 0.6,
+							// Track the scroll tightly; 0.6 lagged the ink/comet noticeably
+							// behind the reader. A hair of smoothing avoids jitter.
+							scrub: 0.2,
 						},
 					});
 					// The real technique: a hairline stroke inks on. No traveling
