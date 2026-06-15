@@ -176,7 +176,9 @@
 	font-size: var(--font-size-label);
 	font-weight: var(--font-weight-medium);
 	text-decoration: none;
-	transition: background-color var(--transition), border-color var(--transition);
+	transition:
+		background-color var(--transition),
+		border-color var(--transition);
 }
 
 .heroReview:hover {
@@ -273,7 +275,9 @@
 	font-size: var(--font-size-label);
 	font-weight: var(--font-weight-medium);
 	text-decoration: none;
-	transition: background-color var(--transition), border-color var(--transition);
+	transition:
+		background-color var(--transition),
+		border-color var(--transition);
 }
 
 .reviewCta:hover {
@@ -625,7 +629,11 @@
 	will-change: transform;
 }
 
-/* The faint, unlit filament — always present (the no-JS / reduced-motion rail). */
+/* The spine is a real inked stroke now: an <svg> overlaying the column, holding
+   a faint always-present BASE path and a lit INK path on the same vertical 'd'.
+   This .rail box positions that SVG exactly where the old filament div sat, so
+   the rest-state is unchanged; x=1 in the 0 0 2 viewBox centres on the 2px box
+   (centre at 20px, as before). */
 .rail {
 	position: absolute;
 	z-index: 1;
@@ -633,60 +641,58 @@
 	top: 22px;
 	bottom: 22px;
 	width: 2px;
-	border-radius: var(--radius-pill);
-	background: linear-gradient(
-		180deg,
-		transparent 0%,
-		var(--color-border) 5%,
-		var(--color-border) 95%,
-		transparent 100%
-	);
+	height: auto;
+	overflow: visible;
 	pointer-events: none;
 }
 
-/* The lit portion, drawn from the top down as you scroll (scrubbed scaleY). */
-.railFill {
-	position: absolute;
-	inset: 0;
-	transform-origin: top center;
-	transform: scaleY(1);
-	border-radius: inherit;
-	background: linear-gradient(
-		180deg,
-		hsl(var(--brand-h) var(--brand-s) var(--brand-l) / 0.7) 0%,
-		hsl(var(--brand-h) var(--brand-s) var(--brand-l)) 100%
-	);
-	will-change: transform;
+/* The faint filament — always solid. This IS the no-JS / reduced-motion rail
+   (it replaces the old static div), so the spine is fully visible without JS. */
+.railBase {
+	stroke: url(#homeRailBase);
+	stroke-width: 2;
+	stroke-linecap: round;
+	fill: none;
 }
 
-/* The glowing comet head riding the front of the draw. */
+/* The lit portion, inked from the top down as you scroll (scrubbed drawSVG).
+   A hairline at the brand hue — no traveling pulse, no neon. */
+.railFill {
+	stroke: url(#homeRailInk);
+	stroke-width: 2;
+	stroke-linecap: round;
+	fill: none;
+}
+
+/* The comet head riding the literal ink tip (placed by MotionPath). Anchored at
+   the SVG's own origin so MotionPath's translate lands on the path point. */
 .railHead {
 	position: absolute;
-	top: -5px;
-	left: 50%;
+	top: 22px;
+	left: 19px;
 	width: 10px;
 	height: 10px;
-	margin-left: -5px;
+	margin: -5px 0 0 -4px;
 	border-radius: 50%;
 	background: hsl(var(--brand-h) var(--brand-s) var(--brand-l));
 	opacity: 0;
 	will-change: transform;
 }
 
-/* Dark keeps the neon bloom; light draws indigo ink on paper with a soft ring. */
+/* Paper-ink: the lit ink stays a crisp hairline on cream. Dark keeps only a
+   whisper of bloom (dialled well down from the old neon box-shadow, which was
+   the least reading-room thing on the page); light gives the comet a soft ring. */
 :global([data-theme='dark']) .railFill {
-	box-shadow: 0 0 12px hsl(var(--brand-h) var(--brand-s) var(--brand-l) / 0.55);
+	filter: drop-shadow(
+		0 0 2px hsl(var(--brand-h) var(--brand-s) var(--brand-l) / 0.35)
+	);
 }
 :global([data-theme='dark']) .railHead {
-	box-shadow:
-		0 0 8px 2px hsl(var(--brand-h) var(--brand-s) var(--brand-l) / 0.9),
-		0 0 20px 7px hsl(var(--brand-h) var(--brand-s) var(--brand-l) / 0.45);
+	box-shadow: 0 0 6px 1px
+		hsl(var(--brand-h) var(--brand-s) var(--brand-l) / 0.5);
 }
 :global([data-theme='light']) .railHead {
 	box-shadow: 0 0 0 4px hsl(var(--brand-h) var(--brand-s) var(--brand-l) / 0.16);
-}
-:global([data-theme='dark']) .nodeSpark {
-	mix-blend-mode: screen;
 }
 :global([data-theme='light']) .lamp {
 	opacity: 0.5;
@@ -756,19 +762,23 @@
 	background: var(--accent);
 }
 
-/* One-shot ignition ping, fired by GSAP as the drawing line reaches a node. */
-.nodeSpark {
-	position: absolute;
-	top: 18px;
-	left: 11px;
-	width: 18px;
-	height: 18px;
-	border-radius: 50%;
-	background: radial-gradient(circle, var(--accent) 0%, transparent 70%);
-	transform: scale(0.3);
-	opacity: 0;
-	pointer-events: none;
-	z-index: 0;
+/* The completion tick. Inside the filled dot it carries the same two-segment
+   geometry the daily-goal ring uses; GSAP inks it on once when a finished node
+   first scrolls in (drawSVG), and it is fully drawn by default so reduced-motion
+   and no-JS show it immediately. */
+.nodeCheck {
+	width: 11px;
+	height: 11px;
+	display: block;
+	overflow: visible;
+}
+
+.nodeCheckPath {
+	fill: none;
+	stroke: currentColor;
+	stroke-width: 2.2;
+	stroke-linecap: round;
+	stroke-linejoin: round;
 }
 
 .nodeVisited .nodeDot {
@@ -1065,8 +1075,9 @@
 		left: 15px;
 	}
 
-	.nodeSpark {
-		left: 7px;
+	/* Keep the comet's anchor on the narrower rail so MotionPath lands true. */
+	.railHead {
+		left: 15px;
 	}
 
 	.nodeMarker {
@@ -1078,4 +1089,3 @@
 		gap: 12px;
 	}
 }
-

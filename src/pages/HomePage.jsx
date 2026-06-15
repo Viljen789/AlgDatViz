@@ -1,8 +1,10 @@
 import { useCallback, useLayoutEffect, useMemo, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { ArrowRight, Check, Clock, Flame, Lock } from 'lucide-react';
+import { ArrowRight, Clock, Flame, Lock } from 'lucide-react';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
+import { DrawSVGPlugin } from 'gsap/DrawSVGPlugin';
+import { MotionPathPlugin } from 'gsap/MotionPathPlugin';
 import {
 	BUILT_TOPICS,
 	CURRICULUM,
@@ -18,7 +20,13 @@ import HeroRecompose from './HeroRecompose.jsx';
 import { PHASES, THESIS_SENTENCE, WASH_HUE } from './recomposeLayout.js';
 import styles from './HomePage.module.css';
 
-gsap.registerPlugin(ScrollTrigger);
+gsap.registerPlugin(ScrollTrigger, DrawSVGPlugin, MotionPathPlugin);
+
+// The completion tick — GoalRing's exact two-segment geometry, framed by a
+// cropped 16-unit viewBox (12 12 16 16) so it sits centred in the station dot.
+// Rendered as an inline <path> so it can ink on (drawSVG) the first time a
+// finished node scrolls into view.
+const NODE_CHECK_D = 'M14.5 20.5 l3.5 3.5 l7 -8';
 
 const PreviewBars = () => (
 	<svg
@@ -198,7 +206,8 @@ const HomePage = () => {
 			fig.classList.add(styles.isFlipping);
 			clearTimeout(flipTimer.current);
 			flipTimer.current = setTimeout(() => {
-				if (figureRef.current) figureRef.current.classList.remove(styles.isFlipping);
+				if (figureRef.current)
+					figureRef.current.classList.remove(styles.isFlipping);
 			}, 220);
 		}
 	}, []);
@@ -208,9 +217,16 @@ const HomePage = () => {
 
 	// Spaced-repetition: how many cards are due (or newly eligible) right now.
 	// Closer to the exam ⇒ a larger new-card budget.
-	const isNewEligible = useCallback(entry => isVisited(entry.topicId), [isVisited]);
+	const isNewEligible = useCallback(
+		entry => isVisited(entry.topicId),
+		[isVisited]
+	);
 	const duePlan = useMemo(
-		() => srsPlan(REVIEW_BANK, { newCap: examNewCap(daysUntilExam), isNewEligible }),
+		() =>
+			srsPlan(REVIEW_BANK, {
+				newCap: examNewCap(daysUntilExam),
+				isNewEligible,
+			}),
 		[srsPlan, isNewEligible, daysUntilExam]
 	);
 	const dueTotal = duePlan.dueCount + duePlan.freshCount;
@@ -351,8 +367,13 @@ const HomePage = () => {
 						},
 					});
 
-				// ---- The spine draws itself; a glow pool follows the reader ----
+				// ---- The spine is inked from the top down as you scroll ----
+				// A faint BASE path stays solid (CSS) as the no-JS / reduced-motion
+				// rail; the lit INK path draws 0%->100% on this scrubbed
+				// ScrollTrigger, and the comet rides the literal ink tip via
+				// MotionPath, so position-on-spine reads as progress honestly.
 				const railEl = q('[data-rail]');
+				const baseEl = q('[data-rail-base]');
 				const fillEl = q('[data-rail-fill]');
 				const headEl = q('[data-rail-head]');
 				const glowEl = q('[data-rail-glow]');
@@ -360,6 +381,8 @@ const HomePage = () => {
 
 				if (railEl && fillEl && spineEl) {
 					gsap.set([headEl, glowEl].filter(Boolean), { opacity: 1 });
+					// The base reads as the full filament from the first frame.
+					if (baseEl) gsap.set(baseEl, { drawSVG: '100%' });
 					const railTl = gsap.timeline({
 						scrollTrigger: {
 							trigger: spineEl,
@@ -369,12 +392,25 @@ const HomePage = () => {
 							scrub: 0.6,
 						},
 					});
-					railTl.fromTo(fillEl, { scaleY: 0 }, { scaleY: 1, ease: 'none' }, 0);
+					// The real technique: a hairline stroke inks on. No traveling
+					// gradient pulse (that would tip into 'loading bar').
+					railTl.fromTo(
+						fillEl,
+						{ drawSVG: '0%' },
+						{ drawSVG: '100%', ease: 'none' },
+						0
+					);
 					if (headEl)
-						railTl.fromTo(
+						railTl.to(
 							headEl,
-							{ y: 0 },
-							{ y: () => railEl.offsetHeight, ease: 'none' },
+							{
+								motionPath: {
+									path: fillEl,
+									align: fillEl,
+									alignOrigin: [0.5, 0.5],
+								},
+								ease: 'none',
+							},
 							0
 						);
 					if (glowEl)
@@ -391,6 +427,9 @@ const HomePage = () => {
 				if (nodes.length) {
 					gsap.set(nodes, { opacity: 0, y: 30 });
 					const revealed = new WeakSet();
+					// Mirrors `revealed`: guards the one-shot check ink so a finished
+					// node's tick strokes on exactly once, the first time it enters.
+					const inked = new WeakSet();
 					ScrollTrigger.batch(nodes, {
 						scroller: pageEl,
 						start: 'top 90%',
@@ -408,7 +447,7 @@ const HomePage = () => {
 							});
 							fresh.forEach((node, i) => {
 								const dot = node.querySelector('[data-dot]');
-								const spark = node.querySelector('[data-spark]');
+								const check = node.querySelector('[data-check]');
 								if (dot)
 									gsap.fromTo(
 										dot,
@@ -420,18 +459,21 @@ const HomePage = () => {
 											delay: i * 0.12,
 										}
 									);
-								if (spark)
+								// A completed station's tick inks on once (meaning: done), in
+								// place of the old meaning-free spark ping.
+								if (check && !inked.has(node)) {
+									inked.add(node);
 									gsap.fromTo(
-										spark,
-										{ scale: 0.3, opacity: 0.85 },
+										check,
+										{ drawSVG: '0%' },
 										{
-											scale: 2.6,
-											opacity: 0,
-											duration: 1,
+											drawSVG: '100%',
+											duration: 0.3,
 											ease: 'power2.out',
-											delay: i * 0.12,
+											delay: i * 0.12 + 0.18,
 										}
 									);
+								}
 							});
 						},
 					});
@@ -540,7 +582,11 @@ const HomePage = () => {
 
 						{started && (
 							<div className={styles.todayGoal}>
-								<GoalRing value={todayCount} goal={DAILY_GOAL} done={goalDone} />
+								<GoalRing
+									value={todayCount}
+									goal={DAILY_GOAL}
+									done={goalDone}
+								/>
 								<div className={styles.goalText}>
 									{goalDone ? (
 										<>
@@ -605,10 +651,70 @@ const HomePage = () => {
 
 				<div className={styles.spineWrap} data-spine>
 					<div className={styles.glow} aria-hidden="true" data-rail-glow />
-					<div className={styles.rail} aria-hidden="true" data-rail>
-						<span className={styles.railFill} data-rail-fill />
-						<span className={styles.railHead} data-rail-head />
-					</div>
+					{/* The spine is a real inked stroke. Two stacked paths share one
+					    vertical 'd': a faint BASE that is always solid (this is the
+					    no-JS / reduced-motion rail), and a lit INK path the scroll
+					    ScrollTrigger draws 0%→100% from the top down. The 10px comet
+					    rides the literal ink tip via MotionPath, so its position on the
+					    spine equals the reader's progress through the curriculum. */}
+					<svg
+						className={styles.rail}
+						aria-hidden="true"
+						data-rail
+						viewBox="0 0 2 1000"
+						preserveAspectRatio="none"
+					>
+						<defs>
+							{/* Vertical fades match the old rail's softened ends. Stroked in
+							    user space (y 0..1000) so preserveAspectRatio="none" only
+							    distorts x, which a vertical line never uses. */}
+							<linearGradient
+								id="homeRailBase"
+								x1="0"
+								y1="0"
+								x2="0"
+								y2="1000"
+								gradientUnits="userSpaceOnUse"
+							>
+								<stop
+									offset="0"
+									stopColor="var(--color-border)"
+									stopOpacity="0"
+								/>
+								<stop offset="0.05" stopColor="var(--color-border)" />
+								<stop offset="0.95" stopColor="var(--color-border)" />
+								<stop
+									offset="1"
+									stopColor="var(--color-border)"
+									stopOpacity="0"
+								/>
+							</linearGradient>
+							<linearGradient
+								id="homeRailInk"
+								x1="0"
+								y1="0"
+								x2="0"
+								y2="1000"
+								gradientUnits="userSpaceOnUse"
+							>
+								<stop
+									offset="0"
+									stopColor="hsl(var(--brand-h) var(--brand-s) var(--brand-l) / 0.7)"
+								/>
+								<stop
+									offset="1"
+									stopColor="hsl(var(--brand-h) var(--brand-s) var(--brand-l))"
+								/>
+							</linearGradient>
+						</defs>
+						{/* No non-scaling-stroke here: with preserveAspectRatio="none" the
+						    y-scale must drive the dash lengths so drawSVG maps to the box
+						    height, while the x-scale (2px box / 2 units = 1) already keeps
+						    the vertical stroke a crisp ~2px. */}
+						<path className={styles.railBase} data-rail-base d="M1 0 V1000" />
+						<path className={styles.railFill} data-rail-fill d="M1 0 V1000" />
+					</svg>
+					<span className={styles.railHead} aria-hidden="true" data-rail-head />
 
 					<ol className={styles.spine} aria-label="Learning path">
 						{CURRICULUM.map((topic, idx) => {
@@ -691,10 +797,21 @@ const HomePage = () => {
 									}}
 								>
 									<div className={styles.nodeMarker} aria-hidden="true">
-										<span className={styles.nodeSpark} data-spark />
 										<span className={styles.nodeDot} data-dot>
 											{completed ? (
-												<Check size={11} strokeWidth={3.2} />
+												<svg
+													className={styles.nodeCheck}
+													viewBox="12 12 16 16"
+													fill="none"
+												>
+													<path
+														className={styles.nodeCheckPath}
+														data-check
+														d={NODE_CHECK_D}
+														pathLength="1"
+														vectorEffect="non-scaling-stroke"
+													/>
+												</svg>
 											) : (
 												<span className={styles.nodeDotInner} />
 											)}
