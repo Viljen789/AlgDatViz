@@ -3,6 +3,7 @@ import { decisionTree, flattenLevels } from './decisionTree.js';
 import { label as recLabel } from './stability.js';
 import useReducedMotion from '../../hooks/useReducedMotion.js';
 import {
+	COUNTING_CUMULATIVE,
 	COUNTING_DEMO,
 	STABILITY,
 	TREE_BOUND,
@@ -72,9 +73,13 @@ const CountingView = () => {
 		return c;
 	}, [k]);
 	const peak = Math.max(...counts, 1);
-	// The focus anchor: follow the first value into the count slot it addresses.
-	// Slots are the count table; the value IS the index (count[follow] += 1).
+	// The focus anchor: follow the first value through the stable pass. In the
+	// tally it addresses count[follow]; after the cumulative pass count[follow]
+	// is the 1-indexed final position of the LAST occurrence of that value, where
+	// the right-to-left scan places it.
 	const follow = COUNTING_DEMO[0];
+	const cumulative = COUNTING_CUMULATIVE;
+	const followPos = cumulative[follow]; // 1-indexed output position of last `follow`
 
 	return (
 		<div className={styles.algView} data-reduced={reducedMotion ? 'true' : undefined}>
@@ -121,8 +126,43 @@ const CountingView = () => {
 					);
 				})}
 			</div>
+			<p className={styles.connector}>
+				accumulate counts → final positions; place from the input, right to left ↓
+			</p>
+			{/* The cumulative row: count[v] becomes the number of keys ≤ v, i.e. the
+			    1-indexed final position of the LAST occurrence of v. */}
+			<div
+				className={styles.cumRow}
+				aria-label="cumulative counts (final positions of the last of each value)"
+			>
+				{cumulative.map((pos, value) => (
+					<div
+						key={value}
+						className={`${styles.cumCol} ${value === follow ? styles.cumColFollow : ''}`}
+					>
+						<span className={styles.cumPos}>{pos}</span>
+						<span className={styles.histValue}>≤ {value}</span>
+					</div>
+				))}
+			</div>
+			{/* The output array: the followed value's last copy settles into position
+			    count[follow], demonstrating the stable placement the prose describes. */}
+			<div className={styles.outputRow} aria-label="output array (1-indexed)">
+				{Array.from({ length: COUNTING_DEMO.length }, (_, i) => {
+					const slot = i + 1; // 1-indexed
+					const isFollow = slot === followPos;
+					return (
+						<span
+							key={i}
+							className={`${styles.cell} ${isFollow ? styles.cellFollow : ''}`}
+						>
+							{isFollow ? follow : ''}
+						</span>
+					);
+				})}
+			</div>
 			<p className={styles.caption}>
-				n = {COUNTING_DEMO.length} · k = {k} → O(n + k), no comparisons
+				last {follow} → position count[{follow}] = {followPos} · stable, O(n + k), no comparisons
 			</p>
 		</div>
 	);

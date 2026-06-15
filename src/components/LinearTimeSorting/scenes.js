@@ -3,7 +3,8 @@
 //
 //   0 bound       — every comparison sort is a decision tree…
 //   1 leaves      — …with ≥ n! leaves, forcing height ≥ log2(n!) = Ω(n log n).
-//   2 counting    — counting sort sidesteps it: keys ARE indices. O(n + k).
+//   2 counting    — counting sort sidesteps it: tally, accumulate into final
+//                   positions, place from the input right-to-left. Stable. O(n+k).
 //   3 radix       — radix repeats a stable per-digit counting pass. O(d·(n+k)).
 //   4 stability   — why radix NEEDS a stable subroutine (ties must be kept).
 //   5 bucket      — bucket sort distributes by range; O(n) when keys spread.
@@ -14,12 +15,24 @@
 // are derived from the pure generators (decisionTree, stability), never
 // hardcoded, so the prose and the stage stay in lock-step.
 
-import { lowerBound } from './decisionTree.js';
+import { factorial, log2Factorial, lowerBound } from './decisionTree.js';
 import { stabilityDemo } from './stability.js';
 
 // The canvas case: sorting three labelled items. 3! = 6, ⌈log2 6⌉ = 3.
 export const TREE_LABELS = ['a', 'b', 'c'];
 export const TREE_BOUND = lowerBound(TREE_LABELS.length);
+
+// A small concrete n for the Θ(n log n) sandwich in the 'leaves' scene. n = 8
+// keeps n! exact (40320) and gives clean halves (n/2 = 4). All numbers below are
+// derived from the pure helpers, never hardcoded.
+export const LEAVES_N = 8;
+const LEAVES_FACT = factorial(LEAVES_N); // 8! = 40320
+const LEAVES_LOG2 = log2Factorial(LEAVES_N); // log2(8!) ≈ 15.30
+const LEAVES_FLOOR = Math.floor(LEAVES_LOG2); // ⌊log2(8!)⌋ = 15
+const LEAVES_MIN_CMP = Math.ceil(LEAVES_LOG2); // ⌈log2(8!)⌉ = 16 worst-case comparisons
+// Sandwich endpoints: (n/2)·log2(n/2) ≤ log2(n!) ≤ n·log2(n).
+const SANDWICH_LO = (LEAVES_N / 2) * Math.log2(LEAVES_N / 2); // 4·log2 4 = 8
+const SANDWICH_HI = LEAVES_N * Math.log2(LEAVES_N); // 8·log2 8 = 24
 
 // The stability demo keys (ties on 3 and 1 so reordering is visible).
 export const STABILITY_KEYS = [3, 1, 3, 1];
@@ -28,8 +41,34 @@ export const STABILITY = stabilityDemo(STABILITY_KEYS);
 // Counting-sort demo: a small array over a small range, so k stays tiny.
 export const COUNTING_DEMO = [4, 2, 2, 0, 3, 2, 1];
 const COUNTING_K = Math.max(...COUNTING_DEMO) + 1; // slots 0..max
-// Which bucket (count slot) does the first value land in? (predict check)
-const FIRST_VALUE = COUNTING_DEMO[0];
+
+// The placement step, derived (never hardcoded) from the demo so the prose, the
+// check, and the stage agree. We tally counts, turn them into a CUMULATIVE
+// (prefix-sum) array, then place each input element by scanning the INPUT array
+// right-to-left, writing it at C[value] and decrementing C[value].
+//
+//   value v:        0  1  2  3  4
+//   count[v]:       1  1  3  1  1
+//   cumulative[v]:  1  2  5  6  7   (C[v] = number of keys <= v)
+//
+// 1-indexed output positions 1..n. The cumulative C[v] is the final 1-indexed
+// position of the LAST occurrence of value v. We feature value 2 (it has ties,
+// so the right-to-left scan and the decrement actually matter).
+const COUNTING_COUNTS = (() => {
+	const c = new Array(COUNTING_K).fill(0);
+	COUNTING_DEMO.forEach(v => (c[v] += 1));
+	return c;
+})();
+export const COUNTING_CUMULATIVE = (() => {
+	const cum = COUNTING_COUNTS.slice();
+	for (let v = 1; v < cum.length; v += 1) cum[v] += cum[v - 1];
+	return cum;
+})();
+// The value we trace through placement: the first input value, 4 (here also the
+// max, so its last copy lands at the very end — easy to verify by eye).
+const PLACE_VALUE = COUNTING_DEMO[0];
+// 1-indexed final position of the LAST occurrence of PLACE_VALUE = C[PLACE_VALUE].
+const PLACE_POSITION = COUNTING_CUMULATIVE[PLACE_VALUE];
 
 export const SCENES = [
 	{
@@ -49,34 +88,27 @@ export const SCENES = [
 		id: 'leaves',
 		eyebrow: 'Ω(n log n)',
 		title: 'n! leaves force a tall tree.',
-		body: `A binary tree of height h has at most 2^h leaves. To hold n! leaves it needs 2^h ≥ n!, so h ≥ log₂(n!). And log₂(n!) grows like n log n. That is the wall: no comparison sort — merge, quick, heap, anything — can beat Ω(n log n) comparisons in the worst case.`,
+		body: `A binary tree of height h has at most 2^h leaves. To hold n! leaves it needs 2^h ≥ n!, so h ≥ log₂(n!). That log₂(n!) is Θ(n log n), squeezed from both sides. Drop the smaller half of the factors: n! ≥ (n/2)^(n/2), so log₂(n!) ≥ (n/2)·log₂(n/2) = Ω(n log n). Inflate every factor to n: n! ≤ n^n, so log₂(n!) ≤ n·log₂ n = O(n log n). The two bounds meet, so log₂(n!) = Θ(n log n). That is the wall: no comparison sort (merge, quick, heap, anything) can beat Ω(n log n) comparisons in the worst case.`,
 		check: {
-			kind: 'choice',
-			prompt:
-				'Why can no clever comparison sort drop below Ω(n log n) in the worst case?',
-			options: [
-				'Comparisons are slow',
-				'Its tree must have ≥ n! leaves',
-				'Memory runs out',
-				'Recursion is required',
-			],
-			answer: 'Its tree must have ≥ n! leaves',
-			explanation:
-				'The bound is information-theoretic, not about constants. The tree must distinguish all n! input orders, so it needs n! leaves, which forces height ≥ log₂(n!) = Ω(n log n). The only way out is to stop comparing keys to each other — which is exactly what the next three sorts do.',
+			kind: 'numeric',
+			prompt: `For n = ${LEAVES_N}, the sandwich gives ${SANDWICH_LO} ≤ log₂(${LEAVES_N}!) ≤ ${SANDWICH_HI}. The true value is log₂(${LEAVES_FACT}) ≈ ${LEAVES_LOG2.toFixed(2)}. What is ⌊log₂(${LEAVES_N}!)⌋?`,
+			answer: LEAVES_FLOOR,
+			placeholder: `${SANDWICH_LO}–${SANDWICH_HI}`,
+			explanation: `⌊log₂(${LEAVES_N}!)⌋ = ${LEAVES_FLOOR}, and it sits inside the sandwich: (n/2)·log₂(n/2) = ${SANDWICH_LO} ≤ ${LEAVES_LOG2.toFixed(2)} ≤ ${SANDWICH_HI} = n·log₂ n. Since the tree height must satisfy h ≥ log₂(${LEAVES_N}!), any comparison sort needs at least ⌈log₂(${LEAVES_N}!)⌉ = ${LEAVES_MIN_CMP} comparisons to sort ${LEAVES_N} distinct items in the worst case. Both endpoints scale as n log n, so the minimum is Θ(n log n): tightening or loosening the constant cannot escape it. The only way out is to stop comparing keys, which is exactly what the next three sorts do.`,
 		},
 	},
 	{
 		id: 'counting',
 		eyebrow: 'Counting sort',
-		title: 'Use the key as an address, not a thing to compare.',
-		body: `Counting sort never compares two keys. It counts how many of each value appear (one tally per value), then replays the tallies from low to high. With n items drawn from the range 0…k it costs O(n + k) — linear when k is small. No comparisons means the Ω(n log n) wall simply does not apply.`,
+		title: 'Count, accumulate into positions, then place.',
+		body: `Counting sort never compares two keys. First it tallies how many of each value appear (count[v]). Then it accumulates those counts into a running total, so count[v] becomes the number of keys ≤ v: the final position of the last value v. Then it walks the INPUT right to left, placing each element at count[value] in the output and decrementing count[value]. Walking right to left while decrementing keeps equal keys in their input order, so the sort is stable and carries each element (and its satellite data) intact. With n items over the range 0…k it costs O(n + k).`,
 		check: {
 			kind: 'predict',
 			mode: 'numeric',
-			prompt: `Counting sort reads the first value, ${FIRST_VALUE}. Which count-table slot does it increment?`,
-			answer: FIRST_VALUE,
-			placeholder: `0–${COUNTING_K - 1}`,
-			explanation: `Slot ${FIRST_VALUE}. The value itself IS the index — count[${FIRST_VALUE}] += 1. That direct addressing is how counting sort avoids comparing: the key tells it exactly where to tally. The table has k = ${COUNTING_K} slots (values 0…${COUNTING_K - 1}); the cost O(n + k) pays for both the n reads and the k slots scanned on replay.`,
+			prompt: `Counts are tallied and turned cumulative, so count[${PLACE_VALUE}] = ${PLACE_POSITION}. Scanning the input right to left, the last ${PLACE_VALUE} is reached. Into which output position (1-indexed) does it go?`,
+			answer: PLACE_POSITION,
+			placeholder: `1–${COUNTING_DEMO.length}`,
+			explanation: `Position ${PLACE_POSITION}. After the cumulative pass count[${PLACE_VALUE}] holds the number of keys ≤ ${PLACE_VALUE}, which is exactly where the last ${PLACE_VALUE} belongs: output[count[${PLACE_VALUE}]] = ${PLACE_VALUE}. Then count[${PLACE_VALUE}] is decremented to ${PLACE_POSITION - 1}, so the next ${PLACE_VALUE} encountered (if any) lands just before it. Scanning right to left and decrementing is what keeps tied keys in input order, which is why this pass is stable. That stability is what radix will rely on.`,
 		},
 	},
 	{
@@ -117,7 +149,7 @@ export const SCENES = [
 			],
 			answer: { stable: 'keeps', unstable: 'breaks' },
 			explanation:
-				'A stable pass keeps tied records in their original order, so each radix pass safely refines the previous one. An unstable pass may swap equal-key records — and once a low-significance ordering is scrambled, no later pass can recover it. That is why radix sort must use a stable subroutine (counting sort is the usual choice).',
+				'A stable pass keeps tied records in their original order, so each radix pass safely refines the previous one. An unstable pass may swap equal-key records, and once a low-significance ordering is scrambled, no later pass can recover it. That is why radix sort must use a stable subroutine: counting sort qualifies precisely because its place-from-cumulative pass (input scanned right to left, counts decremented) leaves tied keys in input order.',
 		},
 	},
 	{
