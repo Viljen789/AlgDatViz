@@ -5,6 +5,7 @@ import {
 	BFS_ORDER,
 	EDGE_POOL,
 	HEAPIFY_PATH,
+	ORDER,
 	STATES,
 	VIEWBOX,
 	WASH_HUE,
@@ -12,17 +13,55 @@ import {
 } from './recomposeLayout.js';
 import styles from './HeroRecompose.module.css';
 
-// "Recompose" — one conserved company of 14 atoms re-forming itself through
-// array → sorted → tree → heap → graph → array, forever. The same data, every
-// structure. See recomposeLayout.js for the geometry; this file owns the GSAP
-// loop and the static reduced-motion frame (a drawn binary tree).
+// "Recompose" — one conserved company of 14 atoms re-forming itself through the
+// curriculum's spine, forever:
+//   array → sorted → tree → heap → graph → shortest path → spanning tree → max flow → array
+// The same data, every structure. See recomposeLayout.js for the geometry; this
+// file owns the GSAP loop, the per-edge "look" (path dim/highlight, flow fill),
+// and the static reduced-motion frame (a drawn binary tree).
 
 const ATOM_R = 6;
 const BAR_W = 3;
 const EDGE_OP = 0.42;
+const BASE_EDGE_W = 1.5; // matches .edge stroke-width; animated as inline style
 const BAR_OP = 0.5;
 const MORPH = 1.7;
 const HOLD = 1.4;
+
+// Largest flow capacity in the constellation — scales pipe thickness in maxFlow.
+const MAX_CAP = Math.max(
+	1,
+	...Array.from(
+		{ length: EDGE_POOL },
+		(_, k) => edgeFrame('maxFlow', k).cap ?? 0
+	)
+);
+
+// edgeLook — the non-geometry visual target (opacity, stroke width, dash offset)
+// for pooled line k in a given state. Endpoints come from edgeFrame; this is where
+// each state's *meaning* is painted:
+//   • shortest path → light the route, dim everything else (opacity contrast).
+//   • max flow      → thickness ∝ capacity, fill (1 − dashoffset) ∝ flow/cap, so an
+//                     unused pipe (flow 0) reads as an empty channel.
+//   • every other state → a uniform ink, fully drawn.
+// Because every morph animates toward these targets, dim/width/fill all self-reset
+// the moment the loop leaves a state — no per-state teardown needed.
+const edgeLook = (state, k) => {
+	const f = edgeFrame(state, k);
+	if (!f.active) return { opacity: 0, width: BASE_EDGE_W, offset: 1 };
+	if (f.flow != null && f.cap != null) {
+		const frac = f.cap > 0 ? f.flow / f.cap : 0;
+		return {
+			opacity: frac > 0 ? EDGE_OP + 0.28 * frac : EDGE_OP * 0.3,
+			width: BASE_EDGE_W + 3 * (f.cap / MAX_CAP),
+			offset: 1 - frac, // partial draw from the source end = how full the pipe is
+		};
+	}
+	if (f.highlight)
+		return { opacity: 0.85, width: BASE_EDGE_W + 1.4, offset: 0 };
+	if (f.dim) return { opacity: EDGE_OP * 0.18, width: BASE_EDGE_W, offset: 0 };
+	return { opacity: EDGE_OP, width: BASE_EDGE_W, offset: 0 };
+};
 
 const HeroRecompose = ({ className, onState }) => {
 	const rootRef = useRef(null);
@@ -61,7 +100,13 @@ const HeroRecompose = ({ className, onState }) => {
 					attr: { height: i => BARS[i].h, y: 0 },
 					autoAlpha: 0,
 				});
-				gsap.set(lines, { autoAlpha: 0, strokeDashoffset: 1 });
+				// Inline strokeWidth so it overrides the .edge stylesheet rule, letting
+				// maxFlow vary pipe thickness per capacity.
+				gsap.set(lines, {
+					autoAlpha: 0,
+					strokeWidth: BASE_EDGE_W,
+					strokeDashoffset: 1,
+				});
 				gsap.set(halos, { autoAlpha: 0, scale: 1 });
 				gsap.set(svg, { '--wash-h': WASH_HUE.array });
 
@@ -92,12 +137,15 @@ const HeroRecompose = ({ className, onState }) => {
 				});
 				const hold = (d = HOLD) => loop.to({}, { duration: d });
 
-				// edgeMode decides how the pooled lines behave through a transition:
-				//   'draw'  → ink on, parent→child (only where that is literally true)
-				//   'undraw'→ un-ink as the structure collapses back to the array
-				//   else    → just retarget endpoints (bend a tree into a heap, or
-				//             jump to unrelated graph pairs) with no false "pointer" ink
-				const morphTo = (state, edgeMode) => {
+				// `ink` controls only the stroke-dashoffset tween (the draw-on flourish):
+				//   'draw'  → ink the active lines on, parent→child, with a growth stagger
+				//   'flow'  → settle each pipe to its flow/cap fill (staggered)
+				//   'undraw'→ un-ink everything as the structure collapses to the array
+				//   'keep'  → snap each line to its resting fill (bend a tree, trim a graph,
+				//             re-tint a path) with no staggered re-ink
+				// Endpoints, opacity and width always retarget to edgeLook, so dim/width/
+				// fill self-reset between states regardless of ink mode.
+				const morphTo = (state, { ink = 'keep' } = {}) => {
 					loop.to(atoms, {
 						x: i => STATES[state].atoms[i].x,
 						y: i => STATES[state].atoms[i].y,
@@ -117,30 +165,39 @@ const HeroRecompose = ({ className, onState }) => {
 								x2: k => edgeFrame(state, k).x2,
 								y2: k => edgeFrame(state, k).y2,
 							},
-							autoAlpha: k => (edgeFrame(state, k).active ? EDGE_OP : 0),
+							strokeWidth: k => edgeLook(state, k).width,
+							autoAlpha: k => edgeLook(state, k).opacity,
 							duration: MORPH,
 						},
 						'<'
 					);
-					if (edgeMode === 'draw') {
-						// Active edges ink on (index-order stagger reads as growth from the
-						// root / head). A plain `to` (not fromTo) means edges a prior state
-						// already inked stay put, so a denser state draws only its NEW lines
-						// instead of re-inking the ones already on screen.
+					if (ink === 'draw' || ink === 'flow') {
+						// A plain `to` (not fromTo) means lines already at their target stay
+						// put, so a denser state inks only its NEW lines instead of re-inking
+						// the ones already on screen; the stagger reads as growth.
 						loop.to(
 							lines,
 							{
-								strokeDashoffset: k => (edgeFrame(state, k).active ? 0 : 1),
+								strokeDashoffset: k => edgeLook(state, k).offset,
 								duration: 0.7,
 								stagger: { each: 0.05 },
 								ease: 'power1.inOut',
 							},
 							'<0.2'
 						);
-					} else if (edgeMode === 'undraw') {
+					} else if (ink === 'undraw') {
 						loop.to(
 							lines,
 							{ strokeDashoffset: 1, duration: MORPH * 0.7, ease: 'power1.in' },
+							'<'
+						);
+					} else {
+						loop.to(
+							lines,
+							{
+								strokeDashoffset: k => edgeLook(state, k).offset,
+								duration: MORPH,
+							},
 							'<'
 						);
 					}
@@ -190,19 +247,22 @@ const HeroRecompose = ({ className, onState }) => {
 				};
 
 				hold(); // dwell on the array
-				morphTo('list', 'draw'); // the array linked into a chain — pointers ink on
+				morphTo('sorted'); // the same dots slide into rank order (bars stay)
 				hold();
-				morphTo('sorted', 'undraw'); // pointers un-ink, atoms sort, bars return
+				morphTo('tree', { ink: 'draw' }); // ink the tree pointers on, root → leaves
 				hold();
-				morphTo('tree', 'draw'); // ink the tree pointers on, root → leaves
-				hold();
-				morphTo('heap', 'bend'); // same pointers, just re-packed (no re-ink)
+				morphTo('heap'); // value-honest reseat; the skeleton lines bend, no re-ink
 				loop.add(beat(HEAPIFY_PATH, { step: 0.34, pop: 1.5 })); // heapify sift
-				morphTo('graph', 'draw'); // the cycle edges ink on to complete the denser graph
-				loop.add(beat(BFS_ORDER, { step: 0.1, pop: 1.32 })); // BFS frontier
-				morphTo('spanningTree'); // the cycle edges fade — trimmed to the spanning tree
+				morphTo('graph', { ink: 'draw' }); // fly to the constellation; cycle edges ink on
+				loop.add(beat(BFS_ORDER, { step: 0.1, pop: 1.32 })); // BFS frontier wave
 				hold();
-				morphTo('array', 'undraw'); // un-ink and collapse to the baseline — lands on the start
+				morphTo('shortestPath'); // light the fewest-hops route, dim the rest
+				hold();
+				morphTo('spanningTree'); // trim the cycles to a tree that still spans all
+				hold();
+				morphTo('maxFlow', { ink: 'flow' }); // re-densify; fill each pipe to flow / cap
+				hold();
+				morphTo('array', { ink: 'undraw' }); // un-ink, collapse to baseline — lands on start
 
 				master.add(loop);
 
@@ -224,11 +284,13 @@ const HeroRecompose = ({ className, onState }) => {
 				};
 			});
 
-			// Reduced motion: still tell the whole story — one dataset re-read as five
-			// structures, each named — but with NO sliding, scaling, or draw-on. Every
+			// Reduced motion: still tell the whole story — one dataset re-read as every
+			// structure, each named — but with NO sliding, scaling, or draw-on. Every
 			// frame is positioned while invisible, then revealed with an opacity-only
 			// dissolve (prefers-reduced-motion targets motion, not fades). The static
-			// drawn tree below remains the no-JS fallback.
+			// drawn tree below remains the no-JS fallback. Edges stay solid here
+			// (.motion is not added), so path/flow read through opacity + width, not
+			// the dash fill.
 			mm.add('(prefers-reduced-motion: reduce)', () => {
 				const atoms = gsap.utils.toArray('[data-atom]', svg);
 				const bars = gsap.utils.toArray('[data-bar]', svg);
@@ -237,26 +299,17 @@ const HeroRecompose = ({ className, onState }) => {
 
 				gsap.set(atoms, { transformOrigin: '0px 0px' });
 				// Hide the authored frame before first paint so it doesn't flash ahead
-				// of the dissolve cycle. (.motion is NOT added here — edges stay solid,
-				// no draw-on.)
+				// of the dissolve cycle.
 				gsap.set(atoms, { autoAlpha: 0 });
 				gsap.set(bars, { autoAlpha: 0 });
-				gsap.set(lines, { autoAlpha: 0 });
+				gsap.set(lines, { autoAlpha: 0, strokeWidth: BASE_EDGE_W });
 
 				const FADE_IN = 0.8;
 				const FADE_OUT = 0.5;
 				const DWELL = 2.6;
 
 				const cycle = gsap.timeline({ repeat: -1 });
-				[
-					'array',
-					'list',
-					'sorted',
-					'tree',
-					'heap',
-					'graph',
-					'spanningTree',
-				].forEach(state => {
+				ORDER.forEach(state => {
 					const sb = STATES[state].bars;
 					// Reposition while invisible — pure attribute sets, no animated motion.
 					cycle.set(atoms, {
@@ -271,6 +324,7 @@ const HeroRecompose = ({ className, onState }) => {
 							x2: k => edgeFrame(state, k).x2,
 							y2: k => edgeFrame(state, k).y2,
 						},
+						strokeWidth: k => edgeLook(state, k).width,
 					});
 					cycle.set(bars, { attr: { height: i => (sb ? sb[i].h : 0) } });
 					cycle.set(svg, { '--wash-h': WASH_HUE[state] });
@@ -284,7 +338,7 @@ const HeroRecompose = ({ className, onState }) => {
 					cycle.to(
 						lines,
 						{
-							autoAlpha: k => (edgeFrame(state, k).active ? EDGE_OP : 0),
+							autoAlpha: k => edgeLook(state, k).opacity,
 							duration: FADE_IN,
 							ease: 'power1.out',
 						},

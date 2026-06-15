@@ -1,18 +1,20 @@
 // recomposeLayout — the pure geometry for the Home hero's "Recompose" instrument.
 //
 // One conserved company of 14 atoms re-forms itself through core CS structures:
-// array → linked list → sorted bars → binary tree → heap → graph → spanning tree
-// → back to the array. The thesis (the product's whole point): it is the SAME
-// data the whole time — a heap is an array, a tree is an array, a list and a
-// graph are one dataset under different access rules. Atom identity is conserved
-// (atom 0 is always the array's index 0, the list's head, the tree's root) so a
-// literate viewer can track a node through the morph — that legibility is what
-// makes it read as an instrument, not decoration.
+// array → sorted bars → binary tree → heap → graph → shortest path → spanning
+// tree → max flow → back to the array. The thesis (the product's whole point):
+// it is the SAME data the whole time — a heap is an array, a tree is an array, a
+// graph and its spanning tree and its max-flow network are one dataset under
+// different access rules. Atom identity is conserved (atom 0 is always the
+// array's index 0, the tree's root) so a literate viewer can track a node through
+// the morph — that legibility is what makes it read as an instrument.
 //
 // Every state is self-evident in the instrument's pure language (atoms + edges +
-// bars): topology is drawn with edges, magnitude with bars. We deliberately do
-// NOT try to draw container-defined structures (a stack frame, a hash bin, a
-// matrix grid) here — those are shown on the curriculum map's per-topic figures.
+// bars): topology is drawn with edges, magnitude with bars, and the graph family
+// (shortest path / spanning tree / max flow) reuses the SAME constellation, only
+// re-painting which edges are lit, trimmed, or filled. We deliberately do NOT
+// draw container-defined structures (a stack frame, a hash bin, a matrix grid)
+// here — those are shown on the curriculum map's per-topic figures.
 //
 // Pure + deterministic: every coordinate is computed once at module load from
 // the viewBox, so the animation layer only interpolates between fixed targets.
@@ -52,14 +54,6 @@ const sortedAtoms = VALUES.map((v, i) => ({
 	y: BASELINE_Y - barH(v),
 	scale: 1,
 }));
-
-// ── Linked list (the array as a chain: one row, each node points to the next) ─
-// Same x-spread as the array, dropped to a single baseline, with 13 pointer edges
-// i→i+1. Drawn pointers are what make it a LIST and not just a row of dots.
-const LIST_Y = 248;
-const listAtoms = VALUES.map((_, i) => ({ x: slotX(i), y: LIST_Y, scale: 1 }));
-const listEdges = [];
-for (let i = 0; i < N - 1; i += 1) listEdges.push({ from: i, to: i + 1 });
 
 // ── Binary tree / heap (same topology, different packing) ───────────────────
 // Node i: level = floor(log2(i+1)); children at 2i+1, 2i+2. A parent sits exactly
@@ -138,43 +132,71 @@ const graphEdges = [
 // The spanning tree is exactly the first N-1 edges (connects all 14, no cycle).
 const spanningTreeEdges = graphEdges.slice(0, N - 1);
 
-export const EDGE_POOL = Math.max(
-	treeEdges.length,
-	graphEdges.length,
-	listEdges.length
+// ── Shortest path (light one fewest-hops route, dim the rest) ───────────────
+// Each consecutive pair in SP_PATH is a real graph edge, so the lit route exists
+// in the constellation; every other edge is dimmed. Same atoms + edges as the
+// graph — only the per-edge `highlight` / `dim` flag changes.
+const SP_PATH = [10, 1, 4, 8, 9];
+const spOnPath = (a, b) => {
+	for (let i = 0; i < SP_PATH.length - 1; i += 1) {
+		const u = SP_PATH[i];
+		const v = SP_PATH[i + 1];
+		if ((a === u && b === v) || (a === v && b === u)) return true;
+	}
+	return false;
+};
+const shortestPathEdges = graphEdges.map(e =>
+	spOnPath(e.from, e.to) ? { ...e, highlight: true } : { ...e, dim: true }
 );
+
+// ── Max flow (each edge a pipe: width ∝ capacity, fill ∝ flow / capacity) ────
+// Illustrative capacities + flows on the same constellation. The legend claims
+// only the ENCODING (width = capacity, fill = flow), never a specific max value:
+// the spanning-tree backbone carries flow, the cycle edges sit slack (flow 0), so
+// the fill contrast reads as "flow concentrates on a backbone, capacity to spare."
+const maxFlowEdges = graphEdges.map((e, i) => {
+	const cap = 3 + ((i * 3) % 4); // varies 3..6
+	const frac = i < N - 1 ? 0.45 + 0.5 * (((i * 4) % 5) / 5) : 0;
+	return { ...e, cap, flow: Math.round(cap * frac) };
+});
+
+export const EDGE_POOL = Math.max(treeEdges.length, graphEdges.length);
 
 export const STATES = {
 	array: { atoms: arrayAtoms, bars: BARS, edges: [] },
-	list: { atoms: listAtoms, bars: null, edges: listEdges },
 	sorted: { atoms: sortedAtoms, bars: BARS, edges: [] },
 	tree: { atoms: treeAtoms, bars: null, edges: treeEdges },
 	heap: { atoms: heapAtoms, bars: null, edges: treeEdges },
 	graph: { atoms: graphAtoms, bars: null, edges: graphEdges },
+	shortestPath: { atoms: graphAtoms, bars: null, edges: shortestPathEdges },
 	spanningTree: { atoms: graphAtoms, bars: null, edges: spanningTreeEdges },
+	maxFlow: { atoms: graphAtoms, bars: null, edges: maxFlowEdges },
 };
 
-// The loop order. It returns to 'array', and spanningTree→array lands EXACTLY on
-// the array coords, so the loop is seamless by construction.
+// The loop order. It returns to 'array', and maxFlow→array lands EXACTLY on the
+// array coords, so the loop is seamless by construction. The reduced-motion
+// dissolve cycle reads this same list, so the two motion modes stay in lockstep.
 export const ORDER = [
 	'array',
-	'list',
 	'sorted',
 	'tree',
 	'heap',
 	'graph',
+	'shortestPath',
 	'spanningTree',
+	'maxFlow',
 ];
 
 // A topic-hue wash names the active concept (subtle, ≤0.08 alpha in CSS).
 export const WASH_HUE = {
 	array: 226, // foundations blue
-	list: 250, // lists/pointers indigo
 	sorted: 210, // sorting azure
 	tree: 286, // trees violet
 	heap: 312, // heaps magenta
 	graph: 162, // graphs teal
+	shortestPath: 198, // shortest paths cyan
 	spanningTree: 142, // spanning trees green
+	maxFlow: 28, // max flow amber
 };
 
 // The legend copy for the live figcaption — one short, STRUCTURALLY-TRUE line
@@ -185,42 +207,51 @@ export const WASH_HUE = {
 // be a visible lie. We say only what is true on screen.
 export const PHASES = {
 	array: { name: 'Array', note: '14 values, one order' },
-	list: { name: 'Linked list', note: 'each node points to the next' },
 	sorted: { name: 'Sorted run', note: 'rearranged by value' },
 	tree: { name: 'Binary tree', note: 'children of i at 2i+1, 2i+2' },
 	heap: { name: 'Heap', note: 'same array, parent/child by index' },
 	graph: { name: 'Graph', note: 'edges, no inherent root' },
+	shortestPath: { name: 'Shortest path', note: 'the lit route, fewest hops' },
 	spanningTree: {
 		name: 'Spanning tree',
 		note: 'connect every node, no cycles',
 	},
+	maxFlow: { name: 'Max flow', note: 'width is capacity, fill is flow' },
 };
 
 // The conservation thesis in words — the <960px fallback, where the live
 // instrument is hidden and only the reading column renders.
-export const THESIS_SENTENCE = 'The same fourteen values, read seven ways.';
+export const THESIS_SENTENCE = 'The same fourteen values, read eight ways.';
 
 /**
  * edgeFrame — for a state and a line-pool index, the endpoint coords + whether
- * the line is active (drawn). Lines beyond the state's edge count park at the
- * canvas center, invisible, ready to fade in for a denser state.
+ * the line is active (drawn), plus any per-edge "meaning" the state paints:
+ * `highlight` / `dim` (shortest path) and `cap` / `flow` (max flow). Lines beyond
+ * the state's edge count park invisible — the cycle edges at their graph spot so
+ * they fade in place, everything else at the canvas center.
  */
 export const edgeFrame = (state, k) => {
 	const { atoms, edges } = STATES[state];
 	const e = edges[k];
 	if (e) {
-		return {
+		const f = {
 			active: true,
 			x1: atoms[e.from].x,
 			y1: atoms[e.from].y,
 			x2: atoms[e.to].x,
 			y2: atoms[e.to].y,
 		};
+		if (e.highlight) f.highlight = true;
+		if (e.dim) f.dim = true;
+		if (e.cap != null) {
+			f.cap = e.cap;
+			f.flow = e.flow;
+		}
+		return f;
 	}
 	// The cycle-closing graph edges (index ≥ N-1) park at their graph position when
-	// inactive, so they fade/draw in place in the graph instead of flying from the
-	// canvas center. Core edges (the spanning tree / list / tree pointers) park at
-	// center as before — they fade out there, masked by the morph.
+	// inactive, so they fade in place in the graph instead of flying from the
+	// canvas center. Core edges (the spanning tree / tree pointers) park at center.
 	const g = k >= N - 1 ? graphEdges[k] : null;
 	if (g)
 		return {
