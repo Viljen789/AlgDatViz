@@ -247,6 +247,17 @@
 	color: var(--topic-accent);
 }
 
+/* Scene-aware colour key, centred under the canvas. The traversal tag sits in
+   the bottom-left corner, so a bottom-centre key clears it on every scene. */
+
+.legend {
+	position: absolute;
+	left: 50%;
+	bottom: clamp(14px, 2.4vw, 24px);
+	transform: translateX(-50%);
+	max-width: calc(100% - 2 * clamp(16px, 3vw, 32px));
+}
+
 /* Top-right notation */
 
 .notation {

@@ -40,60 +40,8 @@
 	align-items: center;
 }
 
-/* ---------- Legend ---------- */
-
-.legend {
-	display: flex;
-	flex-wrap: wrap;
-	justify-content: center;
-	gap: var(--space-md);
-	font-family: var(--font-family-mono);
-	font-size: var(--font-size-caption);
-	color: var(--color-text-secondary);
-}
-
-.legendItem {
-	display: inline-flex;
-	align-items: center;
-	gap: var(--space-xs);
-}
-
-.swatch {
-	width: 14px;
-	height: 14px;
-	border-radius: var(--radius-xs);
-	border: 1px solid var(--color-border);
-}
-
-.swTree {
-	background: var(--topic-accent);
-	border-color: var(--topic-accent);
-}
-
-.swLight {
-	background: var(--topic-accent);
-	border-color: var(--topic-accent);
-}
-
-.swFrontier {
-	background: color-mix(in srgb, var(--topic-accent) 40%, transparent);
-	border-color: var(--topic-accent);
-}
-
-.swReject {
-	background: var(--color-bg-sunken);
-	border-color: var(--color-border-strong);
-}
-
-.swInside {
-	background: color-mix(in srgb, var(--topic-accent) 26%, var(--surface-2));
-	border-color: var(--topic-accent);
-}
-
-.swOutside {
-	background: color-mix(in srgb, var(--color-warning) 22%, var(--surface-2));
-	border-color: var(--color-warning);
-}
+/* The colour key now uses the shared <StateLegend>, which carries its own
+   swatch + label layout; MstStage no longer ships a bespoke legend. */
 
 /* ---------- Caption ---------- */
 

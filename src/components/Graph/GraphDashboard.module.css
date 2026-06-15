@@ -89,6 +89,13 @@
 	flex-direction: column;
 }
 
+/* The colour key sits directly under the graph canvas, clear of the absolutely
+   positioned frame note in the bottom-left corner. */
+.canvasLegend {
+	flex: none;
+	padding: 0 var(--space-lg) var(--space-lg);
+}
+
 .frameNote {
 	position: absolute;
 	left: var(--space-lg);

@@ -1,6 +1,28 @@
 import { useMemo } from 'react';
 import { LESSON_GRAPH, BFS_ORDER, DFS_ORDER } from './graphScenes.js';
+import StateLegend from '../../../common/StateLegend/StateLegend';
 import styles from './GraphStage.module.css';
+
+// The traversal scenes paint nodes with meaningful colour; the key names only
+// the states that scene actually shows. Swatches mirror GraphStage's node
+// styling: a visited node fills with --topic-accent, the frontier (scene 2)
+// is the dashed --topic-graphs-wash. The structure-only scenes (0, 1) have no
+// coloured state, so they carry no legend.
+const VISITED_SWATCH = 'var(--topic-accent)';
+const FRONTIER_SWATCH = 'var(--topic-graphs-wash)';
+
+const sceneLegend = activeScene => {
+	if (activeScene === 2)
+		return [
+			{ label: 'visited', swatch: VISITED_SWATCH, aria: 'filled' },
+			{ label: 'frontier (next up)', swatch: FRONTIER_SWATCH, aria: 'dashed' },
+		];
+	if (activeScene === 3 || activeScene === 4 || activeScene === 6)
+		return [{ label: 'visited in BFS order', swatch: VISITED_SWATCH, aria: 'filled' }];
+	if (activeScene === 5)
+		return [{ label: 'visited in DFS order', swatch: VISITED_SWATCH, aria: 'filled' }];
+	return [];
+};
 
 // Stage geometry. The graph is laid out in a fixed coordinate space so the
 // nodes never move between scenes — only their highlight state changes as the
@@ -140,6 +162,8 @@ const GraphStage = ({ activeScene = 0 }) => {
 	const matrixIds = LESSON_GRAPH.nodes.map(n => n.id);
 	const hasEdge = (a, b) => (adjacency.get(a) || []).includes(b);
 
+	const legend = useMemo(() => sceneLegend(activeScene), [activeScene]);
+
 	return (
 		<div
 			className={styles.wrap}
@@ -213,6 +237,10 @@ const GraphStage = ({ activeScene = 0 }) => {
 						{order.join(' → ')}
 					</span>
 				</div>
+			)}
+
+			{legend.length > 0 && (
+				<StateLegend className={styles.legend} items={legend} />
 			)}
 
 			<div className={styles.notation} aria-hidden="true">

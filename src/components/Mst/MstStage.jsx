@@ -7,7 +7,19 @@ import {
 	primTrace,
 } from './mstTrace.js';
 import { MST_EDGES, MST_VERTICES } from './mstMeta.js';
+import StateLegend from '../../common/StateLegend/StateLegend';
 import styles from './MstStage.module.css';
+
+// Swatch colours mirror MstGraph's on-canvas edge/node styling so the shared
+// key matches the picture. These reproduce the old bespoke swatch classes:
+// tree / light edge ride the topic accent, the frontier is a lighter wash, a
+// rejected cycle reads as a hairline-only chip, and the cut sides are the
+// accent vs warning tints.
+const SW_TREE = 'var(--topic-accent)';
+const SW_FRONTIER = 'color-mix(in srgb, var(--topic-accent) 40%, transparent)';
+const SW_REJECT = 'var(--color-border-strong)';
+const SW_INSIDE = 'color-mix(in srgb, var(--topic-accent) 26%, var(--surface-2))';
+const SW_OUTSIDE = 'color-mix(in srgb, var(--color-warning) 22%, var(--surface-2))';
 
 // The cut the cut-property scene illustrates: {A, B, D} vs the rest.
 const CUT_INSIDE = ['A', 'B', 'D'];
@@ -141,26 +153,24 @@ const MstStage = ({ activeScene = 0 }) => {
 		switch (activeScene) {
 			case 1:
 				return [
-					{ cls: styles.swInside, label: 'cut: inside' },
-					{ cls: styles.swOutside, label: 'cut: rest' },
-					{ cls: styles.swLight, label: 'light edge (safe)' },
+					{ swatch: SW_INSIDE, label: 'cut: inside', aria: 'accent tint' },
+					{ swatch: SW_OUTSIDE, label: 'cut: rest', aria: 'warning tint' },
+					{ swatch: SW_TREE, label: 'light edge (safe)', aria: 'accent' },
 				];
 			case 2:
-				return [
-					{ cls: styles.swTree, label: 'merged component' },
-				];
+				return [{ swatch: SW_TREE, label: 'merged component', aria: 'accent' }];
 			case 3:
 				return [
-					{ cls: styles.swTree, label: 'accepted' },
-					{ cls: styles.swReject, label: 'rejected cycle' },
+					{ swatch: SW_TREE, label: 'accepted', aria: 'accent' },
+					{ swatch: SW_REJECT, label: 'rejected cycle', aria: 'hairline' },
 				];
 			case 4:
 				return [
-					{ cls: styles.swTree, label: 'tree' },
-					{ cls: styles.swFrontier, label: 'frontier' },
+					{ swatch: SW_TREE, label: 'tree', aria: 'accent' },
+					{ swatch: SW_FRONTIER, label: 'frontier', aria: 'accent wash' },
 				];
 			default:
-				return [{ cls: styles.swTree, label: 'MST edge' }];
+				return [{ swatch: SW_TREE, label: 'MST edge', aria: 'accent' }];
 		}
 	})();
 
@@ -184,14 +194,7 @@ const MstStage = ({ activeScene = 0 }) => {
 				/>
 			</div>
 
-			<div className={styles.legend} aria-hidden="true">
-				{legend.map(item => (
-					<span key={item.label} className={styles.legendItem}>
-						<span className={`${styles.swatch} ${item.cls}`} />
-						{item.label}
-					</span>
-				))}
-			</div>
+			<StateLegend items={legend} />
 
 			<p className={styles.caption}>{view.caption}</p>
 		</div>

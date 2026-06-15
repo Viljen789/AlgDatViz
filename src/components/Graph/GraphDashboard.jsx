@@ -14,10 +14,60 @@ import { GRAPH_ALGORITHM_META } from '../../utils/graphAlgorithmMeta.js';
 import { GRAPH_PRESETS } from '../../data/graphPresets.js';
 import PseudocodeRail from '../../common/PseudocodeRail/PseudocodeRail';
 import StepControlBar from '../../common/StepControlBar/StepControlBar';
+import StateLegend from '../../common/StateLegend/StateLegend';
 import { usePlayback, PseudoState } from '../../common/PlaybackEngine';
 import { graphLineState } from '../../utils/graphAlgorithms.js';
 
 const cloneGraph = graph => JSON.parse(JSON.stringify(graph));
+
+// Per-algorithm legend for the graph canvas: only the states the running
+// algorithm actually paints, never a fixed quartet (considered, not crowded).
+// Swatch colours mirror GraphVisualizer's node/edge styling so the key matches
+// the picture — the active node is --state-flight, the frontier (queue / stack /
+// priority queue) is --state-active, visited/settled is --state-done, the edge
+// being considered is --state-flight, and a rejected edge is --state-special.
+const FLIGHT = 'var(--state-flight)';
+const ACTIVE = 'var(--state-active)';
+const DONE = 'var(--state-done)';
+const SPECIAL = 'var(--state-special)';
+
+const GRAPH_LEGENDS = {
+	bfs: [
+		{ label: 'current', swatch: FLIGHT, aria: 'orange' },
+		{ label: 'in queue', swatch: ACTIVE, aria: 'blue' },
+		{ label: 'visited', swatch: DONE, aria: 'green' },
+	],
+	dfs: [
+		{ label: 'current', swatch: FLIGHT, aria: 'orange' },
+		{ label: 'on stack', swatch: ACTIVE, aria: 'blue' },
+		{ label: 'visited', swatch: DONE, aria: 'green' },
+	],
+	dijkstra: [
+		{ label: 'current', swatch: FLIGHT, aria: 'orange' },
+		{ label: 'in frontier', swatch: ACTIVE, aria: 'blue' },
+		{ label: 'settled', swatch: DONE, aria: 'green' },
+	],
+	prim: [
+		{ label: 'current', swatch: FLIGHT, aria: 'orange' },
+		{ label: 'in tree', swatch: DONE, aria: 'green' },
+		{ label: 'candidate edge', swatch: FLIGHT, aria: 'dashed orange' },
+	],
+	kruskal: [
+		{ label: 'considering', swatch: FLIGHT, aria: 'orange' },
+		{ label: 'accepted', swatch: DONE, aria: 'green' },
+		{ label: 'rejected cycle', swatch: SPECIAL, aria: 'purple' },
+	],
+	topo: [
+		{ label: 'current', swatch: FLIGHT, aria: 'orange' },
+		{ label: 'in queue', swatch: ACTIVE, aria: 'blue' },
+		{ label: 'ordered', swatch: DONE, aria: 'green' },
+	],
+	maxflow: [
+		{ label: 'source / sink', swatch: FLIGHT, aria: 'orange' },
+		{ label: 'augmenting path', swatch: FLIGHT, aria: 'dashed orange' },
+		{ label: 'reachable', swatch: DONE, aria: 'green' },
+	],
+};
 
 const SPEED_OPTIONS = [
 	{ value: 1500, label: '0.5×' },
@@ -319,6 +369,10 @@ const GraphDashboard = ({ onUserInteract }) => {
 	);
 	const structureLabel = currentStep?.structureLabel || 'STATE';
 
+	// The colour key under the canvas reflects the running algorithm's live
+	// states, so a student decoding the graph view always has the matching key.
+	const canvasLegend = GRAPH_LEGENDS[algorithmId] || [];
+
 	const viewToggle = (
 		<div
 			className={styles.viewToggle}
@@ -432,6 +486,12 @@ const GraphDashboard = ({ onUserInteract }) => {
 						</div>
 					)}
 					<div className={styles.canvasStage}>{canvasContent}</div>
+					{viewMode === 'graph' && (
+						<StateLegend
+							className={styles.canvasLegend}
+							items={canvasLegend}
+						/>
+					)}
 					{currentStep?.description && (
 						<div className={styles.frameNote} aria-live="polite">
 							<span className={styles.frameNoteLabel}>STEP</span>
