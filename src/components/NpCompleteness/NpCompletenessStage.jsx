@@ -57,7 +57,29 @@ const LandscapeBoard = ({ sceneId }) => {
 					? 'npc'
 					: 'all';
 	return (
-		<div className={styles.landscape}>
+		<div className={styles.landscape} data-focus={focus}>
+			{/* Containment anchor: the nesting named once, so the shape (three
+			    classes, one inside the next) reads before the prose explains it.
+			    The current scene's class is the single highlighted link. */}
+			<div className={styles.chain} aria-hidden="true">
+				<span
+					className={`${styles.chainLink} ${focus === 'p' ? styles.chainLinkLit : ''}`}
+				>
+					P
+				</span>
+				<span className={styles.chainOp}>⊆</span>
+				<span
+					className={`${styles.chainLink} ${focus === 'np' ? styles.chainLinkLit : ''}`}
+				>
+					NP
+				</span>
+				<span className={styles.chainOp}>⊆</span>
+				<span
+					className={`${styles.chainLink} ${focus === 'npc' ? styles.chainLinkLit : ''}`}
+				>
+					NP-hard
+				</span>
+			</div>
 			<div
 				className={`${styles.ring} ${styles.ringHard} ${
 					focus === 'npc' ? styles.ringLit : ''

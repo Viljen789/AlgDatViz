@@ -60,6 +60,44 @@
 	width: 100%;
 }
 
+/* Containment anchor — names the nesting once, above the rings, so the
+   "one class inside the next" shape reads on first paint. The focused
+   scene's class is the single lit link (no extra state hue: accent ink). */
+.chain {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	justify-content: center;
+	gap: var(--space-xs);
+	font-family: var(--font-family-mono);
+	font-size: var(--font-size-label);
+	letter-spacing: var(--tracking-wide);
+}
+
+.chainLink {
+	padding: var(--space-2xs) var(--space-sm);
+	border-radius: var(--radius-pill);
+	font-weight: var(--font-weight-bold);
+	color: var(--color-text-muted);
+	border: 1px solid var(--color-border);
+	background: var(--surface-input);
+	transition:
+		color var(--duration-step) var(--ease-step),
+		border-color var(--duration-step) var(--ease-step),
+		background var(--duration-step) var(--ease-step);
+}
+
+.chainLinkLit {
+	color: var(--topic-accent-ink);
+	border-color: color-mix(in srgb, var(--topic-accent) 55%, transparent);
+	background: var(--topic-npc-wash);
+}
+
+.chainOp {
+	color: var(--color-text-dim);
+	font-weight: var(--font-weight-medium);
+}
+
 .ring {
 	position: relative;
 	display: flex;
@@ -501,7 +539,8 @@
 
 @media (prefers-reduced-motion: reduce) {
 	.ring,
-	.litNode {
+	.litNode,
+	.chainLink {
 		transition-duration: 0ms;
 	}
 }

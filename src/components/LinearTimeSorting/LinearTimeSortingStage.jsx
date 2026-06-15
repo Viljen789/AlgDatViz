@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
 import { decisionTree, flattenLevels } from './decisionTree.js';
 import { label as recLabel } from './stability.js';
+import useReducedMotion from '../../hooks/useReducedMotion.js';
 import {
 	COUNTING_DEMO,
 	STABILITY,
@@ -63,6 +64,7 @@ const DecisionTreeView = ({ showBound }) => {
 
 // ── Scene 2: counting sort — value becomes an index in a tally table ──────────
 const CountingView = () => {
+	const reducedMotion = useReducedMotion();
 	const k = Math.max(...COUNTING_DEMO) + 1;
 	const counts = useMemo(() => {
 		const c = new Array(k).fill(0);
@@ -70,31 +72,54 @@ const CountingView = () => {
 		return c;
 	}, [k]);
 	const peak = Math.max(...counts, 1);
+	// The focus anchor: follow the first value into the count slot it addresses.
+	// Slots are the count table; the value IS the index (count[follow] += 1).
+	const follow = COUNTING_DEMO[0];
 
 	return (
-		<div className={styles.algView}>
+		<div className={styles.algView} data-reduced={reducedMotion ? 'true' : undefined}>
 			<div className={styles.inputRow} aria-label="input array">
 				{COUNTING_DEMO.map((v, i) => (
-					<span key={i} className={styles.cell}>
+					<span
+						key={i}
+						className={`${styles.cell} ${i === 0 ? styles.cellFollow : ''}`}
+					>
 						{v}
 					</span>
 				))}
 			</div>
-			<p className={styles.connector}>each value addresses its own slot ↓</p>
-			<div className={styles.histogram} style={{ '--slots': k }}>
-				{counts.map((count, value) => (
-					<div key={value} className={styles.histColumn}>
-						<div className={styles.histBarWrap}>
-							<div
-								className={styles.histBar}
-								style={{ '--h': `${(count / peak) * 100}%` }}
-							>
-								{count > 0 && <span className={styles.histCount}>{count}</span>}
+			<p className={styles.connector}>
+				follow the <span className={styles.followInk}>{follow}</span>: its value
+				is its slot ↓
+			</p>
+			{/* The count table: one labeled slot per value, the followed value's
+			    slot lit so the "drop into a bucket" shape leads before the prose. */}
+			<div
+				className={styles.histogram}
+				style={{ '--slots': k }}
+				aria-label="count table, one slot per value"
+			>
+				{counts.map((count, value) => {
+					const isFollow = value === follow;
+					return (
+						<div
+							key={value}
+							className={`${styles.histColumn} ${
+								isFollow ? styles.histColumnFollow : ''
+							}`}
+						>
+							<div className={styles.histBarWrap}>
+								<div
+									className={`${styles.histBar} ${isFollow ? styles.histBarFollow : ''}`}
+									style={{ '--h': `${(count / peak) * 100}%` }}
+								>
+									{count > 0 && <span className={styles.histCount}>{count}</span>}
+								</div>
 							</div>
+							<span className={styles.histValue}>slot {value}</span>
 						</div>
-						<span className={styles.histValue}>{value}</span>
-					</div>
-				))}
+					);
+				})}
 			</div>
 			<p className={styles.caption}>
 				n = {COUNTING_DEMO.length} · k = {k} → O(n + k), no comparisons

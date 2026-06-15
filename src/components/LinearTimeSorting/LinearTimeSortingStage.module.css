@@ -219,6 +219,20 @@
 
 /* ---------- Counting histogram (scene 2) ---------- */
 
+/* The focus anchor: one followed value, its source cell and its count slot
+   lit with the topic accent so "value drops into its slot" reads as a shape. */
+.cellFollow {
+	border-color: color-mix(in srgb, var(--topic-accent) 55%, transparent);
+	background: color-mix(in srgb, var(--topic-accent) 14%, transparent);
+	color: var(--topic-accent-ink);
+	font-weight: var(--font-weight-semibold);
+}
+
+.followInk {
+	color: var(--topic-accent-ink);
+	font-weight: var(--font-weight-semibold);
+}
+
 .histogram {
 	display: grid;
 	grid-template-columns: repeat(var(--slots, 5), 1fr);
@@ -266,6 +280,31 @@
 	font-family: var(--font-family-mono);
 	font-size: var(--font-size-caption);
 	color: var(--color-text-muted);
+}
+
+/* The followed value's destination slot: lit label + a settled accent bar so
+   the eye lands on one bucket. The bar gets a one-shot "drop" settle that
+   degrades to the static lit state under prefers-reduced-motion. */
+.histColumnFollow .histValue {
+	color: var(--topic-accent-ink);
+	font-weight: var(--font-weight-semibold);
+}
+
+.histBarFollow {
+	background: var(--topic-accent);
+	box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--topic-accent-ink) 35%, transparent);
+	animation: slotDrop 460ms var(--ease-quiet) both;
+}
+
+@keyframes slotDrop {
+	from {
+		transform: translateY(-8px);
+		opacity: 0.4;
+	}
+	to {
+		transform: translateY(0);
+		opacity: 1;
+	}
 }
 
 /* ---------- Radix passes (scene 3) ---------- */
@@ -483,6 +522,15 @@
 	.boundCard {
 		transition-duration: 1ms;
 	}
+	.histBarFollow {
+		animation: none;
+	}
+}
+
+/* Hook-driven gate: useReducedMotion sets data-reduced on the view, so the
+   followed-slot drop settles instantly to its static lit state. */
+.algView[data-reduced='true'] .histBarFollow {
+	animation: none;
 }
 
 /* ---------- Responsive ---------- */
