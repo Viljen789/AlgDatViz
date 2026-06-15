@@ -101,7 +101,7 @@ const ReviewPage = () => {
 			</header>
 
 			<section className={styles.hero} aria-labelledby="review-title">
-				<p className={styles.eyebrow}>Test deg selv · Spaced retrieval</p>
+				<p className={styles.eyebrow}>Test yourself · Spaced retrieval</p>
 				<h1 id="review-title" className={styles.title}>
 					Pull it from memory, right before you'd forget.
 				</h1>

@@ -116,10 +116,14 @@
 	border-color: color-mix(in srgb, var(--color-warning) 45%, transparent);
 }
 
+/* The stranded greedy coins are a TEACHING state (a locally-best move that
+   poisons the result), not an app error — error-red is reserved for "the tool
+   broke". Use --state-special (the Quartet's pivot/special hue); the "stuck"
+   caption + the count carry the meaning redundantly, so it survives colorblind. */
 .coinWaste {
-	color: var(--color-error);
-	background: var(--color-error-wash);
-	border-color: color-mix(in srgb, var(--color-error) 40%, transparent);
+	color: var(--state-special);
+	background: color-mix(in srgb, var(--state-special) 14%, transparent);
+	border-color: color-mix(in srgb, var(--state-special) 40%, transparent);
 }
 
 @keyframes tokenIn {
@@ -207,7 +211,8 @@
 }
 
 .laneVerdictBad {
-	color: var(--color-error);
+	/* "stuck after taking 6¢ first" is a strategic lesson, not an error. */
+	color: var(--state-special);
 }
 
 .laneVerdictGood {

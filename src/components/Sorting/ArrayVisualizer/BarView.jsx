@@ -3,11 +3,26 @@ import gsap from 'gsap';
 import styles from './ArrayVisualizer.module.css';
 import useReducedMotion from '../../../hooks/useReducedMotion';
 
-const COLOR_IDLE = '#404870';
-const COLOR_ACTIVE = '#4f7cf8';
-const COLOR_DONE = '#38c9a0';
-const COLOR_FLIGHT = '#f8a74f';
-const COLOR_SPECIAL = '#c97af8';
+// State colors come from the canonical tokens (paper-and-ink, both themes) — not
+// the stale dark-indigo hex this used to hardcode, which read wrong on cream and
+// never inverted. idle = muted ink; the rest are the Algorithm State Quartet.
+// Resolved at runtime because GSAP's backgroundColor tween needs a concrete color.
+const STATE_VARS = {
+	idle: '--color-text-muted',
+	active: '--state-active',
+	done: '--state-done',
+	flight: '--state-flight',
+	special: '--state-special',
+};
+
+const resolveStateColors = () => {
+	const cs = getComputedStyle(document.documentElement);
+	const out = {};
+	for (const key in STATE_VARS) {
+		out[key] = cs.getPropertyValue(STATE_VARS[key]).trim() || 'currentColor';
+	}
+	return out;
+};
 
 const stateOf = (idx, comparing, swapping, sorted, special) => {
 	if (sorted.includes(idx)) return 'done';
@@ -15,21 +30,6 @@ const stateOf = (idx, comparing, swapping, sorted, special) => {
 	if (swapping.includes(idx)) return 'flight';
 	if (comparing.includes(idx)) return 'active';
 	return 'idle';
-};
-
-const colorFor = state => {
-	switch (state) {
-		case 'done':
-			return COLOR_DONE;
-		case 'special':
-			return COLOR_SPECIAL;
-		case 'flight':
-			return COLOR_FLIGHT;
-		case 'active':
-			return COLOR_ACTIVE;
-		default:
-			return COLOR_IDLE;
-	}
 };
 
 const BarView = ({
@@ -90,6 +90,8 @@ const BarView = ({
 			shouldCrossSwap && barsRef.current[swapA] && barsRef.current[swapB]
 				? barsRef.current[swapB].offsetLeft - barsRef.current[swapA].offsetLeft
 				: 0;
+		// Re-read each tick so a theme toggle is picked up on the next frame.
+		const stateColors = resolveStateColors();
 
 		barsRef.current.forEach((el, idx) => {
 			if (!el) return;
@@ -104,7 +106,7 @@ const BarView = ({
 				sortedIndices,
 				specialIndices
 			);
-			const target = colorFor(state);
+			const target = stateColors[state];
 
 			gsap.to(el, {
 				height: `${heightPct}%`,
@@ -196,7 +198,7 @@ const BarView = ({
 						className={styles.arrayBar}
 						style={{
 							height: `${initialPct}%`,
-							backgroundColor: COLOR_IDLE,
+							backgroundColor: 'var(--color-text-muted)',
 						}}
 						title={`Value: ${value} · Index: ${index}`}
 					/>

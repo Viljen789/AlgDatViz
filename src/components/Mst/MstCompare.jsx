@@ -147,7 +147,7 @@ const MstCompare = ({ onUserInteract }) => {
 				<span
 					className={`${styles.resultVerdict} ${sameMst ? styles.resultOk : ''}`}
 				>
-					{sameMst ? 'same MST ✓' : 'same weight'}
+					{sameMst ? 'same total weight' : 'different weight'}
 				</span>
 			</div>
 

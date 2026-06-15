@@ -291,7 +291,7 @@ const MstPlayground = ({ onUserInteract }) => {
 				<span
 					className={`${styles.sameVerdict} ${SAME_TREE ? styles.sameOk : ''}`}
 				>
-					{SAME_TREE ? 'same MST ✓' : 'same weight'}
+					{SAME_TREE ? 'identical tree' : 'same weight, different edges'}
 				</span>
 			</div>
 
