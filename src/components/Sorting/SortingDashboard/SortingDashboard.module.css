@@ -148,50 +148,11 @@
 	line-height: var(--line-height-snug);
 }
 
+/* Footer wrapper for the shared StateLegend: pin it to the right column and cap
+   its width. The swatch + label layout itself lives in StateLegend.module.css. */
 .stateLegend {
-	display: inline-flex;
-	flex-wrap: wrap;
 	justify-content: flex-end;
-	gap: 6px;
 	max-width: 430px;
-}
-
-.legendItem {
-	display: inline-flex;
-	align-items: center;
-	gap: 6px;
-	min-height: 26px;
-	padding: 0 8px;
-	border: 1px solid var(--color-border);
-	border-radius: var(--radius-pill);
-	background: color-mix(in srgb, var(--color-bg-sunken) 78%, transparent);
-	color: var(--color-text-muted);
-	font-size: var(--font-size-caption);
-	font-weight: var(--font-weight-bold);
-	white-space: nowrap;
-}
-
-.legendItem i {
-	width: 9px;
-	height: 9px;
-	border-radius: 50%;
-	display: inline-block;
-}
-
-.legendActive {
-	background: var(--state-active);
-}
-
-.legendFlight {
-	background: var(--state-flight);
-}
-
-.legendSpecial {
-	background: var(--state-special);
-}
-
-.legendDone {
-	background: var(--state-done);
 }
 
 .canvasError {

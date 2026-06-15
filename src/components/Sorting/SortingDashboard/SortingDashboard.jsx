@@ -13,6 +13,7 @@ import {
 import SortingHero from '../SortingHero/SortingHero';
 import PseudocodeRail from '../../../common/PseudocodeRail/PseudocodeRail';
 import StepControlBar from '../../../common/StepControlBar/StepControlBar';
+import StateLegend from '../../../common/StateLegend/StateLegend';
 import { PSEUDO_CODE } from '../../../utils/sorting';
 import BarView from '../ArrayVisualizer/BarView';
 import BoxView from '../ArrayVisualizer/BoxView';
@@ -183,6 +184,21 @@ const LEGEND_ITEMS = {
 const getLegendItems = algorithm =>
 	LEGEND_ITEMS[algorithm] || LEGEND_ITEMS.default;
 
+// Each legend className draws with one Algorithm State Quartet token; mirror that
+// exact token (and its spoken colour word) so the shared key matches the canvas.
+const LEGEND_SWATCH = {
+	legendActive: { swatch: 'var(--state-active)', aria: 'blue' },
+	legendFlight: { swatch: 'var(--state-flight)', aria: 'orange' },
+	legendSpecial: { swatch: 'var(--state-special)', aria: 'purple' },
+	legendDone: { swatch: 'var(--state-done)', aria: 'green' },
+};
+
+const toLegendSwatches = items =>
+	items.map(item => ({
+		label: item.label,
+		...LEGEND_SWATCH[item.className],
+	}));
+
 const getFrameNarration = (algorithm, currentFrame, canStep) => {
 	if (!canStep || !currentFrame) {
 		return 'Choose a data profile, then start the run. The next frame will explain the active decision.';
@@ -342,7 +358,7 @@ const SortingDashboard = ({
 		currentFrame,
 		canStep
 	);
-	const legendItems = getLegendItems(sortingAlgorithm);
+	const legendItems = toLegendSwatches(getLegendItems(sortingAlgorithm));
 
 	const handlePrimaryRun = () => {
 		if (isSorting) {
@@ -520,14 +536,10 @@ const SortingDashboard = ({
 							<div className={styles.frameNarration} aria-live="polite">
 								{frameNarration}
 							</div>
-							<div className={styles.stateLegend} aria-label="State legend">
-								{legendItems.map(item => (
-									<span key={item.key} className={styles.legendItem}>
-										<i className={styles[item.className]} aria-hidden="true" />
-										{item.label}
-									</span>
-								))}
-							</div>
+							<StateLegend
+								className={styles.stateLegend}
+								items={legendItems}
+							/>
 						</div>
 					</div>
 				</section>
