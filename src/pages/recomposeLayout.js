@@ -66,7 +66,12 @@ const treeLayout = ({ marginX, top, rowGap, scale }) => {
 	});
 };
 const treeAtoms = treeLayout({ marginX: 70, top: 96, rowGap: 104, scale: 1 });
-const heapAtoms = treeLayout({ marginX: 168, top: 120, rowGap: 92, scale: 0.9 });
+const heapAtoms = treeLayout({
+	marginX: 168,
+	top: 120,
+	rowGap: 92,
+	scale: 0.9,
+});
 
 // Tree/heap edges: parent → each existing child, in a FIXED order so the same
 // line bends (not redraws) between tree and heap.
@@ -78,20 +83,69 @@ for (let i = 0; i < N; i += 1) {
 
 // ── Graph (a deterministic, hand-placed constellation) ──────────────────────
 const graphAtoms = [
-	{ x: 400, y: 130 }, { x: 250, y: 205 }, { x: 560, y: 195 }, { x: 165, y: 305 },
-	{ x: 342, y: 300 }, { x: 470, y: 296 }, { x: 648, y: 305 }, { x: 228, y: 404 },
-	{ x: 400, y: 420 }, { x: 560, y: 408 }, { x: 118, y: 208 }, { x: 690, y: 214 },
-	{ x: 306, y: 146 }, { x: 520, y: 138 },
+	{ x: 400, y: 130 },
+	{ x: 250, y: 205 },
+	{ x: 560, y: 195 },
+	{ x: 165, y: 305 },
+	{ x: 342, y: 300 },
+	{ x: 470, y: 296 },
+	{ x: 648, y: 305 },
+	{ x: 228, y: 404 },
+	{ x: 400, y: 420 },
+	{ x: 560, y: 408 },
+	{ x: 118, y: 208 },
+	{ x: 690, y: 214 },
+	{ x: 306, y: 146 },
+	{ x: 520, y: 138 },
 ].map(p => ({ ...p, scale: 1 }));
 
 const graphEdges = [
-	{ from: 0, to: 12 }, { from: 0, to: 13 }, { from: 12, to: 1 }, { from: 13, to: 2 },
-	{ from: 1, to: 10 }, { from: 1, to: 3 }, { from: 1, to: 4 }, { from: 3, to: 7 },
-	{ from: 4, to: 8 }, { from: 2, to: 5 }, { from: 2, to: 6 }, { from: 5, to: 9 },
-	{ from: 6, to: 11 }, { from: 8, to: 9 },
+	{ from: 0, to: 12 },
+	{ from: 0, to: 13 },
+	{ from: 12, to: 1 },
+	{ from: 13, to: 2 },
+	{ from: 1, to: 10 },
+	{ from: 1, to: 3 },
+	{ from: 1, to: 4 },
+	{ from: 3, to: 7 },
+	{ from: 4, to: 8 },
+	{ from: 2, to: 5 },
+	{ from: 2, to: 6 },
+	{ from: 5, to: 9 },
+	{ from: 6, to: 11 },
+	{ from: 8, to: 9 },
 ];
 
 export const EDGE_POOL = Math.max(treeEdges.length, graphEdges.length);
+
+// ── Hash buckets (the same dataset re-read as a chained hash table) ──────────
+// Each atom lands in bucket (value mod 5) and stacks into that bucket's chain,
+// so the conserved company regroups into five bins by key — the hashing view of
+// "same data, a different access rule." No edges: the columns ARE the buckets.
+const BUCKET_COUNT = 5;
+const BUCKET_MARGIN = 150;
+const BUCKET_TOP = 170;
+const CHAIN_GAP = 60;
+const bucketX = b =>
+	BUCKET_MARGIN + (b * (W - 2 * BUCKET_MARGIN)) / (BUCKET_COUNT - 1);
+const bucketAtoms = new Array(N);
+// Chain links inside each bucket (consecutive entries in the same chain), so the
+// state reads as a CHAINED hash table, not a bare grid of dots.
+const bucketEdges = [];
+(() => {
+	const chains = Array.from({ length: BUCKET_COUNT }, () => []);
+	VALUES.forEach((v, i) => chains[v % BUCKET_COUNT].push(i));
+	chains.forEach((chain, b) => {
+		chain.forEach((atomIdx, slot) => {
+			bucketAtoms[atomIdx] = {
+				x: bucketX(b),
+				y: BUCKET_TOP + slot * CHAIN_GAP,
+				scale: 0.95,
+			};
+			if (slot > 0) bucketEdges.push({ from: chain[slot - 1], to: atomIdx });
+		});
+	});
+})();
 
 export const STATES = {
 	array: { atoms: arrayAtoms, bars: BARS, edges: [] },
@@ -99,11 +153,12 @@ export const STATES = {
 	tree: { atoms: treeAtoms, bars: null, edges: treeEdges },
 	heap: { atoms: heapAtoms, bars: null, edges: treeEdges },
 	graph: { atoms: graphAtoms, bars: null, edges: graphEdges },
+	buckets: { atoms: bucketAtoms, bars: null, edges: bucketEdges },
 };
 
 // The loop order. It returns to 'array', and graph→array lands EXACTLY on the
 // array coords, so the loop is seamless by construction.
-export const ORDER = ['array', 'sorted', 'tree', 'heap', 'graph'];
+export const ORDER = ['array', 'sorted', 'tree', 'heap', 'graph', 'buckets'];
 
 // A topic-hue wash names the active concept (subtle, ≤0.08 alpha in CSS).
 export const WASH_HUE = {
@@ -112,6 +167,7 @@ export const WASH_HUE = {
 	tree: 286, // trees violet
 	heap: 312, // heaps magenta
 	graph: 162, // graphs teal
+	buckets: 38, // hashing amber — one warm note among the cools
 };
 
 // The legend copy for the live figcaption — one short, STRUCTURALLY-TRUE line
@@ -126,6 +182,7 @@ export const PHASES = {
 	tree: { name: 'Binary tree', note: 'children of i at 2i+1, 2i+2' },
 	heap: { name: 'Heap', note: 'same array, parent/child by index' },
 	graph: { name: 'Graph', note: 'edges, no inherent root' },
+	buckets: { name: 'Hash buckets', note: 'each value into bucket v mod 5' },
 };
 
 // The conservation thesis in words — the <960px fallback, where the live

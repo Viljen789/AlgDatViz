@@ -57,7 +57,10 @@ const HeroRecompose = ({ className, onState }) => {
 					scale: 0.5,
 					autoAlpha: 0,
 				});
-				gsap.set(bars, { attr: { height: i => BARS[i].h, y: 0 }, autoAlpha: 0 });
+				gsap.set(bars, {
+					attr: { height: i => BARS[i].h, y: 0 },
+					autoAlpha: 0,
+				});
 				gsap.set(lines, { autoAlpha: 0, strokeDashoffset: 1 });
 				gsap.set(halos, { autoAlpha: 0, scale: 1 });
 				gsap.set(svg, { '--wash-h': WASH_HUE.array });
@@ -172,7 +175,12 @@ const HeroRecompose = ({ className, onState }) => {
 						tl.fromTo(
 							halos[idx],
 							{ autoAlpha: 0, scale: 0.6 },
-							{ autoAlpha: 0.85, scale: 2.2, duration: 0.55, ease: 'power2.out' },
+							{
+								autoAlpha: 0.85,
+								scale: 2.2,
+								duration: 0.55,
+								ease: 'power2.out',
+							},
 							at
 						);
 						tl.to(halos[idx], { autoAlpha: 0, duration: 0.3 }, at + 0.34);
@@ -189,13 +197,16 @@ const HeroRecompose = ({ className, onState }) => {
 				loop.add(beat(HEAPIFY_PATH, { step: 0.34, pop: 1.5 })); // heapify sift
 				morphTo('graph', 'retarget'); // pooled lines retarget — no false "pointer" ink
 				loop.add(beat(BFS_ORDER, { step: 0.1, pop: 1.32 })); // BFS frontier
-				morphTo('array', 'undraw'); // un-ink and collapse — lands exactly on the start
+				morphTo('buckets'); // graph edges retarget into bucket chains; the company regroups
+				hold();
+				morphTo('array', 'undraw'); // un-ink the chains and collapse to the baseline — lands on the start
 
 				master.add(loop);
 
 				// Don't burn frames off-screen or in a hidden tab.
 				const io = new IntersectionObserver(
-					([entry]) => (entry.isIntersecting ? master.resume() : master.pause()),
+					([entry]) =>
+						entry.isIntersecting ? master.resume() : master.pause(),
 					{ threshold: 0 }
 				);
 				if (root) io.observe(root);
@@ -234,49 +245,59 @@ const HeroRecompose = ({ className, onState }) => {
 				const DWELL = 2.6;
 
 				const cycle = gsap.timeline({ repeat: -1 });
-				['array', 'sorted', 'tree', 'heap', 'graph'].forEach(state => {
-					const sb = STATES[state].bars;
-					// Reposition while invisible — pure attribute sets, no animated motion.
-					cycle.set(atoms, {
-						x: i => STATES[state].atoms[i].x,
-						y: i => STATES[state].atoms[i].y,
-						scale: i => STATES[state].atoms[i].scale,
-					});
-					cycle.set(lines, {
-						attr: {
-							x1: k => edgeFrame(state, k).x1,
-							y1: k => edgeFrame(state, k).y1,
-							x2: k => edgeFrame(state, k).x2,
-							y2: k => edgeFrame(state, k).y2,
-						},
-					});
-					cycle.set(bars, { attr: { height: i => (sb ? sb[i].h : 0) } });
-					cycle.set(svg, { '--wash-h': WASH_HUE[state] });
-					cycle.call(() => emit(state));
-					// Dissolve the new frame in.
-					cycle.to(atoms, { autoAlpha: 1, duration: FADE_IN, ease: 'power1.out' });
-					cycle.to(
-						lines,
-						{
-							autoAlpha: k => (edgeFrame(state, k).active ? EDGE_OP : 0),
+				['array', 'sorted', 'tree', 'heap', 'graph', 'buckets'].forEach(
+					state => {
+						const sb = STATES[state].bars;
+						// Reposition while invisible — pure attribute sets, no animated motion.
+						cycle.set(atoms, {
+							x: i => STATES[state].atoms[i].x,
+							y: i => STATES[state].atoms[i].y,
+							scale: i => STATES[state].atoms[i].scale,
+						});
+						cycle.set(lines, {
+							attr: {
+								x1: k => edgeFrame(state, k).x1,
+								y1: k => edgeFrame(state, k).y1,
+								x2: k => edgeFrame(state, k).x2,
+								y2: k => edgeFrame(state, k).y2,
+							},
+						});
+						cycle.set(bars, { attr: { height: i => (sb ? sb[i].h : 0) } });
+						cycle.set(svg, { '--wash-h': WASH_HUE[state] });
+						cycle.call(() => emit(state));
+						// Dissolve the new frame in.
+						cycle.to(atoms, {
+							autoAlpha: 1,
 							duration: FADE_IN,
 							ease: 'power1.out',
-						},
-						'<'
-					);
-					cycle.to(
-						bars,
-						{ autoAlpha: sb ? BAR_OP : 0, duration: FADE_IN, ease: 'power1.out' },
-						'<'
-					);
-					cycle.to({}, { duration: DWELL }); // dwell so the legend can be read
-					// Dissolve out before the next frame repositions (while invisible).
-					cycle.to([...atoms, ...lines, ...bars], {
-						autoAlpha: 0,
-						duration: FADE_OUT,
-						ease: 'power1.in',
-					});
-				});
+						});
+						cycle.to(
+							lines,
+							{
+								autoAlpha: k => (edgeFrame(state, k).active ? EDGE_OP : 0),
+								duration: FADE_IN,
+								ease: 'power1.out',
+							},
+							'<'
+						);
+						cycle.to(
+							bars,
+							{
+								autoAlpha: sb ? BAR_OP : 0,
+								duration: FADE_IN,
+								ease: 'power1.out',
+							},
+							'<'
+						);
+						cycle.to({}, { duration: DWELL }); // dwell so the legend can be read
+						// Dissolve out before the next frame repositions (while invisible).
+						cycle.to([...atoms, ...lines, ...bars], {
+							autoAlpha: 0,
+							duration: FADE_OUT,
+							ease: 'power1.in',
+						});
+					}
+				);
 
 				const io = new IntersectionObserver(
 					([entry]) => (entry.isIntersecting ? cycle.resume() : cycle.pause()),
@@ -337,11 +358,7 @@ const HeroRecompose = ({ className, onState }) => {
 				</g>
 				<g data-atoms>
 					{STATES.tree.atoms.map((a, i) => (
-						<g
-							key={i}
-							data-atom
-							transform={`translate(${a.x} ${a.y})`}
-						>
+						<g key={i} data-atom transform={`translate(${a.x} ${a.y})`}>
 							<rect
 								data-bar
 								className={styles.bar}
@@ -351,7 +368,13 @@ const HeroRecompose = ({ className, onState }) => {
 								height={BARS[i].h}
 								rx={1.5}
 							/>
-							<circle data-halo className={styles.halo} cx={0} cy={0} r={ATOM_R} />
+							<circle
+								data-halo
+								className={styles.halo}
+								cx={0}
+								cy={0}
+								r={ATOM_R}
+							/>
 							<circle
 								data-core
 								className={`${styles.core} ${i === 0 ? styles.coreAccent : ''}`}
