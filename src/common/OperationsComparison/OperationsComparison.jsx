@@ -1,14 +1,4 @@
-import { useMemo } from 'react';
-import {
-	CartesianGrid,
-	Legend,
-	Line,
-	LineChart,
-	ResponsiveContainer,
-	Tooltip,
-	XAxis,
-	YAxis,
-} from 'recharts';
+import { useMemo, useState } from 'react';
 import styles from './OperationsComparison.module.css';
 import AlgorithmStats from '../../components/Sorting/AlgorithmInfoPanel/Views/AlgorithmStats/AlgorithmStats.jsx';
 
@@ -18,6 +8,218 @@ const StatCard = ({ label, value }) => (
 		<span>{value}</span>
 	</div>
 );
+
+// The four plotted series: the measured run vs. the three complexity envelopes.
+const SERIES = [
+	{ key: 'Actual Operations', color: 'var(--color-primary)', dashed: false },
+	{ key: 'O(n²)', color: 'var(--color-error)', dashed: true },
+	{ key: 'O(n log n)', color: 'var(--color-warning)', dashed: true },
+	{ key: 'O(n)', color: 'var(--color-success)', dashed: true },
+];
+
+const formatTick = v =>
+	v >= 1000 ? `${(v / 1000).toFixed(1)}k` : `${Math.round(v)}`;
+
+// "Nice" round y-axis ticks from 0 to >= max, so the top gridline clears the data.
+const niceTicks = (max, count = 4) => {
+	if (!(max > 0)) return [0, 1];
+	const rawStep = max / count;
+	const mag = 10 ** Math.floor(Math.log10(rawStep));
+	const norm = rawStep / mag;
+	const step = (norm >= 5 ? 10 : norm >= 2 ? 5 : norm >= 1 ? 2 : 1) * mag;
+	const ticks = [];
+	for (let v = 0; v <= max + step * 0.001; v += step) ticks.push(v);
+	return ticks;
+};
+
+/**
+ * OperationsChart — a hand-built SVG line chart (replaces the recharts LineChart).
+ * The plot lines live in a 0..100 viewBox stretched to fill (preserveAspectRatio
+ * "none") with non-scaling strokes, so they stay crisp at any width with no
+ * resize measurement. Axes, legend, and the hover readout are positioned HTML.
+ */
+const OperationsChart = ({ data }) => {
+	const [hover, setHover] = useState(null);
+
+	if (!Array.isArray(data) || data.length === 0) return null;
+
+	const steps = data.map(d => d.step);
+	const minStep = Math.min(...steps);
+	const maxStep = Math.max(...steps);
+	const stepSpan = Math.max(1, maxStep - minStep);
+
+	const rawMax = Math.max(1, ...data.flatMap(d => SERIES.map(s => d[s.key] || 0)));
+	const yTicks = niceTicks(rawMax, 4);
+	const yMax = yTicks[yTicks.length - 1] || rawMax;
+
+	const xPct = step => ((step - minStep) / stepSpan) * 100;
+	const yFromBottom = val => (val / yMax) * 100;
+	const yPct = val => 100 - yFromBottom(val);
+
+	// ~5 evenly spaced x ticks taken from real data steps (deduped).
+	const xTickCount = Math.min(5, data.length);
+	const xTicks = [
+		...new Set(
+			Array.from({ length: xTickCount }, (_, i) => {
+				const idx = Math.round(
+					(i / Math.max(1, xTickCount - 1)) * (data.length - 1)
+				);
+				return data[idx].step;
+			})
+		),
+	];
+
+	const onMove = e => {
+		const rect = e.currentTarget.getBoundingClientRect();
+		if (rect.width === 0) return;
+		const frac = (e.clientX - rect.left) / rect.width;
+		const target = minStep + frac * stepSpan;
+		let best = 0;
+		let bestDist = Infinity;
+		data.forEach((d, i) => {
+			const dist = Math.abs(d.step - target);
+			if (dist < bestDist) {
+				bestDist = dist;
+				best = i;
+			}
+		});
+		setHover(best);
+	};
+
+	const hovered = hover != null ? data[hover] : null;
+	const hoveredX = hovered ? xPct(hovered.step) : 0;
+
+	return (
+		<div className={styles.chart}>
+			<div className={styles.yAxis} aria-hidden="true">
+				{yTicks.map(t => (
+					<span
+						key={t}
+						className={styles.yTick}
+						style={{ bottom: `${yFromBottom(t)}%` }}
+					>
+						{formatTick(t)}
+					</span>
+				))}
+			</div>
+
+			<div
+				className={styles.plot}
+				onMouseMove={onMove}
+				onMouseLeave={() => setHover(null)}
+			>
+				<svg
+					className={styles.svg}
+					viewBox="0 0 100 100"
+					preserveAspectRatio="none"
+					aria-hidden="true"
+				>
+					{yTicks.map(t => (
+						<line
+							key={t}
+							className={styles.grid}
+							x1="0"
+							x2="100"
+							y1={yPct(t)}
+							y2={yPct(t)}
+							vectorEffect="non-scaling-stroke"
+						/>
+					))}
+					{hovered && (
+						<line
+							className={styles.guide}
+							x1={hoveredX}
+							x2={hoveredX}
+							y1="0"
+							y2="100"
+							vectorEffect="non-scaling-stroke"
+						/>
+					)}
+					{SERIES.map(s => (
+						<polyline
+							key={s.key}
+							className={styles.line}
+							points={data.map(d => `${xPct(d.step)},${yPct(d[s.key] || 0)}`).join(' ')}
+							style={{ stroke: s.color }}
+							strokeDasharray={s.dashed ? '5 4' : undefined}
+							vectorEffect="non-scaling-stroke"
+						/>
+					))}
+				</svg>
+
+				{hovered &&
+					SERIES.map(s => (
+						<span
+							key={s.key}
+							className={styles.dot}
+							style={{
+								left: `${hoveredX}%`,
+								bottom: `${yFromBottom(hovered[s.key] || 0)}%`,
+								background: s.color,
+							}}
+						/>
+					))}
+
+				{hovered && (
+					<div
+						className={styles.tooltip}
+						style={{
+							left: `${hoveredX}%`,
+							transform:
+								hoveredX > 60
+									? 'translateX(-100%) translateX(-14px)'
+									: 'translateX(14px)',
+						}}
+					>
+						<span className={styles.tipStep}>Step {hovered.step}</span>
+						{SERIES.map(s => (
+							<span key={s.key} className={styles.tipRow}>
+								<span
+									className={styles.tipSwatch}
+									style={{ background: s.color }}
+								/>
+								<span className={styles.tipName}>{s.key}</span>
+								<span className={styles.tipVal}>
+									{(hovered[s.key] || 0).toLocaleString()}
+								</span>
+							</span>
+						))}
+					</div>
+				)}
+			</div>
+
+			<div className={styles.xAxis} aria-hidden="true">
+				{xTicks.map(t => (
+					<span
+						key={t}
+						className={styles.xTick}
+						style={{ left: `${xPct(t)}%` }}
+					>
+						{t}
+					</span>
+				))}
+			</div>
+
+			<ul className={styles.legend}>
+				{SERIES.map(s => (
+					<li key={s.key} className={styles.legendItem}>
+						<span
+							className={styles.legendSwatch}
+							style={
+								s.dashed
+									? {
+											backgroundImage: `repeating-linear-gradient(90deg, ${s.color} 0 5px, transparent 5px 9px)`,
+										}
+									: { backgroundColor: s.color }
+							}
+						/>
+						{s.key}
+					</li>
+				))}
+			</ul>
+		</div>
+	);
+};
 
 const calculateTheoreticalOps = (step, totalSteps, arraySize) => {
 	if (arraySize <= 1 || totalSteps === 0) return { on2: 0, onlogn: 0, on: 0 };
@@ -34,12 +236,7 @@ const calculateTheoreticalOps = (step, totalSteps, arraySize) => {
 	};
 };
 
-const OperationsComparison = ({
-	operationStats,
-	algorithmInfo,
-	arraySize,
-	isSorting,
-}) => {
+const OperationsComparison = ({ operationStats, algorithmInfo, arraySize }) => {
 	const chartData = useMemo(() => {
 		if (
 			!operationStats ||
@@ -169,75 +366,7 @@ const OperationsComparison = ({
 			</div>
 
 			<div className={styles.chartContainer}>
-				<ResponsiveContainer width="100%" height={300}>
-					<LineChart
-						data={chartData}
-						margin={{ top: 5, right: 20, left: 10, bottom: 5 }}
-					>
-						<CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
-						<XAxis
-							dataKey="step"
-							type="number"
-							domain={['dataMin', 'dataMax']}
-							stroke="var(--color-text-secondary)"
-							tick={{ fontSize: 12 }}
-							tickFormatter={value => `${value}`}
-						/>
-						<YAxis
-							stroke="var(--color-text-secondary)"
-							tick={{ fontSize: 12 }}
-							tickFormatter={value =>
-								value > 1000 ? `${(value / 1000).toFixed(1)}k` : value
-							}
-						/>
-						<Tooltip
-							contentStyle={{
-								backgroundColor: 'var(--color-surface)',
-								border: '1px solid var(--color-border)',
-								borderRadius: 'var(--border-radius-md)',
-								boxShadow: '0 4px 12px var(--shadow-color)',
-							}}
-							formatter={(value, name) => [value?.toLocaleString(), name]}
-							labelFormatter={value => `Step ${value}`}
-						/>
-						<Legend />
-						<Line
-							type="monotone"
-							dataKey="Actual Operations"
-							stroke="var(--color-primary)"
-							strokeWidth={2}
-							dot={false}
-							isAnimationActive={!isSorting}
-						/>
-						<Line
-							type="monotone"
-							dataKey="O(n²)"
-							stroke="var(--color-error)"
-							strokeWidth={2}
-							strokeDasharray="4 4"
-							dot={false}
-							isAnimationActive={false}
-						/>
-						<Line
-							type="monotone"
-							dataKey="O(n log n)"
-							stroke="var(--color-warning)"
-							strokeWidth={2}
-							strokeDasharray="4 4"
-							dot={false}
-							isAnimationActive={false}
-						/>
-						<Line
-							type="monotone"
-							dataKey="O(n)"
-							stroke="var(--color-success)"
-							strokeWidth={2}
-							strokeDasharray="4 4"
-							dot={false}
-							isAnimationActive={false}
-						/>
-					</LineChart>
-				</ResponsiveContainer>
+				<OperationsChart data={chartData} />
 			</div>
 		</div>
 	);

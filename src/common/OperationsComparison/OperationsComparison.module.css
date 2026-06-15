@@ -40,6 +40,167 @@
 	min-height: 200px;
 }
 
+/* ---- Hand-built SVG line chart (replaces the recharts LineChart) ---- */
+.chart {
+	display: grid;
+	grid-template-columns: 2.75rem 1fr;
+	grid-template-rows: 1fr 1.25rem auto;
+	width: 100%;
+	height: 100%;
+	min-height: 260px;
+	font-family: var(--font-family-mono);
+}
+
+.yAxis {
+	grid-column: 1;
+	grid-row: 1;
+	position: relative;
+}
+
+.yTick {
+	position: absolute;
+	right: 7px;
+	transform: translateY(50%);
+	font-size: 10px;
+	line-height: 1;
+	color: var(--color-text-secondary);
+	white-space: nowrap;
+}
+
+.plot {
+	grid-column: 2;
+	grid-row: 1;
+	position: relative;
+	border-left: 1px solid var(--color-border);
+	border-bottom: 1px solid var(--color-border);
+}
+
+.svg {
+	position: absolute;
+	inset: 0;
+	width: 100%;
+	height: 100%;
+	overflow: visible;
+}
+
+.grid {
+	stroke: var(--color-border);
+	stroke-width: 1;
+	stroke-dasharray: 3 3;
+	opacity: 0.65;
+}
+
+.guide {
+	stroke: var(--color-text-muted);
+	stroke-width: 1;
+	stroke-dasharray: 2 3;
+}
+
+.line {
+	fill: none;
+	stroke-width: 2;
+	stroke-linejoin: round;
+	stroke-linecap: round;
+}
+
+.dot {
+	position: absolute;
+	width: 7px;
+	height: 7px;
+	border-radius: 50%;
+	transform: translate(-50%, 50%);
+	border: 1.5px solid var(--color-surface);
+	pointer-events: none;
+}
+
+.tooltip {
+	position: absolute;
+	top: 6px;
+	z-index: 2;
+	display: flex;
+	flex-direction: column;
+	gap: 3px;
+	min-width: 9.5rem;
+	padding: var(--spacing-sm) var(--spacing-md);
+	background: var(--color-surface);
+	border: 1px solid var(--color-border);
+	border-radius: var(--border-radius-md);
+	box-shadow: 0 4px 12px var(--shadow-color);
+	pointer-events: none;
+	font-size: 11px;
+}
+
+.tipStep {
+	margin-bottom: 2px;
+	font-weight: 600;
+	color: var(--color-text-primary);
+}
+
+.tipRow {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+}
+
+.tipSwatch {
+	flex: none;
+	width: 10px;
+	height: 3px;
+	border-radius: 1px;
+}
+
+.tipName {
+	flex: 1;
+	color: var(--color-text-secondary);
+}
+
+.tipVal {
+	color: var(--color-text-primary);
+	font-variant-numeric: tabular-nums;
+}
+
+.xAxis {
+	grid-column: 2;
+	grid-row: 2;
+	position: relative;
+}
+
+.xTick {
+	position: absolute;
+	top: 4px;
+	transform: translateX(-50%);
+	font-size: 10px;
+	line-height: 1;
+	color: var(--color-text-secondary);
+	white-space: nowrap;
+}
+
+.legend {
+	grid-column: 1 / -1;
+	grid-row: 3;
+	display: flex;
+	flex-wrap: wrap;
+	justify-content: center;
+	gap: var(--spacing-md);
+	margin: var(--spacing-sm) 0 0;
+	padding: 0;
+	list-style: none;
+	font-size: 11px;
+	color: var(--color-text-secondary);
+}
+
+.legendItem {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+}
+
+.legendSwatch {
+	width: 16px;
+	height: 3px;
+	border-radius: 1px;
+}
+
 .statsRow {
 	display: grid;
 	grid-template-columns: repeat(4, 1fr);
