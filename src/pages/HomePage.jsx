@@ -137,11 +137,355 @@ const PreviewBuckets = () => (
 	</svg>
 );
 
+// An indexed array row: six equal cells side by side, one subtly filled — the
+// "everything lives in an array" primer (distinct from the sorting bars).
+const PreviewArray = () => (
+	<svg
+		viewBox="0 0 120 56"
+		className={styles.preview}
+		aria-hidden="true"
+		preserveAspectRatio="none"
+	>
+		{[0, 1, 2, 3, 4, 5].map(i => (
+			<rect
+				key={i}
+				x={4 + i * 19}
+				y="18"
+				width="17"
+				height="20"
+				rx="1.5"
+				fill="currentColor"
+				fillOpacity={i === 2 ? 0.55 : 0}
+				stroke="currentColor"
+				strokeWidth="1"
+				opacity={i === 2 ? 0.85 : 0.5}
+			/>
+		))}
+	</svg>
+);
+
+// A LIFO stack: four boxed cells piled vertically with a small cap arrow at the
+// top marking where the next push/pop happens.
+const PreviewStack = () => (
+	<svg
+		viewBox="0 0 120 56"
+		className={styles.preview}
+		aria-hidden="true"
+		preserveAspectRatio="none"
+	>
+		<g
+			stroke="currentColor"
+			strokeWidth="1"
+			fill="currentColor"
+			strokeLinecap="round"
+			strokeLinejoin="round"
+		>
+			<path d="M60 4 l-7 8 h4 v6 h6 v-6 h4 Z" opacity="0.85" />
+			{[0, 1, 2, 3].map(i => (
+				<rect
+					key={i}
+					x="42"
+					y={22 + i * 8}
+					width="36"
+					height="7"
+					rx="1.5"
+					fillOpacity={0.55 - i * 0.1}
+					opacity={0.7}
+				/>
+			))}
+		</g>
+	</svg>
+);
+
+// Counting bins: four short tally columns of differing fill heights sitting on a
+// baseline — the histogram of counts (smaller and bin-like, not sorting bars).
+const PreviewCounts = () => (
+	<svg
+		viewBox="0 0 120 56"
+		className={styles.preview}
+		aria-hidden="true"
+		preserveAspectRatio="none"
+	>
+		<line
+			x1="8"
+			y1="46"
+			x2="112"
+			y2="46"
+			stroke="currentColor"
+			strokeWidth="1"
+			opacity="0.45"
+		/>
+		{[18, 30, 12, 24].map((h, i) => (
+			<rect
+				key={i}
+				x={14 + i * 24}
+				y={45 - h}
+				width="14"
+				height={h}
+				rx="1.5"
+				fill="currentColor"
+				opacity={0.4 + i * 0.13}
+			/>
+		))}
+	</svg>
+);
+
+// A binary search tree leaning right: a root with an ordered left/right cascade,
+// the asymmetry reading as sorted-on-insert (distinct from the balanced split).
+const PreviewTree = () => (
+	<svg
+		viewBox="0 0 120 56"
+		className={styles.preview}
+		aria-hidden="true"
+		preserveAspectRatio="none"
+	>
+		<g stroke="currentColor" strokeWidth="1" fill="none" opacity="0.55">
+			<line x1="44" y1="8" x2="22" y2="26" />
+			<line x1="44" y1="8" x2="74" y2="26" />
+			<line x1="74" y1="26" x2="58" y2="46" />
+			<line x1="74" y1="26" x2="98" y2="46" />
+		</g>
+		<g fill="currentColor">
+			<circle cx="44" cy="8" r="3.5" />
+			<circle cx="22" cy="26" r="3" opacity="0.85" />
+			<circle cx="74" cy="26" r="3" opacity="0.85" />
+			<circle cx="58" cy="46" r="2.5" opacity="0.7" />
+			<circle cx="98" cy="46" r="2.5" opacity="0.7" />
+		</g>
+	</svg>
+);
+
+// A compact heap: a tight triangle of nodes with an emphasized (larger, filled)
+// root over two then three children — the always-best-on-top silhouette.
+const PreviewHeap = () => (
+	<svg
+		viewBox="0 0 120 56"
+		className={styles.preview}
+		aria-hidden="true"
+		preserveAspectRatio="none"
+	>
+		<g stroke="currentColor" strokeWidth="1" fill="none" opacity="0.5">
+			<line x1="60" y1="10" x2="42" y2="28" />
+			<line x1="60" y1="10" x2="78" y2="28" />
+			<line x1="42" y1="28" x2="30" y2="46" />
+			<line x1="42" y1="28" x2="54" y2="46" />
+			<line x1="78" y1="28" x2="90" y2="46" />
+		</g>
+		<g fill="currentColor">
+			<circle cx="60" cy="10" r="4.5" />
+			<circle cx="42" cy="28" r="3" opacity="0.8" />
+			<circle cx="78" cy="28" r="3" opacity="0.8" />
+			<circle cx="30" cy="46" r="2.5" opacity="0.65" />
+			<circle cx="54" cy="46" r="2.5" opacity="0.65" />
+			<circle cx="90" cy="46" r="2.5" opacity="0.65" />
+		</g>
+	</svg>
+);
+
+// A decision branch: one node forking into two routes, the chosen path drawn
+// bolder — greedy/divide-and-conquer/DP "when to choose what".
+const PreviewBranch = () => (
+	<svg
+		viewBox="0 0 120 56"
+		className={styles.preview}
+		aria-hidden="true"
+		preserveAspectRatio="none"
+	>
+		<line
+			x1="18"
+			y1="28"
+			x2="58"
+			y2="12"
+			stroke="currentColor"
+			strokeWidth="2"
+			fill="none"
+			opacity="0.85"
+		/>
+		<line
+			x1="18"
+			y1="28"
+			x2="58"
+			y2="44"
+			stroke="currentColor"
+			strokeWidth="1"
+			fill="none"
+			opacity="0.4"
+		/>
+		<g fill="currentColor">
+			<circle cx="18" cy="28" r="4" />
+			<circle cx="58" cy="12" r="3.5" />
+			<circle cx="58" cy="44" r="3" opacity="0.5" />
+		</g>
+	</svg>
+);
+
+// A minimum spanning tree: five nodes where the chosen edges are solid and a
+// couple of rejected edges are faint/dashed — a connected subset of the graph.
+const PreviewSpanning = () => (
+	<svg
+		viewBox="0 0 120 56"
+		className={styles.preview}
+		aria-hidden="true"
+		preserveAspectRatio="none"
+	>
+		<g stroke="currentColor" strokeWidth="1" fill="none">
+			<line x1="18" y1="14" x2="50" y2="30" opacity="0.85" />
+			<line x1="50" y1="30" x2="86" y2="16" opacity="0.85" />
+			<line x1="50" y1="30" x2="40" y2="48" opacity="0.85" />
+			<line x1="86" y1="16" x2="100" y2="44" opacity="0.85" />
+			<line
+				x1="18"
+				y1="14"
+				x2="40"
+				y2="48"
+				strokeDasharray="3 3"
+				opacity="0.3"
+			/>
+			<line
+				x1="86"
+				y1="16"
+				x2="50"
+				y2="30"
+				strokeDasharray="3 3"
+				opacity="0.3"
+			/>
+		</g>
+		<g fill="currentColor">
+			<circle cx="18" cy="14" r="3" />
+			<circle cx="50" cy="30" r="3.5" />
+			<circle cx="86" cy="16" r="3" />
+			<circle cx="40" cy="48" r="3" />
+			<circle cx="100" cy="44" r="3" />
+		</g>
+	</svg>
+);
+
+// A shortest path: a single bold polyline threading through four nodes while the
+// off-path nodes sit faint — the one route relaxation settles on.
+const PreviewPath = () => (
+	<svg
+		viewBox="0 0 120 56"
+		className={styles.preview}
+		aria-hidden="true"
+		preserveAspectRatio="none"
+	>
+		<polyline
+			points="14,40 44,16 76,36 108,12"
+			stroke="currentColor"
+			strokeWidth="2"
+			fill="none"
+			strokeLinecap="round"
+			strokeLinejoin="round"
+			opacity="0.85"
+		/>
+		<g fill="currentColor">
+			<circle cx="14" cy="40" r="3.5" />
+			<circle cx="44" cy="16" r="3.5" />
+			<circle cx="76" cy="36" r="3.5" />
+			<circle cx="108" cy="12" r="3.5" />
+			<circle cx="40" cy="46" r="2.5" opacity="0.35" />
+			<circle cx="92" cy="44" r="2.5" opacity="0.35" />
+		</g>
+	</svg>
+);
+
+// A DP table: a 4×3 lattice of dots — the all-pairs distance matrix filled in
+// over intermediate vertices.
+const PreviewMatrix = () => (
+	<svg
+		viewBox="0 0 120 56"
+		className={styles.preview}
+		aria-hidden="true"
+		preserveAspectRatio="none"
+	>
+		<g fill="currentColor">
+			{[0, 1, 2].map(row =>
+				[0, 1, 2, 3].map(col => (
+					<circle
+						key={`${row}-${col}`}
+						cx={24 + col * 24}
+						cy={14 + row * 14}
+						r="3"
+						opacity={row === col ? 0.85 : 0.45}
+					/>
+				))
+			)}
+		</g>
+	</svg>
+);
+
+// A flow network: a source on the left and a sink on the right, joined through
+// two middle nodes by directed pipes of differing thickness (capacities).
+const PreviewFlow = () => (
+	<svg
+		viewBox="0 0 120 56"
+		className={styles.preview}
+		aria-hidden="true"
+		preserveAspectRatio="none"
+	>
+		<g stroke="currentColor" fill="none" strokeLinecap="round" opacity="0.7">
+			<line x1="16" y1="28" x2="48" y2="14" strokeWidth="3" />
+			<line x1="16" y1="28" x2="48" y2="44" strokeWidth="1.5" />
+			<line x1="48" y1="14" x2="48" y2="44" strokeWidth="1.5" />
+			<line x1="48" y1="14" x2="104" y2="28" strokeWidth="2" />
+			<line x1="48" y1="44" x2="104" y2="28" strokeWidth="3" />
+		</g>
+		<g fill="currentColor">
+			<circle cx="16" cy="28" r="4" />
+			<circle cx="48" cy="14" r="3" opacity="0.85" />
+			<circle cx="48" cy="44" r="3" opacity="0.85" />
+			<circle cx="104" cy="28" r="4" />
+		</g>
+	</svg>
+);
+
+// Intractability: a small densely interconnected clique — five nodes wired to
+// each other, the tangle that reads as combinatorially hard.
+const PreviewClique = () => (
+	<svg
+		viewBox="0 0 120 56"
+		className={styles.preview}
+		aria-hidden="true"
+		preserveAspectRatio="none"
+	>
+		<g stroke="currentColor" strokeWidth="1" fill="none" opacity="0.45">
+			<line x1="60" y1="8" x2="30" y2="26" />
+			<line x1="60" y1="8" x2="90" y2="26" />
+			<line x1="60" y1="8" x2="42" y2="48" />
+			<line x1="60" y1="8" x2="78" y2="48" />
+			<line x1="30" y1="26" x2="90" y2="26" />
+			<line x1="30" y1="26" x2="42" y2="48" />
+			<line x1="30" y1="26" x2="78" y2="48" />
+			<line x1="90" y1="26" x2="42" y2="48" />
+			<line x1="90" y1="26" x2="78" y2="48" />
+			<line x1="42" y1="48" x2="78" y2="48" />
+		</g>
+		<g fill="currentColor">
+			<circle cx="60" cy="8" r="3" />
+			<circle cx="30" cy="26" r="3" />
+			<circle cx="90" cy="26" r="3" />
+			<circle cx="42" cy="48" r="3" />
+			<circle cx="78" cy="48" r="3" />
+		</g>
+	</svg>
+);
+
 const PREVIEW_BY_ID = {
-	sorting: PreviewBars,
-	graphs: PreviewNetwork,
+	foundations: PreviewArray,
+	'stacks-queues': PreviewStack,
 	'master-theorem': PreviewSplit,
+	sorting: PreviewBars,
+	'linear-time-sorting': PreviewCounts,
 	hashing: PreviewBuckets,
+	trees: PreviewTree,
+	heaps: PreviewHeap,
+	graphs: PreviewNetwork,
+	strategies: PreviewBranch,
+	mst: PreviewSpanning,
+	'shortest-paths': PreviewPath,
+	apsp: PreviewMatrix,
+	'max-flow': PreviewFlow,
+	'np-completeness': PreviewClique,
 };
 
 // A small daily-goal ring: today's answered count against the goal.
