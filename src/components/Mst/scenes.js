@@ -9,12 +9,7 @@
 // All concrete numbers are derived from the pure generators in mstTrace.js (run
 // in mstTrace.test.js) so the scrolly and the algorithm can never disagree.
 
-import {
-	crossingEdges,
-	kruskalTrace,
-	lightEdge,
-	primTrace,
-} from './mstTrace.js';
+import { crossingEdges, kruskalTrace, primTrace } from './mstTrace.js';
 import { MST_EDGES, MST_VERTICES } from './mstMeta.js';
 
 // Measured facts about the shared graph (never hand-typed).
@@ -28,9 +23,6 @@ export const MST_EDGE_COUNT = KRUSKAL.treeEdges.length; // n − 1 = 6
 const CUT_INSIDE = ['A', 'B', 'D'];
 const CUT = crossingEdges(MST_EDGES, CUT_INSIDE);
 const CUT_LIGHT = CUT.light; // B–E (4)
-
-// First edge Prim from A takes (the lightest leaving A): A–B (2).
-const PRIM_FIRST = lightEdge(MST_EDGES, ['A']); // A–B (2)
 
 // Sanity (kept honest at module load): Kruskal and Prim agree.
 const SAME_TREE =
@@ -94,7 +86,7 @@ export const SCENES = [
 		id: 'kruskal',
 		eyebrow: 'Algorithm 1',
 		title: 'Kruskal: cheapest edge first, skip the cycles.',
-		body: `Sort all edges ascending. Walk them cheapest-first; add an edge only when its endpoints are in different components (union-find says find(u) ≠ find(v)), otherwise skip it as a cycle. Each accepted edge is the light edge across the cut separating those two components — so the cut property certifies every choice. The forest fuses into one tree after n − 1 acceptances.`,
+		body: `Sort all edges ascending. Walk them cheapest-first; add an edge only when its endpoints are in different components (union-find says find(u) ≠ find(v)), otherwise skip it as a cycle. Each accepted edge is the light edge across the cut separating those two components, so the cut property certifies every choice. The forest fuses into one tree after n − 1 acceptances. The cost is dominated by the SORT: O(E log E), and since E ≤ V² we have log E ≤ 2 log V, so O(E log E) = O(E log V). The union-find work is the cheap part: E cycle checks at O(E·alpha(V)), effectively linear.`,
 		check: {
 			kind: 'predict',
 			prompt: `On this graph the edges sorted ascending start ${[
@@ -115,13 +107,22 @@ export const SCENES = [
 		id: 'prim',
 		eyebrow: 'Algorithm 2',
 		title: 'Prim: grow one tree across the lightest frontier edge.',
-		body: `Prim starts a single tree at one vertex. The cut is always (tree, everything else). Each step it adds the lightest edge crossing that cut — the frontier's minimum — pulling one new vertex inside, then re-computes the frontier. It is the cut property applied to the same cut over and over. A priority queue makes "lightest crossing edge" fast.`,
+		body: `Prim starts a single tree at one vertex. The cut is always (tree, everything else). Each step it adds the lightest edge crossing that cut (the frontier's minimum), pulling one new vertex inside, then re-computes the frontier. It is the cut property applied to the same cut over and over. Starting from A, the lightest edge leaving A is A–B (2), so B joins first. The log factor here comes from the PRIORITY QUEUE, not from any sort: with a binary heap, V extract-min and up to E decrease-key operations each cost O(log V), giving O(E log V). Swap in a Fibonacci heap, where decrease-key is O(1) amortized, and Prim drops to O(E + V log V).`,
 		check: {
-			kind: 'predict',
-			prompt: `Prim starts at A. Its first cut is {A} | rest. Which edge does Prim add first?`,
-			options: [...new Set(['A–B (2)', 'A–D (3)', 'B–E (4)', 'D–E (8)'])],
-			answer: `${PRIM_FIRST.u}–${PRIM_FIRST.v} (${PRIM_FIRST.w})`,
-			explanation: `From the cut {A} | rest, only A–B (2) and A–D (3) cross. The lightest is ${PRIM_FIRST.u}–${PRIM_FIRST.v} (${PRIM_FIRST.w}), so Prim adds it and B joins the tree. Notice Kruskal's first pick was the same edge — both are taking the light edge of a cut.`,
+			kind: 'classify',
+			prompt:
+				'Both run in O(E log V), but the log factor comes from a different structure. Match each algorithm to the structure that produces its log.',
+			items: [
+				{ id: 'kruskal', label: 'Kruskal' },
+				{ id: 'prim', label: 'Prim (binary heap)' },
+			],
+			categories: [
+				{ id: 'sort', label: 'Sorting the edge list' },
+				{ id: 'pq', label: 'The priority queue' },
+			],
+			answer: { kruskal: 'sort', prim: 'pq' },
+			explanation:
+				'Kruskal touches every edge once, but it must first sort them: that O(E log E) = O(E log V) sort is the bottleneck, while its union-find checks are only O(E·alpha(V)), effectively linear. Prim never sorts; its log comes from the binary-heap priority queue (V extract-min plus E decrease-key, each O(log V)). Same Θ(E log V) headline, two different sources, which is exactly why a Fibonacci heap speeds up Prim (to O(E + V log V)) but not Kruskal.',
 		},
 	},
 	{

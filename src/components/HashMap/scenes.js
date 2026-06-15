@@ -84,7 +84,7 @@ export const SCENES = [
 		id: 'chaining',
 		eyebrow: 'Separate chaining',
 		title: 'The bucket holds a chain, not a single value.',
-		body: `Each bucket is a tiny linked list. Colliding keys append to the chain, so nothing is lost. A lookup hashes to one bucket and walks only that chain — never the whole table.`,
+		body: `Each bucket is a tiny linked list. Colliding keys append to the chain, so nothing is lost. A lookup hashes to one bucket and walks only that chain, never the whole table. The catch: a lookup costs as much as the chain it lands in, so the cost is really the chain length, not the table size.`,
 		check: {
 			kind: 'choice',
 			prompt: `To look up "${COLLISION_KEYS[1]}", how many of the ${STAGE_CAPACITY} buckets does the map have to scan?`,
@@ -97,7 +97,7 @@ export const SCENES = [
 		id: 'load-factor',
 		eyebrow: 'Load factor',
 		title: 'Load factor measures the crowding.',
-		body: `Load factor α = n / m: entries over buckets. With ${STAGE_KEYS.length} entries in ${STAGE_CAPACITY} buckets, α ≈ ${(STAGE_KEYS.length / STAGE_CAPACITY).toFixed(2)}. As α climbs, chains lengthen and the average lookup slows.`,
+		body: `Load factor α = n / m: entries over buckets. With ${STAGE_KEYS.length} entries in ${STAGE_CAPACITY} buckets, α ≈ ${(STAGE_KEYS.length / STAGE_CAPACITY).toFixed(2)}. Under simple uniform hashing (keys spread evenly across buckets), the expected chain length is exactly α, so the average search, insert, and delete cost O(1 + α). Resizing keeps α a constant, which keeps that average O(1). As α climbs, chains lengthen and the average lookup slows.`,
 		check: {
 			kind: 'choice',
 			prompt:
@@ -125,7 +125,35 @@ export const SCENES = [
 			],
 			answer: 'hash % capacity changes',
 			explanation:
-				'The raw hash of a key never changes — but the bucket index is hash % capacity, and capacity just changed. An entry that lived in bucket 3 of 7 may belong in bucket 10 of 17. Every entry has to be re-placed, which is what makes resize O(n).',
+				'The raw hash of a key never changes, but the bucket index is hash % capacity, and capacity just changed. An entry that lived in bucket 3 of 7 may belong in bucket 10 of 17. Every entry has to be re-placed, which is what makes resize O(n).',
+		},
+	},
+	{
+		id: 'worst-case',
+		eyebrow: 'Average vs worst case',
+		title: 'The O(1) is an average, resting on one assumption.',
+		body: `That O(1) is an expectation, not a guarantee. It holds under simple uniform hashing: keys spread evenly, so a chain is α long on average. If every key collides into one bucket, the chain becomes the whole table and a single lookup walks all n entries.`,
+		check: {
+			kind: 'choice',
+			prompt:
+				'Hash table search, insert, and delete are average O(1). What is the worst case, and what assumption buys the average?',
+			options: [
+				'Worst case Θ(n); average assumes simple uniform hashing',
+				'Always O(1); hashing removes the dependence on n',
+				'Worst case Θ(log n); average assumes a balanced tree',
+				'Worst case Θ(n); average assumes the keys are sorted',
+			],
+			answer: 'Worst case Θ(n); average assumes simple uniform hashing',
+			misconceptions: {
+				'Always O(1); hashing removes the dependence on n':
+					'O(1) is only the expectation. Under simple uniform hashing the expected chain is α; adversarial or clustered keys that all collide make one chain hold every entry, so a lookup is Θ(n).',
+				'Worst case Θ(log n); average assumes a balanced tree':
+					'Θ(log n) is the balanced-tree bound. A chained hash table has no tree: a single overloaded bucket is a linear chain, so its worst case is Θ(n), not Θ(log n).',
+				'Worst case Θ(n); average assumes the keys are sorted':
+					'The worst case Θ(n) is right, but the average rests on simple uniform hashing (keys spread evenly), not on the keys being sorted. Hash tables never rely on key order.',
+			},
+			explanation:
+				'Average-case O(1) for search, insert, and delete assumes simple uniform hashing: keys land in buckets evenly, so the expected chain length is the load factor α = n/m, and resizing keeps α a constant. The worst case is Θ(n): if every key hashes into the same bucket, that one chain holds all n entries and a single operation must walk the lot.',
 		},
 	},
 ];

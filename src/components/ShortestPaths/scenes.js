@@ -125,13 +125,38 @@ export const SCENES = [
 		id: 'dijkstra',
 		eyebrow: 'Order #3 — greedy',
 		title: 'Dijkstra: always settle the closest vertex next.',
-		body: `When all weights are non-negative, a greedy order wins: keep the vertices in a priority queue by tentative distance, repeatedly EXTRACT-MIN the closest unsettled vertex, and relax its out-edges. The closest unsettled distance can never later get smaller — no non-negative edge can shrink it — so each vertex is settled exactly once. Cost: O((V + E) log V). On the shared graph it settles everything in ${DIJ.relaxations} relaxations.`,
+		body: `When all weights are non-negative, a greedy order wins: keep the vertices in a priority queue by tentative distance, repeatedly EXTRACT-MIN the closest unsettled vertex, and relax its out-edges. The closest unsettled distance can never later get smaller (no non-negative edge can shrink it), so each vertex is settled exactly once. The cost depends on which priority queue you pick. The familiar O((V + E) log V) assumes a BINARY HEAP, where each of the V extractions and E decrease-keys costs O(log V). On the shared graph it settles everything in ${DIJ.relaxations} relaxations.`,
 		check: {
 			kind: 'predict',
 			prompt: `Dijkstra settles vertices in increasing distance order. On the shared graph the source S is settled first (dist 0). Which vertex is settled SECOND?`,
 			options: ['C', 'A', 'B', 'D'],
 			answer: 'C',
 			explanation: `After S, the smallest tentative distance is dist[C] = ${DIST.C} (the direct S→C edge), smaller than the tentative dist[A] = ${DIRECT_SA}. Dijkstra extracts the minimum, so C is settled second — and only then does relaxing C→A lower dist[A] to ${DIST.A}. Greedily taking the closest is safe precisely because no later non-negative edge can undercut it.`,
+		},
+	},
+	{
+		id: 'dijkstra-pq',
+		eyebrow: 'Order #3, the price of the queue',
+		title: 'Dijkstra’s running time is whatever the priority queue charges.',
+		body: `O((V + E) log V) is not a law of Dijkstra, it is the bill from a binary heap. Swap the queue and the bound changes. A simple ARRAY (scan all vertices for the minimum each round) makes each EXTRACT-MIN cost O(V) and each decrease-key O(1), giving O(V^2 + E) = O(V^2). A FIBONACCI HEAP makes decrease-key O(1) amortized, giving O(E + V log V). On a SPARSE graph (E ~ V) the heap wins; on a DENSE graph (E ~ V^2) the plain array’s O(V^2) beats the binary heap, whose log factor on V^2 edges makes it O(V^2 log V).`,
+		check: {
+			kind: 'choice',
+			prompt:
+				'On a dense graph (E ~ V^2), which Dijkstra implementation is asymptotically fastest?',
+			options: [
+				'Array / linear-scan min, O(V^2)',
+				'Binary heap, O((V + E) log V)',
+				'Fibonacci heap, O(E + V log V)',
+			],
+			answer: 'Array / linear-scan min, O(V^2)',
+			misconceptions: {
+				'Binary heap, O((V + E) log V)':
+					'On E ~ V^2 edges the heap pays a log factor per edge: O((V + V^2) log V) = O(V^2 log V), strictly slower than the array’s O(V^2). The heap version is not always fastest.',
+				'Fibonacci heap, O(E + V log V)':
+					'On a dense graph O(E + V log V) = O(V^2 + V log V) = O(V^2), so the Fibonacci heap only ties the array asymptotically, never beats it. Its win is on sparse graphs (E ~ V), and its large constants make the plain array the practical dense-graph choice.',
+			},
+			explanation:
+				'Substitute E ~ V^2 into each bound. Array: O(V^2 + E) = O(V^2). Binary heap: O((V + E) log V) = O(V^2 log V), the slowest. Fibonacci heap: O(E + V log V) = O(V^2). So the array matches the Fibonacci heap and beats the binary heap. The heap’s per-edge log factor is pure overhead once the graph is dense; the array’s strength is that its O(V^2) extraction cost is already dominant, so it pays nothing extra for the V^2 edges.',
 		},
 	},
 	{
