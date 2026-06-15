@@ -222,6 +222,11 @@ const ShortestPathsStage = ({ activeScene = 0 }) => {
 						const cls = [styles.node];
 						if (isSource) cls.push(styles.nodeSource);
 						if (isRelaxTarget) cls.push(styles.nodeRelax);
+						// The distance lives ON the node, not only in the side table, so a
+						// relax reads as one event on one object: this edge fired, that
+						// node's number dropped. ∞ until first reached.
+						const d = view.dist[node.id];
+						const distText = d == null || d === Infinity ? '∞' : d;
 						return (
 							<g key={node.id} transform={`translate(${node.px}, ${node.py})`}>
 								<circle r={NODE_R} className={cls.join(' ')} />
@@ -231,6 +236,15 @@ const ShortestPathsStage = ({ activeScene = 0 }) => {
 									dominantBaseline="central"
 								>
 									{node.id}
+								</text>
+								<text
+									className={`${styles.nodeDist} ${
+										isRelaxTarget ? styles.nodeDistActive : ''
+									}`}
+									y={NODE_R + 7}
+									textAnchor="middle"
+								>
+									{distText}
 								</text>
 							</g>
 						);

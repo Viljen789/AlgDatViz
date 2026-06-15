@@ -146,6 +146,21 @@
 	fill: var(--color-text-on-accent);
 }
 
+/* The live distance, drawn under each node so relaxation is one readable event
+   on one object (the dist/pred table stays as the ledger). */
+.nodeDist {
+	font-family: var(--font-family-mono);
+	font-size: 5px;
+	fill: var(--color-text-secondary);
+	pointer-events: none;
+	user-select: none;
+}
+
+.nodeDistActive {
+	fill: var(--topic-accent-ink);
+	font-weight: var(--font-weight-bold);
+}
+
 /* ---------- dist[] / pred[] table ---------- */
 
 .tableWrap {
