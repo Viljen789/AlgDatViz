@@ -1,4 +1,5 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import gsap from 'gsap';
 import useReducedMotion from '../../hooks/useReducedMotion.js';
 import { STAGE_VALUES } from './scenes.js';
 import styles from './MergeSortStage.module.css';
@@ -27,8 +28,12 @@ const FOLLOW_VALUE = STAGE_VALUES[FOLLOW_IDX];
 // leaf-pairs combine into their parent. Two cursors compare fronts, the smaller
 // is copied out, repeat — the linear-scan invariant the whole lesson builds to.
 // The follow-me value (3) is copied out first, so it visibly leads the run.
-const MERGE_L = STAGE_VALUES.slice(0, 2).slice().sort((a, b) => a - b);
-const MERGE_R = STAGE_VALUES.slice(2, 4).slice().sort((a, b) => a - b);
+const MERGE_L = STAGE_VALUES.slice(0, 2)
+	.slice()
+	.sort((a, b) => a - b);
+const MERGE_R = STAGE_VALUES.slice(2, 4)
+	.slice()
+	.sort((a, b) => a - b);
 const MERGE_TOTAL = MERGE_L.length + MERGE_R.length;
 
 // Pre-compute the merge as a list of frames (a compare, then a copy, per element)
@@ -39,34 +44,70 @@ const buildMergeSteps = (left, right) => {
 	let i = 0;
 	let j = 0;
 	while (i < left.length && j < right.length) {
-		steps.push({ i, j, out: [...out], comparing: true, copied: null,
-			narr: `compare fronts: ${left[i]} vs ${right[j]}` });
+		steps.push({
+			i,
+			j,
+			out: [...out],
+			comparing: true,
+			copied: null,
+			narr: `compare fronts: ${left[i]} vs ${right[j]}`,
+		});
 		if (left[i] <= right[j]) {
 			out.push(left[i]);
-			steps.push({ i: i + 1, j, out: [...out], comparing: false, copied: left[i],
-				narr: `${left[i]} ≤ ${right[j]}, so copy ${left[i]} out` });
+			steps.push({
+				i: i + 1,
+				j,
+				out: [...out],
+				comparing: false,
+				copied: left[i],
+				narr: `${left[i]} ≤ ${right[j]}, so copy ${left[i]} out`,
+			});
 			i += 1;
 		} else {
 			out.push(right[j]);
-			steps.push({ i, j: j + 1, out: [...out], comparing: false, copied: right[j],
-				narr: `${right[j]} < ${left[i]}, so copy ${right[j]} out` });
+			steps.push({
+				i,
+				j: j + 1,
+				out: [...out],
+				comparing: false,
+				copied: right[j],
+				narr: `${right[j]} < ${left[i]}, so copy ${right[j]} out`,
+			});
 			j += 1;
 		}
 	}
 	while (i < left.length) {
 		out.push(left[i]);
-		steps.push({ i: i + 1, j, out: [...out], comparing: false, copied: left[i],
-			narr: `left is drained, copy ${left[i]}` });
+		steps.push({
+			i: i + 1,
+			j,
+			out: [...out],
+			comparing: false,
+			copied: left[i],
+			narr: `left is drained, copy ${left[i]}`,
+		});
 		i += 1;
 	}
 	while (j < right.length) {
 		out.push(right[j]);
-		steps.push({ i, j: j + 1, out: [...out], comparing: false, copied: right[j],
-			narr: `right is drained, copy ${right[j]}` });
+		steps.push({
+			i,
+			j: j + 1,
+			out: [...out],
+			comparing: false,
+			copied: right[j],
+			narr: `right is drained, copy ${right[j]}`,
+		});
 		j += 1;
 	}
-	steps.push({ i, j, out: [...out], comparing: false, copied: null,
-		narr: 'one sorted run; the merge is linear' });
+	steps.push({
+		i,
+		j,
+		out: [...out],
+		comparing: false,
+		copied: null,
+		narr: 'one sorted run; the merge is linear',
+	});
 	return steps;
 };
 const MERGE_STEPS = buildMergeSteps(MERGE_L, MERGE_R);
@@ -113,6 +154,12 @@ const MergeSortStage = ({
 	const sorted = useMemo(() => sortGroups(levels), [levels]);
 	const reducedMotion = useReducedMotion();
 
+	// Scope for GSAP cleanup, and a per-render collection of the bottom-row
+	// <rect> nodes so the base-case "seat" can address exactly the leaves.
+	const wrapRef = useRef(null);
+	const leafRectsRef = useRef([]);
+	leafRectsRef.current = [];
+
 	// Scene 3 is the choreographed merge. Step an index through MERGE_STEPS while
 	// it's active; reduced motion shows the finished run; leaving resets.
 	const isCombine = activeScene === 3;
@@ -140,6 +187,41 @@ const MergeSortStage = ({
 	const visibleLevels = activeScene >= 1 ? 4 : 1;
 	const showRecurrence = activeScene >= 4;
 	const leafPulse = activeScene === 2;
+
+	// The base-case "click": when scene 2 becomes active the recursion has reached
+	// single-element leaves (already sorted), and the bottom row settles with one
+	// crisp seat — left-to-right, like a line of type hitting a platen. It marks
+	// the divide -> conquer turn: the eye gets a "floor reached" beat before the
+	// merges rebuild upward. One overshoot only (the JS twin of --ease-spring),
+	// fired once per entry into the scene; overwrite:'auto' so rapid scrolling
+	// never strands a tween. Reduced motion skips it entirely — the barDone color
+	// change alone carries "base case reached".
+	useEffect(() => {
+		if (!leafPulse || reducedMotion) return undefined;
+		const rects = leafRectsRef.current.filter(Boolean);
+		if (!rects.length) return undefined;
+		// Address them strictly left-to-right regardless of DOM push order, so the
+		// stagger reads as a typewriter sweep across the floor.
+		rects.sort((a, b) => a.getBBox().x - b.getBBox().x);
+		const ctx = gsap.context(() => {
+			gsap.fromTo(
+				rects,
+				{ scaleY: 0.92, y: -1, transformOrigin: '50% 100%' },
+				{
+					scaleY: 1,
+					y: 0,
+					duration: 0.34,
+					ease: 'back.out(1.4)',
+					stagger: { each: 0.04, from: 'start' },
+					overwrite: 'auto',
+					// Hand the resting look back to the CSS state classes.
+					clearProps: 'transform,transformOrigin',
+				}
+			);
+		}, wrapRef);
+		return () => ctx.revert();
+	}, [leafPulse, reducedMotion]);
+
 	const isClickableScene = interactionMode === 'pair' && activeScene === 0;
 
 	// Sorting propagates from the leaves upward as the merge plays out.
@@ -181,8 +263,7 @@ const MergeSortStage = ({
 		const isFlight = flightLevel === levelIdx;
 		const isLeafPulse = isLeaf && leafPulse;
 		const isInteractiveBar = isClickableScene && levelIdx === 0;
-		const isSelected =
-			isInteractiveBar && selectedSlots.includes(renderSlot);
+		const isSelected = isInteractiveBar && selectedSlots.includes(renderSlot);
 		const isExample = isInteractiveBar && exampleSlots.includes(renderSlot);
 
 		let fillClass;
@@ -212,12 +293,21 @@ const MergeSortStage = ({
 		return (
 			<g key={`${levelIdx}-${groupIdx}-${withinGroupIdx}`}>
 				<rect
+					ref={
+						isLeaf
+							? el => {
+									if (el) leafRectsRef.current.push(el);
+								}
+							: undefined
+					}
 					x={x}
 					y={y}
 					width={BAR_W}
 					height={h}
 					rx="1.5"
-					className={`${fillClass} ${isFollow ? styles.barFollow : ''}`}
+					className={`${fillClass} ${isLeaf ? styles.leafSeat : ''} ${
+						isFollow ? styles.barFollow : ''
+					}`}
 				/>
 				{/* The value lives ON the bar so a student can follow one number down
 				    to its base case and watch it re-join in sorted order. */}
@@ -257,8 +347,7 @@ const MergeSortStage = ({
 		for (let levelIdx = 0; levelIdx < levels.length - 1; levelIdx++) {
 			const parentLevel = levels[levelIdx];
 			const childLevel = levels[levelIdx + 1];
-			const parentBaselineY =
-				PAD_Y + levelIdx * LEVEL_GAP + BAR_MAX_H + 1;
+			const parentBaselineY = PAD_Y + levelIdx * LEVEL_GAP + BAR_MAX_H + 1;
 			const childTopY = PAD_Y + (levelIdx + 1) * LEVEL_GAP - 2;
 			parentLevel.forEach((group, parentIdx) => {
 				const left = childLevel[parentIdx * 2];
@@ -370,6 +459,7 @@ const MergeSortStage = ({
 
 	return (
 		<div
+			ref={wrapRef}
 			className={styles.wrap}
 			data-scene={activeScene}
 			role="img"
@@ -426,9 +516,7 @@ const MergeSortStage = ({
 					<span className={styles.recurrenceMath}>
 						n × log<sub>2</sub> n
 					</span>
-					<span className={styles.recurrenceLabel}>
-						= O(n log n)
-					</span>
+					<span className={styles.recurrenceLabel}>= O(n log n)</span>
 				</div>
 			</div>
 

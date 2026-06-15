@@ -1,4 +1,14 @@
-import { useMemo } from 'react';
+import {
+	useCallback,
+	useEffect,
+	useLayoutEffect,
+	useMemo,
+	useRef,
+} from 'react';
+import gsap from 'gsap';
+import { Flip } from 'gsap/Flip';
+import { MotionPathPlugin } from 'gsap/MotionPathPlugin';
+import useReducedMotion from '../../hooks/useReducedMotion.js';
 import {
 	COLLISION_BUCKET,
 	COLLISION_KEYS,
@@ -8,6 +18,10 @@ import {
 	STAGE_KEYS,
 } from './scenes.js';
 import styles from './HashMapStage.module.css';
+
+// Flip captures the small-table layout; MotionPath arcs each entry into its new
+// bucket under the larger modulus. Idempotent (mirrors HomePage's pattern).
+gsap.registerPlugin(Flip, MotionPathPlugin);
 
 // A larger table the resize scene rehashes into. The exact value is the next
 // prime above 2 × STAGE_CAPACITY, matching the dashboard's resize rule.
@@ -41,10 +55,7 @@ const buildBuckets = (keys, capacity) => {
  * can calm it. The stage reads only `activeScene`.
  */
 const HashMapStage = ({ activeScene = 0 }) => {
-	const focus = useMemo(
-		() => STAGE_HASHES.find(h => h.key === FOCUS_KEY),
-		[]
-	);
+	const focus = useMemo(() => STAGE_HASHES.find(h => h.key === FOCUS_KEY), []);
 
 	const isResize = activeScene >= 4;
 	const capacity = isResize ? RESIZE_CAPACITY : STAGE_CAPACITY;
@@ -79,6 +90,135 @@ const HashMapStage = ({ activeScene = 0 }) => {
 		? null
 		: computeIndex(focus.rawHash, STAGE_CAPACITY);
 
+	const reducedMotion = useReducedMotion();
+	const tableRef = useRef(null);
+	const cellRefs = useRef(new Map());
+	const registerCell = useCallback((key, el) => {
+		if (el) cellRefs.current.set(key, el);
+		else cellRefs.current.delete(key);
+	}, []);
+	// Flip state of the small (pre-resize) table, refreshed each scene while we are
+	// NOT resized, so the moment we cross into the resize scene we know where every
+	// entry used to sit. wasResizeRef makes the arc fire once per crossing.
+	const smallTableStateRef = useRef(null);
+	const wasResizeRef = useRef(false);
+	const ctxRef = useRef(null);
+
+	useEffect(() => {
+		const ctx = gsap.context(() => {}, tableRef.current || undefined);
+		ctxRef.current = ctx;
+		return () => {
+			ctx.revert();
+			ctxRef.current = null;
+		};
+	}, []);
+
+	// Keep a fresh Flip capture of the small table on every scene while it is the
+	// one on screen, so by the time the resize scene arrives we hold the layout
+	// with ALL entries present (scenes 2–3), not the single-key scene-0 layout.
+	useLayoutEffect(() => {
+		const table = tableRef.current;
+		if (!table || isResize) return;
+		smallTableStateRef.current = Flip.getState(
+			table.querySelectorAll('[data-flip-id]')
+		);
+		wasResizeRef.current = false;
+	}, [activeScene, isResize]);
+
+	// The rehash re-fly for the scrolly twin. The scene jump 3 → 4 grows the table
+	// from m = STAGE_CAPACITY to m = RESIZE_CAPACITY; without the fix below the
+	// table remounted and every key teleported into the new modulus at once. Now
+	// each key arcs from its old bucket into its new one, staggered one entry at a
+	// time, so the lesson — resize re-places entries individually, it does not copy
+	// slots — is visible. Keys that shared a bucket visibly split apart.
+	useLayoutEffect(() => {
+		const table = tableRef.current;
+		if (!table || !isResize) return;
+
+		// Only animate on the actual crossing into the resize scene, not on every
+		// re-render that is already resized (e.g. scrolling within scene 4+).
+		if (wasResizeRef.current) return;
+		wasResizeRef.current = true;
+
+		const savedState = smallTableStateRef.current;
+		const ctx = ctxRef.current;
+		if (!savedState || !ctx) return;
+
+		// Honor the generator's per-entry pacing: each key departs a beat after the
+		// previous, so only one entry is meaningfully in flight at a time.
+		const order = STAGE_KEYS.filter(key => cellRefs.current.has(key));
+		const stepDelay = reducedMotion ? 0.05 : 0.16;
+
+		ctx.add(() => {
+			order.forEach((key, i) => {
+				const cell = cellRefs.current.get(key);
+				if (!cell) return;
+				// Match the recorded old position by data-flip-id (= the entry key).
+				const oldEl = savedState.idLookup ? savedState.idLookup[key] : null;
+				const oldBounds = oldEl?.bounds || null;
+				if (!oldBounds) return;
+				const newBounds = cell.getBoundingClientRect();
+				const dx = oldBounds.left - newBounds.left;
+				const dy = oldBounds.top - newBounds.top;
+				const delay = i * stepDelay;
+
+				// A cell that changes bucket is a freshly-mounted node, so the CSS
+				// .cell entrance keyframe would fire and, being an animation, win
+				// over GSAP's inline transform. Suppress it inline (pre-paint, in a
+				// layout effect) so the arc owns the move; restore it on land.
+				cell.style.animation = 'none';
+				const restore = () => {
+					cell.style.animation = '';
+				};
+
+				if (reducedMotion) {
+					// Keep the one-at-a-time sequence (the lesson) but collapse each
+					// arc to a short straight settle.
+					gsap.fromTo(
+						cell,
+						{ x: dx * 0.18, y: dy * 0.18, autoAlpha: 0.55 },
+						{
+							x: 0,
+							y: 0,
+							autoAlpha: 1,
+							duration: 0.16,
+							delay,
+							ease: 'power1.inOut',
+							overwrite: 'auto',
+							clearProps: 'transform,opacity',
+							onComplete: restore,
+							onInterrupt: restore,
+						}
+					);
+					return;
+				}
+
+				const arcLift = Math.min(46, 18 + Math.abs(dy) * 0.18);
+				gsap.fromTo(
+					cell,
+					{ x: dx, y: dy },
+					{
+						duration: 0.55,
+						delay,
+						ease: 'power3.inOut',
+						overwrite: 'auto',
+						clearProps: 'transform',
+						onComplete: restore,
+						onInterrupt: restore,
+						motionPath: {
+							path: [
+								{ x: dx, y: dy },
+								{ x: dx / 2, y: dy / 2 - arcLift },
+								{ x: 0, y: 0 },
+							],
+							curviness: 1,
+						},
+					}
+				);
+			});
+		});
+	}, [isResize, reducedMotion]);
+
 	return (
 		<div
 			className={styles.wrap}
@@ -90,13 +230,16 @@ const HashMapStage = ({ activeScene = 0 }) => {
 				α = {entryCount}/{capacity} = {loadFactor.toFixed(2)} · m = {capacity}
 			</div>
 
+			{/* Stable key (NOT key={capacity}) so the table is reconciled, not
+			    remounted, across the resize — Flip needs the same DOM nodes on
+			    both sides of the scene jump to arc each entry to its new bucket. */}
 			<div
+				ref={tableRef}
 				className={`${styles.table} ${isResize ? styles.tableResize : ''}`}
-				key={capacity}
+				key="bucket-table"
 			>
 				{buckets.map((bucket, idx) => {
-					const isSpotlight =
-						spotlightBucket === idx && activeScene <= 1;
+					const isSpotlight = spotlightBucket === idx && activeScene <= 1;
 					const isCollisionBucket =
 						!isResize && idx === COLLISION_BUCKET && collisionActive;
 					return (
@@ -120,6 +263,8 @@ const HashMapStage = ({ activeScene = 0 }) => {
 										return (
 											<div
 												key={entry.key}
+												ref={el => registerCell(entry.key, el)}
+												data-flip-id={entry.key}
 												className={`${styles.cell} ${
 													isCollider && collisionActive
 														? styles.cellCollide
@@ -127,9 +272,7 @@ const HashMapStage = ({ activeScene = 0 }) => {
 												}`}
 												style={{ '--chain-pos': j }}
 											>
-												<span className={styles.cellKey}>
-													{entry.key}
-												</span>
+												<span className={styles.cellKey}>{entry.key}</span>
 											</div>
 										);
 									})

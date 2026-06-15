@@ -85,6 +85,17 @@
 	transition: fill var(--duration-step) var(--ease-quiet);
 }
 
+/* Leaf (bottom-row) bars. fill-box scopes the base-case "seat" tween so each
+   leaf's transform-origin (50% 100%) resolves against its OWN box — it grows up
+   from its baseline like type hitting a platen, not from the SVG origin. With no
+   tween running the transform is identity, so the resting look is unchanged. The
+   seat itself is a one-shot GSAP fromTo gated on scene 2 (see MergeSortStage.jsx);
+   under prefers-reduced-motion no tween runs and the barDone color change alone
+   carries "base case reached". */
+.leafSeat {
+	transform-box: fill-box;
+}
+
 /* The value sits ON the bar (a mono number-row beneath each level) so a student
    can read and follow a single element down the tree and back up. */
 .barValue {

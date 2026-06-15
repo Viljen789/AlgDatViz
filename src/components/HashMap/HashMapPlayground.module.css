@@ -39,7 +39,9 @@
 	font-size: var(--font-size-label);
 	font-weight: var(--font-weight-medium);
 	cursor: pointer;
-	transition: color var(--transition), background-color var(--transition);
+	transition:
+		color var(--transition),
+		background-color var(--transition);
 }
 
 .opTab:hover {
@@ -119,7 +121,9 @@
 	font-family: var(--font-family-sans);
 	font-size: var(--font-size-label);
 	cursor: pointer;
-	transition: color var(--transition), border-color var(--transition),
+	transition:
+		color var(--transition),
+		border-color var(--transition),
 		background-color var(--transition);
 }
 
@@ -291,7 +295,8 @@
 	border-radius: var(--radius-md);
 	font-family: var(--font-family-mono);
 	font-size: var(--font-size-label);
-	transition: background-color var(--duration-step) var(--ease-step),
+	transition:
+		background-color var(--duration-step) var(--ease-step),
 		border-color var(--duration-step) var(--ease-step),
 		transform var(--duration-step) var(--ease-step);
 }
@@ -300,6 +305,16 @@
 	background: color-mix(in srgb, var(--topic-accent) 16%, transparent);
 	border-color: var(--topic-accent);
 	transform: translateX(4px);
+}
+
+/* While the rehash arc owns a cell's transform, hold off the CSS transform
+   transition so the browser does not also try to ease toward GSAP's per-frame
+   inline values (which would fight the tween). The color/border transitions are
+   untouched, and clearProps hands transform back to the state classes on land. */
+.entryFlying {
+	transition:
+		background-color var(--duration-step) var(--ease-step),
+		border-color var(--duration-step) var(--ease-step);
 }
 
 .entryKey {
