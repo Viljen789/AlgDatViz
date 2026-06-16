@@ -5,6 +5,8 @@ import {
 	decisionCards,
 	complexitySheet,
 	greedyRule,
+	glossaryTerms,
+	glossarySections,
 } from './referenceData.js';
 import { ALGORITHM_INFO } from '../utils/sorting/algorithmInfo.js';
 import { ALGORITHM_ORDER } from '../utils/sorting/algorithmMeta.js';
@@ -128,4 +130,61 @@ test('greedyRule lists safe and unsafe cases, all anchored to topics', () => {
 test('greedyRule keeps MST safe and 0/1 knapsack unsafe', () => {
 	assert.ok(greedyRule.safe.some(i => i.id === 'mst'));
 	assert.ok(greedyRule.unsafe.some(i => i.id === 'knapsack'));
+});
+
+// ── glossary ────────────────────────────────────────────────────────────────
+// COVERAGE GUARDRAIL: the bilingual exam glossary must keep a term pair for every
+// curriculum topic. A new topic in curriculum.js with no Norwegian vocabulary
+// authored for it fails HERE, so the glossary can never silently fall behind the
+// course it is meant to translate.
+test('glossary covers every progress topic with at least one term pair', () => {
+	const tagged = new Set(glossaryTerms.map(t => t.topicId));
+	const missing = PROGRESS_TOPICS.filter(t => !tagged.has(t.id)).map(t => t.id);
+	assert.deepEqual(
+		missing,
+		[],
+		`topics with no glossary term pair: ${missing.join(', ')}`
+	);
+});
+
+test('every glossary term is tagged with a real curriculum topic', () => {
+	const ids = new Set(PROGRESS_TOPICS.map(t => t.id));
+	for (const term of glossaryTerms) {
+		assert.ok(ids.has(term.topicId), `unknown topicId: ${term.topicId}`);
+	}
+});
+
+test('every glossary term has non-empty English + Norwegian strings', () => {
+	for (const term of glossaryTerms) {
+		assert.equal(typeof term.en, 'string');
+		assert.equal(typeof term.no, 'string');
+		assert.ok(term.en.trim().length > 0, `empty en for ${term.topicId}`);
+		assert.ok(term.no.trim().length > 0, `empty no for ${term.en}`);
+		// `note` is optional, but when present it must be a real string.
+		if (term.note !== undefined) {
+			assert.equal(typeof term.note, 'string');
+			assert.ok(term.note.trim().length > 0);
+		}
+	}
+});
+
+test('glossarySections group the flat terms, in teaching order, none empty', () => {
+	// Sections appear in PROGRESS_TOPICS order (every topic currently has a pair,
+	// so the section order is exactly the curriculum order here).
+	const coveredTopicsInOrder = PROGRESS_TOPICS.map(t => t.id).filter(id =>
+		glossaryTerms.some(term => term.topicId === id)
+	);
+	assert.deepEqual(
+		glossarySections.map(s => s.id),
+		coveredTopicsInOrder
+	);
+	// No section is rendered empty, and the grouping loses no terms.
+	let regrouped = 0;
+	for (const section of glossarySections) {
+		assert.ok(section.terms.length > 0, `empty section: ${section.id}`);
+		assert.ok(section.terms.every(t => t.topicId === section.id));
+		assert.match(section.accent, /^var\(--topic-/);
+		regrouped += section.terms.length;
+	}
+	assert.equal(regrouped, glossaryTerms.length);
 });

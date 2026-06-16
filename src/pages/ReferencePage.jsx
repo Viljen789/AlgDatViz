@@ -6,6 +6,7 @@ import {
 	sortComparison,
 	decisionCards,
 	greedyRule,
+	glossarySections,
 } from '../lib/referenceData.js';
 import { TOPIC_BY_ID } from '../data/curriculum.js';
 import styles from './ReferencePage.module.css';
@@ -254,6 +255,73 @@ const ReferencePage = () => {
 							))}
 						</ul>
 					</div>
+				</div>
+			</section>
+
+			{/* ---- Bilingual exam glossary ---- */}
+			<section className={styles.block} aria-labelledby="glossary-heading">
+				<h2 id="glossary-heading" className={styles.blockTitle}>
+					The words the exam uses
+				</h2>
+				<p className={styles.blockLede}>
+					You learned the ideas in English; the TDT4120 exam is set in
+					Norwegian. Here is the term each topic is called on the paper, so a
+					word you half-remember never costs you the question. Terms the course
+					keeps in English carry a note.
+				</p>
+				<div className={styles.glossaryGroups}>
+					{glossarySections.map(section => {
+						const tones = accentTokens(section.accent);
+						return (
+							<div
+								key={section.id}
+								className={styles.glossaryGroup}
+								style={{
+									'--q-accent': tones.accent,
+									'--q-accent-ink': tones.ink,
+								}}
+							>
+								<Link to={section.to} className={styles.glossaryGroupHead}>
+									<span className={styles.glossaryGroupNum}>
+										{section.number}
+									</span>
+									<span className={styles.glossaryGroupName}>
+										{section.name}
+									</span>
+									<ArrowRight size={13} strokeWidth={2.2} aria-hidden="true" />
+								</Link>
+								<table className={styles.glossaryTable}>
+									<thead>
+										<tr>
+											<th scope="col">English</th>
+											<th scope="col" lang="no">
+												Norsk
+											</th>
+										</tr>
+									</thead>
+									<tbody>
+										{section.terms.map(term => (
+											<tr key={term.en}>
+												<th scope="row" className={styles.glossaryEn}>
+													{term.en}
+												</th>
+												<td className={styles.glossaryNo} lang="no">
+													<span className={styles.glossaryNoTerm}>
+														{term.no}
+													</span>
+													{term.note && (
+														<span className={styles.glossaryNote} lang="en">
+															{term.note}
+														</span>
+													)}
+												</td>
+											</tr>
+										))}
+									</tbody>
+								</table>
+							</div>
+						);
+					})}
 				</div>
 			</section>
 

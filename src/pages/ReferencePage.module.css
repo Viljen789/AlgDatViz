@@ -491,6 +491,140 @@
 	color: var(--color-text-secondary);
 }
 
+/* ---------- Bilingual exam glossary ---------- */
+
+.glossaryGroups {
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+	gap: var(--space-md);
+	align-items: start;
+}
+
+.glossaryGroup {
+	--q-accent: var(--color-accent-blue);
+	border: 1px solid var(--color-border);
+	border-radius: var(--radius-lg);
+	background: var(--surface-1);
+	/* The quiet accent rail, same language as the complexity cards: the topic
+	   number + name carry the meaning, the rail is decoration (never colour
+	   alone). */
+	border-left: 3px solid color-mix(in srgb, var(--q-accent) 60%, transparent);
+	overflow: hidden;
+}
+
+.glossaryGroupHead {
+	display: flex;
+	align-items: baseline;
+	gap: var(--space-sm);
+	padding: var(--space-sm) var(--space-md);
+	border-bottom: 1px solid var(--color-border-subtle);
+	text-decoration: none;
+	color: var(--color-text-primary);
+	transition: background-color var(--transition);
+}
+
+.glossaryGroupHead:hover {
+	background: var(--surface-hover);
+}
+
+.glossaryGroupHead:focus-visible {
+	outline: none;
+	box-shadow: var(--shadow-focus);
+}
+
+.glossaryGroupNum {
+	flex-shrink: 0;
+	font-family: var(--font-family-mono);
+	font-size: var(--font-size-caption);
+	font-weight: var(--font-weight-bold);
+	color: var(--q-accent-ink);
+}
+
+.glossaryGroupName {
+	flex: 1;
+	min-width: 0;
+	font-family: var(--font-family-display);
+	font-size: var(--font-size-heading-sm);
+	font-weight: var(--font-weight-semibold);
+	line-height: var(--line-height-snug);
+}
+
+.glossaryGroupHead svg {
+	flex-shrink: 0;
+	align-self: center;
+	color: var(--q-accent-ink);
+	transition: transform var(--transition);
+}
+
+.glossaryGroupHead:hover svg {
+	transform: translateX(2px);
+}
+
+.glossaryTable {
+	width: 100%;
+	border-collapse: collapse;
+	font-size: var(--font-size-label);
+}
+
+.glossaryTable thead th {
+	padding: var(--space-2xs) var(--space-md);
+	text-align: left;
+	font-family: var(--font-family-mono);
+	font-size: var(--font-size-caption);
+	font-weight: var(--font-weight-bold);
+	letter-spacing: var(--tracking-caps);
+	text-transform: uppercase;
+	color: var(--color-text-muted);
+	border-bottom: 1px solid var(--color-border-subtle);
+	width: 50%;
+}
+
+.glossaryTable tbody tr + tr th,
+.glossaryTable tbody tr + tr td {
+	border-top: 1px solid var(--color-border-subtle);
+}
+
+.glossaryTable tbody tr:hover th,
+.glossaryTable tbody tr:hover td {
+	background: var(--surface-hover);
+}
+
+.glossaryTable th,
+.glossaryTable td {
+	padding: var(--space-2xs) var(--space-md);
+	vertical-align: top;
+}
+
+.glossaryEn {
+	font-family: var(--font-family-display);
+	font-size: var(--font-size-body);
+	font-weight: var(--font-weight-medium);
+	color: var(--color-text-primary);
+	line-height: var(--line-height-snug);
+}
+
+.glossaryNo {
+	display: flex;
+	flex-direction: column;
+	gap: 1px;
+}
+
+.glossaryNoTerm {
+	font-family: var(--font-family-display);
+	font-size: var(--font-size-body);
+	font-weight: var(--font-weight-semibold);
+	/* The exam's word reads in the topic's ink, so the Norsk column is the one the
+	   eye lands on. */
+	color: var(--q-accent-ink);
+	line-height: var(--line-height-snug);
+}
+
+.glossaryNote {
+	font-size: var(--font-size-caption);
+	line-height: var(--line-height-snug);
+	color: var(--color-text-muted);
+}
+
 /* ---------- Footer ---------- */
 
 .foot {

@@ -180,3 +180,184 @@ export const greedyRule = {
 		},
 	],
 };
+
+// ── Bilingual exam glossary ─────────────────────────────────────────────────────
+// The TDT4120 exam is written in Norwegian; this app teaches in English. That gap
+// is VOCABULARY, not language — a student who knows the concept can still stall on
+// "spenntre" or "slakking" under time pressure. So the cheat sheet carries an
+// English → Norsk term map of the words the exam actually uses.
+//
+// Curated content (the Norwegian terms can't be derived from code), but STRUCTURED
+// as derived data: every entry is tagged with the curriculum `topicId` it belongs
+// to, the terms are GROUPED by walking PROGRESS_TOPICS in teaching order, and a
+// guardrail test asserts every progress topic carries at least one pair — so the
+// glossary can never silently fall behind the curriculum (referenceData.test.js).
+//
+// The Norwegian terms are the ones used in the official NTNU course material
+// (the Norwegian CLRS, the lecture notes and the Wikipendium summary). A few are
+// kept in English ON PURPOSE because the course itself does (e.g. "heap",
+// "in-place", "worst case"); those carry a short note so the student is not
+// surprised to see the English word on a Norwegian exam.
+
+// One flat, ordered list of term pairs. `topicId` ties each to the curriculum so
+// coverage is checkable; `note` is an optional caveat (a synonym, or "kept in
+// English by the course"). `en` is the app's wording, `no` the exam's.
+export const glossaryTerms = [
+	// 01 · Arrays & complexity
+	{ topicId: 'foundations', en: 'array', no: 'array' },
+	{ topicId: 'foundations', en: 'running time', no: 'kjøretid' },
+	{
+		topicId: 'foundations',
+		en: 'worst case',
+		no: 'verste tilfelle',
+		note: 'The course often keeps the English "worst case"; "verste tilfelle" is the plain Norwegian.',
+	},
+	{
+		topicId: 'foundations',
+		en: 'running-time bound',
+		no: 'asymptotisk grense',
+	},
+	// 02 · Stacks & queues
+	{ topicId: 'stacks-queues', en: 'stack', no: 'stakk' },
+	{ topicId: 'stacks-queues', en: 'queue', no: 'kø' },
+	{ topicId: 'stacks-queues', en: 'linked list', no: 'lenket liste' },
+	// 03 · Recursion & the master theorem
+	{ topicId: 'master-theorem', en: 'recursion', no: 'rekursjon' },
+	{
+		topicId: 'master-theorem',
+		en: 'divide and conquer',
+		no: 'splitt og hersk',
+	},
+	{ topicId: 'master-theorem', en: 'recurrence', no: 'rekurrens' },
+	{ topicId: 'master-theorem', en: 'master theorem', no: 'masterteoremet' },
+	// 04 · Sorting
+	{ topicId: 'sorting', en: 'sorting', no: 'sortering' },
+	{
+		topicId: 'sorting',
+		en: 'comparison sort',
+		no: 'sammenligningsbasert sortering',
+	},
+	{ topicId: 'sorting', en: 'stable (sort)', no: 'stabil' },
+	{
+		topicId: 'sorting',
+		en: 'in place',
+		no: 'in-place',
+		note: 'Kept in English by the course; sometimes written "på plass".',
+	},
+	// 05 · Linear-time sorting
+	{ topicId: 'linear-time-sorting', en: 'counting sort', no: 'tellesortering' },
+	{ topicId: 'linear-time-sorting', en: 'radix sort', no: 'radikssortering' },
+	{ topicId: 'linear-time-sorting', en: 'bucket sort', no: 'bøttesortering' },
+	// 06 · Hashing
+	{
+		topicId: 'hashing',
+		en: 'hashing',
+		no: 'hashing',
+		note: 'Kept in English by the course; the table is a "hashtabell".',
+	},
+	{ topicId: 'hashing', en: 'hash table', no: 'hashtabell' },
+	{ topicId: 'hashing', en: '(hash) collision', no: 'kollisjon' },
+	{ topicId: 'hashing', en: 'chaining', no: 'kjeding' },
+	// 07 · Trees
+	{
+		topicId: 'trees',
+		en: 'binary search tree',
+		no: 'binært søketre',
+	},
+	{ topicId: 'trees', en: 'root', no: 'rot' },
+	{ topicId: 'trees', en: 'leaf', no: 'løvnode' },
+	{ topicId: 'trees', en: 'height', no: 'høyde' },
+	// 08 · Heaps & priority queues
+	{
+		topicId: 'heaps',
+		en: 'heap',
+		no: 'heap',
+		note: 'Kept in English by the course (Min-heap / Max-heap).',
+	},
+	{ topicId: 'heaps', en: 'priority queue', no: 'prioritetskø' },
+	// 09 · Graphs
+	{ topicId: 'graphs', en: 'graph', no: 'graf' },
+	{ topicId: 'graphs', en: 'edge', no: 'kant' },
+	{
+		topicId: 'graphs',
+		en: 'vertex / node',
+		no: 'node',
+		note: 'CLRS\'s "vertex"; the course uses "node" (occasionally "knute").',
+	},
+	{ topicId: 'graphs', en: 'weight', no: 'vekt' },
+	{ topicId: 'graphs', en: 'directed / undirected', no: 'rettet / urettet' },
+	{ topicId: 'graphs', en: 'adjacency list', no: 'naboliste' },
+	{
+		topicId: 'graphs',
+		en: 'breadth-first search',
+		no: 'bredde-først-søk',
+	},
+	{ topicId: 'graphs', en: 'depth-first search', no: 'dybde-først-søk' },
+	{ topicId: 'graphs', en: 'topological sort', no: 'topologisk sortering' },
+	// 10 · Strategies
+	{
+		topicId: 'strategies',
+		en: 'greedy algorithm',
+		no: 'grådig algoritme',
+	},
+	{
+		topicId: 'strategies',
+		en: 'dynamic programming',
+		no: 'dynamisk programmering',
+	},
+	{
+		topicId: 'strategies',
+		en: 'optimal substructure',
+		no: 'optimal delstruktur',
+	},
+	// 11 · Minimum spanning trees
+	{ topicId: 'mst', en: 'spanning tree', no: 'spenntre' },
+	{ topicId: 'mst', en: 'minimum spanning tree', no: 'minimalt spenntre' },
+	{ topicId: 'mst', en: 'cut', no: 'snitt' },
+	// 12 · Shortest paths (single-source)
+	{ topicId: 'shortest-paths', en: 'shortest path', no: 'korteste vei' },
+	{
+		topicId: 'shortest-paths',
+		en: 'relaxation (of an edge)',
+		no: 'slakking',
+	},
+	{ topicId: 'shortest-paths', en: 'negative cycle', no: 'negativ sykel' },
+	// 13 · All-pairs shortest paths
+	{
+		topicId: 'apsp',
+		en: 'all-pairs shortest paths',
+		no: 'korteste vei mellom alle par',
+	},
+	{
+		topicId: 'apsp',
+		en: 'transitive closure',
+		no: 'transitiv tillukning',
+	},
+	// 14 · Maximum flow
+	{ topicId: 'max-flow', en: 'maximum flow', no: 'maksimal flyt' },
+	{ topicId: 'max-flow', en: 'residual network', no: 'residualnettverk' },
+	{ topicId: 'max-flow', en: 'minimum cut', no: 'minimalt snitt' },
+	{ topicId: 'max-flow', en: 'augmenting path', no: 'forøkende sti' },
+	// 15 · NP-completeness
+	{
+		topicId: 'np-completeness',
+		en: 'NP-complete',
+		no: 'NP-komplett',
+	},
+	{ topicId: 'np-completeness', en: 'NP-hard', no: 'NP-hard' },
+	{ topicId: 'np-completeness', en: 'reduction', no: 'reduksjon' },
+];
+
+// Group the flat term list BY curriculum topic, walking PROGRESS_TOPICS so the
+// sections come out in teaching order and carry the topic's number + accent (the
+// same model the complexity sheet renders from). Topics with no pairs are dropped
+// rather than shown empty — but the guardrail test forbids that from happening
+// silently, so an empty section means an authoring gap, not a rendering choice.
+export const glossarySections = PROGRESS_TOPICS.map(topic => ({
+	id: topic.id,
+	number: topic.number,
+	name: topic.name,
+	accent: topic.accent,
+	to: topic.to,
+	terms: glossaryTerms.filter(term => term.topicId === topic.id),
+})).filter(section => section.terms.length > 0);
