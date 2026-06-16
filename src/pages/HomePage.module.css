@@ -136,6 +136,17 @@
 	text-align: end;
 }
 
+/* The deeper DSA hint: a second, fainter line that handleHeroState eases in a
+   beat after each structure settles. Starts hidden; its opacity is GSAP-driven,
+   so it rests invisible with no JS rather than flashing the seeded tree tip. */
+.heroFigureTip {
+	font-family: var(--font-family-mono);
+	font-size: var(--font-size-caption);
+	color: var(--color-text-dim);
+	text-align: end;
+	opacity: 0;
+}
+
 /* A brief opacity dip as the legend swaps at each morph boundary. */
 .isFlipping .heroFigureName,
 .isFlipping .heroFigureNote {

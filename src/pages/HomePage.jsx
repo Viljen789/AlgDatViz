@@ -530,6 +530,8 @@ const HomePage = () => {
 	const figureRef = useRef(null);
 	const figureNameRef = useRef(null);
 	const figureNoteRef = useRef(null);
+	const figureTipRef = useRef(null);
+	const tipTween = useRef(null);
 	const flipTimer = useRef(null);
 
 	// HeroRecompose calls this at each morph completion: swap the structure name
@@ -542,6 +544,24 @@ const HomePage = () => {
 		const noteEl = figureNoteRef.current;
 		if (nameEl && phase) nameEl.textContent = phase.name;
 		if (noteEl && phase) noteEl.textContent = phase.note;
+		// The deeper DSA hint surfaces a beat AFTER the structure settles: fade the
+		// previous tip out, swap its text while hidden, then ease it back in. Killed
+		// and restarted on each state change so reveals never stack.
+		const tipEl = figureTipRef.current;
+		if (tipEl && phase) {
+			tipTween.current?.kill();
+			tipTween.current = gsap
+				.timeline()
+				.to(tipEl, { autoAlpha: 0, duration: 0.3, ease: 'power1.in' })
+				.add(() => {
+					tipEl.textContent = phase.tip;
+				})
+				.to(
+					tipEl,
+					{ autoAlpha: 0.8, duration: 0.55, ease: 'power1.out' },
+					'+=0.8'
+				);
+		}
 		if (fig && WASH_HUE[state] != null) {
 			fig.style.setProperty('--wash-h', String(WASH_HUE[state]));
 			fig.classList.remove(styles.isFlipping);
@@ -636,6 +656,9 @@ const HomePage = () => {
 		}
 		if (figureNoteRef.current) {
 			figureNoteRef.current.textContent = PHASES.tree.note;
+		}
+		if (figureTipRef.current) {
+			figureTipRef.current.textContent = PHASES.tree.tip;
 		}
 
 		const ctx = gsap.context(() => {
@@ -1018,6 +1041,7 @@ const HomePage = () => {
 							<span className={styles.heroFigureName} ref={figureNameRef} />
 						</span>
 						<span className={styles.heroFigureNote} ref={figureNoteRef} />
+						<span className={styles.heroFigureTip} ref={figureTipRef} />
 					</figcaption>
 				</figure>
 			</section>

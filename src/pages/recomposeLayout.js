@@ -211,18 +211,52 @@ export const WASH_HUE = {
 // index-PACKED (treeLayout), not value-ordered — atom 0 (value 6) sits above
 // child atom 1 (value 10) — so captioning "max-heap / parent ≥ children" would
 // be a visible lie. We say only what is true on screen.
+// Each state also carries a `tip`: a deeper, second-order DSA hint (a cost or the
+// algorithm that operates on it) that surfaces a beat AFTER the structure settles,
+// for readers who linger. Held to the same honesty bar as `note` — the index-packed
+// tree/heap get topology-true lines only (height/shape), never a value-ordering or
+// "max at the root" claim the pixels do not satisfy.
 export const PHASES = {
-	array: { name: 'Array', note: '14 values, one order' },
-	sorted: { name: 'Sorted run', note: 'rearranged by value' },
-	tree: { name: 'Binary tree', note: 'children of i at 2i+1, 2i+2' },
-	heap: { name: 'Heap', note: 'same array, parent/child by index' },
-	graph: { name: 'Graph', note: 'edges, no inherent root' },
-	shortestPath: { name: 'Shortest path', note: 'the lit route, fewest hops' },
+	array: {
+		name: 'Array',
+		note: '14 values, one order',
+		tip: 'index access, O(1)',
+	},
+	sorted: {
+		name: 'Sorted run',
+		note: 'rearranged by value',
+		tip: 'binary search, O(log n)',
+	},
+	tree: {
+		name: 'Binary tree',
+		note: 'children of i at 2i+1, 2i+2',
+		tip: 'balanced height, log n',
+	},
+	heap: {
+		name: 'Heap',
+		note: 'same array, parent/child by index',
+		tip: 'a complete binary tree',
+	},
+	graph: {
+		name: 'Graph',
+		note: 'edges, no inherent root',
+		tip: 'adjacency list, O(V + E)',
+	},
+	shortestPath: {
+		name: 'Shortest path',
+		note: 'the lit route, fewest hops',
+		tip: 'BFS reaches it, O(V + E)',
+	},
 	spanningTree: {
 		name: 'Spanning tree',
 		note: 'connect every node, no cycles',
+		tip: 'Kruskal or Prim, O(E log V)',
 	},
-	maxFlow: { name: 'Max flow', note: 'width is capacity, fill is flow' },
+	maxFlow: {
+		name: 'Max flow',
+		note: 'width is capacity, fill is flow',
+		tip: 'augment until none remain',
+	},
 };
 
 // The conservation thesis in words — the <960px fallback, where the live
