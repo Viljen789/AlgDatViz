@@ -234,6 +234,79 @@
 	box-shadow: var(--shadow-focus);
 }
 
+/* "Sit your weak spots" — a quiet review-tinted card under the primary launch.
+   Tinted, not filled, so it reads as a focused alternative to the full exam
+   rather than a second competing primary action. */
+.weakCard {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: var(--space-lg);
+	flex-wrap: wrap;
+	margin-top: var(--space-sm);
+	padding: var(--space-lg) var(--space-xl);
+	background: var(--review-brand-wash);
+	border: 1px solid color-mix(in srgb, var(--review-brand) 32%, transparent);
+	border-radius: var(--radius-xl);
+}
+
+.weakCardText {
+	min-width: 0;
+	flex: 1 1 16rem;
+}
+
+.weakCardEyebrow {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	margin: 0 0 4px;
+	font-family: var(--font-family-mono);
+	font-size: var(--font-size-caption);
+	font-weight: var(--font-weight-bold);
+	letter-spacing: var(--tracking-wide);
+	text-transform: uppercase;
+	color: var(--review-brand-ink);
+}
+
+.weakCardLede {
+	margin: 0;
+	font-size: var(--font-size-label);
+	line-height: var(--line-height-snug);
+	color: var(--color-text-secondary);
+}
+
+/* Secondary action: outlined in the review hue (the primary fill stays the
+   full exam). */
+.weakBtn {
+	display: inline-flex;
+	align-items: center;
+	align-self: center;
+	flex-shrink: 0;
+	gap: var(--space-sm);
+	padding: var(--space-sm) var(--space-lg);
+	background: var(--surface-1);
+	color: var(--review-brand-ink);
+	border: 1px solid color-mix(in srgb, var(--review-brand) 55%, transparent);
+	border-radius: var(--radius-pill);
+	font-family: var(--font-family-sans);
+	font-size: var(--font-size-label);
+	font-weight: var(--font-weight-semibold);
+	cursor: pointer;
+	transition:
+		background-color var(--transition),
+		border-color var(--transition);
+}
+
+.weakBtn:hover {
+	background: color-mix(in srgb, var(--review-brand) 12%, var(--surface-1));
+	border-color: var(--review-brand);
+}
+
+.weakBtn:focus-visible {
+	outline: none;
+	box-shadow: var(--shadow-focus);
+}
+
 /* ---------- Picker: sets grouped by topic ---------- */
 
 .picker {

@@ -7,15 +7,20 @@ import {
 	Clock,
 	LayoutGrid,
 	RotateCcw,
+	Target,
 } from 'lucide-react';
 import LessonCheck from '../common/TopicTemplate/LessonCheck.jsx';
 import { checkAnswer } from '../common/TopicTemplate/checkAnswer.js';
-import { accentTokens } from '../components/Review/reviewBank.js';
-import { TOPIC_BY_ID } from '../data/curriculum.js';
+import { REVIEW_BANK, accentTokens } from '../components/Review/reviewBank.js';
+import { BUILT_TOPICS, TOPIC_BY_ID } from '../data/curriculum.js';
 import { EXAM_SETS, EXAM_TOPIC_IDS } from '../data/examSets.js';
 import { logActivity } from '../lib/activityLog.js';
-import { recordExamTopic } from '../lib/examLog.js';
-import { WEAK_THRESHOLD } from '../lib/weakTopics.js';
+import { recordExamTopic, useExamLog } from '../lib/examLog.js';
+import { allMastery } from '../lib/mastery.js';
+import { rankWeakTopics, WEAK_THRESHOLD } from '../lib/weakTopics.js';
+import { selectWeakExamSets, WEAK_EXAM_LENGTH } from '../lib/weakExam.js';
+import useProgress from '../hooks/useProgress.js';
+import useSrs from '../hooks/useSrs.js';
 import styles from './ExamPage.module.css';
 
 /**
@@ -49,6 +54,18 @@ const topicMeta = (topicId, fallbackName) => {
 		to: t?.to ?? '/',
 		accent: t?.accent ?? 'var(--color-accent-blue)',
 	};
+};
+
+// "Sorting", "Sorting and Hashing", "Sorting, Hashing and Maximum flow" — a
+// readable, comma-then-"and" join of topic names for the weak-spots blurb. Names
+// come from the ranked `weak` items (which carry curriculum metadata); falls
+// back to topicMeta for any id not present there.
+const listTopicNames = (topicIds, weak) => {
+	const nameOf = id => weak.find(t => t.id === id)?.name ?? topicMeta(id).name;
+	const names = topicIds.map(nameOf);
+	if (names.length <= 1) return names[0] ?? '';
+	if (names.length === 2) return `${names[0]} and ${names[1]}`;
+	return `${names.slice(0, -1).join(', ')} and ${names[names.length - 1]}`;
 };
 
 // Sets grouped by topic, in first-appearance (teaching) order, for the picker.
@@ -559,10 +576,65 @@ const ExamPage = () => {
 	const [runId, setRunId] = useState(0);
 	const [timed, setTimed] = useState(false); // Untimed is the default.
 
+	// The same data the mastery dashboard reads, so "Sit your weak spots" ranks
+	// weakness identically to /progress (one ranking, no second opinion).
+	const { checks, isCompleted, isVisited } = useProgress();
+	const { cards } = useSrs();
+	const { examScores } = useExamLog();
+
+	const mastery = useMemo(
+		() => allMastery({ bank: REVIEW_BANK, checks, cards, examScores }),
+		[checks, cards, examScores]
+	);
+
+	// Score every built topic exactly as ProgressPage does, so rankWeakTopics
+	// sees the same numbers here as it does on /progress.
+	const topics = useMemo(
+		() =>
+			BUILT_TOPICS.map(t => {
+				const m = mastery[t.id];
+				const score = m
+					? m.score
+					: isCompleted(t.id)
+						? 1
+						: isVisited(t.id)
+							? 0.3
+							: 0;
+				return { ...t, score, hasData: m?.hasData ?? false };
+			}),
+		[mastery, isCompleted, isVisited]
+	);
+
+	const weak = useMemo(
+		() => rankWeakTopics({ topics, mastery }),
+		[topics, mastery]
+	);
+
+	// Assemble the targeted exam: weak-topic problems first, topped up from the
+	// next topics (in teaching order) to a full sitting when the weak material is
+	// thin. Pure selector (lib/weakExam.js); reported honestly to the learner.
+	const weakRun = useMemo(
+		() =>
+			selectWeakExamSets({
+				sets: EXAM_SETS,
+				weak,
+				length: WEAK_EXAM_LENGTH,
+				order: EXAM_TOPIC_IDS,
+			}),
+		[weak]
+	);
+
 	const startAll = useCallback(() => {
 		setRunSets(EXAM_SETS);
 		setRunId(r => r + 1);
 	}, []);
+
+	// Run the assembled weak-spots set through the SAME ExamSession as any other.
+	const startWeak = useCallback(() => {
+		if (weakRun.sets.length === 0) return;
+		setRunSets(weakRun.sets);
+		setRunId(r => r + 1);
+	}, [weakRun]);
 
 	const startTopic = useCallback(topicId => {
 		setRunSets(EXAM_SETS.filter(s => s.topicId === topicId));
@@ -674,6 +746,40 @@ const ExamPage = () => {
 								? ` The clock matches the run, about two minutes per problem.`
 								: ''}
 						</p>
+
+						{/* "Sit your weak spots" — closes the /progress loop back onto a
+						    cold retest. Only shown when there is genuinely weak data to
+						    target; otherwise the full exam above is the honest first move. */}
+						{weakRun.sets.length > 0 && weakRun.weakTopicIds.length > 0 && (
+							<div className={styles.weakCard}>
+								<div className={styles.weakCardText}>
+									<p className={styles.weakCardEyebrow}>
+										<Target size={13} strokeWidth={2.4} aria-hidden="true" />
+										Built from your weakest topics
+									</p>
+									<p className={styles.weakCardLede}>
+										A {weakRun.sets.length}-problem set weighted toward{' '}
+										{listTopicNames(weakRun.weakTopicIds, weak)}, the topics
+										scoring lowest on /progress.{' '}
+										{weakRun.toppedUp
+											? `Weak-topic material runs ${weakRun.weakCount} problem${
+													weakRun.weakCount === 1 ? '' : 's'
+												} deep, so it tops up with ${
+													weakRun.sets.length - weakRun.weakCount
+												} more to fill the sitting.`
+											: 'Every problem comes from a topic you need to shore up.'}
+									</p>
+								</div>
+								<button
+									type="button"
+									className={styles.weakBtn}
+									onClick={startWeak}
+								>
+									<span>Sit your weak spots</span>
+									<ArrowRight size={15} strokeWidth={2.2} aria-hidden="true" />
+								</button>
+							</div>
+						)}
 					</div>
 				)}
 			</section>
