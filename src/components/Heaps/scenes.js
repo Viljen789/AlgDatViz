@@ -66,19 +66,14 @@ export const SCENES = [
 		check: {
 			kind: 'choice',
 			prompt: 'In a max-heap, where is the largest element guaranteed to be?',
-			options: [
-				'At the root',
-				'In a leaf',
-				'In the left subtree',
-				'Anywhere',
-			],
+			options: ['At the root', 'In a leaf', 'In the left subtree', 'Anywhere'],
 			answer: 'At the root',
 			misconceptions: {
 				'In a leaf':
 					'Leaves hold the smallest elements, not the largest. The heap rule pushes big values up toward the root, so the maximum cannot end up stranded at the bottom.',
 				'In the left subtree':
 					'A max-heap has no left/right ordering, so neither subtree is favored. The parent-over-child rule alone forces the maximum all the way to the root, not to a side.',
-				'Anywhere':
+				Anywhere:
 					'The heap property pins the maximum precisely. Since every parent dominates its children, no element can sit above the largest one, so it must be the root, not just somewhere.',
 			},
 			explanation:
@@ -120,7 +115,12 @@ export const SCENES = [
 			kind: 'choice',
 			prompt:
 				'Insert appends the new key at the last leaf. Which way does it then travel to find its place?',
-			options: ['Sift up toward the root', 'Sift down toward the leaves', 'It stays put', 'Re-build the whole heap'],
+			options: [
+				'Sift up toward the root',
+				'Sift down toward the leaves',
+				'It stays put',
+				'Re-build the whole heap',
+			],
 			answer: 'Sift up toward the root',
 			misconceptions: {
 				'Sift down toward the leaves':
@@ -145,12 +145,14 @@ export const SCENES = [
 			// Distinct options: the correct re-settled max, the tempting "next array
 			// slot" A[1], and two other present values. De-duplicated so no two
 			// option labels collide.
-			options: [...new Set([
-				String(SECOND_MAX),
-				String(PREDICT_HEAP[1]),
-				String(PREDICT_HEAP[3]),
-				String(PREDICT_HEAP[4]),
-			])],
+			options: [
+				...new Set([
+					String(SECOND_MAX),
+					String(PREDICT_HEAP[1]),
+					String(PREDICT_HEAP[3]),
+					String(PREDICT_HEAP[4]),
+				]),
+			],
 			answer: String(SECOND_MAX),
 			explanation: `After ${FIRST_MAX} leaves, the heap re-settles and the new root — the new maximum — is ${SECOND_MAX}. It is NOT simply "the next array slot": removing the root reshuffles the tree, so you must let it sift down before reading the top again. Repeat and you get a sorted stream.`,
 		},

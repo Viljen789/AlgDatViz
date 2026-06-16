@@ -14,7 +14,11 @@ import { MST_EDGES, MST_VERTICES } from './mstMeta.js';
 
 // Measured facts about the shared graph (never hand-typed).
 const KRUSKAL = kruskalTrace({ vertices: MST_VERTICES, edges: MST_EDGES });
-const PRIM_A = primTrace({ vertices: MST_VERTICES, edges: MST_EDGES, start: 'A' });
+const PRIM_A = primTrace({
+	vertices: MST_VERTICES,
+	edges: MST_EDGES,
+	start: 'A',
+});
 export const MST_WEIGHT = KRUSKAL.totalWeight; // 27
 export const MST_EDGE_COUNT = KRUSKAL.treeEdges.length; // n − 1 = 6
 
@@ -73,8 +77,7 @@ export const SCENES = [
 		body: `Kruskal needs to know, fast, whether an edge would close a cycle — that happens exactly when both endpoints are already in the same component. Union-find tracks the components: make-set puts each vertex alone, find returns a component's representative (compressing the path as it goes), and union merges two components by rank. A cycle is simply find(u) == find(v).`,
 		check: {
 			kind: 'classify',
-			prompt:
-				'Match each union-find operation to what it does for Kruskal.',
+			prompt: 'Match each union-find operation to what it does for Kruskal.',
 			items: [
 				{ id: 'find', label: 'find(u) == find(v)' },
 				{ id: 'union', label: 'union(u, v)' },
@@ -99,10 +102,13 @@ export const SCENES = [
 			kind: 'predict',
 			prompt: `On this graph the edges sorted ascending start ${[
 				...new Set(
-					kruskalTrace({ vertices: MST_VERTICES, edges: MST_EDGES }).frames
-						.filter(f => f.phase === 'consider')
+					kruskalTrace({ vertices: MST_VERTICES, edges: MST_EDGES })
+						.frames.filter(f => f.phase === 'consider')
 						.slice(0, 3)
-						.map(f => `${f.considerEdge.u}–${f.considerEdge.v}(${f.considerEdge.w})`)
+						.map(
+							f =>
+								`${f.considerEdge.u}–${f.considerEdge.v}(${f.considerEdge.w})`
+						)
 				),
 			].join(', ')} … Which is the very FIRST edge Kruskal accepts?`,
 			options: [...new Set(['A–B (2)', 'A–D (3)', 'B–E (4)', 'C–F (5)'])],

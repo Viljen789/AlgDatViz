@@ -27,9 +27,13 @@ const PATH_TO_B = reconstructPath(BF.pred, SHARED_SOURCE, 'B'); // [S,C,A,B]
 // predict check is graded against the real arithmetic.
 //   When dist[C]=3 and we relax C→A (w=4): 3+4 = 7 < 10, so dist[A] improves to 7.
 const RELAX_C = DIST.C; // 3
-const RELAX_CA_W = SHARED_GRAPH.edges.find(e => e.from === 'C' && e.to === 'A').weight; // 4
+const RELAX_CA_W = SHARED_GRAPH.edges.find(
+	e => e.from === 'C' && e.to === 'A'
+).weight; // 4
 const RELAX_RESULT = RELAX_C + RELAX_CA_W; // 7
-const DIRECT_SA = SHARED_GRAPH.edges.find(e => e.from === 'S' && e.to === 'A').weight; // 10
+const DIRECT_SA = SHARED_GRAPH.edges.find(
+	e => e.from === 'S' && e.to === 'A'
+).weight; // 10
 
 // Dijkstra relaxation count on the shared graph (used in the algorithms scene).
 const DIJ = dijkstraTrace(SHARED_GRAPH, { source: SHARED_SOURCE });
@@ -190,10 +194,12 @@ export const SCENES = [
 		body: `Dijkstra's whole correctness rests on one assumption: once you settle the closest unsettled vertex, its distance is final. A negative edge can violate that — a vertex settled early might later be reachable more cheaply through a far vertex via a negative edge, but Dijkstra has already locked it in and never reconsiders. For negative edges you must use Bellman-Ford (any graph) or DAG-SP (acyclic).`,
 		check: {
 			kind: 'classify',
-			prompt:
-				'Match each situation to the algorithm you should reach for.',
+			prompt: 'Match each situation to the algorithm you should reach for.',
 			items: [
-				{ id: 'neg', label: 'Graph has negative-weight edges (may have cycles)' },
+				{
+					id: 'neg',
+					label: 'Graph has negative-weight edges (may have cycles)',
+				},
 				{ id: 'dag', label: 'Graph is a weighted DAG (negatives allowed)' },
 				{ id: 'nonneg', label: 'Graph has only non-negative weights' },
 			],
