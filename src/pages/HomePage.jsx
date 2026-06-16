@@ -653,19 +653,30 @@ const HomePage = () => {
 				const actionEls = pageEl.querySelectorAll('[data-hero-actions] > *');
 				const progressEl = q('[data-hero-progress]');
 
+				// The lamp warms on: a soft, slightly oversized glow easing down into
+				// place, like a desk lamp reaching temperature. Opacity + scale only,
+				// so it stays cheap to composite.
 				if (lampEl)
 					heroTl.from(
 						lampEl,
-						{ autoAlpha: 0, scale: 1.08, duration: 1.4, ease: 'power2.out' },
+						{ autoAlpha: 0, scale: 1.14, duration: 1.7, ease: 'sine.out' },
 						0
 					);
 				if (eyebrowEl)
 					heroTl.from(eyebrowEl, { y: 14, opacity: 0, duration: 0.55 }, 0.1);
-				// Each title line rises out of its own clipping mask, in sequence.
+				// The headline is the beat: each clause sets UP out of its own
+				// clipping mask. No opacity, since the mask already hides it below the
+				// line, so this reads as type being set into the frame rather than a
+				// fade. power4.out gives the decisive, settled landing.
 				if (titleLineEls.length)
 					heroTl.from(
 						titleLineEls,
-						{ yPercent: 110, opacity: 0, duration: 0.9, stagger: 0.08 },
+						{
+							yPercent: 115,
+							duration: 0.95,
+							stagger: 0.09,
+							ease: 'power4.out',
+						},
 						0.16
 					);
 				if (subEl)
@@ -684,7 +695,7 @@ const HomePage = () => {
 				if (recomposeEl)
 					heroTl.from(
 						recomposeEl,
-						{ autoAlpha: 0, scale: 0.985, duration: 1.1, ease: 'power2.out' },
+						{ autoAlpha: 0, scale: 0.97, duration: 1.2, ease: 'power2.out' },
 						0.2
 					);
 				// The figure legend lands as the closing beat of the hero entrance.
@@ -733,9 +744,10 @@ const HomePage = () => {
 							scroller: pageEl,
 							start: 'top 72%',
 							end: 'bottom 60%',
-							// Track the scroll tightly; 0.6 lagged the ink/comet noticeably
-							// behind the reader. A hair of smoothing avoids jitter.
-							scrub: 0.2,
+							// Lock the ink to the scroll position. scrub: true tracks the
+							// reader 1:1 with no catch-up; 0.6 then 0.2 still read as the
+							// line trailing behind, so exact tracking is what feels right.
+							scrub: true,
 						},
 					});
 					// The real technique: a hairline stroke inks on. No traveling
