@@ -219,6 +219,10 @@
 
 .barTrack {
 	flex: 1;
+	/* Let the equal-width tracks shrink to share the row: without min-width: 0 a
+	   flex item won't shrink below its content size, so many levels (e.g. 7+)
+	   overflow and clip the rightmost bar at phone width. */
+	min-width: 0;
 	height: 100%;
 	display: flex;
 	align-items: flex-end;
