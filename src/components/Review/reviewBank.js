@@ -159,8 +159,11 @@ export const REVIEW_TOPIC_IDS = [
 // student re-take the exact same set, or get a fresh one by re-seeding).
 
 // mulberry32 — a tiny, fast, well-distributed 32-bit PRNG. Deterministic from a
-// numeric seed; returns a function producing floats in [0, 1).
-const mulberry32 = seed => {
+// numeric seed; returns a function producing floats in [0, 1). Exported so the
+// seeded exam-instance layer (data/examInstances.js) can build fresh, reproducible
+// problem inputs from the SAME PRNG the review shuffler uses — one seed mechanism
+// across the whole revision surface.
+export const mulberry32 = seed => {
 	let a = seed >>> 0;
 	return () => {
 		a |= 0;
@@ -173,7 +176,8 @@ const mulberry32 = seed => {
 
 // Normalize any seed (number or string) to a 32-bit unsigned int. Strings are
 // folded with a small FNV-style hash so a label like "exam-1" is a valid seed.
-const toSeed = seed => {
+// Exported alongside mulberry32 so callers can derive sub-seeds deterministically.
+export const toSeed = seed => {
 	if (typeof seed === 'number' && Number.isFinite(seed)) return seed >>> 0;
 	const str = String(seed ?? 0);
 	let h = 2166136261;

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import {
 	ArrowRight,
 	Check,
@@ -13,7 +13,7 @@ import LessonCheck from '../common/TopicTemplate/LessonCheck.jsx';
 import { checkAnswer } from '../common/TopicTemplate/checkAnswer.js';
 import { REVIEW_BANK, accentTokens } from '../components/Review/reviewBank.js';
 import { BUILT_TOPICS, TOPIC_BY_ID } from '../data/curriculum.js';
-import { EXAM_SETS, EXAM_TOPIC_IDS } from '../data/examSets.js';
+import { EXAM_SETS, EXAM_TOPIC_IDS, buildExamSets } from '../data/examSets.js';
 import { logActivity } from '../lib/activityLog.js';
 import { recordExamTopic, useExamLog } from '../lib/examLog.js';
 import { allMastery } from '../lib/mastery.js';
@@ -569,8 +569,44 @@ const ExamSession = ({
 };
 
 // ── The page ──────────────────────────────────────────────────────────────────
+// A fresh, well-distributed sitting seed. Each value seeds a new set of
+// instances, so two calls give two different (un-memorizable) exams of the same
+// shapes. Kept readable in the URL (a short positive integer).
+const freshSeed = () =>
+	(Date.now() ^ Math.floor(Math.random() * 0xffffffff)) >>> 0;
+
 const ExamPage = () => {
 	const navigate = useNavigate();
+	const [searchParams, setSearchParams] = useSearchParams();
+
+	// The sitting seed lives in the URL (?seed=…), so a sitting is shareable and a
+	// "retake" is just a new seed. A missing/blank seed means the FIXED bank (the
+	// canonical landing experience); a seed swaps in fresh, derived instances.
+	const urlSeed = searchParams.get('seed');
+	const seed = urlSeed && urlSeed.length > 0 ? urlSeed : null;
+
+	// The bank for this sitting: with no seed this is EXAM_SETS by reference (so the
+	// picker and the default run are the canonical fixed problems); with a seed every
+	// seedable set's problem is a fresh, generator-derived instance of the same shape.
+	const seededSets = useMemo(() => buildExamSets(seed), [seed]);
+
+	// Set the seed in the URL (replace, so retakes do not pile up history entries).
+	// Returns the seed used, so a caller can build that sitting's sets immediately.
+	const applySeed = useCallback(
+		nextSeed => {
+			setSearchParams(
+				prev => {
+					const next = new URLSearchParams(prev);
+					next.set('seed', String(nextSeed));
+					return next;
+				},
+				{ replace: true }
+			);
+			return nextSeed;
+		},
+		[setSearchParams]
+	);
+
 	const groups = useMemo(() => groupByTopic(EXAM_SETS), []);
 	const [runSets, setRunSets] = useState(null); // null = picker, [] used as guard
 	const [runId, setRunId] = useState(0);
@@ -612,45 +648,80 @@ const ExamPage = () => {
 
 	// Assemble the targeted exam: weak-topic problems first, topped up from the
 	// next topics (in teaching order) to a full sitting when the weak material is
-	// thin. Pure selector (lib/weakExam.js); reported honestly to the learner.
+	// thin. Pure selector (lib/weakExam.js); reported honestly to the learner. Runs
+	// over the SEEDED bank so a weak-spots sitting also gets fresh instances.
 	const weakRun = useMemo(
 		() =>
 			selectWeakExamSets({
-				sets: EXAM_SETS,
+				sets: seededSets,
 				weak,
 				length: WEAK_EXAM_LENGTH,
 				order: EXAM_TOPIC_IDS,
 			}),
-		[weak]
+		[weak, seededSets]
 	);
 
+	// Start the full exam. If the sitting is not yet seeded, mint a fresh seed first
+	// (so even the first run is a fresh instance, and the URL captures it); then run
+	// the seeded bank for that seed.
 	const startAll = useCallback(() => {
-		setRunSets(EXAM_SETS);
+		const s = seed ?? applySeed(freshSeed());
+		setRunSets(buildExamSets(s));
 		setRunId(r => r + 1);
-	}, []);
+	}, [seed, applySeed]);
 
 	// Run the assembled weak-spots set through the SAME ExamSession as any other.
+	// If the sitting is not yet seeded, mint a seed and re-run the SAME weak SELECTION
+	// over that seed's fresh bank (so even the first weak sitting is a fresh instance,
+	// not the fixed bank weakRun memoized while seedless).
 	const startWeak = useCallback(() => {
 		if (weakRun.sets.length === 0) return;
-		setRunSets(weakRun.sets);
+		if (seed == null) {
+			const s = applySeed(freshSeed());
+			const byId = new Map(buildExamSets(s).map(set => [set.id, set]));
+			setRunSets(weakRun.sets.map(set => byId.get(set.id) ?? set));
+		} else {
+			setRunSets(weakRun.sets);
+		}
 		setRunId(r => r + 1);
-	}, [weakRun]);
+	}, [weakRun, seed, applySeed]);
 
-	const startTopic = useCallback(topicId => {
-		setRunSets(EXAM_SETS.filter(s => s.topicId === topicId));
-		setRunId(r => r + 1);
-	}, []);
+	const startTopic = useCallback(
+		topicId => {
+			const s = seed ?? applySeed(freshSeed());
+			setRunSets(buildExamSets(s).filter(set => set.topicId === topicId));
+			setRunId(r => r + 1);
+		},
+		[seed, applySeed]
+	);
 
-	const startSet = useCallback(set => {
-		setRunSets([set]);
-		setRunId(r => r + 1);
-	}, []);
+	// A single set, picked from the picker. The picker lists the FIXED stems, so map
+	// the chosen set to this sitting's seeded instance by id (fresh seed if needed).
+	const startSet = useCallback(
+		set => {
+			const s = seed ?? applySeed(freshSeed());
+			const seeded = buildExamSets(s).find(x => x.id === set.id) ?? set;
+			setRunSets([seeded]);
+			setRunId(r => r + 1);
+		},
+		[seed, applySeed]
+	);
 
 	const exit = useCallback(() => setRunSets(null), []);
 
-	// Re-run the SAME sets, fresh: bump runId so ExamSession remounts with cleared
-	// state. (The summary's honest replay.)
-	const retake = useCallback(() => setRunId(r => r + 1), []);
+	// Retake = a NEW SEED = fresh instances of the same shapes (the whole point: a
+	// retake is no longer the identical problem to memorize). We re-seed, rebuild the
+	// run from the SAME selection (same set ids, regenerated), and remount via runId.
+	const retake = useCallback(() => {
+		const s = applySeed(freshSeed());
+		const byId = new Map(buildExamSets(s).map(set => [set.id, set]));
+		setRunSets(prev =>
+			// Preserve the prior run's selection + order, but swap each set for its new
+			// instance under the new seed (conceptual sets are returned unchanged).
+			prev ? prev.map(set => byId.get(set.id) ?? set) : prev
+		);
+		setRunId(r => r + 1);
+	}, [applySeed]);
 
 	// Open a topic's lesson from the summary (re-read), or run its exam set again
 	// (retrieval). startTopic already remounts the session via runId.

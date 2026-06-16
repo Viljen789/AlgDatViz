@@ -2456,4 +2456,46 @@ export const EXAM_SETS = [
 // Distinct topic ids represented, in first-appearance order (for grouping).
 export const EXAM_TOPIC_IDS = [...new Set(EXAM_SETS.map(s => s.topicId))];
 
+// =============================================================================
+// SEEDED SITTINGS — fresh, un-memorizable instances of the SAME shapes.
+// =============================================================================
+//
+// EXAM_SETS above is the FIXED bank: identical inputs every time (so a retake
+// re-runs the same problem, memorizable). data/examInstances.js adds a seeded
+// layer: given a seed it deterministically generates a FRESH, well-formed input of
+// the same shape and difficulty, then derives the answer from the SAME pure
+// generator. `buildExamSets(seed)` returns the bank with each seedable set's
+// `problem` swapped for that seed's fresh instance; non-seedable (conceptual) sets
+// keep their fixed problem. The set ENVELOPE (id, topicId, topicName) is unchanged,
+// so every downstream consumer — ExamPage grouping, weakExam selection, by-topic
+// scoring — works on a seeded sitting exactly as on the fixed one.
+//
+// Back-compat: `EXAM_SETS` (the default export) is untouched. Calling
+// `buildExamSets()` with no seed, or seed 0/null, returns the FIXED problems by
+// reference, so the seedless path is literally the old bank.
+
+import { buildInstanceProblem, isSeedable } from './examInstances.js';
+
+/**
+ * buildExamSets — the exam bank for one sitting seed.
+ *
+ * @param {number|string|null} [seed] the sitting seed. Falsy (undefined/null/0/'')
+ *        ⇒ the FIXED bank (same objects as EXAM_SETS), preserving back-compat.
+ * @returns {Array<{id,topicId,topicName,problem}>} the sets for this sitting, in
+ *          the same order/identity as EXAM_SETS; seedable problems regenerated.
+ */
+export const buildExamSets = (seed = null) => {
+	// No seed ⇒ the fixed bank verbatim (by reference). This is the old behaviour.
+	if (seed === null || seed === undefined || seed === '' || seed === 0) {
+		return EXAM_SETS;
+	}
+	return EXAM_SETS.map(set => {
+		if (!isSeedable(set.id)) return set; // conceptual set: keep the fixed problem
+		const problem = buildInstanceProblem(set.id, seed);
+		// A builder always returns a problem for a seedable id, but fall back to the
+		// fixed problem defensively rather than ever shipping an empty sitting.
+		return problem ? { ...set, problem } : set;
+	});
+};
+
 export default EXAM_SETS;

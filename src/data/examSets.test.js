@@ -28,7 +28,12 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { EXAM_SETS } from './examSets.js';
+import { EXAM_SETS, buildExamSets } from './examSets.js';
+import {
+	SEEDABLE_SET_IDS,
+	buildInstanceProblem,
+	isSeedable,
+} from './examInstances.js';
 
 import {
 	kruskalTrace,
@@ -637,4 +642,387 @@ test('derivation coverage is reported (and static stays the minority)', () => {
 		`expected re-derived parts to outnumber static ones, but got ` +
 			`${derivedCount} derived vs ${staticCount} static`
 	);
+});
+
+// =============================================================================
+// THE SEEDED-INSTANCE GUARDRAIL (extends the same discipline to fresh inputs).
+// =============================================================================
+//
+// data/examInstances.js generates a FRESH input per seed and derives the answer
+// from the same generator. The risk is identical to the fixed bank: a builder's
+// read-off logic could drift from what the algorithm actually produces. So we hold
+// it to the SAME standard — for each seedable set, across several seeds, we take
+// the instance's OWN input (exposed as problem.__input) and RE-DERIVE every
+// gradeable answer from the generator INDEPENDENTLY (these recipes call
+// kruskalTrace / dijkstraTrace / … themselves; they do not trust the builder), then
+// deep-equal it against the stored answer. Same seed → same instance → answer must
+// match the generator. The fixed-bank STATIC allowlist (conceptual parts) carries
+// over by index, since a seeded instance keeps each part's kind and position.
+
+// The same read-off helpers the seeded recipes need (already declared above:
+// mstEdgeLabel, weightMap, settleOrder, distVal, distAfterPass, cText, mergeOutput).
+
+// A seeded recipe maps the instance INPUT → { partIndex → re-derived answer }, for
+// the auto-gradable parts only. Conceptual parts are covered by SEEDED_STATIC.
+const SEEDED_RECIPES = {
+	'mst-1': ({ vertices, edges }) => {
+		const w = weightMap(edges);
+		const run = kruskalTrace({ vertices, edges });
+		const accept = run.treeEdges.map(id => mstEdgeLabel(id, w));
+		return { 0: accept, 1: run.totalWeight, 2: vertices.length - 1 };
+	},
+	'mst-2': ({ vertices, edges, start }) => {
+		const w = weightMap(edges);
+		const run = primTrace({ vertices, edges, start });
+		const accept = run.treeEdges.map(id => mstEdgeLabel(id, w));
+		return { 0: accept, 1: run.totalWeight, 2: accept[0] };
+	},
+	'sssp-1': ({ graph }) => {
+		const run = dijkstraTrace(graph, { source: 'S' });
+		return {
+			0: settleOrder(run.frames),
+			1: distVal(run.dist.A),
+			2: distVal(run.dist.C),
+		};
+	},
+	'sssp-2': ({ graph }) => {
+		const run = bellmanFordTrace(graph, { source: 'S' });
+		return { 1: distVal(run.dist.A), 2: distVal(run.dist.C) };
+	},
+	'sssp-3': ({ graph }) => {
+		const run = bellmanFordTrace(graph, { source: 'S' });
+		const pass1 = distAfterPass(run.frames, 1);
+		return {
+			0: distVal(pass1.D),
+			1: distVal(run.dist.D),
+			2: distVal(run.dist.C),
+		};
+	},
+	'heaps-1': ({ array }) => {
+		const run = buildMaxHeapTrace(array);
+		const final = run.finalHeap;
+		return {
+			0: Math.floor(array.length / 2) - 1,
+			1: `[${final.join(', ')}]`,
+			2: final[0],
+		};
+	},
+	'heaps-2': ({ heap }) => {
+		const run = extractMaxTrace({ heap });
+		const after = run.finalHeap;
+		return { 0: run.max, 1: `[${after.join(', ')}]`, 2: after[0] };
+	},
+	'master-1': ({ params }) => {
+		const r = analyseRecurrence(params);
+		return { 0: cText(params.a, params.b), 1: r.name, 2: r.result };
+	},
+	'master-2': ({ params }) => {
+		const r = analyseRecurrence(params);
+		return { 0: cText(params.a, params.b), 1: r.name, 2: r.result };
+	},
+	'apsp-1': ({ graph }) => {
+		const run = floydWarshall(graph);
+		const ids = run.ids;
+		const row1 = run.dist[ids.indexOf('1')];
+		const d12 = distVal(row1[ids.indexOf('2')]);
+		const d13 = distVal(row1[ids.indexOf('3')]);
+		const d14 = distVal(row1[ids.indexOf('4')]);
+		const l1 = run.layers[1];
+		const l1_42 = distVal(l1[ids.indexOf('4')][ids.indexOf('2')]);
+		return {
+			0: d13,
+			1: [
+				`d[1][1] = 0`,
+				`d[1][2] = ${d12}`,
+				`d[1][3] = ${d13}`,
+				`d[1][4] = ${d14}`,
+			],
+			2: l1_42,
+		};
+	},
+	'linsort-1': ({ array }) => {
+		const steps = getCountingSortStepsWithStats(array).steps;
+		const last = steps[steps.length - 1];
+		const counting = steps.filter(s => s.metadata.phase === 'counting');
+		const count = counting[counting.length - 1].metadata.countArray;
+		return {
+			0: last.metadata.k,
+			1: count[0],
+			2: `[${last.array.join(', ')}]`,
+		};
+	},
+	'linsort-2': ({ values }) => {
+		const stable = radixWithSubroutine(values, true);
+		const unstable = radixWithSubroutine(values, false);
+		const onesStr = `[${stable.passes[0].after.join(', ')}]`;
+		const unstableStr = `[${unstable.result.join(', ')}]`;
+		return {
+			0: onesStr,
+			1: `[${stable.result.join(', ')}]`,
+			2: `It is no longer sorted, e.g. ${unstableStr}`,
+		};
+	},
+	'trees-1': ({ insertOrder, delValue }) => {
+		const root = buildBst(insertOrder);
+		const inorder = inorderValues(root);
+		const pre = (() => {
+			const steps = getTraversalSteps(root, 'preorder');
+			return steps[steps.length - 1].output.map(Number);
+		})();
+		const successor = inorder[inorder.indexOf(delValue) + 1];
+		const afterDel = deleteValue(root, delValue);
+		const delInorder = inorderValues(afterDel);
+		return {
+			0: inorder.map(String),
+			1: `root ${pre[0]}, left child ${pre[1]}`,
+			2: successor,
+			3: delInorder.map(String),
+		};
+	},
+	'graphs-1': ({ graph, target }) => {
+		const bfs = genericTraverse(graph, { discipline: 'fifo', start: 'A' });
+		const dfs = genericTraverse(graph, { discipline: 'lifo', start: 'A' });
+		return {
+			0: bfs.visitOrder,
+			1: distVal(bfs.dist[target]),
+			2: dfs.visitOrder,
+		};
+	},
+	'hashing-1': ({ keys, capacity }) => {
+		const entries = keys.map(k => ({ key: k, value: k.length }));
+		const buckets = createBucketsFromEntries(entries, capacity);
+		const collisions = buckets.filter(b => b.length > 1).length;
+		const maxChain = Math.max(...buckets.map(b => b.length));
+		const alpha = (keys.length / capacity).toFixed(2);
+		return { 0: collisions, 1: maxChain, 2: alpha };
+	},
+	'maxflow-1': ({ network }) => {
+		const run = edmondsKarpTrace(network);
+		return {
+			0: run.value,
+			1: run.minCut.capacity,
+			2: run.minCut.S.length,
+		};
+	},
+	'foundations-1': ({ n }) => ({ 0: (n * (n + 1)) / 2 }),
+	'foundations-2': ({ n }) => ({ 1: n, 2: 1 }),
+	'stacks-queues-1': ({ ops }) => {
+		const stackFinal = sqFrames('stack', [], ops).at(-1).items;
+		const queueFinal = sqFrames('queue', [], ops).at(-1).items;
+		const stackPops = stackFinal[stackFinal.length - 1];
+		const queueDeq = queueFinal[0];
+		return {
+			0: `[${stackFinal.join(', ')}]`,
+			1: `[${queueFinal.join(', ')}]`,
+			2: `Stack pops ${stackPops}, queue dequeues ${queueDeq}`,
+		};
+	},
+	'sorting-1': ({ array }) => {
+		const run = getMergeSortStepsWithStats(array);
+		const steps = run.steps;
+		const leftStr = `[${mergeOutput(steps, 0, 3).join(', ')}]`;
+		const finalStr = `[${steps[steps.length - 1].array.join(', ')}]`;
+		return { 0: leftStr, 1: finalStr, 2: run.finalStats.comparisons };
+	},
+	'sorting-2': ({ left, right }) => {
+		const run = getMergeSortStepsWithStats([...left, ...right]);
+		const n = left.length + right.length;
+		const mergedStr = `[${mergeOutput(run.steps, 0, n - 1).join(', ')}]`;
+		return { 0: mergedStr, 1: Math.ceil(Math.log2(n)) };
+	},
+	'strategies-1': ({ coins, target }) => {
+		const run = buildCoinChangeFrames({ target, coins });
+		const dpTable = run.frames[run.frames.length - 1].dpTable;
+		return {
+			0: dpTable[4],
+			1: run.summary.dpFinal,
+			2: run.summary.greedyFinal,
+		};
+	},
+	'strategies-2': ({ n }) => {
+		const run = buildClimbingStairsFrames(n);
+		const dpTable = run.frames[run.frames.length - 1].dpTable;
+		return { 0: dpTable[4], 1: dpTable[n] };
+	},
+};
+
+// Conceptual parts of a seeded instance (same index → same kind as the fixed set).
+// Mirrors the relevant entries of STATIC for the seedable sets only.
+const SEEDED_STATIC = new Set([
+	'mst-1#3',
+	'sssp-1#3',
+	'sssp-2#0',
+	'sssp-2#3',
+	'sssp-3#3',
+	'apsp-1#3',
+	'linsort-1#3',
+	'graphs-1#3',
+	'hashing-1#3',
+	'maxflow-1#3',
+	'foundations-1#1',
+	'foundations-1#2',
+	'foundations-1#3',
+	'foundations-2#0',
+	'foundations-2#3',
+	'stacks-queues-1', // all three parts re-derived; no static — sentinel unused
+	'sorting-1#3',
+	'sorting-2#2',
+	'strategies-1#3',
+	'strategies-2#2',
+]);
+
+// A handful of seeds exercised per set: determinism + correctness across instances.
+const SEEDS = [1, 2, 7, 42, 1234, 99999];
+
+// Sanity: every seedable set declares a seeded recipe (a new seedable builder
+// cannot slip in unchecked).
+test('every seedable set has a seeded re-derivation recipe', () => {
+	const missing = SEEDABLE_SET_IDS.filter(id => !(id in SEEDED_RECIPES));
+	assert.deepEqual(
+		missing,
+		[],
+		`seedable set(s) without a seeded recipe in examSets.test.js: ${missing.join(
+			', '
+		)}.`
+	);
+});
+
+// Determinism: the SAME seed yields the byte-identical instance (deep-equal).
+test('seeded instances are deterministic in the seed', () => {
+	for (const id of SEEDABLE_SET_IDS) {
+		for (const seed of SEEDS) {
+			const a = buildInstanceProblem(id, seed);
+			const b = buildInstanceProblem(id, seed);
+			assert.deepEqual(
+				a,
+				b,
+				`${id} @ seed ${seed} is not deterministic (two builds differ)`
+			);
+		}
+	}
+});
+
+// Variety: different seeds yield different instances (so a "retake" is genuinely a
+// new problem). We compare the gradeable answers across seeds: at least two
+// DISTINCT answer-signatures must appear, or the set is effectively fixed.
+test('seeded instances vary across seeds (a retake is a fresh problem)', () => {
+	const wideSeeds = Array.from({ length: 24 }, (_, i) => i * 1009 + 3);
+	for (const id of SEEDABLE_SET_IDS) {
+		const sigs = new Set(
+			wideSeeds.map(seed => {
+				const p = buildInstanceProblem(id, seed);
+				// Signature = the ordered list of every part's answer (the load-bearing,
+				// gradeable content). If this varies, the instance is genuinely fresh.
+				return JSON.stringify(p.parts.map(part => part.answer));
+			})
+		);
+		assert.ok(
+			sigs.size > 1,
+			`${id} produced only ${sigs.size} distinct answer-signature across ` +
+				`${wideSeeds.length} seeds — it is not varying like a fresh instance should.`
+		);
+	}
+});
+
+// THE HEART: every gradeable answer of every seeded instance is RE-DERIVED from the
+// generator on the instance's own input, and must deep-equal the stored answer.
+for (const id of SEEDABLE_SET_IDS) {
+	const recipe = SEEDED_RECIPES[id];
+	if (!recipe) continue; // covered by the sanity test above
+
+	test(`[${id}] seeded instances: every gradeable answer re-derives from its generator`, () => {
+		for (const seed of SEEDS) {
+			const problem = buildInstanceProblem(id, seed);
+			assert.ok(
+				problem && problem.__input,
+				`${id} @ seed ${seed}: instance is missing __input (cannot re-derive)`
+			);
+			const expectedByIndex = recipe(problem.__input);
+			problem.parts.forEach((part, i) => {
+				const key = `${id}#${i}`;
+				if (i in expectedByIndex) {
+					assert.deepEqual(
+						part.answer,
+						expectedByIndex[i],
+						`SEEDED DRIFT: ${id} @ seed ${seed} part ${i} (${part.kind}) stored ` +
+							`answer ${JSON.stringify(part.answer)} does not match the ` +
+							`re-derived ${JSON.stringify(expectedByIndex[i])}. The builder's ` +
+							`read-off has drifted from the generator.`
+					);
+				} else {
+					// Not re-derived ⇒ must be a conceptual part (same index as the fixed
+					// set's STATIC) — never a silent gap.
+					assert.ok(
+						SEEDED_STATIC.has(key) || SEEDED_STATIC.has(id),
+						`UNCOVERED SEEDED PART: ${id} @ seed ${seed} part ${i} (${part.kind}) ` +
+							`is neither re-derived nor a known conceptual part. Add a derivation ` +
+							`for index ${i} to SEEDED_RECIPES['${id}'].`
+					);
+				}
+				// Structural validity that must hold on EVERY instance, every seed:
+				if (part.kind === 'choice') {
+					assert.ok(
+						part.options.includes(part.answer),
+						`${id} @ seed ${seed} part ${i}: choice answer is not among its options`
+					);
+					assert.equal(
+						new Set(part.options).size,
+						part.options.length,
+						`${id} @ seed ${seed} part ${i}: choice options contain a duplicate`
+					);
+				}
+				if (part.kind === 'order') {
+					assert.deepEqual(
+						[...part.items].sort(),
+						[...part.answer].sort(),
+						`${id} @ seed ${seed} part ${i}: order answer is not a permutation of its items`
+					);
+				}
+			});
+		}
+	});
+}
+
+// Back-compat: a seedless sitting is the FIXED bank, by reference. buildExamSets()
+// (and falsy seeds) must return EXAM_SETS unchanged, so the seedless path is
+// literally the old behaviour the rest of the app depends on.
+test('buildExamSets() with no/falsy seed returns the fixed bank by reference', () => {
+	assert.equal(buildExamSets(), EXAM_SETS);
+	assert.equal(buildExamSets(null), EXAM_SETS);
+	assert.equal(buildExamSets(0), EXAM_SETS);
+	assert.equal(buildExamSets(''), EXAM_SETS);
+});
+
+// A seeded sitting preserves the bank ENVELOPE (ids, topicIds, order, length) and
+// only swaps the problem on seedable sets — so grouping / weak-exam selection /
+// by-topic scoring all keep working on a seeded sitting.
+test('a seeded sitting keeps the bank envelope; only seedable problems change', () => {
+	const seeded = buildExamSets(42);
+	assert.equal(seeded.length, EXAM_SETS.length, 'set count changed');
+	seeded.forEach((set, i) => {
+		const fixed = EXAM_SETS[i];
+		assert.equal(set.id, fixed.id, `set ${i} id changed`);
+		assert.equal(set.topicId, fixed.topicId, `set ${set.id} topicId changed`);
+		assert.equal(
+			set.topicName,
+			fixed.topicName,
+			`set ${set.id} topicName changed`
+		);
+		assert.equal(set.problem.kind, 'problem');
+		if (isSeedable(set.id)) {
+			// Seedable: a fresh instance, so it should NOT be the identical object.
+			assert.notEqual(
+				set.problem,
+				fixed.problem,
+				`${set.id} is seedable but the seeded sitting kept the fixed problem`
+			);
+		} else {
+			// Conceptual: the fixed problem is reused verbatim (by reference).
+			assert.equal(
+				set.problem,
+				fixed.problem,
+				`${set.id} is not seedable but the seeded sitting changed its problem`
+			);
+		}
+	});
 });
