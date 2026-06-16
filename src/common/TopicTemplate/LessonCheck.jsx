@@ -1,10 +1,6 @@
 import { useMemo, useState } from 'react';
-import {
-	ArrowDown,
-	ArrowUp,
-	Check,
-	MousePointerClick,
-} from 'lucide-react';
+import { ArrowDown, ArrowUp, Check, MousePointerClick } from 'lucide-react';
+import StepProbeFrame from './StepProbeFrame.jsx';
 import styles from './LessonCheck.module.css';
 
 const STATUS_LABEL = {
@@ -71,11 +67,18 @@ const InputForm = ({ kind, placeholder, isAnswered, value, onSubmit }) => {
 				inputMode={kind === 'numeric' ? 'decimal' : 'text'}
 				value={draft}
 				onChange={e => setDraft(e.target.value)}
-				placeholder={placeholder || (kind === 'numeric' ? 'Enter a number' : 'Type your answer')}
+				placeholder={
+					placeholder ||
+					(kind === 'numeric' ? 'Enter a number' : 'Type your answer')
+				}
 				aria-label="Your answer"
 				step={kind === 'numeric' ? 'any' : undefined}
 			/>
-			<button type="submit" className={styles.submit} disabled={draft.trim() === ''}>
+			<button
+				type="submit"
+				className={styles.submit}
+				disabled={draft.trim() === ''}
+			>
 				Check
 			</button>
 		</form>
@@ -96,7 +99,10 @@ const OrderList = ({ items, isAnswered, answer, onSubmit }) => {
 	};
 	return (
 		<div className={styles.orderWrap}>
-			<ol className={styles.orderList} aria-label="Arrange into the correct order">
+			<ol
+				className={styles.orderList}
+				aria-label="Arrange into the correct order"
+			>
 				{order.map((item, idx) => {
 					const correctSlot = isAnswered && answer?.[idx] === item;
 					return (
@@ -154,7 +160,14 @@ const OrderList = ({ items, isAnswered, answer, onSubmit }) => {
 };
 
 // ── Classify: assign each item to a category via a select (keyboard-native). ──
-const ClassifyGrid = ({ items, categories, isAnswered, answer, perItem, onSubmit }) => {
+const ClassifyGrid = ({
+	items,
+	categories,
+	isAnswered,
+	answer,
+	perItem,
+	onSubmit,
+}) => {
 	const [assignment, setAssignment] = useState({});
 	const allAssigned = items.every(item => assignment[item.id]);
 	return (
@@ -264,7 +277,10 @@ const resolvePredictMode = check => {
 // calm note inside a problem; standalone 'pair' is still handled by LessonCheck.
 const LeafInput = ({ check, state, submit }) => {
 	const isAnswered = state?.status != null;
-	const predictMode = check.kind === 'predict' ? resolvePredictMode(check) : null;
+	const predictMode =
+		check.kind === 'predict' || check.kind === 'stepProbe'
+			? resolvePredictMode(check)
+			: null;
 
 	if (check.kind === 'choice') {
 		return (
@@ -338,6 +354,34 @@ const LeafInput = ({ check, state, submit }) => {
 		);
 	}
 
+	// Trace-step probe: render the frozen frame k as the question (the canvas IS the
+	// question), then the same predict widget below. The answer is graded against the
+	// generator's next frame; the depiction shows the generator's real state at k.
+	if (check.kind === 'stepProbe') {
+		return (
+			<div className={styles.stepProbe}>
+				<StepProbeFrame frame={check.frame} view={check.view} />
+				{predictMode === 'choice' ? (
+					<ChoiceRow
+						options={check.options}
+						answer={check.answer}
+						selected={state?.value}
+						isAnswered={isAnswered}
+						onPick={submit}
+					/>
+				) : (
+					<InputForm
+						kind={predictMode}
+						placeholder={check.placeholder}
+						isAnswered={isAnswered}
+						value={state?.value}
+						onSubmit={submit}
+					/>
+				)}
+			</div>
+		);
+	}
+
 	if (check.kind === 'spotbug' && Array.isArray(check.lines)) {
 		return (
 			<SpotbugLines
@@ -400,8 +444,7 @@ const ProblemBlock = ({ check, state, submit }) => {
 		(part, idx) => part.kind === 'pair' || answers[idx] !== undefined
 	);
 
-	const scorePct =
-		state?.score == null ? null : Math.round(state.score * 100);
+	const scorePct = state?.score == null ? null : Math.round(state.score * 100);
 
 	return (
 		<div className={styles.problem}>
@@ -411,10 +454,10 @@ const ProblemBlock = ({ check, state, submit }) => {
 					const partStatus = !isAnswered
 						? null
 						: partResult?.correct === true
-						? 'correct'
-						: partResult?.correct === null
-						? null
-						: 'incorrect';
+							? 'correct'
+							: partResult?.correct === null
+								? null
+								: 'incorrect';
 					// The leaf widget reads its own state slice. Before submit, only
 					// the draft answer matters; after submit, status drives the reveal.
 					const partState = {
@@ -573,9 +616,7 @@ const LessonCheck = ({ check, state, gated, onAnswer, onChoiceAnswer }) => {
 				{check.kind === 'problem' ? check.stem : check.prompt}
 			</p>
 
-			{showGateHint && (
-				<p className={styles.gateHint}>Answer to continue.</p>
-			)}
+			{showGateHint && <p className={styles.gateHint}>Answer to continue.</p>}
 
 			{check.kind === 'pair' && !isAnswered && (
 				<PairProgress
@@ -596,7 +637,9 @@ const LessonCheck = ({ check, state, gated, onAnswer, onChoiceAnswer }) => {
 				<div className={styles.reveal}>
 					{misconception && (
 						<p className={styles.misconception}>
-							<span className={styles.misconceptionLabel}>Why that was wrong</span>
+							<span className={styles.misconceptionLabel}>
+								Why that was wrong
+							</span>
 							{misconception}
 						</p>
 					)}

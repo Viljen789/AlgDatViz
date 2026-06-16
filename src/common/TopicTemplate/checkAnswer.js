@@ -68,6 +68,19 @@
 //                payload: per the resolved mode.
 //                -> { correct, value, mode }
 //
+//   'stepProbe': a FROZEN-FRAME trace question — the canvas IS the question. The
+//                check carries a `frame` (the algorithm's real state at step k, as
+//                emitted by a trace generator) and a `view` descriptor naming how to
+//                depict it; the learner predicts the NEXT decision, whose answer is
+//                DERIVED from frame k+1 of the SAME generator (never hand-typed).
+//                Grading is identical to 'predict' (it resolves the same
+//                choice/numeric/text mode and delegates), so checkAnswer never reads
+//                `frame`/`view` — those travel only for the host to render the frozen
+//                state honestly. Shape:
+//                  { frame, view, mode?, options?/answer?, ... }
+//                payload: per the resolved mode.
+//                -> { correct, value, mode }
+//
 //   'spotbug'  : { lines: string[], answer: number } | { options, answer }
 //                Pick the wrong line / wrong claim. With `lines`, `answer` is the
 //                index of the buggy line; payload is the chosen index. With
@@ -184,6 +197,12 @@ const checkPredict = (check, payload) => {
 	return { correct: r.correct, value: r.value, mode };
 };
 
+// A trace-step probe grades exactly like a predict: it resolves the same
+// choice/numeric/text mode and delegates. The frozen `frame` and `view` descriptor
+// ride on the check purely so the host can render the frame-k state; grading never
+// reads them, so a probe can only ever be marked against the predicted next move.
+const checkStepProbe = (check, payload) => checkPredict(check, payload);
+
 const checkSpotbug = (check, payload) => {
 	// Line-mode: answer is the buggy line index.
 	if (Array.isArray(check.lines)) {
@@ -216,6 +235,7 @@ const GRADERS = {
 	order: checkOrder,
 	classify: checkClassify,
 	predict: checkPredict,
+	stepProbe: checkStepProbe,
 	spotbug: checkSpotbug,
 	problem: checkProblem,
 };

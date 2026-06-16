@@ -109,6 +109,31 @@ const distAfterPass = (frames, pass) => {
 	return snap || {};
 };
 
+// ── trace-step probe re-derivation (INDEPENDENT of data/traceProbes.js) ──────
+// The bank builds its probes via traceProbes.js; this is a SECOND implementation so
+// a bug in that shared read-off is caught (the two must agree). We find the decision
+// frames ourselves and read the next decision off the frame stream. `ordinal` is
+// 1-based among decision frames after the first (matching the bank's convention),
+// the probed decision frame is decisions[ordinal], the FROZEN frame is the one
+// immediately before it, and the answer is that decision frame's field.
+const probeFrameIndices = (frames, phase) => {
+	const out = [];
+	frames.forEach((f, i) => {
+		if (f.phase === phase) out.push(i);
+	});
+	return out;
+};
+
+const rederiveProbe = (frames, { phase, field, ordinal }) => {
+	const decisions = probeFrameIndices(frames, phase);
+	const decisionIndex = decisions[ordinal];
+	if (decisionIndex === undefined || decisionIndex < 1) return null;
+	return {
+		frozen: frames[decisionIndex - 1],
+		answer: frames[decisionIndex][field],
+	};
+};
+
 // Master-theorem c = log_b(a), formatted exactly as the bank's cText.
 const cText = (a, b) => {
 	const c = Math.log(a) / Math.log(b);
@@ -451,6 +476,38 @@ const RECIPES = {
 			2: dfs.visitOrder, // order: DFS visit order
 		};
 	},
+	// Trace-step probes: the answer is the NEXT decision, re-derived from the frame
+	// stream of the same generator on the same fixed input (S1_GRAPH / G1_GRAPH).
+	'sssp-probe-1': () => {
+		const run = dijkstraTrace(S1_GRAPH, { source: 'S' });
+		return {
+			0: rederiveProbe(run.frames, {
+				phase: 'settle',
+				field: 'active',
+				ordinal: 2,
+			}).answer, // stepProbe: Dijkstra settles next (2nd probed settle)
+			1: rederiveProbe(run.frames, {
+				phase: 'settle',
+				field: 'active',
+				ordinal: 3,
+			}).answer, // stepProbe: the settle after that
+		};
+	},
+	'graphs-probe-1': () => {
+		const bfs = genericTraverse(G1_GRAPH, { discipline: 'fifo', start: 'A' });
+		return {
+			0: rederiveProbe(bfs.frames, {
+				phase: 'extract',
+				field: 'current',
+				ordinal: 1,
+			}).answer, // stepProbe: BFS dequeues next
+			1: rederiveProbe(bfs.frames, {
+				phase: 'extract',
+				field: 'current',
+				ordinal: 2,
+			}).answer, // stepProbe: the dequeue after that
+		};
+	},
 	'hashing-1': () => {
 		const entries = HM1_KEYS.map(k => ({ key: k, value: k.length }));
 		const buckets = createBucketsFromEntries(entries, HM1_CAPACITY);
@@ -788,6 +845,40 @@ const SEEDED_RECIPES = {
 			2: dfs.visitOrder,
 		};
 	},
+	// Seeded trace-step probes: re-run the same generator on the instance's OWN fresh
+	// graph and re-derive the next decision off the frame stream — independent of the
+	// builder's traceProbes.js read-off, so a seeded probe answer can only be the
+	// algorithm's real next move on that fresh input.
+	'sssp-probe-1': ({ graph }) => {
+		const run = dijkstraTrace(graph, { source: 'S' });
+		return {
+			0: rederiveProbe(run.frames, {
+				phase: 'settle',
+				field: 'active',
+				ordinal: 2,
+			}).answer,
+			1: rederiveProbe(run.frames, {
+				phase: 'settle',
+				field: 'active',
+				ordinal: 3,
+			}).answer,
+		};
+	},
+	'graphs-probe-1': ({ graph }) => {
+		const bfs = genericTraverse(graph, { discipline: 'fifo', start: 'A' });
+		return {
+			0: rederiveProbe(bfs.frames, {
+				phase: 'extract',
+				field: 'current',
+				ordinal: 1,
+			}).answer,
+			1: rederiveProbe(bfs.frames, {
+				phase: 'extract',
+				field: 'current',
+				ordinal: 2,
+			}).answer,
+		};
+	},
 	'hashing-1': ({ keys, capacity }) => {
 		const entries = keys.map(k => ({ key: k, value: k.length }));
 		const buckets = createBucketsFromEntries(entries, capacity);
@@ -971,6 +1062,24 @@ for (const id of SEEDABLE_SET_IDS) {
 						`${id} @ seed ${seed} part ${i}: choice options contain a duplicate`
 					);
 				}
+				// A trace-step probe is a choice over the undecided vertices: the answer
+				// must be present, no duplicate options, and it must carry a frozen frame
+				// (the canvas IS the question — never a probe without its state).
+				if (part.kind === 'stepProbe') {
+					assert.ok(
+						part.options.includes(part.answer),
+						`${id} @ seed ${seed} part ${i}: stepProbe answer is not among its options`
+					);
+					assert.equal(
+						new Set(part.options).size,
+						part.options.length,
+						`${id} @ seed ${seed} part ${i}: stepProbe options contain a duplicate`
+					);
+					assert.ok(
+						part.frame && part.view,
+						`${id} @ seed ${seed} part ${i}: stepProbe is missing its frozen frame/view`
+					);
+				}
 				if (part.kind === 'order') {
 					assert.deepEqual(
 						[...part.items].sort(),
@@ -992,6 +1101,127 @@ test('buildExamSets() with no/falsy seed returns the fixed bank by reference', (
 	assert.equal(buildExamSets(0), EXAM_SETS);
 	assert.equal(buildExamSets(''), EXAM_SETS);
 });
+
+// =============================================================================
+// TRACE-STEP PROBE HONESTY (the canvas IS the generator's real state).
+// =============================================================================
+//
+// A 'stepProbe' part freezes a generator frame as the question. Two things must
+// hold for it to be honest: (1) the stored `frame` is the generator's REAL frame
+// just before the probed decision (frames[decisionIndex − 1]) — not a hand-built
+// picture; and (2) the stored `answer` is exactly that decision frame's chosen
+// vertex. We re-run the generator (fixed input AND each seeded input) and re-derive
+// both INDEPENDENTLY of traceProbes.js (via rederiveProbe), then deep-equal. If the
+// builder ever drew its own picture or typed its own "next", this fails.
+
+// (set id) → how to re-run the generator + which decision phase/field/ordinals it
+// probes. Mirrors the bank's probe wiring, re-derived here from first principles.
+const PROBE_SPECS = {
+	'sssp-probe-1': {
+		run: graph => dijkstraTrace(graph, { source: 'S' }),
+		phase: 'settle',
+		field: 'active',
+		ordinals: [2, 3],
+	},
+	'graphs-probe-1': {
+		run: graph => genericTraverse(graph, { discipline: 'fifo', start: 'A' }),
+		phase: 'extract',
+		field: 'current',
+		ordinals: [1, 2],
+	},
+};
+
+// The fixed input each probe set derives from (replicated, like the rest of this
+// file). sssp-probe-1 reuses S1_GRAPH; graphs-probe-1 reuses G1_GRAPH.
+const FIXED_PROBE_GRAPH = {
+	'sssp-probe-1': S1_GRAPH,
+	'graphs-probe-1': G1_GRAPH,
+};
+
+for (const [setId, spec] of Object.entries(PROBE_SPECS)) {
+	test(`[${setId}] FIXED probe: the frozen frame and next-decision answer are the generator's real frame stream`, () => {
+		const set = EXAM_SETS.find(s => s.id === setId);
+		assert.ok(set, `${setId} is not in EXAM_SETS`);
+		const run = spec.run(FIXED_PROBE_GRAPH[setId]);
+		set.problem.parts.forEach((part, i) => {
+			assert.equal(
+				part.kind,
+				'stepProbe',
+				`${setId} part ${i} is not a stepProbe`
+			);
+			const expected = rederiveProbe(run.frames, {
+				phase: spec.phase,
+				field: spec.field,
+				ordinal: spec.ordinals[i],
+			});
+			assert.ok(
+				expected,
+				`${setId} part ${i}: re-derivation found no probe frame`
+			);
+			// The depicted state is the generator's real frame, not a sketch.
+			assert.deepEqual(
+				part.frame,
+				expected.frozen,
+				`${setId} part ${i}: stored frozen frame is not the generator's frame just ` +
+					`before the probed decision (the picture would be a fabrication).`
+			);
+			// The graded answer is the algorithm's real next decision.
+			assert.equal(
+				part.answer,
+				expected.answer,
+				`${setId} part ${i}: stored answer is not the next decision the generator makes`
+			);
+			// And the answer must be reachable as an option.
+			assert.ok(
+				part.options.includes(part.answer),
+				`${setId} part ${i}: answer not among the probe options`
+			);
+		});
+	});
+
+	test(`[${setId}] SEEDED probe: every seed's frozen frame + answer re-derive from the generator on the instance's own graph`, () => {
+		for (const seed of SEEDS) {
+			const problem = buildInstanceProblem(setId, seed);
+			assert.ok(
+				problem && problem.__input && problem.__input.graph,
+				`${setId} @ seed ${seed}: instance is missing __input.graph`
+			);
+			const run = spec.run(problem.__input.graph);
+			problem.parts.forEach((part, i) => {
+				assert.equal(
+					part.kind,
+					'stepProbe',
+					`${setId} @ seed ${seed} part ${i} is not a stepProbe`
+				);
+				const expected = rederiveProbe(run.frames, {
+					phase: spec.phase,
+					field: spec.field,
+					ordinal: spec.ordinals[i],
+				});
+				assert.ok(
+					expected,
+					`${setId} @ seed ${seed} part ${i}: re-derivation found no probe frame`
+				);
+				assert.deepEqual(
+					part.frame,
+					expected.frozen,
+					`SEEDED PROBE DRIFT: ${setId} @ seed ${seed} part ${i}: stored frozen frame ` +
+						`is not the generator's frame just before the probed decision.`
+				);
+				assert.equal(
+					part.answer,
+					expected.answer,
+					`SEEDED PROBE DRIFT: ${setId} @ seed ${seed} part ${i}: stored answer is not ` +
+						`the next decision the generator makes on this fresh graph.`
+				);
+				assert.ok(
+					part.options.includes(part.answer),
+					`${setId} @ seed ${seed} part ${i}: answer not among the probe options`
+				);
+			});
+		}
+	});
+}
 
 // A seeded sitting preserves the bank ENVELOPE (ids, topicIds, order, length) and
 // only swaps the problem on seedable sets — so grouping / weak-exam selection /

@@ -77,6 +77,7 @@ import {
 	buildCoinChangeFrames,
 	buildClimbingStairsFrames,
 } from '../components/Strategies/coinChangeFrames.js';
+import { dijkstraSettleProbe, bfsDequeueProbe } from './traceProbes.js';
 
 // ── PRNG helpers (thin, deterministic) ───────────────────────────────────────
 //
@@ -1481,6 +1482,139 @@ const graphs1 = seed => {
 };
 
 // =============================================================================
+// TRACE-STEP PROBES — sssp-probe-1 (Dijkstra "settle next") and graphs-probe-1
+// (BFS "dequeue next"). Fresh graphs of the SAME shape as sssp-1 / graphs-1; the
+// frozen frame and the next-decision answer are read off the SAME generator via
+// traceProbes.js, so a seeded probe is as derived (and as un-memorizable) as any
+// terminal-artifact instance.
+// =============================================================================
+
+// Dijkstra "settle next", mid-run. Same input space as sssp1 (non-negative, all
+// reachable, UNIQUE distances ⇒ a single-valued settle order, so "who settles next"
+// has one answer). 5 vertices ⇒ 5 settle beats, so probe ordinals 2 and 3 always
+// exist. The unique-distance gate already guarantees ≥ 2 distinct options remain at
+// each probed beat. The probe answer is derived from the next settle frame.
+const ssspProbe1 = seed => {
+	const ids = ['S', 'A', 'B', 'C', 'D'];
+	const graph = rejectionSample(
+		seed,
+		stream => ({
+			nodes: ids.map(id => ({ id })),
+			...reachableDirected(stream, ids, {
+				extra: 3,
+				wOf: s => int(s, 1, 9),
+			}),
+		}),
+		g => {
+			const run = dijkstraTrace(g, { source: 'S' });
+			const order = settleOrder(run.frames);
+			if (order.length !== ids.length) return false; // all reachable + settled
+			const dists = ids.map(id => distVal(run.dist[id]));
+			if (new Set(dists).size !== dists.length) return false; // unique ⇒ one answer
+			// Both probed beats must exist and offer a real (≥2-option) choice.
+			const p2 = dijkstraSettleProbe(run, ids, 2);
+			const p3 = dijkstraSettleProbe(run, ids, 3);
+			return Boolean(
+				p2 && p3 && p2.options.length >= 2 && p3.options.length >= 2
+			);
+		}
+	);
+	const run = dijkstraTrace(graph, { source: 'S' });
+	const p1 = dijkstraSettleProbe(run, ids, 2);
+	const p2 = dijkstraSettleProbe(run, ids, 3);
+	const part = (probe, lead) => ({
+		kind: 'stepProbe',
+		frame: probe.frozen,
+		view: {
+			kind: 'dijkstra-settle',
+			ids,
+			source: 'S',
+			nextLabel: 'settles next',
+		},
+		prompt:
+			'Dijkstra is mid-run on the graph below. From the frozen state — the settled ' +
+			`set and the current tentative distances — ${lead}`,
+		options: probe.options,
+		answer: probe.answer,
+		explanation:
+			'Dijkstra always settles the UNSETTLED vertex of smallest tentative distance. ' +
+			`Among the unsettled vertices the minimum is ${probe.answer} (dist = ` +
+			`${distVal(probe.frozen.dist[probe.answer])}), so it is finalized next.`,
+	});
+	return {
+		kind: 'problem',
+		// The fresh graph this instance derives from, for the guardrail to re-derive.
+		__input: { graph },
+		stem:
+			'Directed weighted graph (non-negative) with edges ' +
+			`${listDirected(graph.edges)}. Dijkstra runs from S. Each part freezes the ` +
+			'algorithm mid-run; read the next move off the state shown.',
+		parts: [
+			part(p1, 'which vertex does Dijkstra SETTLE (finalize) next?'),
+			part(p2, 'which vertex does Dijkstra settle next after that?'),
+		],
+	};
+};
+
+// BFS "dequeue next", mid-run. Same input space as graphs1 (connected, deepest BFS
+// depth ≥ 2). 6 vertices ⇒ 6 extract beats, so probe ordinals 1 and 2 exist. We add
+// one probe-specific gate: each frozen frontier must hold ≥ 2 waiting vertices, so
+// "which dequeues next" is a genuine FIFO choice, not a forced single. The answer is
+// the next extract frame's `current`.
+const graphsProbe1 = seed => {
+	const V = ['A', 'B', 'C', 'D', 'E', 'F'];
+	const start = 'A';
+	const graph = rejectionSample(
+		seed,
+		stream => ({
+			nodes: V.map(id => ({ id })),
+			...connectedUnweightedGraph(stream, V, { extra: 2 }),
+		}),
+		g => {
+			const bfs = genericTraverse(g, { discipline: 'fifo', start });
+			if (bfs.visitOrder.length !== V.length) return false; // connected
+			const depths = Object.values(bfs.dist).map(d => (d == null ? -1 : d));
+			if (Math.max(...depths) < 2) return false; // non-trivial depth
+			const p1 = bfsDequeueProbe(bfs, V, 1);
+			const p2 = bfsDequeueProbe(bfs, V, 2);
+			if (!p1 || !p2) return false;
+			// A real FIFO choice: each frozen queue holds at least two waiting vertices.
+			return p1.frozen.frontier.length >= 2 && p2.frozen.frontier.length >= 2;
+		}
+	);
+	const bfs = genericTraverse(graph, { discipline: 'fifo', start });
+	const p1 = bfsDequeueProbe(bfs, V, 1);
+	const p2 = bfsDequeueProbe(bfs, V, 2);
+	const edgeList = graph.edges.map(e => `${e.from}–${e.to}`).join(', ');
+	const part = (probe, lead) => ({
+		kind: 'stepProbe',
+		frame: probe.frozen,
+		view: { kind: 'bfs-dequeue', ids: V, start, nextLabel: 'dequeues next' },
+		prompt:
+			'BFS is mid-run on the graph below, using a FIFO queue frontier. From the ' +
+			`queue shown, ${lead}`,
+		options: probe.options,
+		answer: probe.answer,
+		explanation:
+			'A FIFO queue hands back the vertex that has waited longest — the FRONT of ' +
+			`the queue. Here the front is ${probe.answer}, so BFS dequeues it next and ` +
+			'then considers its neighbours.',
+	});
+	return {
+		kind: 'problem',
+		__input: { graph },
+		stem:
+			`Undirected graph with vertices A..F and edges ${edgeList}. BFS runs from A ` +
+			'(alphabetical tie-breaking). Each part freezes the queue mid-run; read the ' +
+			'next dequeue off the frontier shown.',
+		parts: [
+			part(p1, 'which vertex does BFS DEQUEUE (remove from the front) next?'),
+			part(p2, 'which vertex does BFS dequeue next after that?'),
+		],
+	};
+};
+
+// =============================================================================
 // HASHING — hashing-1 (separate chaining). Fresh string keys into a capacity-7
 // table; collision-bucket count, longest chain, load factor — derived from
 // createBucketsFromEntries (the module's own polynomial hash).
@@ -2367,6 +2501,8 @@ export const INSTANCE_BUILDERS = {
 	'linsort-2': linsort2,
 	'trees-1': trees1,
 	'graphs-1': graphs1,
+	'graphs-probe-1': graphsProbe1,
+	'sssp-probe-1': ssspProbe1,
 	'hashing-1': hashing1,
 	'maxflow-1': maxflow1,
 	'foundations-1': foundations1,

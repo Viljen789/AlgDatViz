@@ -60,6 +60,7 @@ import {
 	buildCoinChangeFrames,
 	buildClimbingStairsFrames,
 } from '../components/Strategies/coinChangeFrames.js';
+import { dijkstraSettleProbe, bfsDequeueProbe } from './traceProbes.js';
 
 // ── small derivation helpers (pure) ──────────────────────────────────────────
 
@@ -1160,6 +1161,108 @@ const problemG1 = {
 				'It is the same loop over the same graph; only the rule for which frontier ' +
 				'vertex leaves next changes. Queue → breadth-first, stack → depth-first.',
 		},
+	],
+};
+
+// =============================================================================
+// TRACE-STEP PROBES — the mid-run WHY, graded against the frame stream (council
+// #6). Every problem above asks for a TERMINAL artifact; these freeze a frame as
+// the question and grade the NEXT decision, derived from the next decision frame of
+// the SAME generator (traceProbes.js does the read-off). The frozen state rides on
+// each 'stepProbe' part as `frame` so the host renders the canvas the algorithm is
+// actually at; the answer is never typed.
+// =============================================================================
+
+// Problem SP-SSSP: Dijkstra on the same non-negative graph as S1, probed mid-run.
+// We freeze two beats (the 2nd and 3rd settle) and ask which vertex settles next —
+// the smallest-tentative-distance choice that IS Dijkstra. Answers are read off the
+// subsequent settle frame, so they can only be what the algorithm does.
+const SP_DIJKSTRA_IDS = S1_GRAPH.nodes.map(n => n.id); // ['S','A','B','C','D']
+const SP_DIJKSTRA_P1 = dijkstraSettleProbe(S1_DIJKSTRA, SP_DIJKSTRA_IDS, 2);
+const SP_DIJKSTRA_P2 = dijkstraSettleProbe(S1_DIJKSTRA, SP_DIJKSTRA_IDS, 3);
+
+// `lead` opens the question so both the first ("which vertex does Dijkstra settle
+// next?") and the follow-up ("which vertex does Dijkstra settle next AFTER THAT?")
+// read cleanly — no interstitial-word double space.
+const dijkstraProbePart = (probe, lead) => ({
+	kind: 'stepProbe',
+	// The frozen state IS the question — stored verbatim from the generator's frame.
+	frame: probe.frozen,
+	view: {
+		kind: 'dijkstra-settle',
+		ids: SP_DIJKSTRA_IDS,
+		source: 'S',
+		nextLabel: 'settles next',
+	},
+	prompt:
+		'Dijkstra is mid-run on the graph below. From the frozen state — the settled ' +
+		`set and the current tentative distances — ${lead}`,
+	options: probe.options,
+	answer: probe.answer,
+	explanation:
+		`Dijkstra always settles the UNSETTLED vertex of smallest tentative distance. ` +
+		`Among the unsettled vertices the minimum is ${probe.answer} (dist = ` +
+		`${distVal(probe.frozen.dist[probe.answer])}), so it is finalized next. The picture ` +
+		'is the generator’s real state at that ExtractMin, not a sketch.',
+});
+
+const problemSPdijkstra = {
+	kind: 'problem',
+	stem:
+		'Directed weighted graph (non-negative) with edges ' +
+		'S→A(4), S→B(1), B→A(2), A→C(5), B→D(6), D→C(1). Dijkstra runs from S. ' +
+		'Each part freezes the algorithm mid-run; read the next move off the state shown.',
+	parts: [
+		dijkstraProbePart(
+			SP_DIJKSTRA_P1,
+			'which vertex does Dijkstra SETTLE (finalize) next?'
+		),
+		dijkstraProbePart(
+			SP_DIJKSTRA_P2,
+			'which vertex does Dijkstra settle next after that?'
+		),
+	],
+};
+
+// Problem SP-BFS: BFS (a FIFO frontier) on the same graph as G1, probed mid-run.
+// We freeze two beats (before the 2nd and 3rd dequeue) and ask which vertex leaves
+// the queue next — the FIFO front. Answers read off the next extract frame.
+const SP_BFS_IDS = G1_GRAPH.nodes.map(n => n.id); // ['A'..'F']
+const SP_BFS_P1 = bfsDequeueProbe(G1_BFS, SP_BFS_IDS, 1);
+const SP_BFS_P2 = bfsDequeueProbe(G1_BFS, SP_BFS_IDS, 2);
+
+const bfsProbePart = (probe, lead) => ({
+	kind: 'stepProbe',
+	frame: probe.frozen,
+	view: {
+		kind: 'bfs-dequeue',
+		ids: SP_BFS_IDS,
+		start: 'A',
+		nextLabel: 'dequeues next',
+	},
+	prompt:
+		'BFS is mid-run on the graph below, using a FIFO queue frontier. From the ' +
+		`queue shown, ${lead}`,
+	options: probe.options,
+	answer: probe.answer,
+	explanation:
+		`A FIFO queue hands back the vertex that has waited longest — the FRONT of the ` +
+		`queue. Here the front is ${probe.answer}, so BFS dequeues it next and then ` +
+		'considers its neighbours. The queue shown is the generator’s real frontier.',
+});
+
+const problemSPbfs = {
+	kind: 'problem',
+	stem:
+		'Undirected graph with vertices A..F and edges A–B, A–C, B–D, C–D, C–E, D–F, ' +
+		'E–F. BFS runs from A (alphabetical tie-breaking). Each part freezes the queue ' +
+		'mid-run; read the next dequeue off the frontier shown.',
+	parts: [
+		bfsProbePart(
+			SP_BFS_P1,
+			'which vertex does BFS DEQUEUE (remove from the front) next?'
+		),
+		bfsProbePart(SP_BFS_P2, 'which vertex does BFS dequeue next after that?'),
 	],
 };
 
@@ -2378,6 +2481,20 @@ export const EXAM_SETS = [
 		topicId: 'graphs',
 		topicName: 'Graphs',
 		problem: problemG1,
+	},
+	{
+		// Trace-step probe: freeze BFS mid-run, predict the next dequeue.
+		id: 'graphs-probe-1',
+		topicId: 'graphs',
+		topicName: 'Graphs',
+		problem: problemSPbfs,
+	},
+	{
+		// Trace-step probe: freeze Dijkstra mid-run, predict the next settle.
+		id: 'sssp-probe-1',
+		topicId: 'shortest-paths',
+		topicName: 'Shortest paths (single-source)',
+		problem: problemSPdijkstra,
 	},
 	{
 		id: 'hashing-1',

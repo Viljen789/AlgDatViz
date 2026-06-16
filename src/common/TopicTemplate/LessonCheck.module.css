@@ -13,7 +13,8 @@
 	display: flex;
 	flex-direction: column;
 	gap: var(--space-md);
-	transition: border-color var(--duration-step) var(--ease-quiet),
+	transition:
+		border-color var(--duration-step) var(--ease-quiet),
 		box-shadow var(--duration-step) var(--ease-quiet);
 }
 
@@ -25,9 +26,12 @@
    wears a quiet accent ring drawing the eye to where the answer is owed. The
    ring (and the .gateHint line) clear the instant a status is set. No red. */
 .checkGated {
-	border-color: color-mix(in srgb, var(--topic-accent) 55%, var(--color-border));
-	box-shadow: 0 0 0 1px
-		color-mix(in srgb, var(--topic-accent) 32%, transparent);
+	border-color: color-mix(
+		in srgb,
+		var(--topic-accent) 55%,
+		var(--color-border)
+	);
+	box-shadow: 0 0 0 1px color-mix(in srgb, var(--topic-accent) 32%, transparent);
 }
 
 .gateHint {
@@ -100,8 +104,11 @@
 	font-size: var(--font-size-body);
 	font-weight: var(--font-weight-medium);
 	cursor: pointer;
-	transition: color var(--transition), border-color var(--transition),
-		background-color var(--transition), transform var(--transition);
+	transition:
+		color var(--transition),
+		border-color var(--transition),
+		background-color var(--transition),
+		transform var(--transition);
 }
 
 .choice:hover:not(:disabled) {
@@ -232,7 +239,9 @@
 	color: var(--color-text-primary);
 	font-family: var(--font-family-mono);
 	font-size: var(--font-size-body);
-	transition: border-color var(--transition), box-shadow var(--transition);
+	transition:
+		border-color var(--transition),
+		box-shadow var(--transition);
 }
 
 .input:hover {
@@ -256,7 +265,9 @@
 	font-weight: var(--font-weight-bold);
 	letter-spacing: var(--tracking-label);
 	cursor: pointer;
-	transition: filter var(--transition), transform var(--transition);
+	transition:
+		filter var(--transition),
+		transform var(--transition);
 }
 
 .submit:hover:not(:disabled) {
@@ -359,7 +370,9 @@
 	border-radius: var(--radius-sm);
 	color: var(--color-text-secondary);
 	cursor: pointer;
-	transition: color var(--transition), border-color var(--transition);
+	transition:
+		color var(--transition),
+		border-color var(--transition);
 }
 
 .orderBtn:hover:not(:disabled) {
@@ -476,7 +489,9 @@
 	border-left: 2px solid transparent;
 	text-align: left;
 	cursor: pointer;
-	transition: background-color var(--transition), border-color var(--transition);
+	transition:
+		background-color var(--transition),
+		border-color var(--transition);
 }
 
 .spotbugLine:hover:not(:disabled) {
@@ -615,4 +630,180 @@
 	font-weight: var(--font-weight-bold);
 	letter-spacing: var(--tracking-label);
 	color: var(--color-text-primary);
+}
+
+/* =============================================================================
+   Trace-step probe — the FROZEN FRAME k as the question. A compact, honest
+   depiction of the generator's real state (dist + settled for Dijkstra; the FIFO
+   queue + visited for BFS), then the predict widget. Status is shown by SHAPE +
+   LABEL, never hue alone (a lock glyph + "settled"; a "front" caption + left rule),
+   so it reads under colour-vision deficiency. Paper-and-ink: canonical tokens only.
+   ============================================================================ */
+.stepProbe {
+	display: flex;
+	flex-direction: column;
+	gap: var(--space-md);
+}
+
+.probeFigure {
+	margin: 0;
+	padding: var(--space-md);
+	background: var(--surface-2);
+	border: 1px solid var(--color-border);
+	border-radius: var(--radius-md);
+	display: flex;
+	flex-direction: column;
+	gap: var(--space-sm);
+}
+
+.probeCaption {
+	font-family: var(--font-family-mono);
+	font-size: var(--font-size-caption);
+	font-weight: var(--font-weight-bold);
+	letter-spacing: var(--tracking-caps);
+	text-transform: uppercase;
+	color: var(--color-text-muted);
+}
+
+/* ── Dijkstra: the per-vertex tentative-distance row ── */
+.probeDistRow {
+	list-style: none;
+	margin: 0;
+	padding: 0;
+	display: flex;
+	flex-wrap: wrap;
+	gap: var(--space-sm);
+}
+
+.probeVertex {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: var(--space-2xs);
+	min-width: 3.25rem;
+	padding: var(--space-xs) var(--space-sm);
+	border: 1px solid var(--color-border);
+	border-radius: var(--radius-sm);
+	background: var(--surface-1);
+}
+
+/* Settled: a firmer border + a faint success wash + the lock glyph. The wash is a
+   SECONDARY cue; the lock + "settled" label carry the meaning without colour. */
+.probeVertexSettled {
+	border-color: var(--color-success);
+	background: var(--color-success-wash);
+}
+
+.probeVertexOpen {
+	border-style: dashed;
+}
+
+.probeVertexId {
+	display: inline-flex;
+	align-items: center;
+	gap: var(--space-2xs);
+	font-family: var(--font-family-mono);
+	font-size: var(--font-size-label);
+	font-weight: var(--font-weight-bold);
+	color: var(--color-text-primary);
+}
+
+.probeLock {
+	color: var(--color-success);
+}
+
+.probeDist {
+	font-family: var(--font-family-mono);
+	font-size: var(--font-size-body);
+	font-weight: var(--font-weight-medium);
+	color: var(--color-text-primary);
+}
+
+.probeVertexTag {
+	font-family: var(--font-family-mono);
+	font-size: var(--font-size-caption);
+	letter-spacing: var(--tracking-caps);
+	text-transform: uppercase;
+	color: var(--color-text-muted);
+}
+
+/* ── BFS: the FIFO queue strip + the visited line ── */
+.probeQueueWrap {
+	display: flex;
+	align-items: center;
+	flex-wrap: wrap;
+	gap: var(--space-sm);
+}
+
+.probeQueueLabel,
+.probeVisitedLabel {
+	font-family: var(--font-family-mono);
+	font-size: var(--font-size-caption);
+	font-weight: var(--font-weight-bold);
+	letter-spacing: var(--tracking-caps);
+	text-transform: uppercase;
+	color: var(--color-text-muted);
+}
+
+.probeQueue {
+	list-style: none;
+	margin: 0;
+	padding: 0;
+	display: flex;
+	gap: var(--space-xs);
+}
+
+.probeQueueItem {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: var(--space-2xs);
+	min-width: 2.75rem;
+	padding: var(--space-xs) var(--space-sm);
+	border: 1px solid var(--color-border);
+	border-radius: var(--radius-sm);
+	background: var(--surface-1);
+}
+
+/* The front of the queue (the next to leave) gets a left rule + bold, so "what
+   comes out next" is legible without relying on colour. */
+.probeQueueFront {
+	border-left: 3px solid var(--topic-accent);
+	font-weight: var(--font-weight-bold);
+}
+
+.probeQueueId {
+	font-family: var(--font-family-mono);
+	font-size: var(--font-size-body);
+	font-weight: var(--font-weight-bold);
+	color: var(--color-text-primary);
+}
+
+.probeQueuePos {
+	font-family: var(--font-family-mono);
+	font-size: var(--font-size-caption);
+	letter-spacing: var(--tracking-caps);
+	text-transform: uppercase;
+	color: var(--color-text-muted);
+	min-height: var(--font-size-caption);
+}
+
+.probeQueueEmpty {
+	font-family: var(--font-family-mono);
+	font-size: var(--font-size-label);
+	color: var(--color-text-secondary);
+	font-style: italic;
+}
+
+.probeVisited {
+	margin: 0;
+	display: flex;
+	align-items: baseline;
+	gap: var(--space-sm);
+}
+
+.probeVisitedList {
+	font-family: var(--font-family-mono);
+	font-size: var(--font-size-label);
+	color: var(--color-text-secondary);
 }
