@@ -154,6 +154,11 @@ export const SCENES = [
 				]),
 			],
 			answer: String(SECOND_MAX),
+			misconceptions: {
+				15: 'Reading 15 takes A[1], the slot right after the old root, but extract-max does not promote the neighbouring cell. The last leaf moves to the top and sinks while the larger child 18 rises, so 18 becomes the new maximum and 15 stays beneath it.',
+				11: '11 sits low in the left subtree, below several larger values. A heap always returns the current maximum, and both 18 and 16 outrank 11, so it cannot be the next one out.',
+				9: '9 is a small leaf near the bottom of the heap. Extract-max hands back the largest remaining element, which after the tree re-settles is 18, never a value as small as 9.',
+			},
 			explanation: `After ${FIRST_MAX} leaves, the heap re-settles and the new root — the new maximum — is ${SECOND_MAX}. It is NOT simply "the next array slot": removing the root reshuffles the tree, so you must let it sift down before reading the top again. Repeat and you get a sorted stream.`,
 		},
 	},

@@ -113,6 +113,14 @@ export const SCENES = [
 			].join(', ')} … Which is the very FIRST edge Kruskal accepts?`,
 			options: [...new Set(['A–B (2)', 'A–D (3)', 'B–E (4)', 'C–F (5)'])],
 			answer: 'A–B (2)',
+			misconceptions: {
+				'A–D (3)':
+					'A–D is the second-lightest edge, not the first. The opening edge can never close a cycle, since every vertex still sits alone, so the globally cheapest A–B (2) is accepted outright before A–D is even reached.',
+				'B–E (4)':
+					'B–E is only the third edge in ascending order. Kruskal accepts cheapest-first from the global list, so a weight-4 edge cannot jump ahead of A–B (2); it waits until the lighter edges are resolved.',
+				'C–F (5)':
+					'C–F (5) is one of the heavier edges, far down the sorted list. Kruskal’s first acceptance is always the globally lightest edge, which here is A–B (2), not a weight-5 edge.',
+			},
 			explanation:
 				'Kruskal always considers the globally cheapest edge first. A–B (weight 2) is the lightest edge in the whole graph, its endpoints start in different components, so it is accepted immediately — the first edge of the MST.',
 		},

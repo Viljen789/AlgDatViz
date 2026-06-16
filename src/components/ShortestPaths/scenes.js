@@ -159,6 +159,11 @@ export const SCENES = [
 			prompt: `Dijkstra settles vertices in increasing distance order. On the shared graph the source S is settled first (dist 0). Which vertex is settled SECOND?`,
 			options: ['C', 'A', 'B', 'D'],
 			answer: 'C',
+			misconceptions: {
+				A: 'A does have a direct edge from S, but it weighs 10, far above the S→C edge’s 3. Dijkstra settles the smallest tentative distance first, so C is second; A drops to 7 only after C is settled and C→A relaxes it, which makes A the fourth vertex out.',
+				B: 'B is the farthest vertex, distance 8 by the route S→C→A→B, so it is settled last rather than second. Dijkstra reaches it only after C, D, and A have all been settled.',
+				D: 'D settles at distance 5, still larger than C’s 3. Since Dijkstra always extracts the smallest tentative distance next, C is settled second and D follows third.',
+			},
 			explanation: `After S, the smallest tentative distance is dist[C] = ${DIST.C} (the direct S→C edge), smaller than the tentative dist[A] = ${DIRECT_SA}. Dijkstra extracts the minimum, so C is settled second — and only then does relaxing C→A lower dist[A] to ${DIST.A}. Greedily taking the closest is safe precisely because no later non-negative edge can undercut it.`,
 		},
 	},

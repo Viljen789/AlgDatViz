@@ -95,6 +95,9 @@ export const SCENES = [
 			options: ['left', 'right'],
 			answer: 'right',
 			branchKey: BRANCH_CHECK_KEY,
+			misconceptions: {
+				left: 'Going left heads into the values below 42, but 54 is larger than 42, so it can only live in the right subtree. Stepping left would discard the one half of the tree that can still hold 54.',
+			},
 			explanation:
 				'54 is larger than 42, so it can only be in the right subtree — the left subtree holds only values below 42. You move right and never look at the left side again. That discarded half is the log n speedup made visible.',
 		},
