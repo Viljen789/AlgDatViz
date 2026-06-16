@@ -1,5 +1,9 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { gradeCard, planSession } from '../components/Review/srsSchedule.js';
+import {
+	gradeCard,
+	planSession,
+	seedCard,
+} from '../components/Review/srsSchedule.js';
 
 // useSrs — persistent spaced-repetition schedule for the review bank.
 //
@@ -77,6 +81,25 @@ export const useSrs = () => {
 		});
 	}, []);
 
+	// Enter a check into the schedule the first time it is answered in-lesson.
+	// Idempotent: a card that already exists (seeded earlier OR graded at /review)
+	// is left untouched, so re-answers and re-scrolls never re-grade. Returns prev
+	// unchanged in that case so the effect that drives this can't loop on renders.
+	const seed = useCallback((id, correct) => {
+		if (!id) return;
+		setState(prev => {
+			if (prev.cards[id]) return prev; // already scheduled — never re-seed
+			const next = {
+				cards: {
+					...prev.cards,
+					[id]: seedCard(undefined, Boolean(correct), now()),
+				},
+			};
+			writeState(next);
+			return next;
+		});
+	}, []);
+
 	const reset = useCallback(() => {
 		const next = emptyState();
 		writeState(next);
@@ -96,7 +119,7 @@ export const useSrs = () => {
 		[state.cards]
 	);
 
-	return { cards: state.cards, grade, reset, plan, scheduledCount };
+	return { cards: state.cards, grade, seed, reset, plan, scheduledCount };
 };
 
 export default useSrs;

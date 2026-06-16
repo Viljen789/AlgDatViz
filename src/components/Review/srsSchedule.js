@@ -28,7 +28,13 @@ export const MAX_BOX = BOX_INTERVALS_DAYS.length - 1;
 export const DEFAULT_NEW_CAP = 8;
 
 /** A fresh card, before its first review. Box 0 ⇒ due now. */
-export const initialCard = () => ({ box: 0, reps: 0, lapses: 0, last: 0, due: 0 });
+export const initialCard = () => ({
+	box: 0,
+	reps: 0,
+	lapses: 0,
+	last: 0,
+	due: 0,
+});
 
 /**
  * gradeCard — schedule a card after one retrieval attempt.
@@ -51,6 +57,30 @@ export const gradeCard = (card, correct, now) => {
 		due: now + BOX_INTERVALS_DAYS[box] * DAY_MS,
 	};
 };
+
+/**
+ * seedCard — enter a check into the schedule the first time it is answered
+ * in-lesson, so first-encounter retrieval reaches spaced repetition.
+ *
+ * Idempotency is the whole point: only a never-seen check (no prior card) is
+ * seeded; a card that already exists — whether seeded earlier in-lesson or graded
+ * at /review — is returned UNCHANGED. So re-answering a check or re-scrolling a
+ * lesson can never re-grade or inflate the schedule. After the first seed, the
+ * card advances only through /review, exactly like any other card.
+ *
+ * The first answer grades identically to a first /review grade (gradeCard from a
+ * fresh card): correct → box 1 (due in 1 day), wrong → box 0 (due now, a lapse),
+ * which is the desirable-difficulty behaviour we want for a missed first try.
+ *
+ * Pure: returns the existing card unchanged, or a new seeded card; never mutates.
+ *
+ * @param {object|undefined} card  the prior card for this id (or undefined)
+ * @param {boolean} correct        was the first in-lesson answer correct
+ * @param {number} now             ms epoch "now"
+ * @returns {{box:number,reps:number,lapses:number,last:number,due:number}}
+ */
+export const seedCard = (card, correct, now) =>
+	card ? card : gradeCard(undefined, correct, now);
 
 /**
  * planSession — build the study queue from the schedule + the question bank.

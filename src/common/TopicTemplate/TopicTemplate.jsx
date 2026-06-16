@@ -1,14 +1,11 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
-import {
-	ArrowDown,
-	ArrowRight,
-	ChevronDown,
-	ChevronRight,
-} from 'lucide-react';
+import { ArrowDown, ArrowRight, ChevronDown, ChevronRight } from 'lucide-react';
 import { CURRICULUM } from '../../data/curriculum.js';
 import { logActivity } from '../../lib/activityLog.js';
+import { isSelfGraded } from '../../components/Review/reviewBank.js';
 import useProgress from '../../hooks/useProgress.js';
+import useSrs from '../../hooks/useSrs.js';
 import useReducedMotion from '../../hooks/useReducedMotion.js';
 import TopicScrolly from './TopicScrolly.jsx';
 import styles from './TopicTemplate.module.css';
@@ -199,6 +196,7 @@ const TopicTemplate = ({
 	const reducedMotion = useReducedMotion();
 	const { markVisited, markCompleted, recordCheck, correctCheckCount } =
 		useProgress();
+	const { seed: seedCard } = useSrs();
 	const playgroundRef = useRef(null);
 	const [activeScene, setActiveScene] = useState(0);
 
@@ -242,20 +240,53 @@ const TopicTemplate = ({
 	const requiredForCompletion =
 		requiredChecks != null ? requiredChecks : checkCount;
 
+	// Which scene checks are self-graded — exactly the kinds the review bank
+	// collects (the rest are host-graded and have no `${topicId}:${sceneId}` card).
+	// Seeding only these keeps the in-lesson seed 1:1 with the bank / /review.
+	const selfGradedScenes = useMemo(() => {
+		const set = new Set();
+		for (const s of scenes) {
+			if (s?.id && isSelfGraded(s.check)) set.add(s.id);
+		}
+		return set;
+	}, [scenes]);
+
 	useEffect(() => {
 		if (onVisit) onVisit();
 		else if (topicId) markVisited(topicId);
 	}, [onVisit, markVisited, topicId]);
 
-	// Record correct answers as progress whenever a check resolves to 'correct'.
-	// Driven off the host-owned checkStates so this works for every check kind
-	// without the host needing to call recordCheck itself. When the topic has
-	// answered enough required checks correctly, completion is derived from that
-	// retrieval (not mere interaction) and persisted via markCompleted.
+	// Record correct answers as progress whenever a check resolves to 'correct',
+	// and — the retrieval-leak fix — seed an SRS card the FIRST time a check is
+	// answered so in-lesson retrieval reaches spaced repetition. Driven off the
+	// host-owned checkStates so this works for every check kind without the host
+	// needing to call recordCheck/seed itself.
+	//
+	// Seeding uses the review-bank id `${topicId}:${sceneId}` so the card lines up
+	// 1:1 with /review. A correct first try seeds a success (enters at the same box
+	// /review uses for a first success); a first 'incorrect' (the answer is revealed
+	// at that point) seeds a lapse (box 0, due now) for desirable difficulty.
+	// useSrs.seed is idempotent on card existence, so re-answers and re-scrolls
+	// never re-grade or inflate the schedule — only the genuinely first answer per
+	// check creates a card; after that the card advances only through /review.
+	//
+	// When enough required checks are answered correctly, completion is derived
+	// from that retrieval (not mere interaction) and persisted via markCompleted.
 	useEffect(() => {
 		if (!topicId || !checkStates) return;
 		Object.entries(checkStates).forEach(([sceneId, st]) => {
-			if (st?.status === 'correct') recordCheck(topicId, sceneId, true);
+			const status = st?.status;
+			if (status === 'correct') recordCheck(topicId, sceneId, true);
+			// First resolved answer seeds the card. Hosts write exactly 'correct' or
+			// 'incorrect' (and reveal the explanation on 'incorrect'), so 'incorrect'
+			// IS the revealed-wrong signal → seed a lapse. The hook enforces
+			// first-only, so a wrong→correct fix on the same scroll won't re-grade.
+			if (
+				(status === 'correct' || status === 'incorrect') &&
+				selfGradedScenes.has(sceneId)
+			) {
+				seedCard(`${topicId}:${sceneId}`, status === 'correct');
+			}
 		});
 		if (
 			requiredForCompletion > 0 &&
@@ -267,6 +298,8 @@ const TopicTemplate = ({
 		topicId,
 		checkStates,
 		recordCheck,
+		seedCard,
+		selfGradedScenes,
 		markCompleted,
 		correctCheckCount,
 		requiredForCompletion,
@@ -373,10 +406,7 @@ const TopicTemplate = ({
 							<p className={styles.eyebrow}>{playgroundEyebrow}</p>
 						)}
 						{playgroundTitle && (
-							<h2
-								id="playground-heading"
-								className={styles.playgroundTitle}
-							>
+							<h2 id="playground-heading" className={styles.playgroundTitle}>
 								{playgroundTitle}
 							</h2>
 						)}
