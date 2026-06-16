@@ -228,6 +228,21 @@ const A1_GRAPH = {
 	],
 };
 
+const A2_GRAPH = {
+	nodes: [{ id: '1' }, { id: '2' }, { id: '3' }, { id: '4' }, { id: '5' }],
+	edges: [
+		{ from: '1', to: '2', weight: 4 },
+		{ from: '1', to: '3', weight: 11 },
+		{ from: '2', to: '3', weight: 2 },
+		{ from: '2', to: '4', weight: 7 },
+		{ from: '3', to: '4', weight: 1 },
+		{ from: '3', to: '5', weight: 5 },
+		{ from: '4', to: '5', weight: 3 },
+		{ from: '5', to: '1', weight: 6 },
+		{ from: '4', to: '1', weight: 2 },
+	],
+};
+
 const L1_INPUT = [2, 5, 3, 0, 2, 3, 0, 3];
 const L2_VALUES = [53, 17, 31, 58, 11, 35];
 
@@ -429,6 +444,31 @@ const RECIPES = {
 			2: l1_42, // numeric: d[4][2] after k=1
 		};
 	},
+	'apsp-2': () => {
+		const run = floydWarshall(A2_GRAPH);
+		const ids = run.ids;
+		const ix = id => ids.indexOf(id);
+		// d[1][3] after the k = 2 round (intermediates {1, 2}).
+		const l2_13 = distVal(run.layers[2][ix('1')][ix('3')]);
+		// First admitted vertex that lowers d[2][4] below its direct edge.
+		const firstImprove = (fromId, toId) => {
+			const i = ix(fromId);
+			const j = ix(toId);
+			for (let k = 1; k < run.layers.length; k++) {
+				const prev = run.layers[k - 1][i][j];
+				const cur = run.layers[k][i][j];
+				if (JSON.stringify(prev) !== JSON.stringify(cur)) return ids[k - 1];
+			}
+			return null;
+		};
+		// Final shortest distance for the no-direct-edge pair 1 → 5.
+		const d15 = distVal(run.dist[ix('1')][ix('5')]);
+		return {
+			0: l2_13, // numeric: d[1][3] after k=2
+			1: `Vertex ${firstImprove('2', '4')}`, // choice: first vertex to improve d[2][4]
+			2: d15, // numeric: final d[1][5]
+		};
+	},
 	'linsort-1': () => {
 		const steps = getCountingSortStepsWithStats(L1_INPUT).steps;
 		const last = steps[steps.length - 1];
@@ -521,12 +561,67 @@ const RECIPES = {
 			2: alpha, // choice: load factor α
 		};
 	},
+	'hashing-2': () => {
+		const keys = [
+			'frog',
+			'crab',
+			'clam',
+			'seal',
+			'orca',
+			'tuna',
+			'bass',
+			'carp',
+		];
+		const capacity = 7;
+		const entries = keys.map(k => ({ key: k, value: k.length }));
+		const after = createBucketsFromEntries(entries, capacity * 2);
+		const sealAfter = after.findIndex(b => b.some(e => e.key === 'seal'));
+		return {
+			0: keys.length / capacity, // numeric: load factor alpha before resize (8/7)
+			1: Math.max(...after.map(b => b.length)), // numeric: longest chain after resize
+			2: sealAfter, // numeric: seal's bucket once m doubles to 14
+		};
+	},
 	'maxflow-1': () => {
 		const run = edmondsKarpTrace(MF1_NETWORK);
 		return {
 			0: run.value, // numeric: max-flow value
 			1: run.minCut.capacity, // numeric: min-cut capacity
 			2: run.minCut.S.length, // numeric: source-side size
+		};
+	},
+	'maxflow-2': () => {
+		const network = {
+			nodes: [
+				{ id: 'S' },
+				{ id: 'A' },
+				{ id: 'B' },
+				{ id: 'C' },
+				{ id: 'D' },
+				{ id: 'T' },
+			],
+			source: 'S',
+			sink: 'T',
+			edges: [
+				{ from: 'S', to: 'A', capacity: 8 },
+				{ from: 'S', to: 'C', capacity: 7 },
+				{ from: 'A', to: 'B', capacity: 9 },
+				{ from: 'A', to: 'C', capacity: 3 },
+				{ from: 'C', to: 'D', capacity: 6 },
+				{ from: 'B', to: 'D', capacity: 2 },
+				{ from: 'B', to: 'T', capacity: 5 },
+				{ from: 'D', to: 'T', capacity: 9 },
+			],
+		};
+		const run = edmondsKarpTrace(network);
+		const first = run.frames.find(f => f.bottleneck != null);
+		return {
+			0: first.bottleneck, // numeric: first augmenting path's bottleneck
+			1: run.value, // numeric: max-flow value
+			2: run.minCut.capacity, // numeric: min-cut capacity (= max flow)
+			3: run.minCut.S.includes('D') // choice: which side D is on
+				? 'Source side (with S)'
+				: 'Sink side (with T)',
 		};
 	},
 	'foundations-1': () => ({
@@ -613,6 +708,25 @@ RECIPES['quicksort-2'] = () => ({
 	0: getQuickSortFrames([1, 2, 3, 4, 5, 6]).comparisons,
 });
 
+// Trees-2 (BST delete, two-child): independently re-derive the successor, the
+// in-order sequence after deletion, and the pre-order after deletion from the
+// tree generators. The "why the successor preserves the BST property" choice is
+// conceptual (STATIC).
+RECIPES['trees-2'] = () => {
+	const root = buildBst([60, 30, 90, 20, 45, 80, 100, 70, 75]);
+	const inorder = inorderValues(root);
+	const target = root.value; // delete the root (two children)
+	const successor = inorder[inorder.indexOf(target) + 1];
+	const after = deleteValue(root, target);
+	const preSteps = getTraversalSteps(after, 'preorder');
+	const afterPre = preSteps[preSteps.length - 1].output.map(Number);
+	return {
+		0: successor, // numeric: replacement key
+		2: inorderValues(after).map(String), // order: in-order after delete
+		3: `[${afterPre.join(', ')}]`, // choice: pre-order after delete
+	};
+};
+
 // ── STATIC allowlist: parts whose answer is genuinely conceptual prose ───────
 // A generator cannot produce these (they are definitions / which-algorithm /
 // why-this-is-true choices). Keyed by `${setId}#${partIndex}`, each with a short
@@ -627,10 +741,18 @@ const STATIC = {
 	'mst-3#3': 'concept: does positive scaling change the MST',
 	'sssp-3#3': 'concept: why exactly |V|-1 passes',
 	'apsp-1#3': 'concept: why k is the outermost loop',
+	'apsp-2#3':
+		'concept: transitive-closure analogue (min→OR, +→AND) of Floyd-Warshall',
 	'linsort-1#3': 'concept: when counting sort is linear',
 	'graphs-1#3': 'concept: BFS-vs-DFS frontier discipline',
+	'trees-2#1':
+		'concept: successor fits between left subtree and rest of right subtree',
 	'hashing-1#3': 'concept: why resize rehashes every key',
+	'hashing-2#3':
+		'concept: why expected lookup is O(1) (uniform hash + bounded alpha)',
 	'maxflow-1#3': 'concept: Edmonds-Karp vs Ford-Fulkerson rule',
+	'maxflow-2#4':
+		'concept: no augmenting path ⇒ flow = a cut ⇒ optimal (max-flow=min-cut)',
 	'foundations-1#1': 'concept: Θ class of n(n+1)/2',
 	'foundations-1#2': 'concept: big-O simplification of 3n²+100n+7',
 	'foundations-1#3': 'concept: meaning of amortized O(1)',

@@ -2555,6 +2555,553 @@ const problemQS2 = {
 	],
 };
 
+// =============================================================================
+// TREES (BST) — deleting a TWO-CHILD node. Insert builds a fixed BST; deleting
+// the root (two children) splices in its in-order successor. The successor lives
+// two left-steps down the right subtree and carries its own right child up, so
+// the re-thread is real. The successor, the in-order sequence after deletion,
+// and the pre-order after deletion are all read off the tree generators (never
+// hand-typed); only WHY the successor preserves the BST property is conceptual.
+// =============================================================================
+
+const B2_INSERT = [60, 30, 90, 20, 45, 80, 100, 70, 75];
+const B2_ROOT = buildBst(B2_INSERT);
+const B2_INORDER = inorderValues(B2_ROOT); // ascending by the BST invariant
+// Delete the ROOT (two children); its in-order successor moves up.
+const B2_DELETE = B2_ROOT.value; // 60
+const B2_SUCCESSOR = B2_INORDER[B2_INORDER.indexOf(B2_DELETE) + 1]; // 70
+const B2_PREDECESSOR = B2_INORDER[B2_INORDER.indexOf(B2_DELETE) - 1]; // 45 (distractor)
+const B2_AFTER_DEL = deleteValue(B2_ROOT, B2_DELETE);
+const B2_AFTER_INORDER = inorderValues(B2_AFTER_DEL);
+// Final value of a traversal = the `output` of its last step.
+const B2_AFTER_PRE = (() => {
+	const steps = getTraversalSteps(B2_AFTER_DEL, 'preorder');
+	return steps[steps.length - 1].output.map(Number);
+})();
+const B2_AFTER_POST = (() => {
+	const steps = getTraversalSteps(B2_AFTER_DEL, 'postorder');
+	return steps[steps.length - 1].output.map(Number);
+})();
+const B2_REMOVES_TARGET = !containsValue(B2_AFTER_DEL, B2_DELETE);
+const B2_AFTER_PRE_STR = `[${B2_AFTER_PRE.join(', ')}]`;
+const B2_AFTER_POST_STR = `[${B2_AFTER_POST.join(', ')}]`;
+const B2_BEFORE_PRE_STR = `[${(() => {
+	const steps = getTraversalSteps(B2_ROOT, 'preorder');
+	return steps[steps.length - 1].output;
+})().join(', ')}]`;
+
+const problemB2 = {
+	kind: 'problem',
+	stem:
+		`Insert the keys ${B2_INSERT.join(', ')} into an initially empty binary ` +
+		`search tree, in that order. Then DELETE the root key ${B2_DELETE}. Because ` +
+		`${B2_DELETE} has two children, it is replaced by its in-order successor: the ` +
+		`smallest key in its right subtree.`,
+	parts: [
+		{
+			kind: 'numeric',
+			prompt:
+				`Which key moves up to replace ${B2_DELETE}? (Find the minimum of ` +
+				`${B2_DELETE}'s right subtree — keep stepping left from the right child.)`,
+			answer: B2_SUCCESSOR,
+			placeholder: 'a key',
+			explanation:
+				`The in-order successor is the smallest key larger than ${B2_DELETE}, ` +
+				`i.e. the minimum of the right subtree. Stepping left from the right child ` +
+				`reaches ${B2_SUCCESSOR}, so ${B2_SUCCESSOR} takes the root's place. ` +
+				`${B2_SUCCESSOR}'s own right child is re-attached where ${B2_SUCCESSOR} ` +
+				`used to sit, so no keys are lost.`,
+		},
+		{
+			kind: 'choice',
+			prompt:
+				`Splicing the successor in keeps the tree a valid BST. WHY does using the ` +
+				`in-order successor preserve the search-tree ordering?`,
+			options: [
+				`It is larger than everything in the left subtree and smaller than the ` +
+					`rest of the right subtree, so it fits the deleted node's slot exactly`,
+				`It is the largest key in the whole tree, so it belongs at the root`,
+				`It is a leaf, so moving it can never violate any ordering`,
+				`Any key from the right subtree works; the successor is just convenient`,
+			],
+			answer:
+				`It is larger than everything in the left subtree and smaller than the ` +
+				`rest of the right subtree, so it fits the deleted node's slot exactly`,
+			misconceptions: {
+				[`It is a leaf, so moving it can never violate any ordering`]:
+					`The successor is the LEFTMOST node of the right subtree, but it can ` +
+					`still have a right child (here ${B2_SUCCESSOR} has one). It is not ` +
+					`necessarily a leaf; what matters is that no key sits between it and the ` +
+					`deleted key.`,
+				[`Any key from the right subtree works; the successor is just convenient`]:
+					`Only the successor (or the predecessor) fits. A larger key from the ` +
+					`right subtree would end up smaller than some key now in its left ` +
+					`subtree, breaking the BST ordering.`,
+			},
+			explanation:
+				`The successor is the smallest key greater than ${B2_DELETE}, so nothing ` +
+				`lies strictly between them. Dropping it into the deleted slot keeps every ` +
+				`left-subtree key below it and every remaining right-subtree key above it — ` +
+				`exactly the BST invariant. The predecessor (here ${B2_PREDECESSOR}) works ` +
+				`for the mirror-image reason.`,
+		},
+		{
+			kind: 'order',
+			prompt:
+				`After deleting ${B2_DELETE}, list the remaining keys in IN-ORDER ` +
+				`sequence. Drag them into that order.`,
+			items: [...B2_AFTER_INORDER].sort((a, b) => b - a).map(String),
+			answer: B2_AFTER_INORDER.map(String),
+			explanation:
+				`${B2_DELETE} is gone and ${B2_SUCCESSOR} fills its slot, so an in-order ` +
+				`walk still yields ascending keys: ${B2_AFTER_INORDER.join(', ')} — sorted ` +
+				`and without ${B2_DELETE} (removed: ${B2_REMOVES_TARGET}).`,
+		},
+		{
+			kind: 'choice',
+			prompt:
+				`A PRE-ORDER traversal (visit node, then left subtree, then right subtree) ` +
+				`of the tree AFTER the deletion reads which sequence?`,
+			options: [
+				B2_AFTER_PRE_STR,
+				B2_BEFORE_PRE_STR,
+				B2_AFTER_POST_STR,
+				`[${B2_AFTER_INORDER.join(', ')}]`,
+			],
+			answer: B2_AFTER_PRE_STR,
+			misconceptions: {
+				[B2_BEFORE_PRE_STR]:
+					`That is the pre-order of the tree BEFORE the deletion (it still starts ` +
+					`at ${B2_DELETE}). After deleting the root, ${B2_SUCCESSOR} is the new ` +
+					`root, so pre-order starts at ${B2_SUCCESSOR}.`,
+				[`[${B2_AFTER_INORDER.join(', ')}]`]:
+					`That is the IN-ORDER sequence (ascending). Pre-order visits the root ` +
+					`first, so it starts at the new root ${B2_SUCCESSOR}, not the smallest ` +
+					`key.`,
+			},
+			explanation:
+				`With ${B2_SUCCESSOR} now the root, pre-order visits ${B2_SUCCESSOR} first, ` +
+				`then its left subtree, then its right subtree: ${B2_AFTER_PRE_STR}.`,
+		},
+	],
+};
+
+// =============================================================================
+// ALL-PAIRS SHORTEST PATHS #2 (apsp-2) - the Floyd-Warshall DP RECURRENCE and
+// its per-k intermediate matrices. apsp-1 grades a final row + one k=1 cell that
+// does NOT improve; apsp-2 is the complementary angle: it watches a cell ACTUALLY
+// drop as the recurrence fires. Distinct 5-vertex digraph. Every numeric answer
+// is read straight off floydWarshall's `layers[k]` (D after allowing {1..k}) and
+// final `dist`; only the transitive-closure analogue is conceptual.
+//
+// Recurrence: d_k[i][j] = min( d_{k-1}[i][j], d_{k-1}[i][k] + d_{k-1}[k][j] ).
+// =============================================================================
+
+// Directed, weighted, vertices 1..5. Chosen so several pairs only shorten once a
+// specific intermediate is admitted, so the intermediate matrices tell a story:
+//   d[1][3]: 11 (direct) → 6 once vertex 2 is allowed (1 → 2 → 3 = 4 + 2).
+//   d[2][4]: 7  (direct) → 3 once vertex 3 is allowed (2 → 3 → 4 = 2 + 1).
+//   d[1][5]: ∞ (no edge) → 10 finally (1 → 2 → 3 → 4 → 5 = 4 + 2 + 1 + 3).
+const A2_GRAPH = {
+	nodes: [{ id: '1' }, { id: '2' }, { id: '3' }, { id: '4' }, { id: '5' }],
+	edges: [
+		{ from: '1', to: '2', weight: 4 },
+		{ from: '1', to: '3', weight: 11 },
+		{ from: '2', to: '3', weight: 2 },
+		{ from: '2', to: '4', weight: 7 },
+		{ from: '3', to: '4', weight: 1 },
+		{ from: '3', to: '5', weight: 5 },
+		{ from: '4', to: '5', weight: 3 },
+		{ from: '5', to: '1', weight: 6 },
+		{ from: '4', to: '1', weight: 2 },
+	],
+};
+const A2_FW = floydWarshall(A2_GRAPH);
+const A2_IDS = A2_FW.ids; // ['1','2','3','4','5']
+const A2_IX = id => A2_IDS.indexOf(id);
+
+// layers[k] = D after allowing intermediates {1..k}. layers[2] allows {1, 2}.
+// d[1][3] after the k = 2 round: routing 1 → 2 → 3 (4 + 2 = 6) now beats the
+// direct edge 11, so the recurrence writes 6.
+const A2_LAYER2 = A2_FW.layers[2];
+const A2_L2_13 = distVal(A2_LAYER2[A2_IX('1')][A2_IX('3')]); // 6
+
+// Which intermediate, when first admitted, lowers d[2][4]? Scan the layers for
+// the first k where the cell changes from the previous layer; layer k is the
+// round that admitted vertex A2_IDS[k - 1]. d[2][4] is 7 through {1, 2} and only
+// drops to 3 once vertex 3 is allowed (2 → 3 → 4 = 2 + 1).
+const A2_FIRST_IMPROVE = (fromId, toId) => {
+	const i = A2_IX(fromId);
+	const j = A2_IX(toId);
+	for (let k = 1; k < A2_FW.layers.length; k++) {
+		const prev = A2_FW.layers[k - 1][i][j];
+		const cur = A2_FW.layers[k][i][j];
+		if (JSON.stringify(prev) !== JSON.stringify(cur)) return A2_IDS[k - 1];
+	}
+	return null;
+};
+const A2_FIRST_24 = A2_FIRST_IMPROVE('2', '4'); // '3'
+
+// Final shortest distance for a pair with NO direct edge: 1 → 5 is built up
+// entirely from intermediates (1 → 2 → 3 → 4 → 5 = 4 + 2 + 1 + 3 = 10).
+const A2_D15 = distVal(A2_FW.dist[A2_IX('1')][A2_IX('5')]); // 10
+
+const problemA2 = {
+	kind: 'problem',
+	stem:
+		'Directed weighted graph on vertices 1, 2, 3, 4, 5 with edges ' +
+		'1→2(4), 1→3(11), 2→3(2), 2→4(7), 3→4(1), 3→5(5), 4→5(3), 4→1(2), 5→1(6). ' +
+		'Run Floyd-Warshall and watch the intermediate matrices: d_k[i][j] = ' +
+		'min(d_{k−1}[i][j], d_{k−1}[i][k] + d_{k−1}[k][j]) lets a path route through ' +
+		'vertex k once round k admits it.',
+	parts: [
+		{
+			kind: 'numeric',
+			prompt:
+				'After the k = 2 round (intermediates restricted to {1, 2}), what is ' +
+				'd[1][3]? Apply the recurrence: is going 1 → 2 → 3 shorter than the ' +
+				'direct edge 1→3 of weight 11?',
+			answer: A2_L2_13,
+			placeholder: 'a distance',
+			explanation:
+				`d[1][3] = ${A2_L2_13}. The recurrence compares the old value 11 with ` +
+				`d[1][2] + d[2][3] = 4 + 2 = ${A2_L2_13}, so vertex 2 as an intermediate ` +
+				`wins: 1 → 2 → 3. This is already the final value; no later vertex beats it.`,
+		},
+		{
+			kind: 'choice',
+			prompt:
+				'Track d[2][4] as k grows. The direct edge 2→4 is 7. Admitting which ' +
+				'vertex k as an intermediate is the FIRST to lower d[2][4] below 7?',
+			options: [
+				`Vertex ${A2_FIRST_24}`,
+				'Vertex 4',
+				'Vertex 1',
+				'It never drops below 7',
+			],
+			answer: `Vertex ${A2_FIRST_24}`,
+			misconceptions: {
+				'Vertex 4':
+					'Vertex 4 is the DESTINATION, not an intermediate on the way to it. ' +
+					'A path i → 4 → 4 is meaningless; admitting vertex 4 leaves d[2][4] ' +
+					'unchanged. The improvement comes from vertex 3: 2 → 3 → 4 = 2 + 1 = 3.',
+			},
+			explanation:
+				`Vertex ${A2_FIRST_24}. Through {1, 2} the only 2→4 route is the direct ` +
+				`edge (7). Once vertex 3 is admitted the recurrence finds ` +
+				`d[2][3] + d[3][4] = 2 + 1 = 3 < 7, so d[2][4] drops to 3.`,
+		},
+		{
+			kind: 'numeric',
+			prompt:
+				'In the FINAL distance matrix (all intermediates allowed), what is ' +
+				'd[1][5], the shortest distance from vertex 1 to vertex 5? There is no ' +
+				'direct 1→5 edge, so it must be assembled from intermediates.',
+			answer: A2_D15,
+			placeholder: 'a distance',
+			explanation:
+				`d[1][5] = ${A2_D15}, along 1 → 2 → 3 → 4 → 5 (4 + 2 + 1 + 3). Other ` +
+				`routes are longer: 1 → 2 → 3 → 5 = 4 + 2 + 5 = 11 and 1 → 3 → 5 = ` +
+				`11 + 5 = 16, so the four-hop path wins.`,
+		},
+		{
+			kind: 'choice',
+			prompt:
+				'Transitive closure is the boolean twin of this DP: replace + with AND ' +
+				'and min with OR. Which recurrence computes "i can reach j using only ' +
+				'intermediates from {1..k}"?',
+			options: [
+				't_k[i][j] = t_{k−1}[i][j] OR (t_{k−1}[i][k] AND t_{k−1}[k][j])',
+				't_k[i][j] = t_{k−1}[i][j] AND (t_{k−1}[i][k] OR t_{k−1}[k][j])',
+				't_k[i][j] = t_{k−1}[i][k] AND t_{k−1}[k][j]',
+				't_k[i][j] = t_{k−1}[i][j] OR t_{k−1}[k][k]',
+			],
+			answer: 't_k[i][j] = t_{k−1}[i][j] OR (t_{k−1}[i][k] AND t_{k−1}[k][j])',
+			misconceptions: {
+				't_k[i][j] = t_{k−1}[i][k] AND t_{k−1}[k][j]':
+					'This drops the first term. i can reach j if it ALREADY could ' +
+					'(t_{k−1}[i][j]) OR via k. Without the OR, a pair already connected ' +
+					'through lower-numbered vertices would be wrongly forgotten.',
+			},
+			explanation:
+				'It is Floyd-Warshall with min → OR and + → AND: i reaches j through ' +
+				'{1..k} iff it already did, OR it can reach k AND k can reach j. Same ' +
+				'k-outermost triple loop, Θ(V³).',
+		},
+	],
+};
+
+// =============================================================================
+// MAXIMUM FLOW (augmenting paths + max-flow / min-cut) — a second network whose
+// minimum cut is INTERIOR (neither the source edges nor the sink edges). We grade
+// the bottleneck of the FIRST augmenting path, the max-flow value, the min-cut
+// capacity (equal to it), and which side of the min cut a vertex lands on. All
+// numbers are read off edmondsKarpTrace (frames carry each path + bottleneck;
+// run.minCut carries the capacity and the reachable-from-S side); only the
+// theorem statement is conceptual.
+// =============================================================================
+
+const MF2_NETWORK = {
+	nodes: [
+		{ id: 'S' },
+		{ id: 'A' },
+		{ id: 'B' },
+		{ id: 'C' },
+		{ id: 'D' },
+		{ id: 'T' },
+	],
+	source: 'S',
+	sink: 'T',
+	edges: [
+		{ from: 'S', to: 'A', capacity: 8 },
+		{ from: 'S', to: 'C', capacity: 7 },
+		{ from: 'A', to: 'B', capacity: 9 },
+		{ from: 'A', to: 'C', capacity: 3 },
+		{ from: 'C', to: 'D', capacity: 6 },
+		{ from: 'B', to: 'D', capacity: 2 },
+		{ from: 'B', to: 'T', capacity: 5 },
+		{ from: 'D', to: 'T', capacity: 9 },
+	],
+};
+const MF2_RUN = edmondsKarpTrace(MF2_NETWORK);
+const MF2_VALUE = MF2_RUN.value;
+const MF2_CUT = MF2_RUN.minCut;
+const MF2_CUT_CAP = MF2_CUT.capacity;
+// First augmenting path + its bottleneck: the earliest frame carrying a path's
+// min residual capacity. Edmonds-Karp augments along shortest residual paths.
+const MF2_FIRST = MF2_RUN.frames.find(f => f.bottleneck != null);
+const MF2_FIRST_BOTTLENECK = MF2_FIRST.bottleneck;
+const MF2_FIRST_PATH = [
+	MF2_FIRST.path[0].from,
+	...MF2_FIRST.path.map(re => re.to),
+].join(' → ');
+// Which side of the min cut vertex D is on: the source side S is exactly the set
+// still reachable from S in the FINAL residual network.
+const MF2_D_SIDE = MF2_CUT.S.includes('D')
+	? 'Source side (with S)'
+	: 'Sink side (with T)';
+const MF2_CUT_EDGES = MF2_CUT.edges
+	.map(e => `${e.from}→${e.to}(${e.capacity})`)
+	.join(', ');
+
+const problemMF2 = {
+	kind: 'problem',
+	stem:
+		'Flow network from source S to sink T with capacities ' +
+		'S→A(8), S→C(7), A→B(9), A→C(3), C→D(6), B→D(2), B→T(5), D→T(9). ' +
+		'Run Edmonds-Karp: repeatedly find an augmenting path in the residual ' +
+		'network, push its bottleneck of flow, and stop when none remains.',
+	parts: [
+		{
+			kind: 'numeric',
+			prompt:
+				`The first augmenting path Edmonds-Karp finds is ${MF2_FIRST_PATH}. What ` +
+				`is its BOTTLENECK — the most flow you can push along it this round?`,
+			answer: MF2_FIRST_BOTTLENECK,
+			placeholder: 'a capacity',
+			explanation:
+				`The bottleneck is the smallest residual capacity on the path. Along ` +
+				`${MF2_FIRST_PATH} the residuals are 8, 9, 5, so only ` +
+				`${MF2_FIRST_BOTTLENECK} units fit — the B→T edge is the constraint, not ` +
+				`the wide S→A edge.`,
+		},
+		{
+			kind: 'numeric',
+			prompt: 'What is the value of the maximum flow from S to T?',
+			answer: MF2_VALUE,
+			placeholder: 'a flow value',
+			explanation:
+				`Augmenting paths keep adding flow until no residual S→T path remains. ` +
+				`The total pushed out of S is then ${MF2_VALUE}, the maximum flow.`,
+		},
+		{
+			kind: 'numeric',
+			prompt:
+				'By the max-flow / min-cut theorem, the minimum-cut capacity equals the ' +
+				'max-flow value. What is the capacity of the minimum cut?',
+			answer: MF2_CUT_CAP,
+			placeholder: 'a capacity',
+			explanation:
+				`The min cut crosses ${MF2_CUT_EDGES}, total capacity ${MF2_CUT_CAP} — ` +
+				`equal to the max flow ${MF2_VALUE}. Note it is an interior cut: cheaper ` +
+				`than cutting the source edges (8+7=15) or the sink edges (5+9=14).`,
+		},
+		{
+			kind: 'choice',
+			prompt:
+				'Once no augmenting path remains, the vertices reachable from S in the ' +
+				'final residual network form the source side of the min cut. Which side ' +
+				'is vertex D on?',
+			options: ['Source side (with S)', 'Sink side (with T)'],
+			answer: MF2_D_SIDE,
+			misconceptions: {
+				'Source side (with S)':
+					'D is NOT reachable from S in the final residual network: both edges ' +
+					'into D (C→D and B→D) are saturated, so the cut separates D onto the ' +
+					'sink side. The source side is {S, A, B, C}.',
+			},
+			explanation:
+				`The source side S = {${MF2_CUT.S.join(', ')}} is exactly what stays ` +
+				`reachable from S once every augmenting path is exhausted. D is cut off ` +
+				`from it, so D sits on the sink side: ${MF2_D_SIDE}.`,
+		},
+		{
+			kind: 'choice',
+			prompt:
+				'Edmonds-Karp stops when it can find NO augmenting path from S to T. Why ' +
+				'does that prove the flow is already MAXIMUM?',
+			options: [
+				'No augmenting path means the reachable set S forms a cut whose capacity equals the current flow, and no flow can exceed any cut (max-flow = min-cut)',
+				'Because every edge in the network is now saturated to capacity',
+				'Because the algorithm has run for V·E iterations, which is always enough',
+				'Because BFS has visited every vertex at least once',
+			],
+			answer:
+				'No augmenting path means the reachable set S forms a cut whose capacity equals the current flow, and no flow can exceed any cut (max-flow = min-cut)',
+			misconceptions: {
+				'Because every edge in the network is now saturated to capacity':
+					'Edges need NOT all be saturated — only the cut edges leaving the ' +
+					'reachable set are. Here D→T (capacity 9) is not saturated, yet the ' +
+					'flow is still maximum.',
+			},
+			explanation:
+				'When BFS cannot reach T, the reachable set S and its complement form a ' +
+				'cut. Every edge leaving S is saturated (else BFS would cross it) and ' +
+				'every edge entering S carries no flow, so the cut capacity equals the ' +
+				'flow value. Since no flow can exceed any cut, this flow is maximum — the ' +
+				'max-flow / min-cut theorem.',
+		},
+	],
+};
+
+// =============================================================================
+// HASHING (resize / rehash) - the SAME keys hashed into m and into 2m buckets.
+// A resize is just rehashing every key under the new modulus, so we build the
+// table twice with createBucketsFromEntries and read the load factor, the
+// longest chain before vs after, and where one key lands once m doubles. Every
+// number here is DERIVED by the HashMap module's own hash; nothing is typed.
+// =============================================================================
+
+// Problem HM2: eight keys in a capacity-7 table are overloaded (alpha = 8/7 > 1).
+// We grade the load factor before the resize, the longest chain AFTER doubling to
+// m = 14, and the bucket a specific key rehashes to. Keys are sea creatures so the
+// set is visibly distinct from hashing-1's cat/dog/bird/fish/ant.
+const HM2_KEYS = [
+	'frog',
+	'crab',
+	'clam',
+	'seal',
+	'orca',
+	'tuna',
+	'bass',
+	'carp',
+];
+const HM2_CAPACITY = 7; // m before the resize
+const HM2_CAPACITY_2 = HM2_CAPACITY * 2; // m after doubling (rehash target)
+const HM2_ENTRIES = HM2_KEYS.map(k => ({ key: k, value: k.length }));
+// The table hashed into m and into 2m buckets (both derived by the module hash).
+const HM2_BEFORE = createBucketsFromEntries(HM2_ENTRIES, HM2_CAPACITY);
+const HM2_AFTER = createBucketsFromEntries(HM2_ENTRIES, HM2_CAPACITY_2);
+// Derivation helpers (read off the built tables, never hand-typed).
+const HM2_BUCKET_OF = (buckets, key) =>
+	buckets.findIndex(b => b.some(e => e.key === key));
+const HM2_MAX_CHAIN = buckets => Math.max(...buckets.map(b => b.length));
+const HM2_COLLISIONS = buckets => buckets.filter(b => b.length > 1).length;
+// Load factor alpha = n / m BEFORE the resize (the table is overloaded, alpha > 1).
+const HM2_ALPHA_BEFORE = HM2_KEYS.length / HM2_CAPACITY; // 8 / 7 = 1.142857...
+const HM2_ALPHA_BEFORE_STR = HM2_ALPHA_BEFORE.toFixed(2); // "1.14" for display
+const HM2_ALPHA_AFTER_STR = (HM2_KEYS.length / HM2_CAPACITY_2).toFixed(2); // "0.57"
+// Longest chain before vs after the resize (the resize payoff).
+const HM2_MAX_BEFORE = HM2_MAX_CHAIN(HM2_BEFORE); // 3
+const HM2_MAX_AFTER = HM2_MAX_CHAIN(HM2_AFTER); // 2
+// One key from the overloaded longest chain, and where it rehashes to once m
+// doubles. Its bucket MOVES, because the slot is h mod m and only m changed.
+const HM2_PROBE_KEY = 'seal';
+const HM2_PROBE_BEFORE = HM2_BUCKET_OF(HM2_BEFORE, HM2_PROBE_KEY); // 3 at m = 7
+const HM2_PROBE_AFTER = HM2_BUCKET_OF(HM2_AFTER, HM2_PROBE_KEY); // 10 at m = 14
+// Collision-bucket count before vs after (used only in explanation prose).
+const HM2_COLL_BEFORE = HM2_COLLISIONS(HM2_BEFORE); // 3
+const HM2_COLL_AFTER = HM2_COLLISIONS(HM2_AFTER); // 1
+
+const problemHM2 = {
+	kind: 'problem',
+	stem:
+		`A hash table with separate chaining holds ${HM2_KEYS.length} keys in ` +
+		`m = ${HM2_CAPACITY} buckets. The hash of a string is h = 7, then ` +
+		`h = h*31 + charCode for each character, and the bucket is h mod m. The keys ` +
+		`are ${HM2_KEYS.map(k => `"${k}"`).join(', ')}. The table is about to ` +
+		`resize by doubling to m = ${HM2_CAPACITY_2} and rehashing every key.`,
+	parts: [
+		{
+			kind: 'numeric',
+			prompt:
+				`Before the resize, what is the load factor alpha = n / m? ` +
+				`(${HM2_KEYS.length} keys in ${HM2_CAPACITY} buckets; give two decimals.)`,
+			answer: HM2_ALPHA_BEFORE,
+			tolerance: 0.01,
+			placeholder: 'a load factor',
+			explanation:
+				`alpha = n / m = ${HM2_KEYS.length} / ${HM2_CAPACITY} = ` +
+				`${HM2_ALPHA_BEFORE_STR}. Because alpha is above 1 there are more keys than ` +
+				`buckets, so by the pigeonhole principle some bucket must chain. The ` +
+				`expected chain length is alpha, which is why the table resizes to pull it ` +
+				`back down.`,
+		},
+		{
+			kind: 'numeric',
+			prompt:
+				`The resize doubles the table to m = ${HM2_CAPACITY_2} and rehashes every ` +
+				`key. After the resize, what is the length of the LONGEST chain?`,
+			answer: HM2_MAX_AFTER,
+			placeholder: 'a length',
+			explanation:
+				`Rehashing into ${HM2_CAPACITY_2} buckets drops the load factor to ` +
+				`${HM2_ALPHA_AFTER_STR}, and the longest chain shrinks from ` +
+				`${HM2_MAX_BEFORE} to ${HM2_MAX_AFTER} (the count of collision buckets ` +
+				`falls from ${HM2_COLL_BEFORE} to ${HM2_COLL_AFTER}). A shorter worst-case ` +
+				`chain is exactly what restores fast lookups.`,
+		},
+		{
+			kind: 'numeric',
+			prompt:
+				`At m = ${HM2_CAPACITY} the key "${HM2_PROBE_KEY}" sits in bucket ` +
+				`${HM2_PROBE_BEFORE}. After the table doubles to m = ${HM2_CAPACITY_2}, ` +
+				`which bucket does "${HM2_PROBE_KEY}" rehash into?`,
+			answer: HM2_PROBE_AFTER,
+			placeholder: 'a bucket index',
+			explanation:
+				`The bucket is h mod m, and only m changed (the hash h of "` +
+				`${HM2_PROBE_KEY}" is fixed). Recomputing h mod ${HM2_CAPACITY_2} moves it ` +
+				`from bucket ${HM2_PROBE_BEFORE} to bucket ${HM2_PROBE_AFTER}, which is why ` +
+				`every key has to be rehashed on a resize rather than copied to the same ` +
+				`slot.`,
+		},
+		{
+			kind: 'choice',
+			prompt:
+				`The whole point of resizing is to keep operations fast. Why is a hash ` +
+				`table's expected lookup O(1) in the first place?`,
+			options: [
+				'A good hash spreads keys uniformly, so the expected chain length is alpha = n / m, and resizing keeps alpha bounded by a constant',
+				'Because each bucket can hold at most one key, so there are never any chains',
+				'Because the keys are stored in sorted order, so lookups binary-search the table',
+				'Because the hash function makes every key land in bucket 0',
+			],
+			answer:
+				'A good hash spreads keys uniformly, so the expected chain length is alpha = n / m, and resizing keeps alpha bounded by a constant',
+			misconceptions: {
+				'Because each bucket can hold at most one key, so there are never any chains':
+					'That describes open addressing, not separate chaining. Here a bucket holds a whole chain; the cost is O(1 + alpha), and keeping alpha a small constant by resizing is what makes that O(1) on average.',
+			},
+			explanation:
+				'With a hash that distributes keys uniformly, the expected number of keys ' +
+				'in a bucket is alpha = n / m, so an average lookup scans O(1 + alpha) ' +
+				'entries. Resizing whenever alpha grows past a threshold keeps alpha below ' +
+				'a fixed constant, which pins the expected work at O(1).',
+		},
+	],
+};
+
 export const EXAM_SETS = [
 	{
 		id: 'mst-1',
@@ -2623,6 +3170,12 @@ export const EXAM_SETS = [
 		problem: problemA1,
 	},
 	{
+		id: 'apsp-2',
+		topicId: 'apsp',
+		topicName: 'All-pairs shortest paths',
+		problem: problemA2,
+	},
+	{
 		id: 'linsort-1',
 		topicId: 'linear-time-sorting',
 		topicName: 'Linear-time sorting',
@@ -2639,6 +3192,12 @@ export const EXAM_SETS = [
 		topicId: 'trees',
 		topicName: 'Trees',
 		problem: problemB1,
+	},
+	{
+		id: 'trees-2',
+		topicId: 'trees',
+		topicName: 'Trees',
+		problem: problemB2,
 	},
 	{
 		id: 'graphs-1',
@@ -2667,10 +3226,22 @@ export const EXAM_SETS = [
 		problem: problemHM1,
 	},
 	{
+		id: 'hashing-2',
+		topicId: 'hashing',
+		topicName: 'Hashing',
+		problem: problemHM2,
+	},
+	{
 		id: 'maxflow-1',
 		topicId: 'max-flow',
 		topicName: 'Maximum flow',
 		problem: problemMF1,
+	},
+	{
+		id: 'maxflow-2',
+		topicId: 'max-flow',
+		topicName: 'Maximum flow',
+		problem: problemMF2,
 	},
 	{
 		id: 'foundations-1',
