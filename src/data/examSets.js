@@ -30,8 +30,10 @@
 import {
 	kruskalTrace,
 	primTrace,
+	crossingEdges,
 	edgeEndpoints,
 } from '../components/Mst/mstTrace.js';
+import { MST_VERTICES, MST_EDGES } from '../components/Mst/mstMeta.js';
 import {
 	dijkstraTrace,
 	bellmanFordTrace,
@@ -44,6 +46,7 @@ import { analyseRecurrence } from '../components/MasterTheorem/masterMath.js';
 import { floydWarshall } from '../components/AllPairsShortestPaths/fwTrace.js';
 import { getCountingSortStepsWithStats } from '../utils/sorting/algorithms/countingSort.js';
 import { radixWithSubroutine } from '../components/LinearTimeSorting/stability.js';
+import { bucketSort } from '../components/LinearTimeSorting/bucketSortTrace.js';
 import {
 	buildBst,
 	inorderValues,
@@ -52,6 +55,7 @@ import {
 	containsValue,
 } from '../components/Tree/treeUtils.js';
 import { genericTraverse } from '../components/Graph/oneFrontier.js';
+import { topoSort, isValidTopoOrder } from '../components/Graph/topoSort.js';
 import { createBucketsFromEntries } from '../components/HashMap/hashMapTrace.js';
 import { edmondsKarpTrace } from '../components/MaxFlow/maxFlowTrace.js';
 import { sqFrames } from '../components/StacksQueues/sqFrames.js';
@@ -61,6 +65,7 @@ import {
 	buildCoinChangeFrames,
 	buildClimbingStairsFrames,
 } from '../components/Strategies/coinChangeFrames.js';
+import { activitySelect } from '../components/Strategies/activitySelect.js';
 import { dijkstraSettleProbe, bfsDequeueProbe } from './traceProbes.js';
 
 // ── small derivation helpers (pure) ──────────────────────────────────────────
@@ -519,6 +524,148 @@ const problemH2 = {
 	],
 };
 
+// Problem H3: HEAPSORT — the whole sort. Build a max-heap, then repeatedly
+// ExtractMax off the shrinking heap; each max drops into the sorted tail, so the
+// ascending result is the extracted maxima in REVERSE order. Every answer (the
+// post-build array, the first max, the heap after two extractions, the final
+// sorted array) is read off buildMaxHeapTrace / extractMaxTrace — never typed.
+const H3_INPUT = [4, 10, 3, 5, 1, 8, 7];
+const H3_HEAP = buildMaxHeapTrace(H3_INPUT).finalHeap; // valid max-heap
+const H3_HEAP_STR = `[${H3_HEAP.join(', ')}]`;
+
+// Run heapsort by chaining ExtractMax: collect each returned max and the heap
+// array that remains after it. The sorted (ascending) array is those maxima
+// reversed (first max → last slot).
+const H3_RUN = (() => {
+	let heap = [...H3_HEAP];
+	const maxes = []; // extraction order: max, 2nd max, …
+	const after = []; // heap array remaining after the k-th extraction
+	while (heap.length > 0) {
+		const r = extractMaxTrace({ heap });
+		maxes.push(r.max);
+		heap = r.finalHeap;
+		after.push([...heap]);
+	}
+	return { maxes, after, sorted: [...maxes].reverse() };
+})();
+
+const H3_FIRST_MAX = H3_RUN.maxes[0]; // first element extracted = the max
+const H3_AFTER2 = H3_RUN.after[1]; // heap contents after the first 2 extractions
+const H3_AFTER2_STR = `[${H3_AFTER2.join(', ')}]`;
+const H3_SORTED_STR = `[${H3_RUN.sorted.join(', ')}]`;
+
+// Distractors, in the heaps-1/heaps-2 house style: the unchanged input, a
+// one-swap near-miss, and (for the sorted part) the DESCENDING array — which is
+// exactly the extraction order, the classic "forgot to reverse" trap.
+const H3_INPUT_STR = `[${H3_INPUT.join(', ')}]`;
+const H3_DESC_STR = `[${[...H3_INPUT].sort((a, b) => b - a).join(', ')}]`;
+const H3_HEAP_NEAR = (() => {
+	const a = [...H3_HEAP];
+	if (a.length >= 3) [a[1], a[2]] = [a[2], a[1]];
+	return `[${a.join(', ')}]`;
+})();
+const H3_AFTER2_NEAR = (() => {
+	const a = [...H3_AFTER2];
+	if (a.length >= 3) [a[1], a[2]] = [a[2], a[1]];
+	return `[${a.join(', ')}]`;
+})();
+
+const problemH3 = {
+	kind: 'problem',
+	stem:
+		`Heapsort sorts ${H3_INPUT_STR} in place. First BuildMaxHeap turns it into a ` +
+		`max-heap; then it repeatedly extracts the max (swap the root with the last ` +
+		`heap slot, shrink the heap by one, sift the new root down) so each maximum ` +
+		`lands in the growing sorted tail.`,
+	parts: [
+		{
+			kind: 'choice',
+			prompt:
+				`Phase 1 is BuildMaxHeap. Which array is the max-heap it produces, before ` +
+				`any element has been extracted?`,
+			options: [H3_HEAP_STR, H3_DESC_STR, H3_INPUT_STR, H3_HEAP_NEAR],
+			answer: H3_HEAP_STR,
+			misconceptions: {
+				[H3_DESC_STR]:
+					`That is the array sorted in descending order. BuildMaxHeap only enforces ` +
+					`parent >= children, which puts the max at index 0 but leaves the rest ` +
+					`partially ordered; it does not sort.`,
+			},
+			explanation:
+				`Bottom-up heapify gives ${H3_HEAP_STR}: the max ${H3_HEAP[0]} sits at index ` +
+				`0 and every parent >= its children. The sorting only happens in phase 2, as ` +
+				`maxima are pulled off one at a time.`,
+		},
+		{
+			kind: 'numeric',
+			prompt:
+				`Phase 2 begins. What is the FIRST element heapsort extracts (it goes into ` +
+				`the last array slot)?`,
+			answer: H3_FIRST_MAX,
+			placeholder: 'a value',
+			explanation:
+				`ExtractMax returns the root of the max-heap, which is the largest element ` +
+				`${H3_FIRST_MAX}. Heapsort swaps it into the final position, where it stays.`,
+		},
+		{
+			kind: 'choice',
+			prompt:
+				`After the first TWO ExtractMax steps, the two largest values are parked in ` +
+				`the sorted tail and the heap has shrunk by two. What are the heap's ` +
+				`remaining contents (the still-unsorted prefix)?`,
+			options: [H3_AFTER2_STR, H3_HEAP_STR, H3_AFTER2_NEAR, H3_INPUT_STR],
+			answer: H3_AFTER2_STR,
+			misconceptions: {
+				[H3_HEAP_STR]:
+					`That is the heap BEFORE any extraction. Two ExtractMax steps have already ` +
+					`removed the two largest values and re-heapified what is left.`,
+			},
+			explanation:
+				`Removing the top two maxima and re-heapifying after each leaves the ` +
+				`${H3_AFTER2.length}-element max-heap ${H3_AFTER2_STR}. Its root is again the ` +
+				`largest of the values that remain.`,
+		},
+		{
+			kind: 'choice',
+			prompt:
+				`Heapsort runs ExtractMax until the heap is empty. What is the final, fully ` +
+				`sorted array (ascending)?`,
+			options: [H3_SORTED_STR, H3_DESC_STR, H3_HEAP_STR, H3_INPUT_STR],
+			answer: H3_SORTED_STR,
+			misconceptions: {
+				[H3_DESC_STR]:
+					`That is the order the maxima come OUT in (largest first). But each ` +
+					`extracted max is placed at the back of the array, so reading the array ` +
+					`front-to-back gives ascending order, not descending.`,
+			},
+			explanation:
+				`Each ExtractMax drops the current maximum into the next tail slot, so the ` +
+				`array fills from the back with ever-smaller maxima and ends ascending: ` +
+				`${H3_SORTED_STR}.`,
+		},
+		{
+			kind: 'choice',
+			prompt:
+				`Why is heapsort Theta(n log n) in the worst case AND in place (O(1) extra ` +
+				`space)?`,
+			options: [
+				'BuildMaxHeap is O(n), then n ExtractMax calls each cost O(log n) for n log n total, and the heap and the sorted tail share the one array',
+				'It makes a sorted copy of the array, which takes n log n time and n extra space',
+				'Each ExtractMax is O(n), so n of them give O(n squared)',
+				'It is only fast on average; the worst case is O(n squared) like quicksort',
+			],
+			answer:
+				'BuildMaxHeap is O(n), then n ExtractMax calls each cost O(log n) for n log n total, and the heap and the sorted tail share the one array',
+			explanation:
+				`Building the heap is O(n); each of the n extractions sifts a root down one ` +
+				`root-to-leaf path, O(log n), for Theta(n log n) overall, and that bound is the ` +
+				`worst case, not just the average. Because the shrinking heap and the growing ` +
+				`sorted tail occupy the same array, the only extra space is a few indices, so ` +
+				`it is in place.`,
+		},
+	],
+};
+
 // =============================================================================
 // MASTER THEOREM — two recurrences, classified by analyseRecurrence.
 // =============================================================================
@@ -630,6 +777,153 @@ const masterCheck = T => ({
 
 const problemT1 = masterCheck(T1);
 const problemT2 = masterCheck(T2);
+
+// =============================================================================
+// MASTER THEOREM, set 3 — Case 3 (root-dominated) and the two ideas a Case-3
+// problem must pin down: the REGULARITY condition the theorem needs, and a
+// recurrence whose f(n) is NOT polynomially comparable to n^(log_b a), so the
+// BASIC Master Theorem does not settle it. Both recurrences are classified by
+// analyseRecurrence (case + Θ bound are derived); the regularity statement and
+// the gap-case verdict are conceptual choices (analyseRecurrence has no flag for
+// either, so they stay STATIC and are listed in the test's allowlist).
+// =============================================================================
+
+// Problem T3: T(n) = 2T(n/2) + n^2 — c = log2(2) = 1 < d = 2, so the root combine
+// work dominates: Case 3, Θ(n^2). (Not used by master-1 = 2T(n/2)+n or
+// master-2 = 8T(n/2)+n^2.)
+const T3 = masterProblem({
+	id: 't3',
+	a: 2,
+	b: 2,
+	d: 2,
+	k: 0,
+	fnText: 'n^2',
+	recurrenceText: 'T(n) = 2·T(n/2) + n^2',
+});
+// Problem T4: T(n) = 4T(n/2) + n^3 — c = log2(4) = 2 < d = 3, so again the root
+// work wins: Case 3, Θ(n^3). A second, steeper Case-3 split so the recurrence
+// is recognised, not pattern-matched from T3.
+const T4 = masterProblem({
+	id: 't4',
+	a: 4,
+	b: 2,
+	d: 3,
+	k: 0,
+	fnText: 'n^3',
+	recurrenceText: 'T(n) = 4·T(n/2) + n^3',
+});
+
+// A Case-3 problem is only half-answered by "the root wins". The Master Theorem
+// only grants Case 3 when f(n) also satisfies the REGULARITY condition
+// a·f(n/b) <= c·f(n) for some constant c < 1 and all large n, and it stays
+// silent when f(n) is not polynomially comparable to n^(log_b a). This set
+// derives the case + Θ bound for two clean Case-3 recurrences, then asks for
+// those two conceptual facts.
+const problemT3 = {
+	kind: 'problem',
+	stem:
+		`Two recurrences whose combine work outgrows the leaves (Case 3), plus the ` +
+		`fine print the Master Theorem attaches to that case. For T3, ` +
+		`${T3.recurrenceText}: a = ${T3.a}, b = ${T3.b}, f(n) = ${T3.fnText}, so ` +
+		`c = log_${T3.b}(${T3.a}) = ${T3.cText}.`,
+	parts: [
+		{
+			kind: 'choice',
+			prompt:
+				`T3: ${T3.recurrenceText}. Comparing c = ${T3.cText} with d = ${T3.d}, ` +
+				`which Master Theorem case applies?`,
+			options: T3.caseOptions,
+			answer: T3.analysis.name,
+			misconceptions: {
+				'Case 1':
+					`Case 1 is when c > d and the LEAVES win. Here c = ${T3.cText} < d = ` +
+					`${T3.d}, so the work grows toward the ROOT, not the leaves.`,
+				'Case 2':
+					`Case 2 needs c = d (every level ties). Here c = ${T3.cText} is strictly ` +
+					`less than d = ${T3.d}, so one side dominates: the root.`,
+			},
+			explanation:
+				`${T3.analysis.name}: ${T3.analysis.tone}. c = ${T3.cText} < d = ${T3.d}, ` +
+				`so the root combine work dominates.`,
+		},
+		{
+			kind: 'choice',
+			prompt: `T3: ${T3.recurrenceText}. What is the asymptotic bound Θ(·) for T(n)?`,
+			options: T3.boundOptions,
+			answer: T3.analysis.result,
+			misconceptions: {
+				'Θ(n log n)':
+					`Θ(n log n) is the Case-2 (every-level-ties) answer for f(n) = n. Here ` +
+					`the root dominates, so the bound is the combine work itself, ${T3.analysis.result}.`,
+			},
+			explanation: `The bound is ${T3.analysis.result}. ${T3.analysis.explanation}`,
+		},
+		{
+			kind: 'choice',
+			prompt:
+				`Case 3 is not automatic once c < d. Which EXTRA condition on f(n) must ` +
+				`hold for the Master Theorem to actually conclude T(n) = Θ(f(n))?`,
+			options: [
+				'The regularity condition: a·f(n/b) <= c·f(n) for some constant c < 1 and all large n',
+				'f(n) must be a polynomial with integer coefficients',
+				'f(n) must be monotonically increasing for all n',
+				'a must be strictly greater than b',
+			],
+			answer:
+				'The regularity condition: a·f(n/b) <= c·f(n) for some constant c < 1 and all large n',
+			explanation:
+				`Case 3 requires the regularity (smoothness) condition a·f(n/b) <= c·f(n) ` +
+				`for some c < 1 and all large n. It guarantees the combine work shrinks ` +
+				`geometrically down the tree, so the root term Θ(f(n)) dominates the total. ` +
+				`For the polynomial f(n) = ${T3.fnText} it holds, so T3 is genuinely ${T3.analysis.result}.`,
+		},
+		{
+			kind: 'choice',
+			prompt:
+				`T4: ${T4.recurrenceText}. Here a = ${T4.a}, b = ${T4.b}, f(n) = ${T4.fnText}, ` +
+				`so c = log_${T4.b}(${T4.a}) = ${T4.cText}. Comparing c with d = ${T4.d}, ` +
+				`which case applies?`,
+			options: T4.caseOptions,
+			answer: T4.analysis.name,
+			misconceptions: {
+				'Case 1':
+					`Case 1 needs c > d. Here c = ${T4.cText} < d = ${T4.d}, so the root ` +
+					`work dominates, not the leaves.`,
+			},
+			explanation:
+				`${T4.analysis.name}: ${T4.analysis.tone}. c = ${T4.cText} < d = ${T4.d}, ` +
+				`so the root combine work dominates again.`,
+		},
+		{
+			kind: 'choice',
+			prompt: `T4: ${T4.recurrenceText}. What is the asymptotic bound Θ(·) for T(n)?`,
+			options: T4.boundOptions,
+			answer: T4.analysis.result,
+			explanation: `The bound is ${T4.analysis.result}. ${T4.analysis.explanation}`,
+		},
+		{
+			kind: 'choice',
+			prompt:
+				`Now consider T(n) = 2T(n/2) + n/log n. Here c = log_2(2) = 1, but ` +
+				`f(n) = n/log n is asymptotically between n^(1-ε) and n^1 for every ε > 0. ` +
+				`Which statement is TRUE?`,
+			options: [
+				'The basic Master Theorem does not apply: f(n) is not polynomially comparable to n^c, so it falls in the gap between the cases',
+				'It is Case 1, so T(n) = Θ(n)',
+				'It is Case 2, so T(n) = Θ(n log n)',
+				'It is Case 3, so T(n) = Θ(n/log n)',
+			],
+			answer:
+				'The basic Master Theorem does not apply: f(n) is not polynomially comparable to n^c, so it falls in the gap between the cases',
+			explanation:
+				`The three cases all require f(n) to be polynomially smaller, equal, or ` +
+				`larger than n^c = n^1. But n/log n is smaller than n by only a ` +
+				`logarithmic factor, not a polynomial n^ε one, so no case fits: this is ` +
+				`the gap the basic Master Theorem cannot resolve. (The Akra-Bazzi method ` +
+				`handles it and gives Θ(n log log n), but the basic theorem stays silent.)`,
+		},
+	],
+};
 
 // =============================================================================
 // ALL-PAIRS SHORTEST PATHS — a full Floyd-Warshall hand-trace (one final row + an
@@ -989,6 +1283,122 @@ const problemL2 = {
 	],
 };
 
+// Problem L3: BUCKET SORT on non-negative integers. Values are scattered into m
+// range-buckets by index = floor(value * m / (max+1)); each bucket is sorted
+// locally, then buckets are concatenated in index order. We grade the bucket a
+// value lands in, the SCATTER-order contents of one bucket (before its local
+// sort), and the final gathered array — all read off bucketSort (never typed).
+// The two asymptotic parts (expected Theta(n), one-bucket Theta(n^2)) are
+// conceptual (STATIC).
+const L3_VALUES = [29, 25, 3, 49, 9, 37, 21, 43];
+const L3_BUCKETS = 4;
+const L3_RUN = bucketSort(L3_VALUES, L3_BUCKETS);
+const L3_MAX = L3_RUN.max; // 49, so the bucket divisor (max+1) is 50
+// The probed value (37) and the bucket it lands in.
+const L3_PROBE = 37;
+const L3_PROBE_BUCKET = L3_RUN.bucketIndexOf(L3_PROBE); // 2
+// The SCATTER-order contents of that bucket, BEFORE the local sort.
+const L3_BUCKET_SCATTER = L3_RUN.buckets[L3_PROBE_BUCKET]; // [29, 25, 37]
+const L3_BUCKET_SORTED = L3_RUN.sortedBuckets[L3_PROBE_BUCKET]; // [25, 29, 37]
+// The final sorted array (buckets concatenated in index order).
+const L3_SORTED = L3_RUN.sorted; // [3, 9, 21, 25, 29, 37, 43, 49]
+const L3_SORTED_STR = `[${L3_SORTED.join(', ')}]`;
+
+const problemL3 = {
+	kind: 'problem',
+	stem:
+		`Bucket-sort the non-negative integers [${L3_VALUES.join(', ')}] into ` +
+		`${L3_BUCKETS} buckets. The largest value is ${L3_MAX}, so a value v is ` +
+		`scattered into bucket floor(v * ${L3_BUCKETS} / ${L3_MAX + 1}). Each bucket ` +
+		`is then sorted on its own and the buckets are concatenated in index order.`,
+	parts: [
+		{
+			kind: 'numeric',
+			prompt:
+				`Into which 0-based bucket is the value ${L3_PROBE} scattered? ` +
+				`(Use bucket index = floor(v * ${L3_BUCKETS} / ${L3_MAX + 1}).)`,
+			answer: L3_PROBE_BUCKET,
+			placeholder: 'a bucket index',
+			explanation:
+				`floor(${L3_PROBE} * ${L3_BUCKETS} / ${L3_MAX + 1}) = floor(${
+					L3_PROBE * L3_BUCKETS
+				} / ${L3_MAX + 1}) = ${L3_PROBE_BUCKET}, so ${L3_PROBE} lands in bucket ` +
+				`${L3_PROBE_BUCKET}. The mapping spreads the range 0..${L3_MAX} across ` +
+				`${L3_BUCKETS} equal-width buckets; the +1 in the divisor keeps the ` +
+				`maximum ${L3_MAX} inside the last bucket instead of overflowing.`,
+		},
+		{
+			kind: 'order',
+			prompt:
+				`List the contents of bucket ${L3_PROBE_BUCKET} as they sit RIGHT AFTER ` +
+				`the scatter, BEFORE that bucket is sorted (keep them in the order the ` +
+				`values appear in the input). Drag them into that sequence.`,
+			items: [...L3_BUCKET_SCATTER].sort((a, b) => a - b).map(String),
+			answer: L3_BUCKET_SCATTER.map(String),
+			explanation:
+				`Scanning the input left to right, the values that map to bucket ` +
+				`${L3_PROBE_BUCKET} are ${L3_BUCKET_SCATTER.join(', ')} (in that order). ` +
+				`Bucket sort scatters first and sorts each bucket only afterwards, so ` +
+				`right after the scatter the bucket still holds them in input order, not ` +
+				`sorted order. Its local sort then turns ` +
+				`[${L3_BUCKET_SCATTER.join(', ')}] into [${L3_BUCKET_SORTED.join(', ')}].`,
+		},
+		{
+			kind: 'order',
+			prompt:
+				`After every bucket is sorted and the buckets are concatenated from ` +
+				`bucket 0 upward, list the final sorted array. Drag the values into ` +
+				`order.`,
+			items: [...L3_VALUES].sort((a, b) => b - a).map(String),
+			answer: L3_SORTED.map(String),
+			explanation:
+				`Sorting each bucket and gathering them in index order yields ` +
+				`${L3_SORTED_STR}. Because each value sits in a bucket whose whole range ` +
+				`is below the next bucket's, concatenating the sorted buckets in order ` +
+				`produces the fully sorted array with no merge step.`,
+		},
+		{
+			kind: 'choice',
+			prompt:
+				`Bucket sort runs in expected Theta(n) on this kind of input. Which ` +
+				`assumption makes that expectation hold?`,
+			options: [
+				'The values are spread roughly uniformly, so each bucket holds about n/m values and the local sorts are cheap',
+				'The values are already sorted before bucketing',
+				'There are very few buckets, so distribution is fast',
+				'Bucket sort is always Theta(n) for any integer input',
+			],
+			answer:
+				'The values are spread roughly uniformly, so each bucket holds about n/m values and the local sorts are cheap',
+			misconceptions: {
+				'Bucket sort is always Theta(n) for any integer input':
+					'Linear time is an AVERAGE-case expectation, not a guarantee. Scatter and gather are Theta(n + m), but the local sorts cost more when a bucket grows large; only a roughly uniform spread keeps every bucket small.',
+				'The values are already sorted before bucketing':
+					'Pre-sortedness is not what bucket sort needs. A sorted but tightly clustered set still piles into one bucket. What matters is an even SPREAD across the range, so the buckets fill evenly.',
+			},
+			explanation:
+				'With m about n buckets and a roughly uniform spread, each bucket holds about n/m = O(1) values, so all the local sorts together cost Theta(n). Adding the Theta(n) scatter and Theta(n + m) gather gives expected Theta(n) overall.',
+		},
+		{
+			kind: 'choice',
+			prompt:
+				`Now suppose the input is skewed so that EVERY value maps to the same ` +
+				`single bucket. What is bucket sort's worst-case running time (with an ` +
+				`insertion sort inside each bucket)?`,
+			options: ['Theta(n^2)', 'Theta(n)', 'Theta(n log n)', 'Theta(log n)'],
+			answer: 'Theta(n^2)',
+			misconceptions: {
+				'Theta(n)':
+					'Theta(n) is the EXPECTED case for a uniform spread. If everything lands in one bucket, the scatter is still Theta(n) but that one bucket now holds all n values, and sorting it dominates.',
+				'Theta(n log n)':
+					'Theta(n log n) would need the inner sort to be a comparison sort like merge sort. With an insertion sort inside the bucket, a single bucket of n values costs Theta(n^2).',
+			},
+			explanation:
+				'When all n values fall into one bucket, that bucket becomes the entire input and its insertion sort runs in Theta(n^2). The buckets bought nothing: bucket sort has degraded to a single insertion sort. This is why bucket sort needs its values to spread, not clump.',
+		},
+	],
+};
+
 // =============================================================================
 // TREES — a full BST hand-trace: build from an insertion order, read the
 // in-order traversal, then a delete operation. Derived from treeUtils.
@@ -1161,6 +1571,123 @@ const problemG1 = {
 			explanation:
 				'It is the same loop over the same graph; only the rule for which frontier ' +
 				'vertex leaves next changes. Queue → breadth-first, stack → depth-first.',
+		},
+	],
+};
+
+// =============================================================================
+// GRAPHS (topological sort) — Kahn's algorithm on a fixed DAG. The first vertex
+// in the order, any vertex's in-degree, the full topological order, and whether
+// a candidate order is valid are all read off topoSort / isValidTopoOrder
+// (never hand-typed). Only "why a cycle has no order" is conceptual (STATIC).
+// =============================================================================
+
+// A 6-vertex "prerequisite" DAG. Two sources (A, B), and F depends on everything
+// upstream of it, so Kahn's smallest-id-first order is unique enough to grade.
+//   A → C   A → D   B → C   C → E   D → E   E → F
+const G2_VERTICES = ['A', 'B', 'C', 'D', 'E', 'F'];
+const G2_EDGES = [
+	{ from: 'A', to: 'C' },
+	{ from: 'A', to: 'D' },
+	{ from: 'B', to: 'C' },
+	{ from: 'C', to: 'E' },
+	{ from: 'D', to: 'E' },
+	{ from: 'E', to: 'F' },
+];
+const G2_TOPO = topoSort(G2_VERTICES, G2_EDGES);
+const G2_ORDER = G2_TOPO.order; // ['A','B','C','D','E','F']
+const G2_FIRST = G2_ORDER[0]; // 'A' — the in-degree-0, smallest-id vertex
+const G2_INDEG_E = G2_TOPO.indegree.E; // 2 (from C and D)
+// A VALID alternative order (different from Kahn's, to show order is not unique).
+// Whether it is valid is itself derived from isValidTopoOrder.
+const G2_CANDIDATE = ['B', 'A', 'D', 'C', 'E', 'F'];
+const G2_CANDIDATE_STR = `[${G2_CANDIDATE.join(', ')}]`;
+const G2_CANDIDATE_VALID = isValidTopoOrder(G2_CANDIDATE, G2_EDGES); // true
+const G2_VALIDITY = G2_CANDIDATE_VALID ? 'Valid' : 'Invalid';
+// The order part is presented shuffled (a stable non-answer order to drag from).
+const G2_ITEMS_SHUFFLED = [...G2_ORDER].slice().reverse();
+
+const problemG2 = {
+	kind: 'problem',
+	stem:
+		'Directed acyclic graph with vertices A, B, C, D, E, F and edges ' +
+		'A→C, A→D, B→C, C→E, D→E, E→F. Run a topological sort with Kahn’s ' +
+		'algorithm: repeatedly remove an in-degree-0 vertex, breaking ties by ' +
+		'choosing the smallest id (alphabetical here).',
+	parts: [
+		{
+			kind: 'choice',
+			prompt:
+				'Kahn starts from a vertex with NO incoming edges (in-degree 0). With the ' +
+				'smallest-id tie-break, which vertex does the topological sort emit FIRST?',
+			options: [G2_FIRST, 'C', 'F', 'E'],
+			answer: G2_FIRST,
+			misconceptions: {
+				F:
+					'F is the SINK (everything must come before it); it is emitted LAST, ' +
+					'not first. Kahn starts from in-degree-0 sources.',
+			},
+			explanation:
+				`A and B are the only in-degree-0 vertices (no prerequisites). The ` +
+				`smallest-id tie-break picks ${G2_FIRST} first; B follows once A is removed.`,
+		},
+		{
+			kind: 'numeric',
+			prompt:
+				'In the ORIGINAL graph, what is the in-degree of vertex E (its number of ' +
+				'incoming edges)?',
+			answer: G2_INDEG_E,
+			placeholder: 'a count',
+			explanation:
+				`E has incoming edges from C and D, so its in-degree is ${G2_INDEG_E}. ` +
+				'Kahn can only emit E once both of those are removed (its in-degree hits 0).',
+		},
+		{
+			kind: 'order',
+			prompt:
+				'Give the full topological order Kahn produces, smallest in-degree-0 ' +
+				'vertex first at each step. Drag the vertices into that sequence.',
+			items: G2_ITEMS_SHUFFLED,
+			answer: G2_ORDER,
+			explanation:
+				`Emitting the smallest free vertex each step gives ${G2_ORDER.join(' → ')}. ` +
+				'A and B are the sources; C, D open up next; E waits for both C and D; F is last.',
+		},
+		{
+			kind: 'choice',
+			prompt:
+				`A topological order is not unique. Is the candidate order ${G2_CANDIDATE_STR} ` +
+				'a VALID topological order for this graph (every edge points forward)?',
+			options: ['Valid', 'Invalid'],
+			answer: G2_VALIDITY,
+			explanation:
+				`${G2_CANDIDATE_STR} is ${G2_VALIDITY.toLowerCase()}: every edge u→v has u ` +
+				'before v, even though it differs from Kahn’s smallest-id order. Many ' +
+				'distinct orders can be correct as long as no edge points backward.',
+		},
+		{
+			kind: 'choice',
+			prompt:
+				'Suppose we add the edge F→A, creating a cycle A→C→E→F→A. How many ' +
+				'vertices can a topological sort now place?',
+			options: [
+				'None — a graph with a cycle has no topological order',
+				'All six, in some order',
+				'Only the vertices outside the cycle',
+				'Exactly five, dropping one cycle vertex',
+			],
+			answer: 'None — a graph with a cycle has no topological order',
+			misconceptions: {
+				'Only the vertices outside the cycle':
+					'Kahn would emit B (still in-degree 0), but a topological order must ' +
+					'place EVERY vertex. Because the cycle vertices never reach in-degree 0, ' +
+					'no complete order exists, so the sort fails rather than partially succeeds.',
+			},
+			explanation:
+				'In a cycle A→C→E→F→A every vertex has an unmet ' +
+				'prerequisite ahead of it, so none can be placed first. Kahn’s in-degrees ' +
+				'never all reach 0, which is exactly how it DETECTS the cycle: fewer vertices ' +
+				'come out than went in. A topological order exists only for a DAG.',
 		},
 	],
 };
@@ -1563,6 +2090,136 @@ const problemM3 = {
 				'Both adding a constant and multiplying by a positive constant are monotonic ' +
 				'transforms: they preserve the relative order of edge weights, and the greedy ' +
 				'MST choices depend only on that order. So the MST edge set is unchanged either way.',
+		},
+	],
+};
+
+// Problem M4: the CUT PROPERTY in isolation. On the lesson's shared graph we fix
+// ONE cut S = {A, B, D} vs the rest, and read its crossing edges plus the
+// lightest (safe) crossing edge straight off crossingEdges, the same helper
+// Kruskal and Prim's light-edge logic is built on. Everything gradeable is
+// derived; only the "why the light edge is safe" exchange argument is STATIC.
+const M4_VERTICES = MST_VERTICES;
+const M4_EDGES = MST_EDGES;
+const M4_CUT = ['A', 'B', 'D']; // S; the rest is {C, E, F, G}
+const M4_REST = M4_VERTICES.filter(v => !M4_CUT.includes(v));
+// A readable "u–v (w)" label straight off a crossingEdges {u,v,w} record.
+const m4Label = e => `${e.u}–${e.v} (${e.w})`;
+const M4_CROSS = crossingEdges(M4_EDGES, M4_CUT); // { crossing, light }
+// crossing is sorted ascending by weight (then id): the answer to the order part.
+const M4_CROSSING = M4_CROSS.crossing.map(m4Label);
+const M4_CROSSING_SHUFFLED = [...M4_CROSSING].slice().reverse();
+const M4_LIGHT = M4_CROSS.light; // the lightest crossing edge: the safe edge.
+const M4_LIGHT_LABEL = m4Label(M4_LIGHT);
+const M4_LIGHT_WEIGHT = M4_LIGHT.w;
+const M4_HEAVIEST_LABEL = m4Label(
+	M4_CROSS.crossing[M4_CROSS.crossing.length - 1]
+);
+// Cross-check (distinct weights, so the MST is unique): the cut property's
+// "some MST" is THE MST here, so the light edge must appear in it.
+const M4_MST = kruskalTrace({ vertices: M4_VERTICES, edges: M4_EDGES });
+const M4_LIGHT_IN_MST = M4_MST.treeEdges.includes(M4_LIGHT.id);
+
+const problemM4 = {
+	kind: 'problem',
+	stem:
+		'The same graph the lesson runs Kruskal and Prim on: vertices A, B, C, D, ' +
+		'E, F, G with edges A–B(2), A–D(3), B–C(9), B–E(4), C–F(5), D–E(8), ' +
+		'D–G(12), E–F(6), E–G(7), F–G(10), C–E(11). Fix the CUT that splits the ' +
+		`vertices into S = {${M4_CUT.join(', ')}} and the rest {${M4_REST.join(', ')}}. ` +
+		'The cut property is the single theorem behind BOTH algorithms.',
+	parts: [
+		{
+			kind: 'order',
+			prompt:
+				`An edge CROSSES the cut when exactly one endpoint is inside S = ` +
+				`{${M4_CUT.join(', ')}}. List every crossing edge in ascending weight ` +
+				`order. (Edges with both endpoints inside S, like A–B, do not cross.)`,
+			items: M4_CROSSING_SHUFFLED,
+			answer: M4_CROSSING,
+			explanation:
+				`Exactly one endpoint inside S means one of A, B, D and one of ` +
+				`${M4_REST.join(', ')}. Those edges, lightest first, are ` +
+				`${M4_CROSSING.join(', ')}. A–B and A–D stay inside S, so they do not ` +
+				`cross; E–F, E–G, F–G stay inside the rest, so they do not cross either.`,
+		},
+		{
+			kind: 'choice',
+			prompt:
+				'The cut property guarantees ONE of the crossing edges is safe to add ' +
+				'to the MST. Which crossing edge is it?',
+			options: [M4_LIGHT_LABEL, M4_HEAVIEST_LABEL, 'A–B (2)', 'C–F (5)'],
+			answer: M4_LIGHT_LABEL,
+			misconceptions: {
+				[M4_HEAVIEST_LABEL]:
+					`That is the HEAVIEST edge crossing the cut. The cut property is about ` +
+					`the LIGHTEST crossing edge; a heaviest crossing edge is exactly the ` +
+					`kind an MST avoids.`,
+				'A–B (2)':
+					`A–B is lighter, but BOTH its endpoints are inside S, so it does not ` +
+					`cross the cut at all. The property only speaks about edges that cross.`,
+				'C–F (5)':
+					`C–F is light, but both endpoints (C and F) are outside S, so it does ` +
+					`not cross this cut.`,
+			},
+			explanation:
+				`The cut property says: for any cut, the LIGHTEST edge crossing it is ` +
+				`safe, so some MST contains it. Among the crossing edges ` +
+				`${M4_CROSSING.join(', ')} the lightest is ${M4_LIGHT_LABEL}, so it is ` +
+				`the safe edge` +
+				(M4_LIGHT_IN_MST ? `, and indeed it is in this graph's MST.` : '.'),
+		},
+		{
+			kind: 'numeric',
+			prompt:
+				`What is the WEIGHT of that safe edge, the lightest edge crossing ` +
+				`S = {${M4_CUT.join(', ')}}?`,
+			answer: M4_LIGHT_WEIGHT,
+			placeholder: 'a weight',
+			explanation:
+				`The crossing edges are ${M4_CROSSING.join(', ')}; the minimum weight ` +
+				`among them is ${M4_LIGHT_WEIGHT} (edge ${M4_LIGHT_LABEL}). That is the ` +
+				`edge the cut property certifies as safe.`,
+		},
+		{
+			kind: 'choice',
+			prompt:
+				'WHY is that lightest crossing edge guaranteed to be in some MST? ' +
+				'(This single exchange argument is what makes both Kruskal and Prim ' +
+				'correct.)',
+			options: [
+				'Take any MST without it; adding it makes a cycle that also crosses ' +
+					'the cut, so swapping that heavier crossing edge out yields a ' +
+					'spanning tree no heavier, and that tree is an MST containing the ' +
+					'light edge',
+				'Because the lightest edge in the WHOLE graph is always in the MST',
+				'Because every edge crossing a cut is in every MST',
+				'Because Prim happens to add it first from vertex A',
+			],
+			answer:
+				'Take any MST without it; adding it makes a cycle that also crosses ' +
+				'the cut, so swapping that heavier crossing edge out yields a ' +
+				'spanning tree no heavier, and that tree is an MST containing the ' +
+				'light edge',
+			misconceptions: {
+				'Because the lightest edge in the WHOLE graph is always in the MST':
+					'A different claim, and a weaker one. The cut property is local: it ' +
+					'is about the lightest edge crossing THIS cut, not the global minimum. ' +
+					'That locality is what lets Prim and Kruskal make progress one cut at ' +
+					'a time.',
+				'Because every edge crossing a cut is in every MST':
+					'Only the LIGHTEST crossing edge is guaranteed safe. The heavier ' +
+					'crossing edges (here D–E, B–C, D–G) need not be in any MST.',
+			},
+			explanation:
+				'The exchange argument: take any MST that omits the light edge e. ' +
+				'Adding e creates exactly one cycle, and that cycle must cross the cut a ' +
+				'second time on some edge f. Since e is the LIGHTEST crossing edge, ' +
+				'weight(e) is at most weight(f), so removing f and keeping e yields a ' +
+				'spanning tree of weight no greater than the MST, hence an MST ' +
+				'containing e. That guarantee is exactly why greedily taking light ' +
+				'edges (Kruskal across components, Prim across the tree/rest cut) never ' +
+				'goes wrong.',
 		},
 	],
 };
@@ -2072,6 +2729,134 @@ const problemMS2 = {
 };
 
 // =============================================================================
+// SORTING (comparison-sort lower bound): the decision-tree argument. Any
+// comparison sort is a binary decision tree whose leaves are the n! possible
+// input orderings; a binary tree with L leaves has height >= ceil(log2 L), so
+// the worst case needs >= ceil(log2(n!)) comparisons, i.e. Omega(n log n). For a
+// fixed small n = 5 the leaf count n! and the min worst-case comparisons
+// ceil(log2(n!)) are DERIVED from a tiny factorial helper (never hand-typed);
+// only the WHY (n! leaves, why that is Omega(n log n), why counting/radix escape
+// it) is conceptual.
+// =============================================================================
+
+// A tiny factorial so the leaf count and the log2 bound are computed, not typed.
+const factorial = n => {
+	let product = 1;
+	for (let i = 2; i <= n; i += 1) product *= i;
+	return product;
+};
+
+const SL3_N = 5;
+const SL3_ORDERINGS = factorial(SL3_N); // n! leaves of the decision tree = 120
+const SL3_MIN_COMPARISONS = Math.ceil(Math.log2(factorial(SL3_N))); // ⌈log₂ n!⌉ = 7
+
+const problemSL3 = {
+	kind: 'problem',
+	stem:
+		`Any sort that orders elements only by COMPARING pairs can be drawn as a ` +
+		`binary decision tree: each internal node asks "is a < b?", and every ` +
+		`possible sorted output is a leaf. Reason about the shortest such tree for ` +
+		`n = ${SL3_N} elements.`,
+	parts: [
+		{
+			kind: 'numeric',
+			prompt:
+				`Each distinct ordering of the ${SL3_N} inputs must reach its own leaf. ` +
+				`How many leaves does the decision tree need at minimum (i.e. how many ` +
+				`distinct orderings of ${SL3_N} elements are there)?`,
+			answer: SL3_ORDERINGS,
+			placeholder: 'a count',
+			explanation:
+				`There are ${SL3_N}! = ${SL3_ORDERINGS} permutations of ${SL3_N} ` +
+				`distinct elements, and a correct comparison sort must be able to output ` +
+				`each one, so the tree needs at least ${SL3_ORDERINGS} leaves.`,
+		},
+		{
+			kind: 'numeric',
+			prompt:
+				`A binary tree with L leaves has height at least ⌈log₂ L⌉, and the ` +
+				`worst-case number of comparisons is that height. With L = ` +
+				`${SL3_ORDERINGS} leaves, how many comparisons must the worst case make ` +
+				`at minimum?`,
+			answer: SL3_MIN_COMPARISONS,
+			placeholder: 'a count',
+			explanation:
+				`A binary tree of height h has at most 2^h leaves, so h ≥ ⌈log₂ L⌉. ` +
+				`Here ⌈log₂ ${SL3_ORDERINGS}⌉ = ${SL3_MIN_COMPARISONS}, so SOME input ` +
+				`forces at least ${SL3_MIN_COMPARISONS} comparisons. No comparison sort ` +
+				`can beat that on every input.`,
+		},
+		{
+			kind: 'choice',
+			prompt: `Why does the decision tree have exactly n! leaves (and not fewer)?`,
+			options: [
+				'Each of the n! input orderings needs its own leaf, because the sort must produce a different sequence of decisions for each',
+				'Because the tree is balanced, so it has n! leaves by construction',
+				'Because each comparison has two outcomes, so n comparisons give n! leaves',
+				'Because n! is the number of comparisons the sort performs',
+			],
+			answer:
+				'Each of the n! input orderings needs its own leaf, because the sort must produce a different sequence of decisions for each',
+			misconceptions: {
+				'Because each comparison has two outcomes, so n comparisons give n! leaves':
+					'Two outcomes per comparison give 2^(#comparisons) leaves, not n!. The n! comes from the INPUTS: there are n! orderings to distinguish, and that many leaves are needed; setting 2^h ≥ n! is exactly what forces the height.',
+			},
+			explanation:
+				'A correct sort must map every one of the n! initial orderings to the ' +
+				'correct output, and two different orderings can require different ' +
+				'comparison outcomes, so each needs its own leaf. That is why at least ' +
+				'n! leaves are required.',
+		},
+		{
+			kind: 'choice',
+			prompt:
+				`From "L ≥ n! leaves" and "height ≥ ⌈log₂ L⌉", why does the worst case ` +
+				`take Ω(n log n) comparisons in general (for arbitrary n)?`,
+			options: [
+				'Because log₂(n!) = Θ(n log n) (Stirling), so the height ⌈log₂ n!⌉ grows like n log n',
+				'Because n! = Θ(n log n)',
+				'Because every sort makes exactly n log n comparisons',
+				'Because the tree has n levels and log n leaves',
+			],
+			answer:
+				'Because log₂(n!) = Θ(n log n) (Stirling), so the height ⌈log₂ n!⌉ grows like n log n',
+			misconceptions: {
+				'Because n! = Θ(n log n)':
+					'n! itself is enormous (super-exponential), not Θ(n log n). It is the LOGARITHM of n! that is Θ(n log n): log₂(n!) = Σ log₂ k = Θ(n log n) by Stirling, and that log is the tree height = worst-case comparisons.',
+			},
+			explanation:
+				'The worst case is the tree height ≥ ⌈log₂(n!)⌉, and log₂(n!) = ' +
+				'Σ_{k=1..n} log₂ k = Θ(n log n) (Stirling). So any comparison sort needs ' +
+				'Ω(n log n) comparisons in the worst case, and merge sort and heapsort ' +
+				'meet this bound.',
+		},
+		{
+			kind: 'choice',
+			prompt:
+				`Counting sort and radix sort run in O(n) time, beating the ⌈log₂ n!⌉ ` +
+				`bound. How is that possible?`,
+			options: [
+				'They do not compare elements to each other (they bucket by key value), so the decision-tree model and its bound do not apply',
+				'They are not correct sorts, so the bound does not count',
+				'They use a balanced binary tree, which lowers the height',
+				'They make fewer than ⌈log₂ n!⌉ comparisons by being clever about comparisons',
+			],
+			answer:
+				'They do not compare elements to each other (they bucket by key value), so the decision-tree model and its bound do not apply',
+			misconceptions: {
+				'They make fewer than ⌈log₂ n!⌉ comparisons by being clever about comparisons':
+					'No comparison-based sort can beat ⌈log₂ n!⌉; that is the whole theorem. Counting and radix sort sidestep it by NOT comparing elements at all: they index into buckets by key, so they are not modelled by the decision tree.',
+			},
+			explanation:
+				'The Ω(n log n) bound only constrains sorts whose only operation is ' +
+				'comparing pairs of elements. Counting and radix sort instead use the ' +
+				'keys directly as array indices (bucketing), so they are outside the ' +
+				'decision-tree model and can run in O(n) for bounded-range keys.',
+		},
+	],
+};
+
+// =============================================================================
 // STRATEGIES (greedy / divide-and-conquer / DP) — a coin-change DP table value
 // and the greedy-vs-DP comparison, derived by SIMULATING buildCoinChangeFrames on
 // a coin set where greedy FAILS; plus a Fibonacci DP value from climbing stairs.
@@ -2215,6 +3000,142 @@ const problemP2 = {
 				'There are only n + 1 distinct subproblems ways(0..n). Solving each once ' +
 				'and reusing the stored value makes the whole computation Θ(n) instead of ' +
 				'the exponential blow-up of recomputing shared subproblems.',
+		},
+	],
+};
+
+// =============================================================================
+// STRATEGIES — activity selection (the greedy that IS optimal). Where greedy
+// coin change (strategies-1) could be beaten by DP, the earliest-finish-first
+// greedy here is provably optimal. Which activity is picked first, the maximum
+// number of compatible activities, and the full selected set are all derived by
+// SIMULATING activitySelect on a fixed instance with real overlaps; only the WHY
+// (the exchange / greedy-stays-ahead argument, and the contrast with coin change)
+// is conceptual.
+// =============================================================================
+
+// Problem P3: nine activities [start, finish) with genuine overlaps. A3 = [0, 6)
+// is a long early decoy (it is BOTH the earliest-starting and the longest
+// activity), exactly the kind of interval a naive instinct grabs; the optimal
+// greedy ignores it. activitySelect sorts by finish, takes the earliest-finishing
+// activity, then each later one whose start >= the last finish. Selected set is
+// {A1, A4, A8, A9} (size 4); the first activity chosen is A1 (earliest finish, 4).
+const P3_ACTIVITIES = [
+	{ id: 'A1', start: 1, finish: 4 },
+	{ id: 'A2', start: 3, finish: 5 },
+	{ id: 'A3', start: 0, finish: 6 },
+	{ id: 'A4', start: 4, finish: 7 },
+	{ id: 'A5', start: 3, finish: 8 },
+	{ id: 'A6', start: 5, finish: 9 },
+	{ id: 'A7', start: 6, finish: 10 },
+	{ id: 'A8', start: 8, finish: 11 },
+	{ id: 'A9', start: 11, finish: 13 },
+];
+const P3_RUN = activitySelect(P3_ACTIVITIES);
+const P3_FIRST = P3_RUN.selectedIds[0]; // earliest finish => 'A1'
+const P3_COUNT = P3_RUN.count; // maximum compatible activities => 4
+const P3_SELECTED_STR = `{${P3_RUN.selectedIds.join(', ')}}`; // '{A1, A4, A8, A9}'
+// A few plausible-but-wrong full-set strings for the choice distractors.
+const P3_ALL_STR = `{${P3_ACTIVITIES.map(a => a.id).join(', ')}}`;
+const P3_EARLY_START_SET_STR = '{A3, A8, A9}'; // greedily taking the long decoy A3
+const P3_NONOPT_SET_STR = '{A1, A2, A4, A8, A9}'; // A1 and A2 overlap — illegal
+
+const problemP3 = {
+	kind: 'problem',
+	stem:
+		`Activity selection. Nine activities want one shared resource (one room, one ` +
+		`processor); each is a half-open interval [start, finish), so an activity ` +
+		`finishing at t and one starting at t do NOT clash. Choose the LARGEST set ` +
+		`with no two overlapping. The greedy: sort by finish time, take the activity ` +
+		`that finishes earliest, then repeatedly take the next activity whose start ` +
+		`is at or after the last chosen finish.\n\n` +
+		P3_ACTIVITIES.map(a => `    ${a.id}: [${a.start}, ${a.finish})`).join('\n'),
+	parts: [
+		{
+			kind: 'choice',
+			prompt:
+				`The greedy commits to one activity before looking at any other. Which ` +
+				`activity does it pick FIRST?`,
+			options: [P3_FIRST, 'A3', 'A2', 'A9'],
+			answer: P3_FIRST,
+			misconceptions: {
+				A3:
+					`A3 = [0, 6) starts earliest AND is the longest, which is exactly why a ` +
+					`naive choice grabs it. But it finishes late (6) and blocks A1, A2 and ` +
+					`A4 at once. The greedy sorts by FINISH, so it takes A1 (finishes at 4).`,
+				A2:
+					`A2 finishes at 5, but A1 finishes earlier, at 4. Earliest-finish-first ` +
+					`takes A1.`,
+			},
+			explanation:
+				`Sorted by finish time, A1 = [1, 4) finishes first, so the greedy takes ` +
+				`it. Choosing the activity that frees the resource soonest leaves the most ` +
+				`time for everything after it.`,
+		},
+		{
+			kind: 'numeric',
+			prompt:
+				`Running the greedy to the end, what is the MAXIMUM number of mutually ` +
+				`compatible activities you can schedule?`,
+			answer: P3_COUNT,
+			placeholder: 'a count',
+			explanation:
+				`The greedy takes A1 [1,4), then A4 [4,7) (starts at 4 >= 4), then A8 ` +
+				`[8,11) (8 >= 7), then A9 [11,13) (11 >= 11): ${P3_COUNT} activities. No ` +
+				`compatible set is larger, because earliest-finish-first is optimal.`,
+		},
+		{
+			kind: 'choice',
+			prompt: `Which set of activities does the greedy actually select?`,
+			options: [
+				P3_SELECTED_STR,
+				P3_EARLY_START_SET_STR,
+				P3_NONOPT_SET_STR,
+				P3_ALL_STR,
+			],
+			answer: P3_SELECTED_STR,
+			misconceptions: {
+				[P3_NONOPT_SET_STR]:
+					`A1 = [1, 4) and A2 = [3, 5) overlap (A2 starts at 3, before A1 finishes ` +
+					`at 4), so they cannot both be chosen. A compatible set never contains ` +
+					`two overlapping activities.`,
+				[P3_ALL_STR]:
+					`These all overlap one another; "compatible" means NO two overlap, so ` +
+					`you cannot keep them all. The largest compatible subset has just ` +
+					`${P3_COUNT}.`,
+			},
+			explanation:
+				`Taking the earliest finish each time gives A1 -> A4 -> A8 -> A9, i.e. ` +
+				`${P3_SELECTED_STR}. Each starts at or after the previous one finishes, so ` +
+				`the set is compatible and (by the exchange argument) maximum.`,
+		},
+		{
+			kind: 'choice',
+			prompt:
+				`WHY is earliest-finish-first guaranteed optimal here, when greedy coin ` +
+				`change (strategies-1) could be beaten by DP?`,
+			options: [
+				'An exchange argument: swapping the optimal solution’s first activity for the earliest-finishing one keeps it valid and no smaller, so the greedy choice is always safe (it "stays ahead")',
+				'Because the activities were already sorted, so any greedy works',
+				'Because activity selection has no overlapping subproblems',
+				'Because there are fewer activities than coins, so greedy cannot fail',
+			],
+			answer:
+				'An exchange argument: swapping the optimal solution’s first activity for the earliest-finishing one keeps it valid and no smaller, so the greedy choice is always safe (it "stays ahead")',
+			misconceptions: {
+				'Because the activities were already sorted, so any greedy works':
+					`Sorting is just step one. What makes THIS greedy optimal is the ` +
+					`exchange argument: the earliest-finishing activity can always replace ` +
+					`the first activity of any optimal schedule without losing anything. ` +
+					`Coin change has no such safe swap, so its greedy can be beaten.`,
+			},
+			explanation:
+				`Activity selection has the greedy-choice property: any optimal schedule ` +
+				`can be modified to start with the earliest-finishing activity (swap it in ` +
+				`- it frees the resource at least as soon), so a greedy that always takes ` +
+				`it stays ahead of every alternative. Coin change lacks this property: ` +
+				`taking the biggest coin can strand an expensive remainder, which is why ` +
+				`its greedy is optimal only for special (canonical) coin systems.`,
 		},
 	],
 };
@@ -3140,6 +4061,12 @@ export const EXAM_SETS = [
 		problem: problemH2,
 	},
 	{
+		id: 'heaps-3',
+		topicId: 'heaps',
+		topicName: 'Heaps & priority queues',
+		problem: problemH3,
+	},
+	{
 		id: 'master-1',
 		topicId: 'master-theorem',
 		topicName: 'Recursion & the master theorem',
@@ -3152,10 +4079,22 @@ export const EXAM_SETS = [
 		problem: problemT2,
 	},
 	{
+		id: 'master-3',
+		topicId: 'master-theorem',
+		topicName: 'Recursion & the master theorem',
+		problem: problemT3,
+	},
+	{
 		id: 'mst-3',
 		topicId: 'mst',
 		topicName: 'Minimum spanning trees',
 		problem: problemM3,
+	},
+	{
+		id: 'mst-4',
+		topicId: 'mst',
+		topicName: 'Minimum spanning trees',
+		problem: problemM4,
 	},
 	{
 		id: 'sssp-3',
@@ -3188,6 +4127,12 @@ export const EXAM_SETS = [
 		problem: problemL2,
 	},
 	{
+		id: 'linsort-3',
+		topicId: 'linear-time-sorting',
+		topicName: 'Linear-time sorting',
+		problem: problemL3,
+	},
+	{
 		id: 'trees-1',
 		topicId: 'trees',
 		topicName: 'Trees',
@@ -3204,6 +4149,12 @@ export const EXAM_SETS = [
 		topicId: 'graphs',
 		topicName: 'Graphs',
 		problem: problemG1,
+	},
+	{
+		id: 'graphs-2',
+		topicId: 'graphs',
+		topicName: 'Graphs',
+		problem: problemG2,
 	},
 	{
 		// Trace-step probe: freeze BFS mid-run, predict the next dequeue.
@@ -3280,6 +4231,12 @@ export const EXAM_SETS = [
 		problem: problemMS2,
 	},
 	{
+		id: 'sorting-3',
+		topicId: 'sorting',
+		topicName: 'Sorting',
+		problem: problemSL3,
+	},
+	{
 		id: 'quicksort-1',
 		topicId: 'quicksort',
 		topicName: 'Quicksort',
@@ -3302,6 +4259,12 @@ export const EXAM_SETS = [
 		topicId: 'strategies',
 		topicName: 'Strategies',
 		problem: problemP2,
+	},
+	{
+		id: 'strategies-3',
+		topicId: 'strategies',
+		topicName: 'Strategies',
+		problem: problemP3,
 	},
 	{
 		id: 'np-1',

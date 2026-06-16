@@ -39,8 +39,10 @@ import { getQuickSortFrames } from '../utils/sorting/quickPartitionFrames.js';
 import {
 	kruskalTrace,
 	primTrace,
+	crossingEdges,
 	edgeEndpoints,
 } from '../components/Mst/mstTrace.js';
+import { MST_VERTICES, MST_EDGES } from '../components/Mst/mstMeta.js';
 import {
 	dijkstraTrace,
 	bellmanFordTrace,
@@ -53,6 +55,7 @@ import { analyseRecurrence } from '../components/MasterTheorem/masterMath.js';
 import { floydWarshall } from '../components/AllPairsShortestPaths/fwTrace.js';
 import { getCountingSortStepsWithStats } from '../utils/sorting/algorithms/countingSort.js';
 import { radixWithSubroutine } from '../components/LinearTimeSorting/stability.js';
+import { bucketSort } from '../components/LinearTimeSorting/bucketSortTrace.js';
 import {
 	buildBst,
 	inorderValues,
@@ -60,6 +63,7 @@ import {
 	getTraversalSteps,
 } from '../components/Tree/treeUtils.js';
 import { genericTraverse } from '../components/Graph/oneFrontier.js';
+import { topoSort, isValidTopoOrder } from '../components/Graph/topoSort.js';
 import { createBucketsFromEntries } from '../components/HashMap/hashMapTrace.js';
 import { edmondsKarpTrace } from '../components/MaxFlow/maxFlowTrace.js';
 import { sqFrames } from '../components/StacksQueues/sqFrames.js';
@@ -68,6 +72,7 @@ import {
 	buildCoinChangeFrames,
 	buildClimbingStairsFrames,
 } from '../components/Strategies/coinChangeFrames.js';
+import { activitySelect } from '../components/Strategies/activitySelect.js';
 
 // ── derivation helpers, replicated 1:1 from examSets.js ─────────────────────
 // These intentionally mirror the bank's private helpers. The whole point is to
@@ -268,6 +273,16 @@ const G1_GRAPH = {
 	],
 };
 
+const G2_VERTICES = ['A', 'B', 'C', 'D', 'E', 'F'];
+const G2_EDGES = [
+	{ from: 'A', to: 'C' },
+	{ from: 'A', to: 'D' },
+	{ from: 'B', to: 'C' },
+	{ from: 'C', to: 'E' },
+	{ from: 'D', to: 'E' },
+	{ from: 'E', to: 'F' },
+];
+
 const HM1_KEYS = ['cat', 'dog', 'bird', 'fish', 'ant'];
 const HM1_CAPACITY = 7;
 
@@ -403,6 +418,16 @@ const RECIPES = {
 			2: r.result,
 		};
 	},
+	'master-3': () => {
+		const r3 = analyseRecurrence({ a: 2, b: 2, d: 2, k: 0 });
+		const r4 = analyseRecurrence({ a: 4, b: 2, d: 3, k: 0 });
+		return {
+			0: r3.name, // choice: T3 case (Case 3)
+			1: r3.result, // choice: T3 Θ bound (Θ(n^2))
+			3: r4.name, // choice: T4 case (Case 3)
+			4: r4.result, // choice: T4 Θ bound (Θ(n^3))
+		};
+	},
 	'mst-3': () => {
 		const base = kruskalTrace({ vertices: M3_VERTICES, edges: M3_EDGES });
 		const shifted = kruskalTrace({
@@ -413,6 +438,17 @@ const RECIPES = {
 			1: base.totalWeight, // numeric: original MST weight
 			2: shifted.totalWeight - base.totalWeight, // numeric: weight increase
 		};
+	},
+	'mst-4': () => {
+		const cut = ['A', 'B', 'D'];
+		const { crossing, light } = crossingEdges(MST_EDGES, cut);
+		const label = e => `${e.u}–${e.v} (${e.w})`;
+		return {
+			0: crossing.map(label), // order: crossing edges, ascending weight
+			1: label(light), // choice: the safe (lightest crossing) edge
+			2: light.w, // numeric: its weight
+		};
+		// part 3 ("WHY it is safe") is conceptual; see STATIC below.
 	},
 	'sssp-3': () => {
 		const run = bellmanFordTrace(S3_GRAPH, { source: 'S' });
@@ -491,6 +527,15 @@ const RECIPES = {
 			2: `It is no longer sorted, e.g. ${unstableStr}`, // choice: unstable effect
 		};
 	},
+	'linsort-3': () => {
+		const run = bucketSort([29, 25, 3, 49, 9, 37, 21, 43], 4);
+		const probeBucket = run.bucketIndexOf(37);
+		return {
+			0: probeBucket, // numeric: bucket 37 lands in
+			1: run.buckets[probeBucket].map(String), // order: scatter-order contents
+			2: run.sorted.map(String), // order: final sorted array
+		};
+	},
 	'trees-1': () => {
 		const root = buildBst(B1_INSERT);
 		const inorder = inorderValues(root);
@@ -515,6 +560,17 @@ const RECIPES = {
 			0: bfs.visitOrder, // order: BFS visit order
 			1: distVal(bfs.dist.F), // numeric: BFS depth of F
 			2: dfs.visitOrder, // order: DFS visit order
+		};
+	},
+	'graphs-2': () => {
+		const t = topoSort(G2_VERTICES, G2_EDGES);
+		const candidate = ['B', 'A', 'D', 'C', 'E', 'F'];
+		return {
+			0: t.order[0], // choice: first vertex emitted
+			1: t.indegree.E, // numeric: in-degree of E
+			2: t.order, // order: full topological order
+			3: isValidTopoOrder(candidate, G2_EDGES) ? 'Valid' : 'Invalid', // choice: candidate validity
+			// part 4 (cycle ⇒ no order) is conceptual → STATIC
 		};
 	},
 	// Trace-step probes: the answer is the NEXT decision, re-derived from the frame
@@ -668,6 +724,24 @@ const RECIPES = {
 			1: dpTable[P2_N], // numeric: ways(6)
 		};
 	},
+	'strategies-3': () => {
+		const run = activitySelect([
+			{ id: 'A1', start: 1, finish: 4 },
+			{ id: 'A2', start: 3, finish: 5 },
+			{ id: 'A3', start: 0, finish: 6 },
+			{ id: 'A4', start: 4, finish: 7 },
+			{ id: 'A5', start: 3, finish: 8 },
+			{ id: 'A6', start: 5, finish: 9 },
+			{ id: 'A7', start: 6, finish: 10 },
+			{ id: 'A8', start: 8, finish: 11 },
+			{ id: 'A9', start: 11, finish: 13 },
+		]);
+		return {
+			0: run.selectedIds[0], // choice: first activity picked (earliest finish)
+			1: run.count, // numeric: maximum compatible activities
+			2: `{${run.selectedIds.join(', ')}}`, // choice: the full selected set
+		};
+	},
 	// Purely conceptual sets: no generator produces these. Every part is static.
 	'stacks-queues-2': () => ({}),
 	'np-1': () => ({}),
@@ -708,6 +782,30 @@ RECIPES['quicksort-2'] = () => ({
 	0: getQuickSortFrames([1, 2, 3, 4, 5, 6]).comparisons,
 });
 
+// Heapsort: re-derive the whole sort from buildMaxHeapTrace + chained
+// extractMaxTrace — the post-build heap, the first extracted max, the heap after
+// two extractions, and the fully-sorted (maxima reversed) array. The "why
+// n log n and in place" choice is conceptual (STATIC).
+RECIPES['heaps-3'] = () => {
+	const heap0 = buildMaxHeapTrace([4, 10, 3, 5, 1, 8, 7]).finalHeap;
+	let heap = [...heap0];
+	const maxes = [];
+	const after = [];
+	while (heap.length > 0) {
+		const r = extractMaxTrace({ heap });
+		maxes.push(r.max);
+		heap = r.finalHeap;
+		after.push([...heap]);
+	}
+	const sorted = [...maxes].reverse();
+	return {
+		0: `[${heap0.join(', ')}]`, // choice: post-build max-heap
+		1: maxes[0], // numeric: first element extracted (the max)
+		2: `[${after[1].join(', ')}]`, // choice: heap after the first 2 extractions
+		3: `[${sorted.join(', ')}]`, // choice: final fully-sorted array
+	};
+};
+
 // Trees-2 (BST delete, two-child): independently re-derive the successor, the
 // in-order sequence after deletion, and the pre-order after deletion from the
 // tree generators. The "why the successor preserves the BST property" choice is
@@ -727,6 +825,22 @@ RECIPES['trees-2'] = () => {
 	};
 };
 
+// Comparison-sort lower bound: the two numeric parts (n! leaf count and the
+// ⌈log₂ n!⌉ worst-case comparison bound) are re-derived from a fresh factorial;
+// the three "why" choices are conceptual (STATIC).
+RECIPES['sorting-3'] = () => {
+	const factorial = n => {
+		let product = 1;
+		for (let i = 2; i <= n; i += 1) product *= i;
+		return product;
+	};
+	const n = 5;
+	return {
+		0: factorial(n), // numeric: n! leaves = 120
+		1: Math.ceil(Math.log2(factorial(n))), // numeric: ⌈log₂ n!⌉ = 7
+	};
+};
+
 // ── STATIC allowlist: parts whose answer is genuinely conceptual prose ───────
 // A generator cannot produce these (they are definitions / which-algorithm /
 // why-this-is-true choices). Keyed by `${setId}#${partIndex}`, each with a short
@@ -739,12 +853,17 @@ const STATIC = {
 	'sssp-2#3': 'concept: what the extra BF pass detects',
 	'mst-3#0': 'concept: does a uniform weight shift change the MST',
 	'mst-3#3': 'concept: does positive scaling change the MST',
+	'mst-4#3': 'concept: the exchange argument (lightest crossing edge is safe)',
 	'sssp-3#3': 'concept: why exactly |V|-1 passes',
 	'apsp-1#3': 'concept: why k is the outermost loop',
 	'apsp-2#3':
 		'concept: transitive-closure analogue (min→OR, +→AND) of Floyd-Warshall',
 	'linsort-1#3': 'concept: when counting sort is linear',
+	'linsort-3#3':
+		'concept: why bucket sort is expected Theta(n) (uniform spread)',
+	'linsort-3#4': 'concept: one-bucket skew degrades bucket sort to Theta(n^2)',
 	'graphs-1#3': 'concept: BFS-vs-DFS frontier discipline',
+	'graphs-2#4': 'concept: a graph with a cycle has no topological order',
 	'trees-2#1':
 		'concept: successor fits between left subtree and rest of right subtree',
 	'hashing-1#3': 'concept: why resize rehashes every key',
@@ -760,10 +879,21 @@ const STATIC = {
 	'foundations-2#3': 'concept: why quote worst-case',
 	'sorting-1#3': 'concept: recurrence T(n)=2T(n/2)+Θ(n) solves to',
 	'sorting-2#2': 'concept: left-on-tie gives stability',
+	'sorting-3#2': 'concept: why there are n! leaves (one per input ordering)',
+	'sorting-3#3': 'concept: log₂(n!)=Θ(n log n) (Stirling) ⇒ Ω(n log n)',
+	'sorting-3#4':
+		'concept: counting/radix do not compare ⇒ model does not apply',
+	'heaps-3#4':
+		'concept: build O(n) + n*ExtractMax O(log n) = Θ(n log n), in place',
 	'quicksort-2#1': 'concept: T(n)=T(n-1)+n solves to Θ(n²)',
 	'quicksort-2#2': 'concept: a random/median pivot avoids the worst case',
+	'master-3#2':
+		'concept: the Case-3 regularity condition a·f(n/b) <= c·f(n), c<1',
+	'master-3#5':
+		'concept: f=n/log n is not polynomially comparable to n^c (gap; basic theorem n/a)',
 	'strategies-1#3': 'concept: greedy coin change not always optimal',
 	'strategies-2#2': 'concept: why memoization is efficient',
+	'strategies-3#3': 'concept: exchange argument; why greedy is optimal here',
 	// (stacks-queues-1 has no static parts — all three are re-derived.)
 	'stacks-queues-2#0': 'concept: undo wants a stack',
 	'stacks-queues-2#1': 'concept: print queue wants a FIFO',
