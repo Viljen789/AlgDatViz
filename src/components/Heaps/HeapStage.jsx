@@ -10,9 +10,12 @@ import styles from './HeapStage.module.css';
 // different intensities; the parent direction borrows --color-warning; the E1
 // bars contrast --color-success (cheap build) against --color-warning (costly).
 const SW_MAX = 'var(--topic-accent)';
-const SW_FOCUS = 'color-mix(in srgb, var(--topic-accent) 20%, var(--surface-2))';
-const SW_CHILD = 'color-mix(in srgb, var(--topic-accent) 14%, var(--surface-2))';
-const SW_PARENT = 'color-mix(in srgb, var(--color-warning) 18%, var(--surface-2))';
+const SW_FOCUS =
+	'color-mix(in srgb, var(--topic-accent) 20%, var(--surface-2))';
+const SW_CHILD =
+	'color-mix(in srgb, var(--topic-accent) 14%, var(--surface-2))';
+const SW_PARENT =
+	'color-mix(in srgb, var(--color-warning) 18%, var(--surface-2))';
 const SW_SIFT = 'color-mix(in srgb, var(--topic-accent) 22%, var(--surface-2))';
 const SW_BUILD = 'color-mix(in srgb, var(--color-success) 32%, transparent)';
 const SW_INSERT = 'color-mix(in srgb, var(--color-warning) 32%, transparent)';
@@ -70,9 +73,14 @@ const ComparePanel = () => {
 		},
 	];
 	return (
-		<div className={styles.compare} role="img" aria-label="Build-heap versus repeated insert operation counts">
+		<div
+			className={styles.compare}
+			role="img"
+			aria-label="Build-heap versus repeated insert operation counts"
+		>
 			<p className={styles.compareLead}>
-				Same {COMPARE_INPUT.length} elements, two strategies — measured operations:
+				Same {COMPARE_INPUT.length} elements, two strategies — measured
+				operations:
 			</p>
 			{rows.map(row => (
 				<div
@@ -93,7 +101,8 @@ const ComparePanel = () => {
 				</div>
 			))}
 			<p className={styles.compareNote}>
-				Bottom-up build is the cheaper one — most nodes are leaves and barely sink.
+				Bottom-up build is the cheaper one — most nodes are leaves and barely
+				sink.
 			</p>
 		</div>
 	);
@@ -114,7 +123,14 @@ const ComparePanel = () => {
  *   4 extract         — spotlight the root (the next element a PQ hands back).
  *   5 build-vs-insert — swap the tree for the two measured op-count bars (E1).
  */
-const HeapStage = ({ activeScene = 0 }) => {
+const HeapStage = ({
+	activeScene = 0,
+	interactionMode = null,
+	selectedNodes = [],
+	exampleNodes = [],
+	answerStatus = null,
+	onNodeClick,
+}) => {
 	const WIDTH = 460;
 	const layout = useMemo(() => buildLayout(STAGE_HEAP, WIDTH), []);
 
@@ -125,9 +141,24 @@ const HeapStage = ({ activeScene = 0 }) => {
 	const isExtract = activeScene === 4;
 	const isCompare = activeScene === 5;
 
+	// Scene 1 is the host-graded 'pair' check: the learner clicks a node and its
+	// left child (the 2i+1 relation) directly on the tree. Nodes become buttons
+	// only while that check is live, and the array cells mirror the selection so
+	// the index relation reads in both halves of the dual view.
+	const isPairScene = interactionMode === 'pair' && isAsArray;
+	const selectedSet = new Set(isPairScene ? selectedNodes : []);
+	const exampleSet = new Set(
+		isPairScene && answerStatus === 'incorrect' ? exampleNodes : []
+	);
+
 	// Scene 1: a focus node (index 1) and its children — the 2i+1 / 2i+2 ribbon.
+	// The static ribbon only draws before the learner starts selecting, so it
+	// hints at the relation without colliding with their own picks.
 	const focusI = 1;
-	const focusKids = isAsArray ? [leftChild(focusI), rightChild(focusI)] : [];
+	const showFocusRibbon = isAsArray && selectedSet.size === 0;
+	const focusKids = showFocusRibbon
+		? [leftChild(focusI), rightChild(focusI)]
+		: [];
 
 	// Scene 2: the parent-of-6 direction (the ⌊(i-1)/2⌋ floor-division).
 	const parentChild = isParent ? 6 : null;
@@ -139,7 +170,10 @@ const HeapStage = ({ activeScene = 0 }) => {
 	const siftPath = isSift ? [0, 2, 5] : [];
 
 	const highlightSet = new Set();
-	if (isAsArray) highlightSet.add(focusI);
+	if (showFocusRibbon) highlightSet.add(focusI);
+	// The array cells track the learner's live selection so the 2i+1 relation is
+	// visible in the flat array too, not only in the tree.
+	selectedSet.forEach(i => highlightSet.add(i));
 	if (isParent && parentChild != null) highlightSet.add(parentChild);
 	siftPath.forEach(i => highlightSet.add(i));
 
@@ -150,9 +184,33 @@ const HeapStage = ({ activeScene = 0 }) => {
 			case 0:
 				return [{ swatch: SW_MAX, label: 'maximum (A[0])', aria: 'accent' }];
 			case 1:
+				if (isPairScene) {
+					const items = [
+						{ swatch: SW_FOCUS, label: 'your selection', aria: 'accent tint' },
+					];
+					if (answerStatus === 'correct') {
+						items.push({
+							swatch: SW_MAX,
+							label: 'correct pair',
+							aria: 'accent',
+						});
+					}
+					if (answerStatus === 'incorrect') {
+						items.push({
+							swatch: SW_CHILD,
+							label: 'an i and its 2i+1',
+							aria: 'accent wash',
+						});
+					}
+					return items;
+				}
 				return [
 					{ swatch: SW_FOCUS, label: 'node i', aria: 'accent tint' },
-					{ swatch: SW_CHILD, label: 'children 2i+1, 2i+2', aria: 'accent wash' },
+					{
+						swatch: SW_CHILD,
+						label: 'children 2i+1, 2i+2',
+						aria: 'accent wash',
+					},
 				];
 			case 2:
 				return [
@@ -160,9 +218,13 @@ const HeapStage = ({ activeScene = 0 }) => {
 					{ swatch: SW_PARENT, label: 'parent ⌊(i−1)/2⌋', aria: 'amber tint' },
 				];
 			case 3:
-				return [{ swatch: SW_SIFT, label: 'sift path (root → leaf)', aria: 'accent' }];
+				return [
+					{ swatch: SW_SIFT, label: 'sift path (root → leaf)', aria: 'accent' },
+				];
 			case 4:
-				return [{ swatch: SW_MAX, label: 'extract-max (A[0])', aria: 'accent' }];
+				return [
+					{ swatch: SW_MAX, label: 'extract-max (A[0])', aria: 'accent' },
+				];
 			case 5:
 				return [
 					{ swatch: SW_BUILD, label: 'build Θ(n)', aria: 'green' },
@@ -178,6 +240,15 @@ const HeapStage = ({ activeScene = 0 }) => {
 			case 0:
 				return 'Every parent ≥ its children — so A[0] is the maximum';
 			case 1:
+				if (isPairScene && answerStatus === 'correct') {
+					return 'Yes — the left child of i sits at 2i+1';
+				}
+				if (isPairScene && answerStatus === 'incorrect') {
+					return 'A left child is 2i+1 — the highlighted pair is one example';
+				}
+				if (isPairScene) {
+					return 'Click a node, then its left child (index 2i+1)';
+				}
 				return 'children of i → 2i+1, 2i+2 · the array IS the tree';
 			case 2:
 				return 'parent of i → ⌊(i−1)/2⌋ · two children, one parent';
@@ -219,7 +290,9 @@ const HeapStage = ({ activeScene = 0 }) => {
 								edge.to.i === parentChild &&
 								edge.from.i === parentTarget;
 							const onKid =
-								isAsArray && focusKids.includes(edge.to.i) && edge.from.i === focusI;
+								isAsArray &&
+								focusKids.includes(edge.to.i) &&
+								edge.from.i === focusI;
 							const onSift =
 								isSift &&
 								siftPath.includes(edge.from.i) &&
@@ -242,11 +315,18 @@ const HeapStage = ({ activeScene = 0 }) => {
 
 						{layout.nodes.map((node, idx) => {
 							const isMax = node.i === 0 && (isProperty || isExtract);
-							const isFocus = isAsArray && node.i === focusI;
+							const isFocus = showFocusRibbon && node.i === focusI;
 							const isKid = focusKids.includes(node.i);
 							const isParentNode = isParent && node.i === parentTarget;
 							const isChildNode = isParent && node.i === parentChild;
 							const onSift = siftPath.includes(node.i);
+
+							// Pair-check states (scene 1, host-graded). A picked node rides the
+							// focus tint; once the host marks the pair correct, both jump to the
+							// strong max accent; a wrong pick reveals one correct i/2i+1 example.
+							const isPicked = selectedSet.has(node.i);
+							const isExample = exampleSet.has(node.i);
+							const isPairCorrect = isPairScene && answerStatus === 'correct';
 
 							const cls = [styles.node];
 							if (isProperty) cls.push(styles.nodeReveal);
@@ -256,6 +336,12 @@ const HeapStage = ({ activeScene = 0 }) => {
 							if (isParentNode) cls.push(styles.nodeParent);
 							if (isChildNode) cls.push(styles.nodeChild);
 							if (onSift) cls.push(styles.nodeSift);
+							if (isPicked)
+								cls.push(isPairCorrect ? styles.nodeMax : styles.nodeFocus);
+							if (isExample) cls.push(styles.nodeChild);
+
+							const interactive = isPairScene;
+							const labelRelation = `node ${node.i}, value ${node.value}`;
 
 							return (
 								<g
@@ -278,6 +364,23 @@ const HeapStage = ({ activeScene = 0 }) => {
 									>
 										{node.i}
 									</text>
+									{interactive && (
+										<circle
+											r={NODE_R + 4}
+											className={styles.nodeHit}
+											onClick={() => onNodeClick?.(node.i)}
+											role="button"
+											tabIndex={0}
+											aria-pressed={isPicked}
+											aria-label={labelRelation}
+											onKeyDown={event => {
+												if (event.key === 'Enter' || event.key === ' ') {
+													event.preventDefault();
+													onNodeClick?.(node.i);
+												}
+											}}
+										/>
+									)}
 								</g>
 							);
 						})}
@@ -290,6 +393,14 @@ const HeapStage = ({ activeScene = 0 }) => {
 							if (highlightSet.has(i)) cls.push(styles.cellActive);
 							if (i === 0 && (isProperty || isExtract))
 								cls.push(styles.cellMax);
+							// Mirror the tree's pair-check states onto the flat array.
+							if (
+								isPairScene &&
+								answerStatus === 'correct' &&
+								selectedSet.has(i)
+							)
+								cls.push(styles.cellMax);
+							if (isPairScene && exampleSet.has(i)) cls.push(styles.cellChild);
 							if (isParent && i === parentTarget) cls.push(styles.cellParent);
 							return (
 								<div key={i} className={styles.cellWrap}>

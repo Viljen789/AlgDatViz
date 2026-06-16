@@ -99,6 +99,28 @@
 	stroke: var(--topic-accent);
 }
 
+/* Transparent click/keyboard target for the host-graded 'pair' check. Sits over
+   each node only while scene 1's check is live. Keyboard focus shows a dashed
+   accent ring (mirrors the merge-sort stage's hit target) so node selection is
+   reachable without a mouse; the colour is the topic accent, never a brand hue. */
+.nodeHit {
+	fill: transparent;
+	cursor: pointer;
+	transition: fill var(--duration-instant) var(--ease-quiet);
+}
+
+.nodeHit:hover {
+	fill: color-mix(in srgb, var(--topic-accent) 8%, transparent);
+}
+
+.nodeHit:focus-visible {
+	outline: none;
+	fill: color-mix(in srgb, var(--topic-accent) 12%, transparent);
+	stroke: var(--topic-accent);
+	stroke-width: 1.5;
+	stroke-dasharray: 2 2;
+}
+
 .nodeReveal {
 	opacity: 0;
 	animation: nodeEnter 460ms var(--ease-quiet) forwards;
@@ -170,6 +192,14 @@
 
 .cellActive {
 	background: color-mix(in srgb, var(--topic-accent) 16%, transparent);
+	border-color: var(--topic-accent);
+	color: var(--topic-accent-ink);
+}
+
+/* Array twin of .nodeChild — the lighter accent wash used to mark the example
+   i / 2i+1 pair revealed after a wrong selection on the pair check. */
+.cellChild {
+	background: color-mix(in srgb, var(--topic-accent) 14%, transparent);
 	border-color: var(--topic-accent);
 	color: var(--topic-accent-ink);
 }

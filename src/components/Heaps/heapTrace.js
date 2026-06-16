@@ -37,6 +37,20 @@ export const parentIndex = i => Math.floor((i - 1) / 2);
 export const leftChild = i => 2 * i + 1;
 export const rightChild = i => 2 * i + 2;
 
+// True when {a, b} is a (node, its LEFT child) pair under the 2i+1 layout —
+// order-independent, so either click order counts. Pure index arithmetic: it
+// holds for any heap regardless of the values stored, which is exactly why a
+// 'pair' check built on it is honest about an index-packed picture (the relation
+// is the array layout, not a value-ordering claim). Used by the heap-as-array
+// comprehension check, host-graded on HeapStage.
+export const isLeftChildPair = (a, b) => {
+	if (!Number.isInteger(a) || !Number.isInteger(b) || a < 0 || b < 0) {
+		return false;
+	}
+	const [parent, child] = a < b ? [a, b] : [b, a];
+	return child === leftChild(parent);
+};
+
 const clone = arr => arr.slice();
 
 // Verify the max-heap property over the first `size` entries. Used by tests and
@@ -439,7 +453,8 @@ export const extractMaxTrace = ({ heap }) => {
 				phase: 'visit',
 				line: 3,
 				title: 'Sift the new root down',
-				description: 'It is probably too small for the root — sink it until the heap property holds again.',
+				description:
+					'It is probably too small for the root — sink it until the heap property holds again.',
 				comparisons: counter.comparisons,
 				swaps: counter.swaps,
 			})

@@ -13,6 +13,7 @@ import {
 	buildMaxHeapTrace,
 	compareBuildVsInsert,
 	extractMaxTrace,
+	isLeftChildPair,
 	leftChild,
 	parentIndex,
 	rightChild,
@@ -86,11 +87,15 @@ export const SCENES = [
 		title: 'The tree is a lie — it lives in a flat array.',
 		body: `A heap is never stored as nodes-with-pointers. It is one array, read level by level. The tree shape is implicit in the indices: for a node at i, its left child is at 2i+1, its right child at 2i+2, and its parent at ⌊(i−1)/2⌋. No pointers, perfect cache locality. Watch the tree and the array light up together as you step.`,
 		check: {
-			kind: 'numeric',
-			prompt: `Using 0-based indices, what is the index of the LEFT child of the node at index ${FOCUS_INDEX} (value ${STAGE_HEAP[FOCUS_INDEX]})?`,
-			answer: FOCUS_LEFT,
-			placeholder: 'an index',
-			explanation: `Left child of i is 2i+1 = 2·${FOCUS_INDEX}+1 = ${FOCUS_LEFT} (value ${STAGE_HEAP[FOCUS_LEFT]}). Its right child is 2i+2 = ${FOCUS_RIGHT}, and its parent is ⌊(${FOCUS_INDEX}−1)/2⌋ = ${FOCUS_PARENT}. The arithmetic IS the tree — that is why a heap needs no pointers.`,
+			kind: 'pair',
+			prompt:
+				'On the heap, click any node and the node that is its LEFT child (index 2i+1).',
+			hint: 'Click a node, then the node one level down on its left — the array cell at 2i+1.',
+			// Host-graded on HeapStage. Pure index relation (2i+1), so it is true for
+			// whatever values the layout happens to hold — no value-ordering claimed.
+			validate: ([a, b]) => isLeftChildPair(a, b),
+			exampleCorrectPair: [FOCUS_INDEX, FOCUS_LEFT],
+			explanation: `Left child of i is 2i+1: node ${FOCUS_INDEX} → 2·${FOCUS_INDEX}+1 = ${FOCUS_LEFT}, node 0 → 1, node 2 → 5. Its right child is 2i+2 and its parent is ⌊(i−1)/2⌋ (node ${FOCUS_INDEX} → ${FOCUS_PARENT}, its right child ${FOCUS_RIGHT}). The arithmetic IS the tree — that is why a heap needs no pointers, and why this works for any node regardless of the value it holds.`,
 		},
 	},
 	{

@@ -7,6 +7,7 @@ import {
 	compareBuildVsInsert,
 	extractMaxTrace,
 	insertTrace,
+	isLeftChildPair,
 	isMaxHeap,
 	leftChild,
 	parentIndex,
@@ -36,6 +37,35 @@ test('parent/child index math is the 0-based heap arithmetic', () => {
 	for (let i = 1; i < 50; i++) {
 		const p = parentIndex(i);
 		assert.ok(leftChild(p) === i || rightChild(p) === i);
+	}
+});
+
+// ── isLeftChildPair (the pair-check validator: the 2i+1 relation) ──
+
+test('isLeftChildPair recognises a node and its left child in either order', () => {
+	// (parent, its left child) holds across the first few levels.
+	assert.ok(isLeftChildPair(0, 1), '0 and its left child 1');
+	assert.ok(isLeftChildPair(1, 3), '1 and its left child 3');
+	assert.ok(isLeftChildPair(2, 5), '2 and its left child 5');
+	// Order-independent: the click order must not matter.
+	assert.ok(isLeftChildPair(3, 1), 'same pair, reversed');
+	// It is the LEFT child specifically — a right-child pair is not accepted.
+	assert.ok(!isLeftChildPair(0, 2), 'right child 2 is not the left child');
+	assert.ok(!isLeftChildPair(1, 4), 'right child 4 is not the left child');
+	// Unrelated indices, a node with itself, and out-of-range/garbage inputs.
+	assert.ok(!isLeftChildPair(1, 5), 'not in a parent/left-child relation');
+	assert.ok(!isLeftChildPair(2, 2), 'a node is not its own child');
+	assert.ok(!isLeftChildPair(-1, 1), 'negative index rejected');
+	assert.ok(!isLeftChildPair(1, 1.5), 'non-integer rejected');
+	assert.ok(!isLeftChildPair(undefined, 3), 'missing index rejected');
+});
+
+test('isLeftChildPair agrees with leftChild for every parent index', () => {
+	// For any i, {i, leftChild(i)} is accepted and the off-by-one neighbours are
+	// not — the relation IS the 2i+1 arithmetic, value-free.
+	for (let i = 0; i < 40; i++) {
+		assert.ok(isLeftChildPair(i, leftChild(i)), `i=${i} with 2i+1`);
+		assert.ok(!isLeftChildPair(i, leftChild(i) + 1), `i=${i} not with 2i+2`);
 	}
 });
 
@@ -100,7 +130,10 @@ test('repeated extract-max yields elements in descending order (PQ semantics)', 
 		out.push(max);
 		heap = finalHeap;
 	}
-	assert.deepEqual(out, [...input].sort((a, b) => b - a));
+	assert.deepEqual(
+		out,
+		[...input].sort((a, b) => b - a)
+	);
 });
 
 test('extractMaxTrace on an empty heap is a no-op', () => {
@@ -117,7 +150,10 @@ test('compareBuildVsInsert: both build a valid heap with the same multiset', () 
 	assert.ok(isMaxHeap(build.heap), 'bottom-up build is a valid max-heap');
 	assert.ok(isMaxHeap(repeatedInsert.heap), 'repeated insert is a valid heap');
 	const sortedInput = [...input].sort((a, b) => a - b);
-	assert.deepEqual([...build.heap].sort((a, b) => a - b), sortedInput);
+	assert.deepEqual(
+		[...build.heap].sort((a, b) => a - b),
+		sortedInput
+	);
 	assert.deepEqual(
 		[...repeatedInsert.heap].sort((a, b) => a - b),
 		sortedInput
@@ -176,6 +212,8 @@ test('buildOperationTrace dispatches by operation name', () => {
 	const heap = [9, 4, 7];
 	assert.ok(buildOperationTrace('insert', { heap, key: 5 }).frames.length > 0);
 	assert.ok(buildOperationTrace('extractMax', { heap }).frames.length > 0);
-	assert.ok(buildOperationTrace('build', { heap: [1, 2, 3] }).frames.length > 0);
+	assert.ok(
+		buildOperationTrace('build', { heap: [1, 2, 3] }).frames.length > 0
+	);
 	assert.deepEqual(buildOperationTrace('nope', { heap }).frames, []);
 });
