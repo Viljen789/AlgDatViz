@@ -147,7 +147,7 @@ const RadixSortView = ({
 			</div>
 
 			<div className={styles.bucketsSection}>
-				<h4 className={styles.sectionTitle}>Digit buckets 0-9</h4>
+				<h3 className={styles.sectionTitle}>Digit buckets 0-9</h3>
 				<div className={styles.bucketsContainer}>
 					{processedBuckets.map(({ index, elements }) => (
 						<div
@@ -176,7 +176,7 @@ const RadixSortView = ({
 			</div>
 
 			<div className={styles.arraySection}>
-				<h4 className={styles.sectionTitle}>Array, active digit isolated</h4>
+				<h3 className={styles.sectionTitle}>Array, active digit isolated</h3>
 				<div className={styles.arrayContainer}>
 					{values.map((item, index) =>
 						renderNumber(
@@ -191,7 +191,7 @@ const RadixSortView = ({
 
 			{outputArray.length > 0 && (
 				<div className={styles.outputSection}>
-					<h4 className={styles.sectionTitle}>Stable output buffer</h4>
+					<h3 className={styles.sectionTitle}>Stable output buffer</h3>
 					<div className={styles.outputContainer}>
 						{outputArray.map((value, index) => (
 							<div

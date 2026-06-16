@@ -141,7 +141,7 @@ const BucketSortView = ({
 			</div>
 
 			<div className={styles.arraySection}>
-				<h4 className={styles.sectionTitle}>Current array</h4>
+				<h3 className={styles.sectionTitle}>Current array</h3>
 				<div className={styles.arrayContainer}>
 					{values.map((item, index) => (
 						<div
@@ -158,7 +158,7 @@ const BucketSortView = ({
 			</div>
 
 			<div className={styles.bucketsSection}>
-				<h4 className={styles.sectionTitle}>Range buckets</h4>
+				<h3 className={styles.sectionTitle}>Range buckets</h3>
 				<div className={styles.bucketsContainer}>
 					{processedBuckets.map(
 						({ index, elements, range, isActive, isSorted }) => (

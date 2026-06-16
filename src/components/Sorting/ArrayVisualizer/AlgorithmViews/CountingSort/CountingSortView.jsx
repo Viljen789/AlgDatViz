@@ -102,7 +102,7 @@ const CountingSortView = ({
 			</div>
 
 			<div className={styles.arraySection}>
-				<h4 className={styles.sectionTitle}>Input and output array</h4>
+				<h3 className={styles.sectionTitle}>Input and output array</h3>
 				<div className={styles.arrayContainer}>
 					{values.map((item, index) => (
 						<div
@@ -119,9 +119,9 @@ const CountingSortView = ({
 			</div>
 
 			<div className={styles.histogramSection}>
-				<h4 className={styles.sectionTitle}>
+				<h3 className={styles.sectionTitle}>
 					Count table, one slot per possible value
-				</h4>
+				</h3>
 				<div className={styles.histogramWrap}>
 					<div
 						className={styles.histogram}

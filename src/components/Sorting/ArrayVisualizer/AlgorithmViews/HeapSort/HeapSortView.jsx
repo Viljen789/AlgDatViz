@@ -114,7 +114,7 @@ const HeapSortView = ({
 			</div>
 
 			<div className={styles.arraySection}>
-				<h4 className={styles.sectionTitle}>Array representation</h4>
+				<h3 className={styles.sectionTitle}>Array representation</h3>
 				<div className={styles.arrayContainer}>
 					{values.map((item, index) => (
 						<div
@@ -137,7 +137,7 @@ const HeapSortView = ({
 				leftChild !== undefined ||
 				rightChild !== undefined) && (
 				<div className={styles.operationSection}>
-					<h4 className={styles.sectionTitle}>Current heap check</h4>
+					<h3 className={styles.sectionTitle}>Current heap check</h3>
 					<div className={styles.operationDetails}>
 						{parentIndex !== undefined && (
 							<div className={styles.operationDetail}>
@@ -165,7 +165,7 @@ const HeapSortView = ({
 			)}
 
 			<div className={styles.treeSection}>
-				<h4 className={styles.sectionTitle}>Heap tree structure</h4>
+				<h3 className={styles.sectionTitle}>Heap tree structure</h3>
 				<div className={styles.treeContainer}>
 					{treeLevels.map((level, levelIndex) => (
 						<div key={levelIndex} className={styles.treeLevel}>
@@ -201,7 +201,7 @@ const HeapSortView = ({
 
 			{sortedIndices.length > 0 && (
 				<div className={styles.sortedSection}>
-					<h4 className={styles.sectionTitle}>Sorted tail, largest first</h4>
+					<h3 className={styles.sectionTitle}>Sorted tail, largest first</h3>
 					<div className={styles.sortedContainer}>
 						{sortedIndices
 							.map(index => (
