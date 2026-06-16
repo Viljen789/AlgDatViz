@@ -34,6 +34,7 @@ import {
 	buildInstanceProblem,
 	isSeedable,
 } from './examInstances.js';
+import { getQuickSortFrames } from '../utils/sorting/quickPartitionFrames.js';
 
 import {
 	kruskalTrace,
@@ -592,6 +593,26 @@ RECIPES['stacks-queues-1'] = () => {
 	};
 };
 
+// Quicksort: the partition trace (pivot index, array, left sub-array, comparison
+// count) is re-derived from getQuickSortFrames; the worst-case comparison count
+// too. The recurrence-result and practical-fix choices are conceptual (STATIC).
+RECIPES['quicksort-1'] = () => {
+	const run = getQuickSortFrames([7, 2, 9, 4, 1, 8, 5, 6]);
+	const place = run.frames.find(
+		f => f.phase === 'place' && f.range && f.range[0] === 0 && f.range[1] === 7
+	);
+	const after = place.array;
+	return {
+		0: place.pivotIndex,
+		1: `[${after.join(', ')}]`,
+		2: `[${after.slice(0, place.pivotIndex).join(', ')}]`,
+		3: run.comparisons,
+	};
+};
+RECIPES['quicksort-2'] = () => ({
+	0: getQuickSortFrames([1, 2, 3, 4, 5, 6]).comparisons,
+});
+
 // ── STATIC allowlist: parts whose answer is genuinely conceptual prose ───────
 // A generator cannot produce these (they are definitions / which-algorithm /
 // why-this-is-true choices). Keyed by `${setId}#${partIndex}`, each with a short
@@ -617,6 +638,8 @@ const STATIC = {
 	'foundations-2#3': 'concept: why quote worst-case',
 	'sorting-1#3': 'concept: recurrence T(n)=2T(n/2)+Θ(n) solves to',
 	'sorting-2#2': 'concept: left-on-tie gives stability',
+	'quicksort-2#1': 'concept: T(n)=T(n-1)+n solves to Θ(n²)',
+	'quicksort-2#2': 'concept: a random/median pivot avoids the worst case',
 	'strategies-1#3': 'concept: greedy coin change not always optimal',
 	'strategies-2#2': 'concept: why memoization is efficient',
 	// (stacks-queues-1 has no static parts — all three are re-derived.)

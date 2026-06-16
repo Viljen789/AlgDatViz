@@ -56,6 +56,7 @@ import { createBucketsFromEntries } from '../components/HashMap/hashMapTrace.js'
 import { edmondsKarpTrace } from '../components/MaxFlow/maxFlowTrace.js';
 import { sqFrames } from '../components/StacksQueues/sqFrames.js';
 import { getMergeSortStepsWithStats } from '../utils/sorting/algorithms/mergeSort.js';
+import { getQuickSortFrames } from '../utils/sorting/quickPartitionFrames.js';
 import {
 	buildCoinChangeFrames,
 	buildClimbingStairsFrames,
@@ -2391,6 +2392,169 @@ const problemNP2 = {
 // curriculum id so ExamPage can resolve the topic name/accent; `topicName` is a
 // display fallback. The exam page groups sets by topic and scores by topic.
 
+// =============================================================================
+// QUICKSORT (Lomuto partition, pivot = last) — the partition pass + recursion,
+// and the worst case. The pivot's final index, the array after the first
+// partition, the recursion sub-array, and the comparison counts are all read off
+// getQuickSortFrames (never hand-typed); only the asymptotic recurrence-result
+// and the practical-fix choices are conceptual.
+// =============================================================================
+
+const QS1_INPUT = [7, 2, 9, 4, 1, 8, 5, 6];
+const QS1_RUN = getQuickSortFrames(QS1_INPUT);
+const QS1_PIVOT = QS1_INPUT[QS1_INPUT.length - 1]; // Lomuto pivot = last element
+const QS1_FIRST_PLACE = QS1_RUN.frames.find(
+	f =>
+		f.phase === 'place' &&
+		f.range &&
+		f.range[0] === 0 &&
+		f.range[1] === QS1_INPUT.length - 1
+);
+const QS1_PIVOT_INDEX = QS1_FIRST_PLACE.pivotIndex;
+const QS1_AFTER = QS1_FIRST_PLACE.array;
+const QS1_AFTER_STR = `[${QS1_AFTER.join(', ')}]`;
+const QS1_LEFT_STR = `[${QS1_AFTER.slice(0, QS1_PIVOT_INDEX).join(', ')}]`;
+const QS1_RIGHT_STR = `[${QS1_AFTER.slice(QS1_PIVOT_INDEX + 1).join(', ')}]`;
+const QS1_SORTED_STR = `[${QS1_RUN.sorted.join(', ')}]`;
+
+const problemQS1 = {
+	kind: 'problem',
+	stem:
+		`Quicksort with Lomuto partition (pivot = the LAST element). Partition the ` +
+		`array [${QS1_INPUT.join(', ')}] around its pivot ${QS1_PIVOT}, then recurse ` +
+		`on each side.`,
+	parts: [
+		{
+			kind: 'numeric',
+			prompt:
+				`The pivot is the last element, ${QS1_PIVOT}. After one partition pass, ` +
+				`at which 0-based index does ${QS1_PIVOT} come to rest (its final sorted ` +
+				`position)?`,
+			answer: QS1_PIVOT_INDEX,
+			placeholder: 'an index',
+			explanation:
+				`Lomuto sweeps a pointer across the array, pulling every value less than ` +
+				`${QS1_PIVOT} to the left, then swaps the pivot just past them. ` +
+				`${QS1_PIVOT_INDEX} values are smaller, so ${QS1_PIVOT} lands at index ` +
+				`${QS1_PIVOT_INDEX}, and it never moves again.`,
+		},
+		{
+			kind: 'choice',
+			prompt: `What does the array look like immediately after that first partition?`,
+			options: [
+				QS1_AFTER_STR,
+				QS1_SORTED_STR,
+				`[${QS1_INPUT.join(', ')}]`,
+				`[${[...QS1_INPUT].sort((a, b) => b - a).join(', ')}]`,
+			],
+			answer: QS1_AFTER_STR,
+			misconceptions: {
+				[QS1_SORTED_STR]:
+					`That is the FULLY sorted array. One partition only places the pivot ` +
+					`and splits the rest into "less than" and "greater than"; the two sides ` +
+					`are not sorted yet.`,
+			},
+			explanation:
+				`After partitioning, everything left of index ${QS1_PIVOT_INDEX} is less ` +
+				`than ${QS1_PIVOT} and everything right is greater, but neither side is ` +
+				`sorted yet: ${QS1_AFTER_STR}.`,
+		},
+		{
+			kind: 'choice',
+			prompt:
+				`Partition leaves ${QS1_PIVOT} home and splits the rest into two ranges ` +
+				`to recurse on. Which values form the LEFT sub-array the next recursive ` +
+				`call sorts?`,
+			options: [
+				QS1_LEFT_STR,
+				QS1_RIGHT_STR,
+				`[${QS1_AFTER.slice(0, QS1_PIVOT_INDEX + 1).join(', ')}]`,
+				QS1_AFTER_STR,
+			],
+			answer: QS1_LEFT_STR,
+			explanation:
+				`The left sub-array is everything before the pivot's resting index ` +
+				`${QS1_PIVOT_INDEX}: ${QS1_LEFT_STR}. Quicksort sorts it and the right ` +
+				`side ${QS1_RIGHT_STR} independently; the pivot itself is already done.`,
+		},
+		{
+			kind: 'numeric',
+			prompt:
+				`How many element-to-element COMPARISONS does the FULL quicksort make on ` +
+				`this array? (Count each "is this element < the current pivot?" test.)`,
+			answer: QS1_RUN.comparisons,
+			placeholder: 'a count',
+			explanation:
+				`Summed across every partition pass, this run makes ` +
+				`${QS1_RUN.comparisons} comparisons. With reasonably balanced pivots ` +
+				`quicksort is Θ(n log n) on average.`,
+		},
+	],
+};
+
+// QUICKSORT worst case: on an already-sorted array the last-element pivot is
+// always the maximum, so each partition splits n into n-1 and 0 (the n(n-1)/2
+// comparison disaster). The count is derived; the recurrence-result and the fix
+// are conceptual choices.
+const QS2_SORTED = [1, 2, 3, 4, 5, 6];
+const QS2_WC_COMPARISONS = getQuickSortFrames(QS2_SORTED).comparisons;
+
+const problemQS2 = {
+	kind: 'problem',
+	stem:
+		`Quicksort's running time is decided entirely by how BALANCED its partitions ` +
+		`are. Look at the case that goes wrong.`,
+	parts: [
+		{
+			kind: 'numeric',
+			prompt:
+				`Run Lomuto quicksort (pivot = last) on the already-sorted array ` +
+				`[${QS2_SORTED.join(', ')}]. How many element comparisons does it make?`,
+			answer: QS2_WC_COMPARISONS,
+			placeholder: 'a count',
+			explanation:
+				`On sorted input the last element is always the largest, so every ` +
+				`partition puts the pivot at the end and recurses on the other n-1 ` +
+				`elements: (n-1) + (n-2) + ... + 1 = n(n-1)/2 = ${QS2_WC_COMPARISONS} for ` +
+				`n = ${QS2_SORTED.length}. That is the Θ(n²) worst case.`,
+		},
+		{
+			kind: 'choice',
+			prompt:
+				`That worst case splits n into n-1 and 0 every time, giving the ` +
+				`recurrence T(n) = T(n-1) + Θ(n). What does it solve to?`,
+			options: ['Θ(n²)', 'Θ(n log n)', 'Θ(n)', 'Θ(n³)'],
+			answer: 'Θ(n²)',
+			misconceptions: {
+				'Θ(n log n)':
+					`Θ(n log n) is the BALANCED case, where each split is about n/2. The ` +
+					`sorted-input worst case peels off one element at a time, so the work ` +
+					`is n + (n-1) + ... = Θ(n²).`,
+			},
+			explanation:
+				`Unrolling T(n) = T(n-1) + Θ(n) gives Θ(n) + Θ(n-1) + ... + Θ(1) = Θ(n²). ` +
+				`This is why a naive last-element pivot is dangerous on nearly-sorted data.`,
+		},
+		{
+			kind: 'choice',
+			prompt:
+				`Which simple change makes that Θ(n²) worst case vanishingly unlikely in ` +
+				`practice?`,
+			options: [
+				'Choose the pivot at random (or median-of-three)',
+				'Always pick the first element as the pivot',
+				'Sort the array before partitioning',
+				'Use a bigger array',
+			],
+			answer: 'Choose the pivot at random (or median-of-three)',
+			explanation:
+				`A random (or median-of-three) pivot makes a badly unbalanced split ` +
+				`extremely unlikely, so quicksort runs in its Θ(n log n) average case on ` +
+				`any input, including already-sorted data.`,
+		},
+	],
+};
+
 export const EXAM_SETS = [
 	{
 		id: 'mst-1',
@@ -2543,6 +2707,18 @@ export const EXAM_SETS = [
 		topicId: 'sorting',
 		topicName: 'Sorting',
 		problem: problemMS2,
+	},
+	{
+		id: 'quicksort-1',
+		topicId: 'quicksort',
+		topicName: 'Quicksort',
+		problem: problemQS1,
+	},
+	{
+		id: 'quicksort-2',
+		topicId: 'quicksort',
+		topicName: 'Quicksort',
+		problem: problemQS2,
 	},
 	{
 		id: 'strategies-1',
