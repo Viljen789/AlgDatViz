@@ -1,12 +1,9 @@
 import { useMemo } from 'react';
-import {
-	buildResidual,
-	edmondsKarpTrace,
-	edgeKey,
-} from './maxFlowTrace.js';
+import { buildResidual, edmondsKarpTrace, edgeKey } from './maxFlowTrace.js';
 import { CLRS_NETWORK, MATCHING_NETWORK } from './maxFlowMeta.js';
 import { buildEdges, projectNodes, VIEW_H, VIEW_W } from './graphLayout.js';
 import StateLegend from '../../common/StateLegend/StateLegend.jsx';
+import { SceneNarration } from '../../common/PlaybackEngine';
 import styles from './MaxFlowStage.module.css';
 
 // Canonical run on the classic network, measured once and shared by the scenes.
@@ -57,8 +54,20 @@ const SCENE_VIEW = activeScene => {
 		// 2 augmenting path — a residual s→t path with its bottleneck.
 		case 2: {
 			const path = [
-				{ from: 's', to: 'v2', kind: 'forward', edgeKey: 's->v2', residual: 13 },
-				{ from: 'v2', to: 'v4', kind: 'forward', edgeKey: 'v2->v4', residual: 14 },
+				{
+					from: 's',
+					to: 'v2',
+					kind: 'forward',
+					edgeKey: 's->v2',
+					residual: 13,
+				},
+				{
+					from: 'v2',
+					to: 'v4',
+					kind: 'forward',
+					edgeKey: 'v2->v4',
+					residual: 14,
+				},
 				{ from: 'v4', to: 't', kind: 'forward', edgeKey: 'v4->t', residual: 4 },
 			];
 			return {
@@ -130,12 +139,18 @@ const SCENE_LEGEND = activeScene => {
 	switch (activeScene) {
 		// 0 flow network — bare capacities, nothing flowing yet.
 		case 0:
-			return [{ label: 'number = capacity c', swatch: RESTING, aria: 'grey edge' }];
+			return [
+				{ label: 'number = capacity c', swatch: RESTING, aria: 'grey edge' },
+			];
 		// 1 residual network — the label is the spare forward capacity; the back
 		//   residual (f, cancellable) lives on the same edge.
 		case 1:
 			return [
-				{ label: 'forward residual = c − f', swatch: RESTING, aria: 'grey edge' },
+				{
+					label: 'forward residual = c − f',
+					swatch: RESTING,
+					aria: 'grey edge',
+				},
 				{ label: 'back residual = f', swatch: RESTING, aria: 'cancellable' },
 			];
 		// 2 augmenting path — the chosen residual s→t path is the only highlight.
@@ -202,10 +217,7 @@ const MaxFlowStage = ({ activeScene = 0 }) => {
 
 	const pathSet = view.pathSet || new Set();
 	const minCut = view.minCut || null;
-	const sSide = useMemo(
-		() => new Set(minCut ? minCut.S : []),
-		[minCut]
-	);
+	const sSide = useMemo(() => new Set(minCut ? minCut.S : []), [minCut]);
 	const cutEdgeSet = useMemo(() => {
 		const s = new Set();
 		if (minCut) minCut.edges.forEach(e => s.add(edgeKey(e.from, e.to)));
@@ -216,159 +228,164 @@ const MaxFlowStage = ({ activeScene = 0 }) => {
 	const legend = useMemo(() => SCENE_LEGEND(activeScene), [activeScene]);
 
 	return (
-		<div
-			className={styles.wrap}
-			data-scene={activeScene}
-			role="img"
-			aria-label="Directed flow network with capacities, flow, the residual network, an augmenting path, and the minimum cut, scene by scene"
-		>
-			<div className={styles.notation} aria-hidden="true">
-				source = {network.source} · sink = {network.sink} · |V| ={' '}
-				{network.nodes.length}
-			</div>
-
-			<svg
-				viewBox={`0 0 ${VIEW_W} ${VIEW_H}`}
-				className={styles.svg}
-				preserveAspectRatio="xMidYMid meet"
+		<>
+			{/* Per-scene narration for screen readers, OUTSIDE the role=img figure
+			    below (which collapses its in-figure caption into one static label). */}
+			<SceneNarration>{view.caption}</SceneNarration>
+			<div
+				className={styles.wrap}
+				data-scene={activeScene}
+				role="img"
+				aria-label="Directed flow network with capacities, flow, the residual network, an augmenting path, and the minimum cut, scene by scene"
 			>
-				<defs>
-					<marker
-						id="mfArrow"
-						viewBox="0 0 10 10"
-						refX="8"
-						refY="5"
-						markerWidth="5"
-						markerHeight="5"
-						orient="auto-start-reverse"
-					>
-						<path d="M 0 1 L 9 5 L 0 9 z" className={styles.arrowHead} />
-					</marker>
-					<marker
-						id="mfArrowHot"
-						viewBox="0 0 10 10"
-						refX="8"
-						refY="5"
-						markerWidth="5"
-						markerHeight="5"
-						orient="auto-start-reverse"
-					>
-						<path d="M 0 1 L 9 5 L 0 9 z" className={styles.arrowHeadHot} />
-					</marker>
-				</defs>
+				<div className={styles.notation} aria-hidden="true">
+					source = {network.source} · sink = {network.sink} · |V| ={' '}
+					{network.nodes.length}
+				</div>
 
-				{/* Min-cut divider line behind everything, when revealed. */}
-				{minCut && <line x1="50" y1="4" x2="50" y2="96" className={styles.cutLine} />}
-
-				{drawEdges.map(edge => {
-					const key = edgeKey(edge.from, edge.to);
-					const onPath = pathSet.has(key);
-					const isCutEdge = cutEdgeSet.has(key);
-					const f = flowOf(edge);
-					const saturated = view.showFlow && f >= edge.capacity && f > 0;
-					const re = residualByKey[key];
-					const hot = onPath || isCutEdge;
-					const cls = [styles.edge];
-					if (saturated) cls.push(styles.edgeSaturated);
-					else if (view.showFlow && f > 0) cls.push(styles.edgeFlowing);
-					if (isCutEdge) cls.push(styles.edgeCut);
-					if (onPath) cls.push(styles.edgePath);
-
-					// Label text per mode.
-					let label;
-					if (view.showResidual && re) {
-						label = re.residual; // forward residual capacity
-					} else if (view.showFlow) {
-						label = `${f}/${edge.capacity}`;
-					} else {
-						label = edge.capacity;
-					}
-
-					return (
-						<g key={key}>
-							<path
-								d={edge.path}
-								className={cls.join(' ')}
-								fill="none"
-								markerEnd={`url(#${hot ? 'mfArrowHot' : 'mfArrow'})`}
-							/>
-							<text
-								x={edge.lx}
-								y={edge.ly}
-								className={`${styles.weight} ${
-									onPath || saturated ? styles.weightHot : ''
-								}`}
-								textAnchor="middle"
-								dominantBaseline="central"
-							>
-								{label}
-							</text>
-						</g>
-					);
-				})}
-
-				{projected.map(node => {
-					const isSource = node.id === network.source;
-					const isSink = node.id === network.sink;
-					const inS = minCut ? sSide.has(node.id) : false;
-					const cls = [styles.node];
-					if (isSource) cls.push(styles.nodeSource);
-					else if (isSink) cls.push(styles.nodeSink);
-					if (minCut) cls.push(inS ? styles.nodeInS : styles.nodeInT);
-					return (
-						<g
-							key={node.id}
-							transform={`translate(${node.px}, ${node.py})`}
+				<svg
+					viewBox={`0 0 ${VIEW_W} ${VIEW_H}`}
+					className={styles.svg}
+					preserveAspectRatio="xMidYMid meet"
+				>
+					<defs>
+						<marker
+							id="mfArrow"
+							viewBox="0 0 10 10"
+							refX="8"
+							refY="5"
+							markerWidth="5"
+							markerHeight="5"
+							orient="auto-start-reverse"
 						>
-							<circle r={NODE_R} className={cls.join(' ')} />
-							<text
-								className={styles.nodeText}
-								textAnchor="middle"
-								dominantBaseline="central"
-							>
-								{node.id}
-							</text>
-							{/* Spatial orientation for a student new to flow networks:
-							    s is the origin, t the drain. Recedes in secondary ink. */}
-							{(isSource || isSink) && (
+							<path d="M 0 1 L 9 5 L 0 9 z" className={styles.arrowHead} />
+						</marker>
+						<marker
+							id="mfArrowHot"
+							viewBox="0 0 10 10"
+							refX="8"
+							refY="5"
+							markerWidth="5"
+							markerHeight="5"
+							orient="auto-start-reverse"
+						>
+							<path d="M 0 1 L 9 5 L 0 9 z" className={styles.arrowHeadHot} />
+						</marker>
+					</defs>
+
+					{/* Min-cut divider line behind everything, when revealed. */}
+					{minCut && (
+						<line x1="50" y1="4" x2="50" y2="96" className={styles.cutLine} />
+					)}
+
+					{drawEdges.map(edge => {
+						const key = edgeKey(edge.from, edge.to);
+						const onPath = pathSet.has(key);
+						const isCutEdge = cutEdgeSet.has(key);
+						const f = flowOf(edge);
+						const saturated = view.showFlow && f >= edge.capacity && f > 0;
+						const re = residualByKey[key];
+						const hot = onPath || isCutEdge;
+						const cls = [styles.edge];
+						if (saturated) cls.push(styles.edgeSaturated);
+						else if (view.showFlow && f > 0) cls.push(styles.edgeFlowing);
+						if (isCutEdge) cls.push(styles.edgeCut);
+						if (onPath) cls.push(styles.edgePath);
+
+						// Label text per mode.
+						let label;
+						if (view.showResidual && re) {
+							label = re.residual; // forward residual capacity
+						} else if (view.showFlow) {
+							label = `${f}/${edge.capacity}`;
+						} else {
+							label = edge.capacity;
+						}
+
+						return (
+							<g key={key}>
+								<path
+									d={edge.path}
+									className={cls.join(' ')}
+									fill="none"
+									markerEnd={`url(#${hot ? 'mfArrowHot' : 'mfArrow'})`}
+								/>
 								<text
-									className={styles.nodeRole}
-									y={NODE_R + 5.5}
+									x={edge.lx}
+									y={edge.ly}
+									className={`${styles.weight} ${
+										onPath || saturated ? styles.weightHot : ''
+									}`}
 									textAnchor="middle"
 									dominantBaseline="central"
 								>
-									{isSource ? 'source' : 'sink'}
+									{label}
 								</text>
-							)}
-						</g>
-					);
-				})}
-			</svg>
+							</g>
+						);
+					})}
 
-			<StateLegend className={styles.legend} items={legend} />
+					{projected.map(node => {
+						const isSource = node.id === network.source;
+						const isSink = node.id === network.sink;
+						const inS = minCut ? sSide.has(node.id) : false;
+						const cls = [styles.node];
+						if (isSource) cls.push(styles.nodeSource);
+						else if (isSink) cls.push(styles.nodeSink);
+						if (minCut) cls.push(inS ? styles.nodeInS : styles.nodeInT);
+						return (
+							<g key={node.id} transform={`translate(${node.px}, ${node.py})`}>
+								<circle r={NODE_R} className={cls.join(' ')} />
+								<text
+									className={styles.nodeText}
+									textAnchor="middle"
+									dominantBaseline="central"
+								>
+									{node.id}
+								</text>
+								{/* Spatial orientation for a student new to flow networks:
+							    s is the origin, t the drain. Recedes in secondary ink. */}
+								{(isSource || isSink) && (
+									<text
+										className={styles.nodeRole}
+										y={NODE_R + 5.5}
+										textAnchor="middle"
+										dominantBaseline="central"
+									>
+										{isSource ? 'source' : 'sink'}
+									</text>
+								)}
+							</g>
+						);
+					})}
+				</svg>
 
-			{view.bottleneck != null && (
-				<div className={styles.badge} aria-hidden="true">
-					bottleneck = {view.bottleneck}
-				</div>
-			)}
-			{view.showFlow && !minCut && (
-				<div className={styles.badge} aria-hidden="true">
-					|f| = {Object.keys(view.flow).reduce((sum, k) => {
-						return k.startsWith(`${network.source}->`)
-							? sum + (view.flow[k] || 0)
-							: sum;
-					}, 0)}
-				</div>
-			)}
-			{minCut && (
-				<div className={styles.badge} aria-hidden="true">
-					cut capacity = {minCut.capacity}
-				</div>
-			)}
+				<StateLegend className={styles.legend} items={legend} />
 
-			<p className={styles.caption}>{view.caption}</p>
-		</div>
+				{view.bottleneck != null && (
+					<div className={styles.badge} aria-hidden="true">
+						bottleneck = {view.bottleneck}
+					</div>
+				)}
+				{view.showFlow && !minCut && (
+					<div className={styles.badge} aria-hidden="true">
+						|f| ={' '}
+						{Object.keys(view.flow).reduce((sum, k) => {
+							return k.startsWith(`${network.source}->`)
+								? sum + (view.flow[k] || 0)
+								: sum;
+						}, 0)}
+					</div>
+				)}
+				{minCut && (
+					<div className={styles.badge} aria-hidden="true">
+						cut capacity = {minCut.capacity}
+					</div>
+				)}
+
+				<p className={styles.caption}>{view.caption}</p>
+			</div>
+		</>
 	);
 };
 

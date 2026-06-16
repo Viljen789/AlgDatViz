@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import useReducedMotion from '../../hooks/useReducedMotion.js';
 import { getQuickSortFrames } from '../../utils/sorting/quickPartitionFrames.js';
+import { SceneNarration } from '../../common/PlaybackEngine';
 import { STAGE_VALUES } from './scenes.js';
 import styles from './QuickSortStage.module.css';
 
@@ -224,45 +225,48 @@ const QuickSortStage = ({ activeScene = 0 }) => {
 	);
 
 	return (
-		<div
-			ref={wrapRef}
-			className={styles.wrap}
-			data-scene={activeScene}
-			role="img"
-			aria-label={
-				isPartitionScene
-					? 'Lomuto partition: two pointers sweep and the pivot snaps to its final index'
-					: isRecurse
-						? 'The array partitioned around its pivot, with the two recursion subranges marked'
-						: 'Quicksort worst case: a lopsided recursion'
-			}
-		>
-			{isWorstCase ? renderStick() : renderBars()}
-
-			<p className={styles.caption} aria-live="polite">
-				{caption}
-			</p>
-
+		<>
+			{/* Per-scene narration for screen readers, OUTSIDE the role=img figure
+			    below (which collapses its in-figure caption into one static label). */}
+			<SceneNarration>{caption}</SceneNarration>
 			<div
-				className={`${styles.recurrence} ${showRecurrence ? styles.recurrenceShow : ''}`}
-				aria-hidden={!showRecurrence}
+				ref={wrapRef}
+				className={styles.wrap}
+				data-scene={activeScene}
+				role="img"
+				aria-label={
+					isPartitionScene
+						? 'Lomuto partition: two pointers sweep and the pivot snaps to its final index'
+						: isRecurse
+							? 'The array partitioned around its pivot, with the two recursion subranges marked'
+							: 'Quicksort worst case: a lopsided recursion'
+				}
 			>
-				<div className={styles.recurrenceList}>
-					<span>Worst: T(n) = T(n−1) + n</span>
-					<span>= n + (n−1) + … + 1</span>
-				</div>
-				<div className={styles.recurrenceTotal}>
-					<span className={styles.recurrenceMath}>Θ(n²)</span>
-					<span className={styles.recurrenceLabel}>
-						balanced: 2T(n/2) + n = Θ(n log n)
-					</span>
-				</div>
-			</div>
+				{isWorstCase ? renderStick() : renderBars()}
 
-			<div className={styles.notation} aria-hidden="true">
-				partition · n = {STAGE_VALUES.length}
+				<p className={styles.caption}>{caption}</p>
+
+				<div
+					className={`${styles.recurrence} ${showRecurrence ? styles.recurrenceShow : ''}`}
+					aria-hidden={!showRecurrence}
+				>
+					<div className={styles.recurrenceList}>
+						<span>Worst: T(n) = T(n−1) + n</span>
+						<span>= n + (n−1) + … + 1</span>
+					</div>
+					<div className={styles.recurrenceTotal}>
+						<span className={styles.recurrenceMath}>Θ(n²)</span>
+						<span className={styles.recurrenceLabel}>
+							balanced: 2T(n/2) + n = Θ(n log n)
+						</span>
+					</div>
+				</div>
+
+				<div className={styles.notation} aria-hidden="true">
+					partition · n = {STAGE_VALUES.length}
+				</div>
 			</div>
-		</div>
+		</>
 	);
 };
 

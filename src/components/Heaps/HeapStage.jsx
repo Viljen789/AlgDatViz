@@ -3,6 +3,7 @@ import { leftChild, parentIndex, rightChild } from './heapTrace.js';
 import { BUILD_OPS, INSERT_OPS, STAGE_HEAP } from './scenes.js';
 import { COMPARE_INPUT } from './heapMeta.js';
 import StateLegend from '../../common/StateLegend/StateLegend';
+import { SceneNarration } from '../../common/PlaybackEngine';
 import styles from './HeapStage.module.css';
 
 // Swatch colours mirror what HeapStage.module.css actually paints. The max/root,
@@ -264,179 +265,189 @@ const HeapStage = ({
 	})();
 
 	return (
-		<div
-			className={styles.wrap}
-			data-scene={activeScene}
-			role="img"
-			aria-label="Binary max-heap shown as a tree and its backing array, scene by scene"
-		>
-			{isCompare ? (
-				<ComparePanel />
-			) : (
-				<>
-					<div className={styles.notation} aria-hidden="true">
-						max-heap · A[0] = {STAGE_HEAP[0]} · n = {STAGE_HEAP.length}
-					</div>
-
-					{/* ---------- Tree ---------- */}
-					<svg
-						viewBox={`0 0 ${WIDTH} ${layout.height}`}
-						className={styles.svg}
-						preserveAspectRatio="xMidYMid meet"
-					>
-						{layout.edges.map(edge => {
-							const onParent =
-								isParent &&
-								edge.to.i === parentChild &&
-								edge.from.i === parentTarget;
-							const onKid =
-								isAsArray &&
-								focusKids.includes(edge.to.i) &&
-								edge.from.i === focusI;
-							const onSift =
-								isSift &&
-								siftPath.includes(edge.from.i) &&
-								siftPath.includes(edge.to.i);
-							const cls = [styles.edge];
-							if (onParent) cls.push(styles.edgeParent);
-							if (onKid) cls.push(styles.edgeChild);
-							if (onSift) cls.push(styles.edgeSift);
-							return (
-								<line
-									key={`${edge.from.i}-${edge.to.i}`}
-									x1={edge.from.x}
-									y1={edge.from.y}
-									x2={edge.to.x}
-									y2={edge.to.y}
-									className={cls.join(' ')}
-								/>
-							);
-						})}
-
-						{layout.nodes.map((node, idx) => {
-							const isMax = node.i === 0 && (isProperty || isExtract);
-							const isFocus = showFocusRibbon && node.i === focusI;
-							const isKid = focusKids.includes(node.i);
-							const isParentNode = isParent && node.i === parentTarget;
-							const isChildNode = isParent && node.i === parentChild;
-							const onSift = siftPath.includes(node.i);
-
-							// Pair-check states (scene 1, host-graded). A picked node rides the
-							// focus tint; once the host marks the pair correct, both jump to the
-							// strong max accent; a wrong pick reveals one correct i/2i+1 example.
-							const isPicked = selectedSet.has(node.i);
-							const isExample = exampleSet.has(node.i);
-							const isPairCorrect = isPairScene && answerStatus === 'correct';
-
-							const cls = [styles.node];
-							if (isProperty) cls.push(styles.nodeReveal);
-							if (isMax) cls.push(styles.nodeMax);
-							if (isFocus) cls.push(styles.nodeFocus);
-							if (isKid) cls.push(styles.nodeChild);
-							if (isParentNode) cls.push(styles.nodeParent);
-							if (isChildNode) cls.push(styles.nodeChild);
-							if (onSift) cls.push(styles.nodeSift);
-							if (isPicked)
-								cls.push(isPairCorrect ? styles.nodeMax : styles.nodeFocus);
-							if (isExample) cls.push(styles.nodeChild);
-
-							const interactive = isPairScene;
-							const labelRelation = `node ${node.i}, value ${node.value}`;
-
-							return (
-								<g
-									key={node.i}
-									transform={`translate(${node.x}, ${node.y})`}
-									style={
-										isProperty
-											? { '--delay': `${node.depth * 90 + idx * 14}ms` }
-											: undefined
-									}
-								>
-									<circle r={NODE_R} className={cls.join(' ')} />
-									<text className={styles.nodeText} textAnchor="middle" dy="5">
-										{node.value}
-									</text>
-									<text
-										className={styles.nodeIdx}
-										textAnchor="middle"
-										dy={NODE_R + 14}
-									>
-										{node.i}
-									</text>
-									{interactive && (
-										<circle
-											r={NODE_R + 4}
-											className={styles.nodeHit}
-											onClick={() => onNodeClick?.(node.i)}
-											role="button"
-											tabIndex={0}
-											aria-pressed={isPicked}
-											aria-label={labelRelation}
-											onKeyDown={event => {
-												if (event.key === 'Enter' || event.key === ' ') {
-													event.preventDefault();
-													onNodeClick?.(node.i);
-												}
-											}}
-										/>
-									)}
-								</g>
-							);
-						})}
-					</svg>
-
-					{/* ---------- Backing array (the dual view) ---------- */}
-					<div className={styles.arrayRow} aria-label="Backing array">
-						{STAGE_HEAP.map((value, i) => {
-							const cls = [styles.cell];
-							if (highlightSet.has(i)) cls.push(styles.cellActive);
-							if (i === 0 && (isProperty || isExtract))
-								cls.push(styles.cellMax);
-							// Mirror the tree's pair-check states onto the flat array.
-							if (
-								isPairScene &&
-								answerStatus === 'correct' &&
-								selectedSet.has(i)
-							)
-								cls.push(styles.cellMax);
-							if (isPairScene && exampleSet.has(i)) cls.push(styles.cellChild);
-							if (isParent && i === parentTarget) cls.push(styles.cellParent);
-							return (
-								<div key={i} className={styles.cellWrap}>
-									<div className={cls.join(' ')}>{value}</div>
-									<span className={styles.cellIdx}>{i}</span>
-								</div>
-							);
-						})}
-					</div>
-
-					{/* Index-math ribbon (scenes 1 & 2). */}
-					{(isAsArray || isParent) && (
-						<div className={styles.formula} aria-hidden="true">
-							{isAsArray && (
-								<span>
-									children of {focusI} = 2·{focusI}+1, 2·{focusI}+2 ={' '}
-									<strong>
-										{focusKids[0]}, {focusKids[1]}
-									</strong>
-								</span>
-							)}
-							{isParent && (
-								<span>
-									parent of {parentChild} = ⌊({parentChild}−1)/2⌋ ={' '}
-									<strong>{parentTarget}</strong>
-								</span>
-							)}
+		<>
+			{/* Per-scene narration for screen readers, OUTSIDE the role=img figure
+			    below (which collapses its in-figure caption into one static label). */}
+			<SceneNarration>{caption}</SceneNarration>
+			<div
+				className={styles.wrap}
+				data-scene={activeScene}
+				role="img"
+				aria-label="Binary max-heap shown as a tree and its backing array, scene by scene"
+			>
+				{isCompare ? (
+					<ComparePanel />
+				) : (
+					<>
+						<div className={styles.notation} aria-hidden="true">
+							max-heap · A[0] = {STAGE_HEAP[0]} · n = {STAGE_HEAP.length}
 						</div>
-					)}
-				</>
-			)}
 
-			<StateLegend items={legend} />
+						{/* ---------- Tree ---------- */}
+						<svg
+							viewBox={`0 0 ${WIDTH} ${layout.height}`}
+							className={styles.svg}
+							preserveAspectRatio="xMidYMid meet"
+						>
+							{layout.edges.map(edge => {
+								const onParent =
+									isParent &&
+									edge.to.i === parentChild &&
+									edge.from.i === parentTarget;
+								const onKid =
+									isAsArray &&
+									focusKids.includes(edge.to.i) &&
+									edge.from.i === focusI;
+								const onSift =
+									isSift &&
+									siftPath.includes(edge.from.i) &&
+									siftPath.includes(edge.to.i);
+								const cls = [styles.edge];
+								if (onParent) cls.push(styles.edgeParent);
+								if (onKid) cls.push(styles.edgeChild);
+								if (onSift) cls.push(styles.edgeSift);
+								return (
+									<line
+										key={`${edge.from.i}-${edge.to.i}`}
+										x1={edge.from.x}
+										y1={edge.from.y}
+										x2={edge.to.x}
+										y2={edge.to.y}
+										className={cls.join(' ')}
+									/>
+								);
+							})}
 
-			<p className={styles.caption}>{caption}</p>
-		</div>
+							{layout.nodes.map((node, idx) => {
+								const isMax = node.i === 0 && (isProperty || isExtract);
+								const isFocus = showFocusRibbon && node.i === focusI;
+								const isKid = focusKids.includes(node.i);
+								const isParentNode = isParent && node.i === parentTarget;
+								const isChildNode = isParent && node.i === parentChild;
+								const onSift = siftPath.includes(node.i);
+
+								// Pair-check states (scene 1, host-graded). A picked node rides the
+								// focus tint; once the host marks the pair correct, both jump to the
+								// strong max accent; a wrong pick reveals one correct i/2i+1 example.
+								const isPicked = selectedSet.has(node.i);
+								const isExample = exampleSet.has(node.i);
+								const isPairCorrect = isPairScene && answerStatus === 'correct';
+
+								const cls = [styles.node];
+								if (isProperty) cls.push(styles.nodeReveal);
+								if (isMax) cls.push(styles.nodeMax);
+								if (isFocus) cls.push(styles.nodeFocus);
+								if (isKid) cls.push(styles.nodeChild);
+								if (isParentNode) cls.push(styles.nodeParent);
+								if (isChildNode) cls.push(styles.nodeChild);
+								if (onSift) cls.push(styles.nodeSift);
+								if (isPicked)
+									cls.push(isPairCorrect ? styles.nodeMax : styles.nodeFocus);
+								if (isExample) cls.push(styles.nodeChild);
+
+								const interactive = isPairScene;
+								const labelRelation = `node ${node.i}, value ${node.value}`;
+
+								return (
+									<g
+										key={node.i}
+										transform={`translate(${node.x}, ${node.y})`}
+										style={
+											isProperty
+												? { '--delay': `${node.depth * 90 + idx * 14}ms` }
+												: undefined
+										}
+									>
+										<circle r={NODE_R} className={cls.join(' ')} />
+										<text
+											className={styles.nodeText}
+											textAnchor="middle"
+											dy="5"
+										>
+											{node.value}
+										</text>
+										<text
+											className={styles.nodeIdx}
+											textAnchor="middle"
+											dy={NODE_R + 14}
+										>
+											{node.i}
+										</text>
+										{interactive && (
+											<circle
+												r={NODE_R + 4}
+												className={styles.nodeHit}
+												onClick={() => onNodeClick?.(node.i)}
+												role="button"
+												tabIndex={0}
+												aria-pressed={isPicked}
+												aria-label={labelRelation}
+												onKeyDown={event => {
+													if (event.key === 'Enter' || event.key === ' ') {
+														event.preventDefault();
+														onNodeClick?.(node.i);
+													}
+												}}
+											/>
+										)}
+									</g>
+								);
+							})}
+						</svg>
+
+						{/* ---------- Backing array (the dual view) ---------- */}
+						<div className={styles.arrayRow} aria-label="Backing array">
+							{STAGE_HEAP.map((value, i) => {
+								const cls = [styles.cell];
+								if (highlightSet.has(i)) cls.push(styles.cellActive);
+								if (i === 0 && (isProperty || isExtract))
+									cls.push(styles.cellMax);
+								// Mirror the tree's pair-check states onto the flat array.
+								if (
+									isPairScene &&
+									answerStatus === 'correct' &&
+									selectedSet.has(i)
+								)
+									cls.push(styles.cellMax);
+								if (isPairScene && exampleSet.has(i))
+									cls.push(styles.cellChild);
+								if (isParent && i === parentTarget) cls.push(styles.cellParent);
+								return (
+									<div key={i} className={styles.cellWrap}>
+										<div className={cls.join(' ')}>{value}</div>
+										<span className={styles.cellIdx}>{i}</span>
+									</div>
+								);
+							})}
+						</div>
+
+						{/* Index-math ribbon (scenes 1 & 2). */}
+						{(isAsArray || isParent) && (
+							<div className={styles.formula} aria-hidden="true">
+								{isAsArray && (
+									<span>
+										children of {focusI} = 2·{focusI}+1, 2·{focusI}+2 ={' '}
+										<strong>
+											{focusKids[0]}, {focusKids[1]}
+										</strong>
+									</span>
+								)}
+								{isParent && (
+									<span>
+										parent of {parentChild} = ⌊({parentChild}−1)/2⌋ ={' '}
+										<strong>{parentTarget}</strong>
+									</span>
+								)}
+							</div>
+						)}
+					</>
+				)}
+
+				<StateLegend items={legend} />
+
+				<p className={styles.caption}>{caption}</p>
+			</div>
+		</>
 	);
 };
 

@@ -6,6 +6,7 @@ import {
 	satisfyingAssignmentToIndependentSet,
 	verify3SAT,
 } from './certificates.js';
+import { SceneNarration } from '../../common/PlaybackEngine';
 import styles from './NpCompletenessStage.module.css';
 
 // The synchronized concept stage for NP-completeness. It reacts to the active
@@ -36,9 +37,7 @@ const DEMO_FORMULA = {
 };
 
 const clauseText = clause =>
-	clause
-		.map(l => `${l.negated ? '¬' : ''}${l.var}`)
-		.join(' ∨ ');
+	clause.map(l => `${l.negated ? '¬' : ''}${l.var}`).join(' ∨ ');
 
 // The assignment shown in the 'verify-it' scene (matches the scene's numeric
 // check). Hoisted so it is a stable reference for the verifier memo.
@@ -111,12 +110,14 @@ const LandscapeBoard = ({ sceneId }) => {
 				</div>
 			</div>
 			<p className={styles.caption}>
-				{focus === 'p' && 'P sits inside NP: solving fast implies verifying fast.'}
+				{focus === 'p' &&
+					'P sits inside NP: solving fast implies verifying fast.'}
 				{focus === 'np' &&
 					'NP — every yes-instance has a poly-time-checkable certificate.'}
 				{focus === 'npc' &&
 					'NP-complete = in NP AND NP-hard. NP-hard alone can sit outside NP.'}
-				{focus === 'all' && 'P ⊆ NP ⊆ NP-hard frontier; NP-complete is the overlap.'}
+				{focus === 'all' &&
+					'P ⊆ NP ⊆ NP-hard frontier; NP-complete is the overlap.'}
 			</p>
 		</div>
 	);
@@ -126,7 +127,10 @@ const LandscapeBoard = ({ sceneId }) => {
 
 const VerifyBoard = () => {
 	const assignment = VERIFY_ASSIGNMENT;
-	const result = useMemo(() => verify3SAT(DEMO_FORMULA, assignment), [assignment]);
+	const result = useMemo(
+		() => verify3SAT(DEMO_FORMULA, assignment),
+		[assignment]
+	);
 	return (
 		<div className={styles.verifyBoard}>
 			<div className={styles.assignRow} aria-label="Proposed assignment">
@@ -227,17 +231,17 @@ const DirectionBoard = ({ sceneId }) => {
 	return (
 		<div className={styles.direction}>
 			<div className={styles.dirRow}>
-				<div className={`${styles.dirNode} ${proving ? '' : styles.dirNodeFrom}`}>
-					A
-					<small>{proving ? 'known-hard (3-SAT)' : 'problem to solve'}</small>
+				<div
+					className={`${styles.dirNode} ${proving ? '' : styles.dirNodeFrom}`}
+				>
+					A<small>{proving ? 'known-hard (3-SAT)' : 'problem to solve'}</small>
 				</div>
 				<div className={styles.dirArrow}>
 					<ArrowRight size={26} strokeWidth={2} aria-hidden="true" />
 					<span className={styles.dirArrowLabel}>≤p</span>
 				</div>
 				<div className={`${styles.dirNode} ${proving ? styles.dirNodeTo : ''}`}>
-					B
-					<small>{proving ? 'prove this hard' : 'solver you have'}</small>
+					B<small>{proving ? 'prove this hard' : 'solver you have'}</small>
 				</div>
 			</div>
 			<div
@@ -248,16 +252,17 @@ const DirectionBoard = ({ sceneId }) => {
 				{proving ? (
 					<>
 						<strong>To PROVE B is NP-hard:</strong> reduce a known-hard problem
-						(A = 3-SAT) <em>into</em> B. A ≤p B means B is at least as hard as A.
+						(A = 3-SAT) <em>into</em> B. A ≤p B means B is at least as hard as
+						A.
 						<span className={styles.dirWrong}>
 							Reducing B ≤p 3-SAT instead proves nothing about B.
 						</span>
 					</>
 				) : (
 					<>
-						<strong>To SOLVE A with B’s solver:</strong> reduce A <em>into</em> B
-						(A ≤p B), run B’s solver, translate the answer back. The arrow points
-						toward the tool you already have.
+						<strong>To SOLVE A with B’s solver:</strong> reduce A <em>into</em>{' '}
+						B (A ≤p B), run B’s solver, translate the answer back. The arrow
+						points toward the tool you already have.
 					</>
 				)}
 			</div>
@@ -283,7 +288,9 @@ const ReductionBoard = () => {
 			<div className={styles.redHead}>
 				<span className={styles.redFrom}>3-SAT instance</span>
 				<ArrowRight size={16} strokeWidth={2} aria-hidden="true" />
-				<span className={styles.redTo}>Independent-Set instance (k = {built.k})</span>
+				<span className={styles.redTo}>
+					Independent-Set instance (k = {built.k})
+				</span>
 			</div>
 			<div className={styles.gadgets}>
 				{DEMO_FORMULA.clauses.map((clause, ci) => (
@@ -309,8 +316,8 @@ const ReductionBoard = () => {
 				))}
 			</div>
 			<p className={`${styles.caption} ${styles.captionGood}`}>
-				Glowing = one true literal per clause → an independent set of size k.
-				φ satisfiable ⇔ size-k independent set exists.
+				Glowing = one true literal per clause → an independent set of size k. φ
+				satisfiable ⇔ size-k independent set exists.
 			</p>
 		</div>
 	);
@@ -330,7 +337,8 @@ const SCENE_BOARDS = {
 
 const BOARD_META = {
 	landscape: {
-		label: 'Nested complexity classes: P inside NP inside the NP-hard frontier, with NP-complete as the overlap',
+		label:
+			'Nested complexity classes: P inside NP inside the NP-hard frontier, with NP-complete as the overlap',
 		notation: 'P ⊆ NP ⊆ NP-hard',
 	},
 	verify: {
@@ -342,37 +350,66 @@ const BOARD_META = {
 		notation: 'NPC vs P',
 	},
 	direction: {
-		label: 'The reduction arrow A ≤p B, pointing the solve direction versus the hardness-proof direction',
+		label:
+			'The reduction arrow A ≤p B, pointing the solve direction versus the hardness-proof direction',
 		notation: 'A ≤p B · direction',
 	},
 	reduction: {
-		label: 'The worked reduction from 3-SAT to Independent-Set with clause gadgets',
+		label:
+			'The worked reduction from 3-SAT to Independent-Set with clause gadgets',
 		notation: '3-SAT ≤p INDEP-SET',
 	},
+};
+
+// Per-scene narration for screen readers — the honest WHY each board paints on
+// screen, mirroring the visible board caption. Keyed by scene id because several
+// scenes share the landscape board but emphasize a different ring.
+const SCENE_NARRATION = {
+	'the-line': 'P sits inside NP: solving fast implies verifying fast.',
+	'np-is-verify':
+		'NP — every yes-instance has a certificate checkable in polynomial time.',
+	'verify-it':
+		'A 3-SAT certificate is checked clause by clause; the verifier decides in one linear pass.',
+	'hard-vs-complete':
+		'NP-complete = in NP AND NP-hard. NP-hard alone can sit outside NP.',
+	'the-roster':
+		'The NP-complete problems are inter-reducible: a polynomial solver for one would crack them all.',
+	'reduction-tool':
+		'To solve A with B’s solver, reduce A into B (A ≤p B); the arrow points to the tool you already have.',
+	'wrong-direction':
+		'To prove B is NP-hard, reduce a known-hard problem into B; the other direction proves nothing.',
+	'worked-reduction':
+		'3-SAT reduces to Independent-Set: one true literal per clause gives a size-k independent set.',
 };
 
 const NpCompletenessStage = ({ activeScene = 0 }) => {
 	const sceneId = SCENES[activeScene]?.id ?? SCENES[0].id;
 	const board = SCENE_BOARDS[sceneId] ?? 'landscape';
 	const meta = BOARD_META[board];
+	const narration = SCENE_NARRATION[sceneId] ?? meta.label;
 
 	return (
-		<div
-			className={styles.wrap}
-			data-scene={activeScene}
-			role="img"
-			aria-label={meta.label}
-		>
-			{board === 'landscape' && <LandscapeBoard sceneId={sceneId} />}
-			{board === 'verify' && <VerifyBoard />}
-			{board === 'roster' && <RosterBoard />}
-			{board === 'direction' && <DirectionBoard sceneId={sceneId} />}
-			{board === 'reduction' && <ReductionBoard />}
+		<>
+			{/* Per-scene narration for screen readers, OUTSIDE the role=img figure
+			    below (which collapses its in-board captions into one static label). */}
+			<SceneNarration>{narration}</SceneNarration>
+			<div
+				className={styles.wrap}
+				data-scene={activeScene}
+				role="img"
+				aria-label={meta.label}
+			>
+				{board === 'landscape' && <LandscapeBoard sceneId={sceneId} />}
+				{board === 'verify' && <VerifyBoard />}
+				{board === 'roster' && <RosterBoard />}
+				{board === 'direction' && <DirectionBoard sceneId={sceneId} />}
+				{board === 'reduction' && <ReductionBoard />}
 
-			<div className={styles.notation} aria-hidden="true">
-				{meta.notation}
+				<div className={styles.notation} aria-hidden="true">
+					{meta.notation}
+				</div>
 			</div>
-		</div>
+		</>
 	);
 };
 

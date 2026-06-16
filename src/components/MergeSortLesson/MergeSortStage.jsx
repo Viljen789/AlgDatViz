@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import gsap from 'gsap';
 import useReducedMotion from '../../hooks/useReducedMotion.js';
+import { SceneNarration } from '../../common/PlaybackEngine';
 import { STAGE_VALUES } from './scenes.js';
 import styles from './MergeSortStage.module.css';
 
@@ -187,6 +188,24 @@ const MergeSortStage = ({
 	const visibleLevels = activeScene >= 1 ? 4 : 1;
 	const showRecurrence = activeScene >= 4;
 	const leafPulse = activeScene === 2;
+
+	// Honest per-scene narration for screen readers — the SAME thing the figure
+	// shows at this scene, no value-ordering the index-packed bars do not satisfy.
+	// The combine scene reuses the live compare/copy line that drives the demo.
+	const sceneNarration = (() => {
+		switch (activeScene) {
+			case 0:
+				return `Unsorted array of ${STAGE_VALUES.length} values, not yet split.`;
+			case 1:
+				return 'Split in half, and the halves in half, down to single elements.';
+			case 2:
+				return 'At the bottom every piece is one element, trivially sorted.';
+			case 3:
+				return (MERGE_STEPS[mergeStep] || MERGE_STEPS[0]).narr;
+			default:
+				return 'The same n-work merge runs at every level: n log n total.';
+		}
+	})();
 
 	// The base-case "click": when scene 2 becomes active the recursion has reached
 	// single-element leaves (already sorted), and the bottom row settles with one
@@ -450,80 +469,83 @@ const MergeSortStage = ({
 						})}
 					</div>
 				</div>
-				<p className={styles.mergeNarr} aria-live="polite">
-					{step.narr}
-				</p>
+				<p className={styles.mergeNarr}>{step.narr}</p>
 			</div>
 		);
 	};
 
 	return (
-		<div
-			ref={wrapRef}
-			className={styles.wrap}
-			data-scene={activeScene}
-			role="img"
-			aria-label={
-				isCombine
-					? 'Merging two sorted runs into one'
-					: 'Merge sort recursion tree visualization'
-			}
-		>
-			{isCombine ? (
-				renderMergeDemo()
-			) : (
-				<svg
-					viewBox={`0 0 ${VIEW_W} ${VIEW_H}`}
-					className={styles.svg}
-					preserveAspectRatio="xMidYMid meet"
-				>
-					<g className={styles.connectorGroup}>{renderConnections()}</g>
-
-					{Array.from({ length: visibleLevels }).map((_, levelIdx) => {
-						const groups = sortedMask[levelIdx]
-							? sorted[levelIdx]
-							: levels[levelIdx];
-						return (
-							<g
-								key={levelIdx}
-								className={styles.levelGroup}
-								style={{
-									// Per-level entrance delay when first revealing the tree.
-									'--delay': `${levelIdx * 90}ms`,
-								}}
-							>
-								{groups.map((group, groupIdx) =>
-									group.map((bar, withinIdx) =>
-										renderBar(bar, levelIdx, groupIdx, withinIdx)
-									)
-								)}
-							</g>
-						);
-					})}
-				</svg>
-			)}
-
+		<>
+			{/* Per-scene narration for screen readers, OUTSIDE the role=img figure
+			    below (which collapses its in-figure caption into one static label). */}
+			<SceneNarration>{sceneNarration}</SceneNarration>
 			<div
-				className={`${styles.recurrence} ${showRecurrence ? styles.recurrenceShow : ''}`}
-				aria-hidden={!showRecurrence}
+				ref={wrapRef}
+				className={styles.wrap}
+				data-scene={activeScene}
+				role="img"
+				aria-label={
+					isCombine
+						? 'Merging two sorted runs into one'
+						: 'Merge sort recursion tree visualization'
+				}
 			>
-				<div className={styles.recurrenceList}>
-					<span>Level 0 · 1 merge × n</span>
-					<span>Level 1 · 2 merges × n/2</span>
-					<span>Level 2 · 4 merges × n/4</span>
-				</div>
-				<div className={styles.recurrenceTotal}>
-					<span className={styles.recurrenceMath}>
-						n × log<sub>2</sub> n
-					</span>
-					<span className={styles.recurrenceLabel}>= O(n log n)</span>
-				</div>
-			</div>
+				{isCombine ? (
+					renderMergeDemo()
+				) : (
+					<svg
+						viewBox={`0 0 ${VIEW_W} ${VIEW_H}`}
+						className={styles.svg}
+						preserveAspectRatio="xMidYMid meet"
+					>
+						<g className={styles.connectorGroup}>{renderConnections()}</g>
 
-			<div className={styles.notation} aria-hidden="true">
-				O(n log n) · n = {STAGE_VALUES.length}
+						{Array.from({ length: visibleLevels }).map((_, levelIdx) => {
+							const groups = sortedMask[levelIdx]
+								? sorted[levelIdx]
+								: levels[levelIdx];
+							return (
+								<g
+									key={levelIdx}
+									className={styles.levelGroup}
+									style={{
+										// Per-level entrance delay when first revealing the tree.
+										'--delay': `${levelIdx * 90}ms`,
+									}}
+								>
+									{groups.map((group, groupIdx) =>
+										group.map((bar, withinIdx) =>
+											renderBar(bar, levelIdx, groupIdx, withinIdx)
+										)
+									)}
+								</g>
+							);
+						})}
+					</svg>
+				)}
+
+				<div
+					className={`${styles.recurrence} ${showRecurrence ? styles.recurrenceShow : ''}`}
+					aria-hidden={!showRecurrence}
+				>
+					<div className={styles.recurrenceList}>
+						<span>Level 0 · 1 merge × n</span>
+						<span>Level 1 · 2 merges × n/2</span>
+						<span>Level 2 · 4 merges × n/4</span>
+					</div>
+					<div className={styles.recurrenceTotal}>
+						<span className={styles.recurrenceMath}>
+							n × log<sub>2</sub> n
+						</span>
+						<span className={styles.recurrenceLabel}>= O(n log n)</span>
+					</div>
+				</div>
+
+				<div className={styles.notation} aria-hidden="true">
+					O(n log n) · n = {STAGE_VALUES.length}
+				</div>
 			</div>
-		</div>
+		</>
 	);
 };
 

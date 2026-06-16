@@ -17,6 +17,7 @@ import {
 	STAGE_HASHES,
 	STAGE_KEYS,
 } from './scenes.js';
+import { SceneNarration } from '../../common/PlaybackEngine';
 import styles from './HashMapStage.module.css';
 
 // Flip captures the small-table layout; MotionPath arcs each entry into its new
@@ -219,93 +220,119 @@ const HashMapStage = ({ activeScene = 0 }) => {
 		});
 	}, [isResize, reducedMotion]);
 
-	return (
-		<div
-			className={styles.wrap}
-			data-scene={activeScene}
-			role="img"
-			aria-label="Hash map bucket table visualization"
-		>
-			<div className={styles.notation} aria-hidden="true">
-				α = {entryCount}/{capacity} = {loadFactor.toFixed(2)} · m = {capacity}
-			</div>
+	// Per-scene narration for screen readers — the honest WHY the table paints at
+	// this scene, including the load factor the gauge shows once it appears.
+	const sceneNarration = (() => {
+		switch (activeScene) {
+			case 0:
+				return `Key ${FOCUS_KEY} hashes into bucket ${spotlightBucket} of ${capacity}.`;
+			case 1:
+				return `A second key collides into bucket ${COLLISION_BUCKET} — same index, different key.`;
+			case 2:
+				return 'Collisions chain: each bucket holds a list, so the full table fills in.';
+			case 3:
+				return `Load factor α = ${loadFactor.toFixed(2)} — ${
+					overloaded
+						? 'above 0.75, time to resize'
+						: 'healthy, chains stay short'
+				}.`;
+			default:
+				return `Resizing to ${capacity} buckets: every entry rehashes into the larger table one at a time.`;
+		}
+	})();
 
-			{/* Stable key (NOT key={capacity}) so the table is reconciled, not
+	return (
+		<>
+			{/* Per-scene narration for screen readers, OUTSIDE the role=img figure
+			    below (whose bucket table collapses into one static label). */}
+			<SceneNarration>{sceneNarration}</SceneNarration>
+			<div
+				className={styles.wrap}
+				data-scene={activeScene}
+				role="img"
+				aria-label="Hash map bucket table visualization"
+			>
+				<div className={styles.notation} aria-hidden="true">
+					α = {entryCount}/{capacity} = {loadFactor.toFixed(2)} · m = {capacity}
+				</div>
+
+				{/* Stable key (NOT key={capacity}) so the table is reconciled, not
 			    remounted, across the resize — Flip needs the same DOM nodes on
 			    both sides of the scene jump to arc each entry to its new bucket. */}
-			<div
-				ref={tableRef}
-				className={`${styles.table} ${isResize ? styles.tableResize : ''}`}
-				key="bucket-table"
-			>
-				{buckets.map((bucket, idx) => {
-					const isSpotlight = spotlightBucket === idx && activeScene <= 1;
-					const isCollisionBucket =
-						!isResize && idx === COLLISION_BUCKET && collisionActive;
-					return (
-						<div
-							key={idx}
-							className={`${styles.bucket} ${
-								isSpotlight ? styles.bucketSpotlight : ''
-							} ${isCollisionBucket ? styles.bucketCollision : ''}`}
-							style={{ '--row': idx }}
-						>
-							<span className={styles.bucketIndex}>{idx}</span>
-							<div className={styles.chain}>
-								{bucket.length === 0 ? (
-									<span className={styles.empty}>·</span>
-								) : (
-									bucket.map((entry, j) => {
-										const isCollider =
-											!isResize &&
-											idx === COLLISION_BUCKET &&
-											COLLISION_KEYS.includes(entry.key);
-										return (
-											<div
-												key={entry.key}
-												ref={el => registerCell(entry.key, el)}
-												data-flip-id={entry.key}
-												className={`${styles.cell} ${
-													isCollider && collisionActive
-														? styles.cellCollide
-														: ''
-												}`}
-												style={{ '--chain-pos': j }}
-											>
-												<span className={styles.cellKey}>{entry.key}</span>
-											</div>
-										);
-									})
-								)}
-							</div>
-						</div>
-					);
-				})}
-			</div>
-
-			{showGauge && (
 				<div
-					className={`${styles.gauge} ${overloaded ? styles.gaugeWarn : ''}`}
+					ref={tableRef}
+					className={`${styles.table} ${isResize ? styles.tableResize : ''}`}
+					key="bucket-table"
 				>
-					<div className={styles.gaugeHead}>
-						<span className={styles.gaugeLabel}>load factor α</span>
-						<span className={styles.gaugeValue}>{loadFactor.toFixed(2)}</span>
-					</div>
-					<div className={styles.gaugeTrack}>
-						<div
-							className={styles.gaugeFill}
-							style={{ '--pct': `${loadPct}%` }}
-						/>
-						<div className={styles.gaugeThreshold} aria-hidden="true" />
-					</div>
-					<span className={styles.gaugeNote}>
-						{overloaded
-							? 'above 0.75 — time to resize'
-							: 'healthy — chains stay short'}
-					</span>
+					{buckets.map((bucket, idx) => {
+						const isSpotlight = spotlightBucket === idx && activeScene <= 1;
+						const isCollisionBucket =
+							!isResize && idx === COLLISION_BUCKET && collisionActive;
+						return (
+							<div
+								key={idx}
+								className={`${styles.bucket} ${
+									isSpotlight ? styles.bucketSpotlight : ''
+								} ${isCollisionBucket ? styles.bucketCollision : ''}`}
+								style={{ '--row': idx }}
+							>
+								<span className={styles.bucketIndex}>{idx}</span>
+								<div className={styles.chain}>
+									{bucket.length === 0 ? (
+										<span className={styles.empty}>·</span>
+									) : (
+										bucket.map((entry, j) => {
+											const isCollider =
+												!isResize &&
+												idx === COLLISION_BUCKET &&
+												COLLISION_KEYS.includes(entry.key);
+											return (
+												<div
+													key={entry.key}
+													ref={el => registerCell(entry.key, el)}
+													data-flip-id={entry.key}
+													className={`${styles.cell} ${
+														isCollider && collisionActive
+															? styles.cellCollide
+															: ''
+													}`}
+													style={{ '--chain-pos': j }}
+												>
+													<span className={styles.cellKey}>{entry.key}</span>
+												</div>
+											);
+										})
+									)}
+								</div>
+							</div>
+						);
+					})}
 				</div>
-			)}
-		</div>
+
+				{showGauge && (
+					<div
+						className={`${styles.gauge} ${overloaded ? styles.gaugeWarn : ''}`}
+					>
+						<div className={styles.gaugeHead}>
+							<span className={styles.gaugeLabel}>load factor α</span>
+							<span className={styles.gaugeValue}>{loadFactor.toFixed(2)}</span>
+						</div>
+						<div className={styles.gaugeTrack}>
+							<div
+								className={styles.gaugeFill}
+								style={{ '--pct': `${loadPct}%` }}
+							/>
+							<div className={styles.gaugeThreshold} aria-hidden="true" />
+						</div>
+						<span className={styles.gaugeNote}>
+							{overloaded
+								? 'above 0.75 — time to resize'
+								: 'healthy — chains stay short'}
+						</span>
+					</div>
+				)}
+			</div>
+		</>
 	);
 };
 

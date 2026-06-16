@@ -10,6 +10,7 @@ import {
 import { SHARED_GRAPH, SHARED_SOURCE } from './ssspMeta.js';
 import { buildEdges, projectNodes, VIEW_H, VIEW_W } from './graphLayout.js';
 import useReducedMotion from '../../hooks/useReducedMotion.js';
+import { SceneNarration } from '../../common/PlaybackEngine';
 import styles from './ShortestPathsStage.module.css';
 
 // Same idempotent-registration pattern HomePage uses for ScrollTrigger.
@@ -312,198 +313,208 @@ const ShortestPathsStage = ({ activeScene = 0 }) => {
 	}, [relaxEdge, relaxTarget, activeScene, reducedMotion, view, ids]);
 
 	return (
-		<div
-			className={styles.wrap}
-			data-scene={activeScene}
-			role="img"
-			aria-label="Weighted directed graph with a live distance and predecessor table, scene by scene"
-		>
-			<div className={styles.notation} aria-hidden="true">
-				source = {SHARED_SOURCE} · weighted digraph · |V| = {ids.length}
-			</div>
-
-			<div className={styles.layout}>
-				{/* ---------- Graph ---------- */}
-				<svg
-					ref={svgRef}
-					viewBox={`0 0 ${VIEW_W} ${VIEW_H}`}
-					className={styles.svg}
-					preserveAspectRatio="xMidYMid meet"
-				>
-					<defs>
-						<marker
-							id="ssspArrow"
-							viewBox="0 0 10 10"
-							refX="8"
-							refY="5"
-							markerWidth="5"
-							markerHeight="5"
-							orient="auto-start-reverse"
-						>
-							<path d="M 0 1 L 9 5 L 0 9 z" className={styles.arrowHead} />
-						</marker>
-						<marker
-							id="ssspArrowHot"
-							viewBox="0 0 10 10"
-							refX="8"
-							refY="5"
-							markerWidth="5"
-							markerHeight="5"
-							orient="auto-start-reverse"
-						>
-							<path d="M 0 1 L 9 5 L 0 9 z" className={styles.arrowHeadHot} />
-						</marker>
-					</defs>
-
-					{EDGES.map(edge => {
-						const key = edgeKey(edge);
-						const isRelax = relaxEdge === key;
-						const isPath = pathSet.has(key);
-						const isSub = subpathSet.has(key);
-						const isTree = treeSet.has(key);
-						const hot = isRelax || isPath || isSub || isTree || allEdges;
-						const cls = [styles.edge];
-						if (allEdges) cls.push(styles.edgeAll);
-						if (isTree) cls.push(styles.edgeTree);
-						if (isPath) cls.push(styles.edgePath);
-						if (isSub) cls.push(styles.edgeSub);
-						if (isRelax) cls.push(styles.edgeRelax);
-						return (
-							<g key={key}>
-								<line
-									ref={el => {
-										if (el) edgeLineRefs.current[key] = el;
-										else delete edgeLineRefs.current[key];
-									}}
-									x1={edge.x1}
-									y1={edge.y1}
-									x2={edge.x2}
-									y2={edge.y2}
-									className={cls.join(' ')}
-									markerEnd={`url(#${hot ? 'ssspArrowHot' : 'ssspArrow'})`}
-								/>
-								<text
-									x={edge.mx}
-									y={edge.my}
-									className={`${styles.weight} ${
-										isRelax ? styles.weightHot : ''
-									}`}
-									textAnchor="middle"
-									dominantBaseline="central"
-								>
-									{edge.weight}
-								</text>
-							</g>
-						);
-					})}
-
-					{/* The relax pulse: one small ink dot that rides the firing edge from
-					    u to v. Hidden (opacity 0) at rest so the picture is unchanged. */}
-					<circle
-						ref={dotRef}
-						className={styles.relaxDot}
-						r={1.7}
-						cx={0}
-						cy={0}
-						opacity={0}
-						aria-hidden="true"
-					/>
-
-					{NODES.map(node => {
-						const isSource = node.id === SHARED_SOURCE;
-						const isRelaxTarget = node.id === relaxTarget;
-						const cls = [styles.node];
-						if (isSource) cls.push(styles.nodeSource);
-						if (isRelaxTarget) cls.push(styles.nodeRelax);
-						// The distance lives ON the node, not only in the side table, so a
-						// relax reads as one event on one object: this edge fired, that
-						// node's number dropped. ∞ until first reached.
-						const d = view.dist[node.id];
-						const distText = d == null || d === Infinity ? '∞' : d;
-						return (
-							<g key={node.id} transform={`translate(${node.px}, ${node.py})`}>
-								<circle
-									ref={el => {
-										if (el) nodeRef.current[node.id] = el;
-										else delete nodeRef.current[node.id];
-									}}
-									r={NODE_R}
-									className={cls.join(' ')}
-								/>
-								<text
-									className={styles.nodeText}
-									textAnchor="middle"
-									dominantBaseline="central"
-								>
-									{node.id}
-								</text>
-								<text
-									ref={el => {
-										if (el) distTextRefs.current[node.id] = el;
-										else delete distTextRefs.current[node.id];
-									}}
-									className={`${styles.nodeDist} ${
-										isRelaxTarget ? styles.nodeDistActive : ''
-									}`}
-									y={NODE_R + 7}
-									textAnchor="middle"
-								>
-									{distText}
-								</text>
-							</g>
-						);
-					})}
-				</svg>
-
-				{/* ---------- dist[] / pred[] table (the spine) ---------- */}
-				<div className={styles.tableWrap}>
-					<table className={styles.table}>
-						<thead>
-							<tr>
-								<th scope="col">v</th>
-								<th scope="col">dist</th>
-								<th scope="col">pred</th>
-							</tr>
-						</thead>
-						<tbody>
-							{ids.map(id => {
-								const d = view.dist[id];
-								const p = view.pred[id];
-								const isTarget = id === relaxTarget;
-								return (
-									<tr key={id} className={isTarget ? styles.rowActive : ''}>
-										<th scope="row" className={styles.rowKey}>
-											{id}
-										</th>
-										<td className={styles.rowVal}>
-											{d === null || d === undefined ? '∞' : d}
-										</td>
-										<td className={styles.rowPred}>{p ?? '—'}</td>
-									</tr>
-								);
-							})}
-						</tbody>
-					</table>
-
-					{view.order && (
-						<div className={styles.orderRow}>
-							<span className={styles.orderLabel}>topo order</span>
-							<span className={styles.orderSeq}>{view.order.join(' → ')}</span>
-						</div>
-					)}
-					{view.settleOrder && (
-						<div className={styles.orderRow}>
-							<span className={styles.orderLabel}>settle order</span>
-							<span className={styles.orderSeq}>
-								{view.settleOrder.join(' → ')}
-							</span>
-						</div>
-					)}
+		<>
+			{/* Per-scene narration for screen readers, OUTSIDE the role=img figure
+			    below (which collapses its in-figure caption into one static label). */}
+			<SceneNarration>{view.caption}</SceneNarration>
+			<div
+				className={styles.wrap}
+				data-scene={activeScene}
+				role="img"
+				aria-label="Weighted directed graph with a live distance and predecessor table, scene by scene"
+			>
+				<div className={styles.notation} aria-hidden="true">
+					source = {SHARED_SOURCE} · weighted digraph · |V| = {ids.length}
 				</div>
-			</div>
 
-			<p className={styles.caption}>{view.caption}</p>
-		</div>
+				<div className={styles.layout}>
+					{/* ---------- Graph ---------- */}
+					<svg
+						ref={svgRef}
+						viewBox={`0 0 ${VIEW_W} ${VIEW_H}`}
+						className={styles.svg}
+						preserveAspectRatio="xMidYMid meet"
+					>
+						<defs>
+							<marker
+								id="ssspArrow"
+								viewBox="0 0 10 10"
+								refX="8"
+								refY="5"
+								markerWidth="5"
+								markerHeight="5"
+								orient="auto-start-reverse"
+							>
+								<path d="M 0 1 L 9 5 L 0 9 z" className={styles.arrowHead} />
+							</marker>
+							<marker
+								id="ssspArrowHot"
+								viewBox="0 0 10 10"
+								refX="8"
+								refY="5"
+								markerWidth="5"
+								markerHeight="5"
+								orient="auto-start-reverse"
+							>
+								<path d="M 0 1 L 9 5 L 0 9 z" className={styles.arrowHeadHot} />
+							</marker>
+						</defs>
+
+						{EDGES.map(edge => {
+							const key = edgeKey(edge);
+							const isRelax = relaxEdge === key;
+							const isPath = pathSet.has(key);
+							const isSub = subpathSet.has(key);
+							const isTree = treeSet.has(key);
+							const hot = isRelax || isPath || isSub || isTree || allEdges;
+							const cls = [styles.edge];
+							if (allEdges) cls.push(styles.edgeAll);
+							if (isTree) cls.push(styles.edgeTree);
+							if (isPath) cls.push(styles.edgePath);
+							if (isSub) cls.push(styles.edgeSub);
+							if (isRelax) cls.push(styles.edgeRelax);
+							return (
+								<g key={key}>
+									<line
+										ref={el => {
+											if (el) edgeLineRefs.current[key] = el;
+											else delete edgeLineRefs.current[key];
+										}}
+										x1={edge.x1}
+										y1={edge.y1}
+										x2={edge.x2}
+										y2={edge.y2}
+										className={cls.join(' ')}
+										markerEnd={`url(#${hot ? 'ssspArrowHot' : 'ssspArrow'})`}
+									/>
+									<text
+										x={edge.mx}
+										y={edge.my}
+										className={`${styles.weight} ${
+											isRelax ? styles.weightHot : ''
+										}`}
+										textAnchor="middle"
+										dominantBaseline="central"
+									>
+										{edge.weight}
+									</text>
+								</g>
+							);
+						})}
+
+						{/* The relax pulse: one small ink dot that rides the firing edge from
+					    u to v. Hidden (opacity 0) at rest so the picture is unchanged. */}
+						<circle
+							ref={dotRef}
+							className={styles.relaxDot}
+							r={1.7}
+							cx={0}
+							cy={0}
+							opacity={0}
+							aria-hidden="true"
+						/>
+
+						{NODES.map(node => {
+							const isSource = node.id === SHARED_SOURCE;
+							const isRelaxTarget = node.id === relaxTarget;
+							const cls = [styles.node];
+							if (isSource) cls.push(styles.nodeSource);
+							if (isRelaxTarget) cls.push(styles.nodeRelax);
+							// The distance lives ON the node, not only in the side table, so a
+							// relax reads as one event on one object: this edge fired, that
+							// node's number dropped. ∞ until first reached.
+							const d = view.dist[node.id];
+							const distText = d == null || d === Infinity ? '∞' : d;
+							return (
+								<g
+									key={node.id}
+									transform={`translate(${node.px}, ${node.py})`}
+								>
+									<circle
+										ref={el => {
+											if (el) nodeRef.current[node.id] = el;
+											else delete nodeRef.current[node.id];
+										}}
+										r={NODE_R}
+										className={cls.join(' ')}
+									/>
+									<text
+										className={styles.nodeText}
+										textAnchor="middle"
+										dominantBaseline="central"
+									>
+										{node.id}
+									</text>
+									<text
+										ref={el => {
+											if (el) distTextRefs.current[node.id] = el;
+											else delete distTextRefs.current[node.id];
+										}}
+										className={`${styles.nodeDist} ${
+											isRelaxTarget ? styles.nodeDistActive : ''
+										}`}
+										y={NODE_R + 7}
+										textAnchor="middle"
+									>
+										{distText}
+									</text>
+								</g>
+							);
+						})}
+					</svg>
+
+					{/* ---------- dist[] / pred[] table (the spine) ---------- */}
+					<div className={styles.tableWrap}>
+						<table className={styles.table}>
+							<thead>
+								<tr>
+									<th scope="col">v</th>
+									<th scope="col">dist</th>
+									<th scope="col">pred</th>
+								</tr>
+							</thead>
+							<tbody>
+								{ids.map(id => {
+									const d = view.dist[id];
+									const p = view.pred[id];
+									const isTarget = id === relaxTarget;
+									return (
+										<tr key={id} className={isTarget ? styles.rowActive : ''}>
+											<th scope="row" className={styles.rowKey}>
+												{id}
+											</th>
+											<td className={styles.rowVal}>
+												{d === null || d === undefined ? '∞' : d}
+											</td>
+											<td className={styles.rowPred}>{p ?? '—'}</td>
+										</tr>
+									);
+								})}
+							</tbody>
+						</table>
+
+						{view.order && (
+							<div className={styles.orderRow}>
+								<span className={styles.orderLabel}>topo order</span>
+								<span className={styles.orderSeq}>
+									{view.order.join(' → ')}
+								</span>
+							</div>
+						)}
+						{view.settleOrder && (
+							<div className={styles.orderRow}>
+								<span className={styles.orderLabel}>settle order</span>
+								<span className={styles.orderSeq}>
+									{view.settleOrder.join(' → ')}
+								</span>
+							</div>
+						)}
+					</div>
+				</div>
+
+				<p className={styles.caption}>{view.caption}</p>
+			</div>
+		</>
 	);
 };
 

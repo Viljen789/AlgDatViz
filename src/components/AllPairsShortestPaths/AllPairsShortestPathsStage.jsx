@@ -2,6 +2,7 @@ import { useMemo } from 'react';
 import { floydWarshall, reconstructPath, formatDist } from './fwTrace.js';
 import { SHARED_GRAPH } from './apspMeta.js';
 import { buildEdges, projectNodes, VIEW_H, VIEW_W } from './graphLayout.js';
+import { SceneNarration } from '../../common/PlaybackEngine';
 import styles from './AllPairsShortestPathsStage.module.css';
 
 // Canonical answers measured once from the generator (shared by every scene).
@@ -33,7 +34,8 @@ const SCENE_VIEW = activeScene => {
 			return {
 				layer: 0,
 				kLabel: '0',
-				caption: 'k = 0 — direct edges only (∞ where no edge, 0 on the diagonal)',
+				caption:
+					'k = 0 — direct edges only (∞ where no edge, 0 on the diagonal)',
 			};
 		// 2 recurrence — the final layer; spotlight d[1][3] + its two readers.
 		case 2: {
@@ -99,7 +101,8 @@ const SCENE_VIEW = activeScene => {
 				layer: LAYERS.length - 1,
 				kLabel: 'final',
 				diagCells: diag,
-				caption: 'Diagonal stays 0 here — a negative d[v][v] would flag a neg cycle',
+				caption:
+					'Diagonal stays 0 here — a negative d[v][v] would flag a neg cycle',
 			};
 		}
 	}
@@ -130,139 +133,144 @@ const AllPairsShortestPathsStage = ({ activeScene = 0 }) => {
 	const sameCell = (a, b) => a && b && a[0] === b[0] && a[1] === b[1];
 
 	return (
-		<div
-			className={styles.wrap}
-			data-scene={activeScene}
-			role="img"
-			aria-label="Weighted directed graph beside the all-pairs distance matrix, filling across k, scene by scene"
-		>
-			<div className={styles.notation} aria-hidden="true">
-				weighted digraph · |V| = {IDS.length} · k = {view.kLabel}
-			</div>
-
-			<div className={styles.layout}>
-				{/* ---------- Graph ---------- */}
-				<svg
-					viewBox={`0 0 ${VIEW_W} ${VIEW_H}`}
-					className={styles.svg}
-					preserveAspectRatio="xMidYMid meet"
-				>
-					<defs>
-						<marker
-							id="apspArrow"
-							viewBox="0 0 10 10"
-							refX="8"
-							refY="5"
-							markerWidth="5"
-							markerHeight="5"
-							orient="auto-start-reverse"
-						>
-							<path d="M 0 1 L 9 5 L 0 9 z" className={styles.arrowHead} />
-						</marker>
-					</defs>
-
-					{EDGES.map(edge => (
-						<g key={`${edge.from}->${edge.to}`}>
-							<path
-								d={edge.path}
-								className={styles.edge}
-								fill="none"
-								markerEnd="url(#apspArrow)"
-							/>
-							<text
-								x={edge.lx}
-								y={edge.ly}
-								className={styles.weight}
-								textAnchor="middle"
-								dominantBaseline="central"
-							>
-								{edge.weight}
-							</text>
-						</g>
-					))}
-
-					{NODES.map(node => (
-						<g key={node.id} transform={`translate(${node.px}, ${node.py})`}>
-							<circle r={NODE_R} className={styles.node} />
-							<text
-								className={styles.nodeText}
-								textAnchor="middle"
-								dominantBaseline="central"
-							>
-								{node.id}
-							</text>
-						</g>
-					))}
-				</svg>
-
-				{/* ---------- The V×V matrix (the spine) ---------- */}
-				<div className={styles.matrixWrap}>
-					<table className={styles.matrix}>
-						<thead>
-							<tr>
-								<th scope="col" className={styles.corner}>
-									{isBoolean ? 'T' : 'd'}
-								</th>
-								{IDS.map(id => (
-									<th
-										key={id}
-										scope="col"
-										className={
-											write && idxOf(id) === write[1] ? styles.colHot : ''
-										}
-									>
-										{id}
-									</th>
-								))}
-							</tr>
-						</thead>
-						<tbody>
-							{IDS.map((rowId, i) => (
-								<tr key={rowId}>
-									<th
-										scope="row"
-										className={`${styles.rowKey} ${
-											write && i === write[0] ? styles.rowHot : ''
-										}`}
-									>
-										{rowId}
-									</th>
-									{IDS.map((colId, j) => {
-										const v = matrix[i][j];
-										const key = cellKey(i, j);
-										const cls = [styles.cell];
-										if (sameCell([i, j], write)) cls.push(styles.cellWrite);
-										if (sameCell([i, j], readIK)) cls.push(styles.cellRead);
-										if (sameCell([i, j], readKJ)) cls.push(styles.cellRead);
-										if (pathCells.has(key)) cls.push(styles.cellPath);
-										if (diagCells.has(key)) cls.push(styles.cellDiag);
-										const display = isBoolean
-											? v === null || v === undefined
-												? '·'
-												: '✓'
-											: formatDist(v);
-										return (
-											<td key={colId} className={cls.join(' ')}>
-												{display}
-											</td>
-										);
-									})}
-								</tr>
-							))}
-						</tbody>
-					</table>
-
-					{(write || readIK) && (
-						<div className={styles.readLegend} aria-hidden="true">
-							<span className={styles.legRead}>reads d[i][k], d[k][j]</span>
-							<span className={styles.legWrite}>writes d[i][j]</span>
-						</div>
-					)}
+		<>
+			{/* Per-scene narration for screen readers, OUTSIDE the role=img figure
+			    below (which collapses its in-figure caption into one static label). */}
+			<SceneNarration>{view.caption}</SceneNarration>
+			<div
+				className={styles.wrap}
+				data-scene={activeScene}
+				role="img"
+				aria-label="Weighted directed graph beside the all-pairs distance matrix, filling across k, scene by scene"
+			>
+				<div className={styles.notation} aria-hidden="true">
+					weighted digraph · |V| = {IDS.length} · k = {view.kLabel}
 				</div>
-			</div>
 
-			<p className={styles.caption}>{view.caption}</p>
-		</div>
+				<div className={styles.layout}>
+					{/* ---------- Graph ---------- */}
+					<svg
+						viewBox={`0 0 ${VIEW_W} ${VIEW_H}`}
+						className={styles.svg}
+						preserveAspectRatio="xMidYMid meet"
+					>
+						<defs>
+							<marker
+								id="apspArrow"
+								viewBox="0 0 10 10"
+								refX="8"
+								refY="5"
+								markerWidth="5"
+								markerHeight="5"
+								orient="auto-start-reverse"
+							>
+								<path d="M 0 1 L 9 5 L 0 9 z" className={styles.arrowHead} />
+							</marker>
+						</defs>
+
+						{EDGES.map(edge => (
+							<g key={`${edge.from}->${edge.to}`}>
+								<path
+									d={edge.path}
+									className={styles.edge}
+									fill="none"
+									markerEnd="url(#apspArrow)"
+								/>
+								<text
+									x={edge.lx}
+									y={edge.ly}
+									className={styles.weight}
+									textAnchor="middle"
+									dominantBaseline="central"
+								>
+									{edge.weight}
+								</text>
+							</g>
+						))}
+
+						{NODES.map(node => (
+							<g key={node.id} transform={`translate(${node.px}, ${node.py})`}>
+								<circle r={NODE_R} className={styles.node} />
+								<text
+									className={styles.nodeText}
+									textAnchor="middle"
+									dominantBaseline="central"
+								>
+									{node.id}
+								</text>
+							</g>
+						))}
+					</svg>
+
+					{/* ---------- The V×V matrix (the spine) ---------- */}
+					<div className={styles.matrixWrap}>
+						<table className={styles.matrix}>
+							<thead>
+								<tr>
+									<th scope="col" className={styles.corner}>
+										{isBoolean ? 'T' : 'd'}
+									</th>
+									{IDS.map(id => (
+										<th
+											key={id}
+											scope="col"
+											className={
+												write && idxOf(id) === write[1] ? styles.colHot : ''
+											}
+										>
+											{id}
+										</th>
+									))}
+								</tr>
+							</thead>
+							<tbody>
+								{IDS.map((rowId, i) => (
+									<tr key={rowId}>
+										<th
+											scope="row"
+											className={`${styles.rowKey} ${
+												write && i === write[0] ? styles.rowHot : ''
+											}`}
+										>
+											{rowId}
+										</th>
+										{IDS.map((colId, j) => {
+											const v = matrix[i][j];
+											const key = cellKey(i, j);
+											const cls = [styles.cell];
+											if (sameCell([i, j], write)) cls.push(styles.cellWrite);
+											if (sameCell([i, j], readIK)) cls.push(styles.cellRead);
+											if (sameCell([i, j], readKJ)) cls.push(styles.cellRead);
+											if (pathCells.has(key)) cls.push(styles.cellPath);
+											if (diagCells.has(key)) cls.push(styles.cellDiag);
+											const display = isBoolean
+												? v === null || v === undefined
+													? '·'
+													: '✓'
+												: formatDist(v);
+											return (
+												<td key={colId} className={cls.join(' ')}>
+													{display}
+												</td>
+											);
+										})}
+									</tr>
+								))}
+							</tbody>
+						</table>
+
+						{(write || readIK) && (
+							<div className={styles.readLegend} aria-hidden="true">
+								<span className={styles.legRead}>reads d[i][k], d[k][j]</span>
+								<span className={styles.legWrite}>writes d[i][j]</span>
+							</div>
+						)}
+					</div>
+				</div>
+
+				<p className={styles.caption}>{view.caption}</p>
+			</div>
+		</>
 	);
 };
 

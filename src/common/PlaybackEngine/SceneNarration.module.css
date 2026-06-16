@@ -1,0 +1,16 @@
+/* Visually hidden, still announced to assistive tech. The scrolly figure already
+   paints the caption on screen; this sr-only twin sits OUTSIDE the role=img
+   subtree so a screen reader hears the per-scene WHY change as the reader scrolls,
+   instead of the figure's one frozen aria-label. Mirrors the established
+   sr-only / srLive helpers (MstCompare, ExamPage) exactly. */
+.srLive {
+	position: absolute;
+	width: 1px;
+	height: 1px;
+	margin: -1px;
+	padding: 0;
+	overflow: hidden;
+	clip: rect(0 0 0 0);
+	white-space: nowrap;
+	border: 0;
+}

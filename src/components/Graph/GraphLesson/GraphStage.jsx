@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
 import { LESSON_GRAPH, BFS_ORDER, DFS_ORDER } from './graphScenes.js';
 import StateLegend from '../../../common/StateLegend/StateLegend';
+import { SceneNarration } from '../../../common/PlaybackEngine';
 import styles from './GraphStage.module.css';
 
 // The traversal scenes paint nodes with meaningful colour; the key names only
@@ -18,9 +19,13 @@ const sceneLegend = activeScene => {
 			{ label: 'frontier (next up)', swatch: FRONTIER_SWATCH, aria: 'dashed' },
 		];
 	if (activeScene === 3 || activeScene === 4 || activeScene === 6)
-		return [{ label: 'visited in BFS order', swatch: VISITED_SWATCH, aria: 'filled' }];
+		return [
+			{ label: 'visited in BFS order', swatch: VISITED_SWATCH, aria: 'filled' },
+		];
 	if (activeScene === 5)
-		return [{ label: 'visited in DFS order', swatch: VISITED_SWATCH, aria: 'filled' }];
+		return [
+			{ label: 'visited in DFS order', swatch: VISITED_SWATCH, aria: 'filled' },
+		];
 	return [];
 };
 
@@ -164,89 +169,115 @@ const GraphStage = ({ activeScene = 0 }) => {
 
 	const legend = useMemo(() => sceneLegend(activeScene), [activeScene]);
 
-	return (
-		<div
-			className={styles.wrap}
-			data-scene={activeScene}
-			role="img"
-			aria-label="Graph concept visualization"
-		>
-			<svg
-				viewBox={`0 0 ${VIEW_W} ${VIEW_H}`}
-				className={styles.svg}
-				preserveAspectRatio="xMidYMid meet"
-			>
-				<g className={styles.edges}>{LESSON_GRAPH.edges.map(renderEdge)}</g>
-				<g>{LESSON_GRAPH.nodes.map(renderNode)}</g>
-			</svg>
+	// Per-scene narration for screen readers — the honest WHY the figure paints
+	// (the same visit order it numbers on the nodes), spoken instead of frozen into
+	// the figure's one static aria-label.
+	const sceneNarration = (() => {
+		switch (activeScene) {
+			case 0:
+				return `A graph: ${LESSON_GRAPH.nodes.length} vertices joined by ${LESSON_GRAPH.edges.length} edges.`;
+			case 1:
+				return 'The same graph as an adjacency list and an adjacency matrix.';
+			case 2:
+				return `Start at A; its unvisited neighbors ${[...frontier].sort().join(' and ')} form the frontier.`;
+			case 3:
+			case 4:
+				return `Breadth-first from A visits nodes in the order ${BFS_ORDER.join(' → ')}.`;
+			case 5:
+				return `Depth-first from A visits nodes in the order ${DFS_ORDER.join(' → ')}.`;
+			case 6:
+				return 'BFS and DFS are one loop; swapping the frontier (queue vs stack) is the only change.';
+			default:
+				return 'Graph concept visualization.';
+		}
+	})();
 
-			{/* Representation panels (scene 1): list + matrix side by side. */}
+	return (
+		<>
+			{/* Per-scene narration for screen readers, OUTSIDE the role=img figure
+			    below (whose visual order badges collapse into one static label). */}
+			<SceneNarration>{sceneNarration}</SceneNarration>
 			<div
-				className={`${styles.repr} ${showMatrix ? styles.reprShow : ''}`}
-				aria-hidden={!showMatrix}
+				className={styles.wrap}
+				data-scene={activeScene}
+				role="img"
+				aria-label="Graph concept visualization"
 			>
-				<div className={styles.reprPanel}>
-					<span className={styles.reprTitle}>Adjacency list</span>
-					<ul className={styles.list}>
-						{matrixIds.map(id => (
-							<li key={id} className={styles.listRow}>
-								<span className={styles.listKey}>{id}</span>
-								<span className={styles.listVals}>
-									{(adjacency.get(id) || []).join(' ') || '—'}
-								</span>
-							</li>
-						))}
-					</ul>
-				</div>
-				<div className={styles.reprPanel}>
-					<span className={styles.reprTitle}>Adjacency matrix</span>
-					<table className={styles.matrix}>
-						<thead>
-							<tr>
-								<th aria-hidden="true" />
-								{matrixIds.map(id => (
-									<th key={id} scope="col">
-										{id}
-									</th>
-								))}
-							</tr>
-						</thead>
-						<tbody>
-							{matrixIds.map(rowId => (
-								<tr key={rowId}>
-									<th scope="row">{rowId}</th>
-									{matrixIds.map(colId => (
-										<td
-											key={colId}
-											className={hasEdge(rowId, colId) ? styles.cellOn : ''}
-										>
-											{hasEdge(rowId, colId) ? 1 : 0}
-										</td>
+				<svg
+					viewBox={`0 0 ${VIEW_W} ${VIEW_H}`}
+					className={styles.svg}
+					preserveAspectRatio="xMidYMid meet"
+				>
+					<g className={styles.edges}>{LESSON_GRAPH.edges.map(renderEdge)}</g>
+					<g>{LESSON_GRAPH.nodes.map(renderNode)}</g>
+				</svg>
+
+				{/* Representation panels (scene 1): list + matrix side by side. */}
+				<div
+					className={`${styles.repr} ${showMatrix ? styles.reprShow : ''}`}
+					aria-hidden={!showMatrix}
+				>
+					<div className={styles.reprPanel}>
+						<span className={styles.reprTitle}>Adjacency list</span>
+						<ul className={styles.list}>
+							{matrixIds.map(id => (
+								<li key={id} className={styles.listRow}>
+									<span className={styles.listKey}>{id}</span>
+									<span className={styles.listVals}>
+										{(adjacency.get(id) || []).join(' ') || '—'}
+									</span>
+								</li>
+							))}
+						</ul>
+					</div>
+					<div className={styles.reprPanel}>
+						<span className={styles.reprTitle}>Adjacency matrix</span>
+						<table className={styles.matrix}>
+							<thead>
+								<tr>
+									<th aria-hidden="true" />
+									{matrixIds.map(id => (
+										<th key={id} scope="col">
+											{id}
+										</th>
 									))}
 								</tr>
-							))}
-						</tbody>
-					</table>
+							</thead>
+							<tbody>
+								{matrixIds.map(rowId => (
+									<tr key={rowId}>
+										<th scope="row">{rowId}</th>
+										{matrixIds.map(colId => (
+											<td
+												key={colId}
+												className={hasEdge(rowId, colId) ? styles.cellOn : ''}
+											>
+												{hasEdge(rowId, colId) ? 1 : 0}
+											</td>
+										))}
+									</tr>
+								))}
+							</tbody>
+						</table>
+					</div>
+				</div>
+
+				{traversalLabel && (
+					<div className={styles.traversalTag} aria-hidden="true">
+						{traversalLabel}
+						<span className={styles.traversalOrder}>{order.join(' → ')}</span>
+					</div>
+				)}
+
+				{legend.length > 0 && (
+					<StateLegend className={styles.legend} items={legend} />
+				)}
+
+				<div className={styles.notation} aria-hidden="true">
+					V = {LESSON_GRAPH.nodes.length} · E = {LESSON_GRAPH.edges.length}
 				</div>
 			</div>
-
-			{traversalLabel && (
-				<div className={styles.traversalTag} aria-hidden="true">
-					{traversalLabel}
-					<span className={styles.traversalOrder}>
-						{order.join(' → ')}
-					</span>
-				</div>
-			)}
-
-			{legend.length > 0 && (
-				<StateLegend className={styles.legend} items={legend} />
-			)}
-
-			<div className={styles.notation} aria-hidden="true">
-				V = {LESSON_GRAPH.nodes.length} · E = {LESSON_GRAPH.edges.length}
-			</div>
-		</div>
+		</>
 	);
 };
 

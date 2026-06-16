@@ -1,4 +1,5 @@
 import { SEQUENCE } from './scenes.js';
+import { SceneNarration } from '../../common/PlaybackEngine';
 import styles from './StacksQueuesStage.module.css';
 
 // The scrolly stage. It is driven entirely by `activeScene` so it stays in
@@ -154,43 +155,57 @@ const StacksQueuesStage = ({ activeScene = 0 }) => {
 	const showQueue = activeScene === 0 || activeScene === 2;
 	const isTraversal = activeScene === 3;
 
-	return (
-		<div
-			className={styles.wrap}
-			data-scene={activeScene}
-			role="group"
-			aria-label="Stacks and queues concept visualization"
-		>
-			{isTraversal ? (
-				<div className={styles.traversalGrid}>
-					<TraversalGraph
-						order={DFS_ORDER}
-						label="Depth-first"
-						acronym="DFS"
-						structure="stack"
-					/>
-					<TraversalGraph
-						order={BFS_ORDER}
-						label="Breadth-first"
-						acronym="BFS"
-						structure="queue"
-					/>
-				</div>
-			) : (
-				<div
-					className={`${styles.disciplineGrid} ${
-						activeScene === 0 ? styles.disciplineGridBoth : ''
-					}`}
-				>
-					{showStack && <StackPile active={activeScene === 1} />}
-					{showQueue && <QueueLane active={activeScene === 2} />}
-				</div>
-			)}
+	// Per-scene narration for screen readers — the honest WHY each scene paints, so
+	// the swapped figure is re-announced as the reader scrolls.
+	const sceneNarration = [
+		'Stacks and queues side by side: both are O(1) at one end, they differ in which end.',
+		'A stack is LIFO: push and pop both touch the top.',
+		'A queue is FIFO: enqueue at the rear, dequeue at the front.',
+		`Same tree: depth-first (a stack) visits ${DFS_ORDER.join(' → ')}; breadth-first (a queue) visits ${BFS_ORDER.join(' → ')}.`,
+	][Math.min(activeScene, 3)];
 
-			<div className={styles.notation} aria-hidden="true">
-				O(1) · push · pop · enqueue · dequeue
+	return (
+		<>
+			{/* Per-scene narration for screen readers, announcing each scene as the
+			    sticky figure swaps (role=group does not auto-announce on change). */}
+			<SceneNarration>{sceneNarration}</SceneNarration>
+			<div
+				className={styles.wrap}
+				data-scene={activeScene}
+				role="group"
+				aria-label="Stacks and queues concept visualization"
+			>
+				{isTraversal ? (
+					<div className={styles.traversalGrid}>
+						<TraversalGraph
+							order={DFS_ORDER}
+							label="Depth-first"
+							acronym="DFS"
+							structure="stack"
+						/>
+						<TraversalGraph
+							order={BFS_ORDER}
+							label="Breadth-first"
+							acronym="BFS"
+							structure="queue"
+						/>
+					</div>
+				) : (
+					<div
+						className={`${styles.disciplineGrid} ${
+							activeScene === 0 ? styles.disciplineGridBoth : ''
+						}`}
+					>
+						{showStack && <StackPile active={activeScene === 1} />}
+						{showQueue && <QueueLane active={activeScene === 2} />}
+					</div>
+				)}
+
+				<div className={styles.notation} aria-hidden="true">
+					O(1) · push · pop · enqueue · dequeue
+				</div>
 			</div>
-		</div>
+		</>
 	);
 };
 

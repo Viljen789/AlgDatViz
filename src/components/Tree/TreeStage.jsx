@@ -2,14 +2,17 @@ import { useMemo } from 'react';
 import { buildBst, getTreeLayout } from './treeUtils.js';
 import { INSERT_KEY, SEARCH_KEY, STAGE_VALUES } from './scenes.js';
 import StateLegend from '../../common/StateLegend/StateLegend';
+import { SceneNarration } from '../../common/PlaybackEngine';
 import styles from './TreeStage.module.css';
 
 // Swatch colours mirror what TreeStage.module.css actually paints, so the shared
 // key reads the same as the picture. The invariant wash uses --color-info (left,
 // smaller) vs --color-warning (right, larger); search/insert path lighting and
 // the inorder visit ride the topic accent; a found node turns success-green.
-const SW_SMALLER = 'color-mix(in srgb, var(--color-info) 16%, var(--surface-2))';
-const SW_LARGER = 'color-mix(in srgb, var(--color-warning) 16%, var(--surface-2))';
+const SW_SMALLER =
+	'color-mix(in srgb, var(--color-info) 16%, var(--surface-2))';
+const SW_LARGER =
+	'color-mix(in srgb, var(--color-warning) 16%, var(--surface-2))';
 const SW_PATH = 'var(--topic-accent)';
 const SW_FOUND = 'var(--color-success)';
 
@@ -94,9 +97,7 @@ const TreeStage = ({ activeScene = 0 }) => {
 	const isInsert = activeScene === 3;
 	const isTraversal = activeScene === 4;
 
-	const pathIds = new Set(
-		isSearch ? search.path : isInsert ? insert.path : []
-	);
+	const pathIds = new Set(isSearch ? search.path : isInsert ? insert.path : []);
 	// The current "head" of a search/insert path — the node the descent ends on.
 	// For search, that's the matched node; for insert, the parent of the new slot.
 	const headId = isSearch
@@ -140,8 +141,16 @@ const TreeStage = ({ activeScene = 0 }) => {
 		switch (activeScene) {
 			case 1:
 				return [
-					{ swatch: SW_SMALLER, label: 'left subtree (smaller)', aria: 'cyan tint' },
-					{ swatch: SW_LARGER, label: 'right subtree (larger)', aria: 'amber tint' },
+					{
+						swatch: SW_SMALLER,
+						label: 'left subtree (smaller)',
+						aria: 'cyan tint',
+					},
+					{
+						swatch: SW_LARGER,
+						label: 'right subtree (larger)',
+						aria: 'amber tint',
+					},
 				];
 			case 2:
 				return [
@@ -149,169 +158,171 @@ const TreeStage = ({ activeScene = 0 }) => {
 					{ swatch: SW_FOUND, label: 'found', aria: 'green' },
 				];
 			case 3:
-				return [{ swatch: SW_PATH, label: 'search path + new slot', aria: 'accent' }];
+				return [
+					{ swatch: SW_PATH, label: 'search path + new slot', aria: 'accent' },
+				];
 			case 4:
-				return [{ swatch: SW_PATH, label: 'visited (inorder)', aria: 'accent' }];
+				return [
+					{ swatch: SW_PATH, label: 'visited (inorder)', aria: 'accent' },
+				];
 			default:
 				return [];
 		}
 	})();
 
 	return (
-		<div
-			className={styles.wrap}
-			data-scene={activeScene}
-			role="img"
-			aria-label="Binary search tree, illustrated scene by scene"
-		>
-			<svg
-				viewBox={`0 0 ${layout.width} ${layout.height}`}
-				className={styles.svg}
-				preserveAspectRatio="xMidYMid meet"
+		<>
+			{/* Per-scene narration for screen readers, OUTSIDE the role=img figure
+			    below (which collapses its in-figure caption into one static label). */}
+			<SceneNarration>{caption}</SceneNarration>
+			<div
+				className={styles.wrap}
+				data-scene={activeScene}
+				role="img"
+				aria-label="Binary search tree, illustrated scene by scene"
 			>
-				{/* Invariant scene: wash the two subtrees of the root. */}
-				{showInvariant &&
-					(() => {
-						const xs = layout.nodes.map(n => n.x);
-						const minX = Math.min(...xs) - NODE_R - 8;
-						const maxX = Math.max(...xs) + NODE_R + 8;
-						const rootNode = layout.nodes.find(n => n.id === rootId);
-						const splitX = rootNode ? rootNode.x : (minX + maxX) / 2;
-						return (
-							<g aria-hidden="true">
-								<rect
-									x={minX}
-									y={0}
-									width={Math.max(splitX - minX, 0)}
-									height={layout.height}
-									className={styles.washLeft}
-								/>
-								<rect
-									x={splitX}
-									y={0}
-									width={Math.max(maxX - splitX, 0)}
-									height={layout.height}
-									className={styles.washRight}
-								/>
-							</g>
-						);
-					})()}
-
-				{layout.edges.map(edge => {
-					const onPath =
-						pathIds.has(edge.from.id) && pathIds.has(edge.to.id);
-					return (
-						<line
-							key={`${edge.from.id}-${edge.to.id}`}
-							x1={edge.from.x}
-							y1={edge.from.y}
-							x2={edge.to.x}
-							y2={edge.to.y}
-							className={onPath ? styles.edgeActive : styles.edge}
-						/>
-					);
-				})}
-
-				{/* Ghost insertion edge + node (insert scene only). */}
-				{ghostNode &&
-					(() => {
-						const parent = layout.nodes.find(
-							n => n.id === insert.parentId
-						);
-						return (
-							<g aria-hidden="true">
-								<line
-									x1={parent.x}
-									y1={parent.y}
-									x2={ghostNode.x}
-									y2={ghostNode.y}
-									className={styles.edgeGhost}
-								/>
-								<g
-									transform={`translate(${ghostNode.x}, ${ghostNode.y})`}
-									className={styles.ghostGroup}
-								>
-									<circle r={NODE_R} className={styles.nodeGhost} />
-									<text
-										className={styles.nodeText}
-										textAnchor="middle"
-										dy="5"
-									>
-										{ghostNode.value}
-									</text>
+				<svg
+					viewBox={`0 0 ${layout.width} ${layout.height}`}
+					className={styles.svg}
+					preserveAspectRatio="xMidYMid meet"
+				>
+					{/* Invariant scene: wash the two subtrees of the root. */}
+					{showInvariant &&
+						(() => {
+							const xs = layout.nodes.map(n => n.x);
+							const minX = Math.min(...xs) - NODE_R - 8;
+							const maxX = Math.max(...xs) + NODE_R + 8;
+							const rootNode = layout.nodes.find(n => n.id === rootId);
+							const splitX = rootNode ? rootNode.x : (minX + maxX) / 2;
+							return (
+								<g aria-hidden="true">
+									<rect
+										x={minX}
+										y={0}
+										width={Math.max(splitX - minX, 0)}
+										height={layout.height}
+										className={styles.washLeft}
+									/>
+									<rect
+										x={splitX}
+										y={0}
+										width={Math.max(maxX - splitX, 0)}
+										height={layout.height}
+										className={styles.washRight}
+									/>
 								</g>
+							);
+						})()}
+
+					{layout.edges.map(edge => {
+						const onPath = pathIds.has(edge.from.id) && pathIds.has(edge.to.id);
+						return (
+							<line
+								key={`${edge.from.id}-${edge.to.id}`}
+								x1={edge.from.x}
+								y1={edge.from.y}
+								x2={edge.to.x}
+								y2={edge.to.y}
+								className={onPath ? styles.edgeActive : styles.edge}
+							/>
+						);
+					})}
+
+					{/* Ghost insertion edge + node (insert scene only). */}
+					{ghostNode &&
+						(() => {
+							const parent = layout.nodes.find(n => n.id === insert.parentId);
+							return (
+								<g aria-hidden="true">
+									<line
+										x1={parent.x}
+										y1={parent.y}
+										x2={ghostNode.x}
+										y2={ghostNode.y}
+										className={styles.edgeGhost}
+									/>
+									<g
+										transform={`translate(${ghostNode.x}, ${ghostNode.y})`}
+										className={styles.ghostGroup}
+									>
+										<circle r={NODE_R} className={styles.nodeGhost} />
+										<text
+											className={styles.nodeText}
+											textAnchor="middle"
+											dy="5"
+										>
+											{ghostNode.value}
+										</text>
+									</g>
+								</g>
+							);
+						})()}
+
+					{layout.nodes.map((node, idx) => {
+						const isRoot = node.id === rootId;
+						const onPath = pathIds.has(node.id);
+						const isHead = node.id === headId;
+						const isFound =
+							isSearch && search.found && node.id === String(SEARCH_KEY);
+						const isVisited = visitedIds.has(node.id);
+						const side = subtreeSide[node.id];
+
+						const classes = [styles.nodeCircle];
+						if (revealLevels) classes.push(styles.nodeReveal);
+						if (showInvariant && isRoot) classes.push(styles.nodeRootMark);
+						if (showInvariant && side === 'left')
+							classes.push(styles.nodeSmaller);
+						if (showInvariant && side === 'right')
+							classes.push(styles.nodeLarger);
+						if (onPath) classes.push(styles.nodePath);
+						if (isHead) classes.push(styles.nodeHead);
+						if (isFound) classes.push(styles.nodeFound);
+						if (isVisited) classes.push(styles.nodeVisited);
+
+						return (
+							<g
+								key={node.id}
+								transform={`translate(${node.x}, ${node.y})`}
+								className={revealLevels ? styles.revealGroup : undefined}
+								style={
+									revealLevels
+										? { '--delay': `${node.depth * 90 + idx * 12}ms` }
+										: isTraversal
+											? { '--delay': `${inorder.indexOf(node.id) * 120}ms` }
+											: undefined
+								}
+							>
+								<circle r={NODE_R} className={classes.join(' ')} />
+								<text className={styles.nodeText} textAnchor="middle" dy="5">
+									{node.value}
+								</text>
 							</g>
 						);
-					})()}
+					})}
+				</svg>
 
-				{layout.nodes.map((node, idx) => {
-					const isRoot = node.id === rootId;
-					const onPath = pathIds.has(node.id);
-					const isHead = node.id === headId;
-					const isFound =
-						isSearch && search.found && node.id === String(SEARCH_KEY);
-					const isVisited = visitedIds.has(node.id);
-					const side = subtreeSide[node.id];
+				<StateLegend items={legend} className={styles.legend} />
 
-					const classes = [styles.nodeCircle];
-					if (revealLevels) classes.push(styles.nodeReveal);
-					if (showInvariant && isRoot) classes.push(styles.nodeRootMark);
-					if (showInvariant && side === 'left')
-						classes.push(styles.nodeSmaller);
-					if (showInvariant && side === 'right')
-						classes.push(styles.nodeLarger);
-					if (onPath) classes.push(styles.nodePath);
-					if (isHead) classes.push(styles.nodeHead);
-					if (isFound) classes.push(styles.nodeFound);
-					if (isVisited) classes.push(styles.nodeVisited);
-
-					return (
-						<g
-							key={node.id}
-							transform={`translate(${node.x}, ${node.y})`}
-							className={revealLevels ? styles.revealGroup : undefined}
-							style={
-								revealLevels
-									? { '--delay': `${node.depth * 90 + idx * 12}ms` }
-									: isTraversal
-										? { '--delay': `${inorder.indexOf(node.id) * 120}ms` }
-										: undefined
-							}
-						>
-							<circle r={NODE_R} className={classes.join(' ')} />
-							<text
-								className={styles.nodeText}
-								textAnchor="middle"
-								dy="5"
-							>
-								{node.value}
-							</text>
-						</g>
-					);
-				})}
-			</svg>
-
-			<StateLegend items={legend} className={styles.legend} />
-
-			{isTraversal && (
-				<div className={styles.outputStrip} aria-hidden="true">
-					<span className={styles.outputLabel}>Inorder</span>
-					<div className={styles.outputItems}>
-						{inorder.map((id, i) => (
-							<span
-								key={id}
-								className={styles.outputItem}
-								style={{ '--delay': `${i * 120 + 120}ms` }}
-							>
-								{id}
-							</span>
-						))}
+				{isTraversal && (
+					<div className={styles.outputStrip} aria-hidden="true">
+						<span className={styles.outputLabel}>Inorder</span>
+						<div className={styles.outputItems}>
+							{inorder.map((id, i) => (
+								<span
+									key={id}
+									className={styles.outputItem}
+									style={{ '--delay': `${i * 120 + 120}ms` }}
+								>
+									{id}
+								</span>
+							))}
+						</div>
 					</div>
-				</div>
-			)}
+				)}
 
-			<p className={styles.caption}>{caption}</p>
-		</div>
+				<p className={styles.caption}>{caption}</p>
+			</div>
+		</>
 	);
 };
 

@@ -9,6 +9,7 @@ import {
 	TREE_BOUND,
 	TREE_LABELS,
 } from './scenes.js';
+import { SceneNarration } from '../../common/PlaybackEngine';
 import styles from './LinearTimeSortingStage.module.css';
 
 // ── Scene 0–1: the comparison decision tree + the leaf-count argument ─────────
@@ -20,14 +21,26 @@ const DecisionTreeView = ({ showBound }) => {
 		<div className={styles.treeView}>
 			<div className={styles.treeRows}>
 				{levels.map((nodes, depth) => (
-					<div key={depth} className={styles.treeRow} style={{ '--depth': depth }}>
+					<div
+						key={depth}
+						className={styles.treeRow}
+						style={{ '--depth': depth }}
+					>
 						{nodes.map(nd =>
 							nd.kind === 'compare' ? (
-								<span key={nd.id} className={styles.cmpNode} title="one comparison">
+								<span
+									key={nd.id}
+									className={styles.cmpNode}
+									title="one comparison"
+								>
 									{nd.compare}?
 								</span>
 							) : (
-								<span key={nd.id} className={styles.leafNode} title="a sorted order">
+								<span
+									key={nd.id}
+									className={styles.leafNode}
+									title="a sorted order"
+								>
 									{nd.order}
 								</span>
 							)
@@ -35,7 +48,9 @@ const DecisionTreeView = ({ showBound }) => {
 					</div>
 				))}
 			</div>
-			<div className={`${styles.boundCard} ${showBound ? styles.boundCardOn : ''}`}>
+			<div
+				className={`${styles.boundCard} ${showBound ? styles.boundCardOn : ''}`}
+			>
 				<div className={styles.boundRow}>
 					<span className={styles.boundLabel}>leaves needed</span>
 					<span className={styles.boundValue}>
@@ -82,7 +97,10 @@ const CountingView = () => {
 	const followPos = cumulative[follow]; // 1-indexed output position of last `follow`
 
 	return (
-		<div className={styles.algView} data-reduced={reducedMotion ? 'true' : undefined}>
+		<div
+			className={styles.algView}
+			data-reduced={reducedMotion ? 'true' : undefined}
+		>
 			<div className={styles.inputRow} aria-label="input array">
 				{COUNTING_DEMO.map((v, i) => (
 					<span
@@ -118,7 +136,9 @@ const CountingView = () => {
 									className={`${styles.histBar} ${isFollow ? styles.histBarFollow : ''}`}
 									style={{ '--h': `${(count / peak) * 100}%` }}
 								>
-									{count > 0 && <span className={styles.histCount}>{count}</span>}
+									{count > 0 && (
+										<span className={styles.histCount}>{count}</span>
+									)}
 								</div>
 							</div>
 							<span className={styles.histValue}>slot {value}</span>
@@ -127,7 +147,8 @@ const CountingView = () => {
 				})}
 			</div>
 			<p className={styles.connector}>
-				accumulate counts → final positions; place from the input, right to left ↓
+				accumulate counts → final positions; place from the input, right to left
+				↓
 			</p>
 			{/* The cumulative row: count[v] becomes the number of keys ≤ v, i.e. the
 			    1-indexed final position of the LAST occurrence of v. */}
@@ -162,7 +183,8 @@ const CountingView = () => {
 				})}
 			</div>
 			<p className={styles.caption}>
-				last {follow} → position count[{follow}] = {followPos} · stable, O(n + k), no comparisons
+				last {follow} → position count[{follow}] = {followPos} · stable, O(n +
+				k), no comparisons
 			</p>
 		</div>
 	);
@@ -196,7 +218,9 @@ const RadixView = () => {
 							const digit = p === 0 ? v % 10 : Math.floor(v / 10);
 							return (
 								<span key={i} className={styles.cell}>
-									<span className={styles.cellDim}>{p === 0 ? Math.floor(v / 10) : ''}</span>
+									<span className={styles.cellDim}>
+										{p === 0 ? Math.floor(v / 10) : ''}
+									</span>
 									<span className={styles.cellHot}>{digit}</span>
 								</span>
 							);
@@ -263,10 +287,15 @@ const StabilityView = () => {
 			</div>
 			<div className={styles.stabCompare}>
 				{column('Stable sort', STABILITY.stable, STABILITY.stablePreserves)}
-				{column('Unstable sort', STABILITY.unstable, STABILITY.unstablePreserves)}
+				{column(
+					'Unstable sort',
+					STABILITY.unstable,
+					STABILITY.unstablePreserves
+				)}
 			</div>
 			<p className={styles.caption}>
-				key = number, letter = input slot. Tied keys are highlighted — watch their order.
+				key = number, letter = input slot. Tied keys are highlighted — watch
+				their order.
 			</p>
 		</div>
 	);
@@ -320,7 +349,11 @@ const BucketView = () => {
 const AssumptionsView = () => {
 	const rows = [
 		{ name: 'Counting', cost: 'O(n + k)', needs: 'small range k' },
-		{ name: 'Radix', cost: 'O(d·(n + k))', needs: 'bounded digits + stable pass' },
+		{
+			name: 'Radix',
+			cost: 'O(d·(n + k))',
+			needs: 'bounded digits + stable pass',
+		},
 		{ name: 'Bucket', cost: 'O(n) expected', needs: 'uniform distribution' },
 		{ name: 'Comparison', cost: 'Ω(n log n)', needs: 'works on any keys' },
 	];
@@ -336,7 +369,10 @@ const AssumptionsView = () => {
 				</thead>
 				<tbody>
 					{rows.map(r => (
-						<tr key={r.name} className={r.name === 'Comparison' ? styles.summaryBaseline : ''}>
+						<tr
+							key={r.name}
+							className={r.name === 'Comparison' ? styles.summaryBaseline : ''}
+						>
 							<td className={styles.summaryName}>{r.name}</td>
 							<td className={styles.summaryCost}>{r.cost}</td>
 							<td className={styles.summaryNeeds}>{r.needs}</td>
@@ -345,7 +381,8 @@ const AssumptionsView = () => {
 				</tbody>
 			</table>
 			<p className={styles.caption}>
-				Linear time is rented from the keys. Break the assumption and Ω(n log n) wins.
+				Linear time is rented from the keys. Break the assumption and Ω(n log n)
+				wins.
 			</p>
 		</div>
 	);
@@ -395,20 +432,37 @@ const LinearTimeSortingStage = ({ activeScene = 0 }) => {
 		'assumptions',
 	][Math.min(activeScene, 6)];
 
+	// Per-scene narration for screen readers — the honest WHY each view paints on
+	// screen, mirroring the visible per-view caption.
+	const sceneNarration = [
+		'A comparison sort is a decision tree; each internal node is one comparison.',
+		'n! orderings need n! leaves, so height h ≥ log₂(n!) = Ω(n log n) comparisons.',
+		'Counting sort uses each value as an index: stable, O(n + k), no comparisons.',
+		'Radix sort runs one stable counting pass per digit: O(d·(n + k)).',
+		'A stable sort keeps equal keys in input order; an unstable one may reorder them.',
+		'Bucket sort scatters into range buckets, sorts each, and gathers: O(n) expected.',
+		'Linear time is rented from the keys; break the assumption and Ω(n log n) wins.',
+	][Math.min(activeScene, 6)];
+
 	return (
-		<div
-			className={styles.wrap}
-			data-scene={activeScene}
-			role="img"
-			aria-label={`Linear-time sorting visualization: ${sceneLabel}`}
-		>
-			<div className={styles.notation} aria-hidden="true">
-				{sceneLabel}
+		<>
+			{/* Per-scene narration for screen readers, OUTSIDE the role=img figure
+			    below (which collapses its in-view caption into one static label). */}
+			<SceneNarration>{sceneNarration}</SceneNarration>
+			<div
+				className={styles.wrap}
+				data-scene={activeScene}
+				role="img"
+				aria-label={`Linear-time sorting visualization: ${sceneLabel}`}
+			>
+				<div className={styles.notation} aria-hidden="true">
+					{sceneLabel}
+				</div>
+				<div key={activeScene} className={styles.sceneSlot}>
+					{view}
+				</div>
 			</div>
-			<div key={activeScene} className={styles.sceneSlot}>
-				{view}
-			</div>
-		</div>
+		</>
 	);
 };
 

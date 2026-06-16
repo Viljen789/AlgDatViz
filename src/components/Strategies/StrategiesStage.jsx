@@ -5,6 +5,7 @@ import {
 } from './climbingStairsRecursion.js';
 import { SCENES } from './scenes.js';
 import StateLegend from '../../common/StateLegend/StateLegend';
+import { SceneNarration } from '../../common/PlaybackEngine';
 import styles from './StrategiesStage.module.css';
 
 // Swatch colours mirror what StrategiesStage.module.css actually paints. Greedy
@@ -82,7 +83,9 @@ const CoinBoard = ({ sceneId }) => {
 			<div className={styles.lane}>
 				<div className={styles.laneHead}>
 					<span className={styles.laneTag}>Greedy</span>
-					<span className={styles.laneSub}>take the biggest coin that fits</span>
+					<span className={styles.laneSub}>
+						take the biggest coin that fits
+					</span>
 				</div>
 				<div className={styles.coinRow}>
 					{showGreedy ? (
@@ -117,7 +120,9 @@ const CoinBoard = ({ sceneId }) => {
 					<span className={`${styles.laneTag} ${styles.laneTagDp}`}>
 						Dynamic programming
 					</span>
-					<span className={styles.laneSub}>1 + min(dp[i − c]) for every coin</span>
+					<span className={styles.laneSub}>
+						1 + min(dp[i − c]) for every coin
+					</span>
 				</div>
 				<ol className={styles.dpRow} aria-label="DP table">
 					{dp.map((value, i) => {
@@ -132,9 +137,7 @@ const CoinBoard = ({ sceneId }) => {
 								style={{ '--cell-delay': `${i * 55}ms` }}
 							>
 								<span className={styles.dpIndex}>{i}</span>
-								<span className={styles.dpValue}>
-									{isFilled ? value : '·'}
-								</span>
+								<span className={styles.dpValue}>{isFilled ? value : '·'}</span>
 							</li>
 						);
 					})}
@@ -210,9 +213,7 @@ const RecursionBoard = () => {
 					{census.rows.map(row => (
 						<li key={row.k} className={styles.censusCell}>
 							<span className={styles.dpIndex}>ways({row.k})</span>
-							<span className={styles.censusNaive}>
-								naive ×{row.naive}
-							</span>
+							<span className={styles.censusNaive}>naive ×{row.naive}</span>
 							<span className={styles.censusMemo}>memo ×1</span>
 						</li>
 					))}
@@ -331,11 +332,13 @@ const SCENE_BOARDS = {
 
 const BOARD_META = {
 	coin: {
-		label: 'Coin change — greedy commitment versus the dynamic-programming table',
+		label:
+			'Coin change — greedy commitment versus the dynamic-programming table',
 		notation: 'target = 10¢ · coins {1, 5, 6}',
 	},
 	recursion: {
-		label: 'Climbing stairs — naive recursion tree with repeated subproblems versus a memoized table',
+		label:
+			'Climbing stairs — naive recursion tree with repeated subproblems versus a memoized table',
 		notation: `ways(${STAIRS_N}) · naive vs memo`,
 	},
 	interval: {
@@ -348,6 +351,27 @@ const BOARD_META = {
 	},
 };
 
+// Per-scene narration for screen readers — the honest WHY of the active board,
+// matching the verdict each board already paints on screen. Keyed by scene id (the
+// coin board shifts meaning across its scenes), so the spoken line tracks the
+// concept, not just the static board summary in BOARD_META.
+const SCENE_NARRATION = {
+	'two-shapes':
+		'Greedy commits to the largest coin first; dynamic programming will fill a table instead.',
+	'greedy-trap':
+		'Greedy is trapped: taking 6¢ first strands it at 5 coins for a 10¢ target.',
+	'dp-remembers':
+		'Dynamic programming remembers every option and finds 5 + 5 — just 2 coins.',
+	'overlapping-subproblems':
+		'Naive recursion recomputes the same subproblems; memoizing solves each once, O(n).',
+	'greedy-safe':
+		'Interval scheduling: always taking the earliest finish is provably optimal, 3 activities.',
+	'two-properties':
+		'Both tools need optimal substructure; greedy-choice leads to greedy, overlapping subproblems lead to DP.',
+	'choose-what':
+		'The fork: greedy strands at 5 coins, DP answers 2 — choose by which property holds.',
+};
+
 // Scene-aware colour key: only the states the active board paints right now.
 // The coin board shifts meaning across its scenes, so it is keyed by id, not by
 // board: greedy "take" before the trap, the stranded waste once it is sprung,
@@ -355,7 +379,9 @@ const BOARD_META = {
 const buildLegend = sceneId => {
 	switch (sceneId) {
 		case 'two-shapes':
-			return [{ swatch: SW_GREEDY, label: 'greedy: take biggest', aria: 'amber' }];
+			return [
+				{ swatch: SW_GREEDY, label: 'greedy: take biggest', aria: 'amber' },
+			];
 		case 'greedy-trap':
 			return [
 				{ swatch: SW_GREEDY, label: 'greedy: take', aria: 'amber' },
@@ -390,25 +416,31 @@ const StrategiesStage = ({ activeScene = 0 }) => {
 	const board = SCENE_BOARDS[sceneId] ?? 'coin';
 	const meta = BOARD_META[board];
 	const legend = buildLegend(sceneId);
+	const narration = SCENE_NARRATION[sceneId] ?? meta.label;
 
 	return (
-		<div
-			className={styles.wrap}
-			data-scene={activeScene}
-			role="img"
-			aria-label={meta.label}
-		>
-			{board === 'coin' && <CoinBoard sceneId={sceneId} />}
-			{board === 'recursion' && <RecursionBoard />}
-			{board === 'interval' && <IntervalBoard />}
-			{board === 'decision' && <DecisionBoard />}
+		<>
+			{/* Per-scene narration for screen readers, OUTSIDE the role=img figure
+			    below (which collapses its in-board captions into one static label). */}
+			<SceneNarration>{narration}</SceneNarration>
+			<div
+				className={styles.wrap}
+				data-scene={activeScene}
+				role="img"
+				aria-label={meta.label}
+			>
+				{board === 'coin' && <CoinBoard sceneId={sceneId} />}
+				{board === 'recursion' && <RecursionBoard />}
+				{board === 'interval' && <IntervalBoard />}
+				{board === 'decision' && <DecisionBoard />}
 
-			<StateLegend items={legend} />
+				<StateLegend items={legend} />
 
-			<div className={styles.notation} aria-hidden="true">
-				{meta.notation}
+				<div className={styles.notation} aria-hidden="true">
+					{meta.notation}
+				</div>
 			</div>
-		</div>
+		</>
 	);
 };
 

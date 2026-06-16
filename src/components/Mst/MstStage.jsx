@@ -8,6 +8,7 @@ import {
 } from './mstTrace.js';
 import { MST_EDGES, MST_VERTICES } from './mstMeta.js';
 import StateLegend from '../../common/StateLegend/StateLegend';
+import { SceneNarration } from '../../common/PlaybackEngine';
 import styles from './MstStage.module.css';
 
 // Swatch colours mirror MstGraph's on-canvas edge/node styling so the shared
@@ -18,15 +19,21 @@ import styles from './MstStage.module.css';
 const SW_TREE = 'var(--topic-accent)';
 const SW_FRONTIER = 'color-mix(in srgb, var(--topic-accent) 40%, transparent)';
 const SW_REJECT = 'var(--color-border-strong)';
-const SW_INSIDE = 'color-mix(in srgb, var(--topic-accent) 26%, var(--surface-2))';
-const SW_OUTSIDE = 'color-mix(in srgb, var(--color-warning) 22%, var(--surface-2))';
+const SW_INSIDE =
+	'color-mix(in srgb, var(--topic-accent) 26%, var(--surface-2))';
+const SW_OUTSIDE =
+	'color-mix(in srgb, var(--color-warning) 22%, var(--surface-2))';
 
 // The cut the cut-property scene illustrates: {A, B, D} vs the rest.
 const CUT_INSIDE = ['A', 'B', 'D'];
 
 // Precompute the things the static stage needs once (pure, cheap).
 const KRUSKAL = kruskalTrace({ vertices: MST_VERTICES, edges: MST_EDGES });
-const PRIM_A = primTrace({ vertices: MST_VERTICES, edges: MST_EDGES, start: 'A' });
+const PRIM_A = primTrace({
+	vertices: MST_VERTICES,
+	edges: MST_EDGES,
+	start: 'A',
+});
 const MST_TREE = new Set(KRUSKAL.treeEdges);
 const ALL_EDGES = normalizeEdges(MST_EDGES);
 
@@ -110,12 +117,12 @@ const MstStage = ({ activeScene = 0 }) => {
 					edgeSets: {
 						tree: acceptedSoFar,
 						rejected,
-						consider: lastReject ? new Set([lastReject.considerEdge.id]) : undefined,
+						consider: lastReject
+							? new Set([lastReject.considerEdge.id])
+							: undefined,
 					},
 					nodeSets: {
-						tree: new Set(
-							[...acceptedSoFar].flatMap(id => id.split('|'))
-						),
+						tree: new Set([...acceptedSoFar].flatMap(id => id.split('|'))),
 					},
 					cutSets: null,
 					caption:
@@ -175,29 +182,35 @@ const MstStage = ({ activeScene = 0 }) => {
 	})();
 
 	return (
-		<div
-			className={styles.wrap}
-			data-scene={activeScene}
-			role="img"
-			aria-label="A shared weighted graph shown scene by scene as its minimum spanning tree is built"
-		>
-			<div className={styles.notation} aria-hidden="true">
-				weighted · undirected · |V| = {MST_VERTICES.length} · |E| = {ALL_EDGES.length}
+		<>
+			{/* Per-scene narration for screen readers, OUTSIDE the role=img figure
+			    below (which collapses its in-figure caption into one static label). */}
+			<SceneNarration>{view.caption}</SceneNarration>
+			<div
+				className={styles.wrap}
+				data-scene={activeScene}
+				role="img"
+				aria-label="A shared weighted graph shown scene by scene as its minimum spanning tree is built"
+			>
+				<div className={styles.notation} aria-hidden="true">
+					weighted · undirected · |V| = {MST_VERTICES.length} · |E| ={' '}
+					{ALL_EDGES.length}
+				</div>
+
+				<div className={styles.graphBox}>
+					<MstGraph
+						edges={ALL_EDGES}
+						edgeSets={view.edgeSets}
+						nodeSets={view.nodeSets}
+						cutSets={view.cutSets}
+					/>
+				</div>
+
+				<StateLegend items={legend} />
+
+				<p className={styles.caption}>{view.caption}</p>
 			</div>
-
-			<div className={styles.graphBox}>
-				<MstGraph
-					edges={ALL_EDGES}
-					edgeSets={view.edgeSets}
-					nodeSets={view.nodeSets}
-					cutSets={view.cutSets}
-				/>
-			</div>
-
-			<StateLegend items={legend} />
-
-			<p className={styles.caption}>{view.caption}</p>
-		</div>
+		</>
 	);
 };
 
