@@ -102,6 +102,9 @@ const HeroRecompose = ({ className, onState }) => {
 				gsap.set(bars, {
 					attr: { height: i => BARS[i].h, y: 0 },
 					autoAlpha: 0,
+					scaleY: 0,
+					// Grow each stem down from its atom (the dot), like an inked stroke.
+					transformOrigin: '0px 0px',
 				});
 				// Inline strokeWidth so it overrides the .edge stylesheet rule, letting
 				// maxFlow vary pipe thickness per capacity.
@@ -132,7 +135,21 @@ const HeroRecompose = ({ className, onState }) => {
 					ease: 'power3.out',
 					stagger: { each: 0.02, from: 'center' },
 				});
-				master.to(bars, { autoAlpha: BAR_OP, duration: 0.6 }, '<0.2');
+				// Stems ink on: each grows down from its dot, lightly staggered from
+				// the centre, so the array draws itself in rather than fading. The
+				// loop only ever toggles bar autoAlpha, so leaving scaleY at 1 here is
+				// safe — later bar states reappear at full height.
+				master.to(
+					bars,
+					{
+						autoAlpha: BAR_OP,
+						scaleY: 1,
+						duration: 0.7,
+						ease: 'power2.out',
+						stagger: { each: 0.03, from: 'center' },
+					},
+					'<0.1'
+				);
 
 				// The forever loop.
 				const loop = gsap.timeline({

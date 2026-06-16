@@ -643,15 +643,19 @@ const HomePage = () => {
 			mm.add('(prefers-reduced-motion: no-preference)', () => {
 				const q = sel => pageEl.querySelector(sel);
 
-				// ---- Hero: a short, confident staggered entrance ----
+				// ---- Hero entrance: the instrument inks in first, then the headline
+				// sets. The lamp warms on underneath, an inked rule draws in under the
+				// eyebrow, and the reading column cascades in after the headline. ----
 				const heroTl = gsap.timeline({ defaults: { ease: 'power3.out' } });
 				const lampEl = q('[data-hero-lamp]');
 				const eyebrowEl = q('[data-hero-eyebrow]');
+				const ruleEl = q('[data-hero-rule]');
 				const titleLineEls = pageEl.querySelectorAll('[data-hero-title-line]');
 				const subEl = q('[data-hero-sub]');
 				const stripEl = q('[data-hero-strip]');
 				const actionEls = pageEl.querySelectorAll('[data-hero-actions] > *');
 				const progressEl = q('[data-hero-progress]');
+				const recomposeEl = q('[data-hero-recompose]');
 
 				// The lamp warms on: a soft, slightly oversized glow easing down into
 				// place, like a desk lamp reaching temperature. Opacity + scale only,
@@ -662,42 +666,58 @@ const HomePage = () => {
 						{ autoAlpha: 0, scale: 1.14, duration: 1.7, ease: 'sine.out' },
 						0
 					);
+				// The instrument leads. Its container reveals on the very first beat,
+				// so the stems (which ink themselves on inside HeroRecompose) read as
+				// the hero drawing itself before any words arrive.
+				if (recomposeEl)
+					heroTl.from(
+						recomposeEl,
+						{ autoAlpha: 0, scale: 0.98, duration: 0.85, ease: 'power2.out' },
+						0
+					);
 				if (eyebrowEl)
-					heroTl.from(eyebrowEl, { y: 14, opacity: 0, duration: 0.55 }, 0.1);
-				// The headline is the beat: each clause sets UP out of its own
-				// clipping mask. No opacity, since the mask already hides it below the
-				// line, so this reads as type being set into the frame rather than a
-				// fade. power4.out gives the decisive, settled landing.
+					heroTl.from(eyebrowEl, { y: 14, opacity: 0, duration: 0.55 }, 0.12);
+				// A hairline rule draws itself in under the eyebrow (scaleX from the
+				// left), echoing the inked spine so the hero speaks the same language.
+				if (ruleEl)
+					heroTl.from(
+						ruleEl,
+						{
+							scaleX: 0,
+							transformOrigin: 'left center',
+							duration: 0.7,
+							ease: 'power2.out',
+						},
+						0.24
+					);
+				// The headline is the payoff beat, landing once the instrument has
+				// begun forming. Each clause sets UP out of its own clipping mask with
+				// no opacity (the mask already hides it below the line), so it reads as
+				// type being set, not a fade. power4.out plus a touch more travel give
+				// the decisive, confident landing.
 				if (titleLineEls.length)
 					heroTl.from(
 						titleLineEls,
 						{
-							yPercent: 115,
+							yPercent: 120,
 							duration: 0.95,
-							stagger: 0.09,
+							stagger: 0.1,
 							ease: 'power4.out',
 						},
-						0.16
+						0.3
 					);
 				if (subEl)
-					heroTl.from(subEl, { y: 18, opacity: 0, duration: 0.7 }, 0.34);
+					heroTl.from(subEl, { y: 18, opacity: 0, duration: 0.7 }, 0.5);
 				if (stripEl)
-					heroTl.from(stripEl, { y: 12, opacity: 0, duration: 0.6 }, 0.42);
+					heroTl.from(stripEl, { y: 12, opacity: 0, duration: 0.6 }, 0.58);
 				if (actionEls.length)
 					heroTl.from(
 						actionEls,
 						{ y: 14, opacity: 0, duration: 0.6, stagger: 0.09 },
-						0.44
+						0.6
 					);
 				if (progressEl)
-					heroTl.from(progressEl, { y: 12, opacity: 0, duration: 0.6 }, 0.54);
-				const recomposeEl = q('[data-hero-recompose]');
-				if (recomposeEl)
-					heroTl.from(
-						recomposeEl,
-						{ autoAlpha: 0, scale: 0.97, duration: 1.2, ease: 'power2.out' },
-						0.2
-					);
+					heroTl.from(progressEl, { y: 12, opacity: 0, duration: 0.6 }, 0.7);
 				// The figure legend lands as the closing beat of the hero entrance.
 				const figCaptionEl = q('[data-hero-figure-caption]');
 				if (figCaptionEl)
@@ -874,9 +894,16 @@ const HomePage = () => {
 			>
 				<div className={styles.lamp} aria-hidden="true" data-hero-lamp />
 				<div className={styles.heroInner}>
-					<p className={styles.eyebrow} data-hero-eyebrow>
-						AlgDatViz · TDT4120
-					</p>
+					<div className={styles.eyebrowGroup}>
+						<p className={styles.eyebrow} data-hero-eyebrow>
+							AlgDatViz · TDT4120
+						</p>
+						<span
+							className={styles.eyebrowRule}
+							aria-hidden="true"
+							data-hero-rule
+						/>
+					</div>
 					<h1 id="home-hero-title" className={styles.heroTitle}>
 						{heroState.titleLines.map((line, i) => (
 							<span key={i} className={styles.heroTitleMask}>

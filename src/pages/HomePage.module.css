@@ -385,6 +385,27 @@
 	color: var(--color-text-muted);
 }
 
+/* Eyebrow + its hairline, kept tight so the page-level gap sits around the pair
+   rather than between them. */
+.eyebrowGroup {
+	display: flex;
+	flex-direction: column;
+	align-items: flex-start;
+	gap: var(--space-xs);
+}
+
+/* A hairline that draws itself in under the eyebrow (scaleX from the left during
+   the entrance), echoing the inked spine. Rests fully drawn for reduced-motion
+   and no-JS, since only the entrance animates it. */
+.eyebrowRule {
+	display: block;
+	width: clamp(44px, 6vw, 72px);
+	height: 1.5px;
+	border-radius: 1px;
+	background: var(--color-text-muted);
+	transform-origin: left center;
+}
+
 .heroTitleMask {
 	display: block;
 	overflow: hidden;
