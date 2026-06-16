@@ -4,6 +4,7 @@ import {
 	addDays,
 	computeStreak,
 	daysUntil,
+	dailyGoal,
 	examNewCap,
 	DAILY_GOAL,
 } from './activityLog.js';
@@ -102,4 +103,41 @@ test('examNewCap: honors a custom base', () => {
 	assert.equal(examNewCap(30, 10), 10);
 	assert.equal(examNewCap(2, 10), 20);
 	assert.equal(examNewCap(10, 10), 15);
+});
+
+test('dailyGoal: defaults to the base goal when no exam date is set', () => {
+	// The graceful no-date default — the resting daily target.
+	assert.equal(dailyGoal(null), DAILY_GOAL);
+	assert.equal(dailyGoal(undefined), DAILY_GOAL);
+});
+
+test('dailyGoal: escalates as the exam approaches', () => {
+	// Far out ⇒ the base goal (the floor).
+	assert.equal(dailyGoal(30), DAILY_GOAL);
+	// Just over a fortnight is still base; at/within 14 days it ramps to 1.5x.
+	assert.equal(dailyGoal(15), DAILY_GOAL);
+	assert.equal(dailyGoal(14), Math.round(DAILY_GOAL * 1.5));
+	assert.equal(dailyGoal(4), Math.round(DAILY_GOAL * 1.5));
+	// The last three days double it (the ceiling).
+	assert.equal(dailyGoal(3), DAILY_GOAL * 2);
+	assert.equal(dailyGoal(1), DAILY_GOAL * 2);
+});
+
+test('dailyGoal: floor and ceiling hold; exam day / past stays at max', () => {
+	// The curve is monotonic and bounded by [base, 2*base] across the window.
+	const base = DAILY_GOAL;
+	for (let d = -2; d <= 40; d += 1) {
+		const g = dailyGoal(d);
+		assert.ok(g >= base, `goal ${g} below floor at d=${d}`);
+		assert.ok(g <= base * 2, `goal ${g} above ceiling at d=${d}`);
+	}
+	// Exam day and a missed/past exam read as max pressure, never 0 or negative.
+	assert.equal(dailyGoal(0), base * 2);
+	assert.equal(dailyGoal(-1), base * 2);
+});
+
+test('dailyGoal: honors a custom base, mirroring examNewCap', () => {
+	assert.equal(dailyGoal(30, 10), 10);
+	assert.equal(dailyGoal(10, 10), 15);
+	assert.equal(dailyGoal(2, 10), 20);
 });

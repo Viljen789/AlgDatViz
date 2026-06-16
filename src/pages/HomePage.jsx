@@ -12,7 +12,7 @@ import {
 	TOPIC_BY_ID,
 } from '../data/curriculum.js';
 import { REVIEW_BANK } from '../components/Review/reviewBank.js';
-import { DAILY_GOAL, examNewCap } from '../lib/activityLog.js';
+import { dailyGoal, examNewCap } from '../lib/activityLog.js';
 import useProgress from '../hooks/useProgress.js';
 import useSrs from '../hooks/useSrs.js';
 import useActivity from '../hooks/useActivity.js';
@@ -594,7 +594,14 @@ const HomePage = () => {
 		[srsPlan, isNewEligible, daysUntilExam]
 	);
 	const dueTotal = duePlan.dueCount + duePlan.freshCount;
-	const goalDone = started && todayCount >= DAILY_GOAL;
+	// The daily ring's target escalates as the exam nears (mirrors the new-card
+	// ramp above), so the goal and the schedule push together. Defaults to the
+	// base goal when no exam date is set.
+	const goal = useMemo(() => dailyGoal(daysUntilExam), [daysUntilExam]);
+	// True when the deadline has pushed today's target above the resting goal —
+	// drives one honest line of copy explaining why the bar is higher.
+	const goalRaised = goal > dailyGoal(null);
+	const goalDone = started && todayCount >= goal;
 
 	const lastTopic = lastVisited ? TOPIC_BY_ID[lastVisited] : null;
 	const nextTopic = useMemo(() => {
@@ -614,12 +621,15 @@ const HomePage = () => {
 				ctaTopic: FIRST_TOPIC,
 			};
 		}
-		if (lastTopic && lastTopic.id !== nextTopic?.id) {
+		if (lastTopic) {
+			// Resume where you actually stopped — the CTA reopens the last topic and
+			// the scrolly drops you back at the furthest scene you reached. (Jumping
+			// ahead to the next topic stays one click away via the path map below.)
 			return {
 				titleLines: ['Welcome back.'],
-				subtitle: `You stopped at ${lastTopic.name.toLowerCase()}. Pick it back up, or jump ahead.`,
-				ctaLabel: `Continue with ${nextTopic.name.toLowerCase()}`,
-				ctaTopic: nextTopic,
+				subtitle: `Pick up ${lastTopic.name.toLowerCase()} right where you left off, or jump ahead on the path.`,
+				ctaLabel: `Resume ${lastTopic.name.toLowerCase()}`,
+				ctaTopic: lastTopic,
 			};
 		}
 		return {
@@ -629,7 +639,7 @@ const HomePage = () => {
 			ctaLabel: `Begin with ${FIRST_TOPIC.name.toLowerCase()}`,
 			ctaTopic: FIRST_TOPIC,
 		};
-	}, [allComplete, lastTopic, nextTopic]);
+	}, [allComplete, lastTopic]);
 
 	const visit = topic => {
 		markVisited(topic.id);
@@ -990,11 +1000,7 @@ const HomePage = () => {
 
 						{started && (
 							<div className={styles.todayGoal}>
-								<GoalRing
-									value={todayCount}
-									goal={DAILY_GOAL}
-									done={goalDone}
-								/>
+								<GoalRing value={todayCount} goal={goal} done={goalDone} />
 								<div className={styles.goalText}>
 									{goalDone ? (
 										<>
@@ -1006,10 +1012,12 @@ const HomePage = () => {
 									) : (
 										<>
 											<span className={styles.goalHead}>
-												{todayCount} / {DAILY_GOAL} answered today
+												{todayCount} / {goal} answered today
 											</span>
 											<span className={styles.goalSub}>
-												{overall.completed} of {overall.total} topics complete
+												{goalRaised
+													? `Goal raised — exam in ${daysUntilExam}d`
+													: `${overall.completed} of ${overall.total} topics complete`}
 											</span>
 										</>
 									)}

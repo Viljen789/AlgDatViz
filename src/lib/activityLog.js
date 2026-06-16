@@ -130,3 +130,18 @@ export const examNewCap = (daysUntilExam, base = DAILY_GOAL) => {
 	if (daysUntilExam <= 3) return base * 2;
 	return Math.round(base * 1.5);
 };
+
+/**
+ * dailyGoal — how many answers close today's ring, escalated by the deadline.
+ *
+ * Mirrors examNewCap's shape on purpose, so the two deadline ramps feel like one
+ * rule: the base goal when the exam is far out or unset (the graceful default),
+ * 1.5× within the final fortnight, 2× in the last three days. base is the floor;
+ * 2×base is the ceiling. A past/zero day still reads as "today" (max pressure),
+ * never a negative or zero goal.
+ */
+export const dailyGoal = (daysUntilExam, base = DAILY_GOAL) => {
+	if (daysUntilExam == null || daysUntilExam > 14) return base;
+	if (daysUntilExam <= 3) return base * 2;
+	return Math.round(base * 1.5);
+};

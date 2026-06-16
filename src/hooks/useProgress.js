@@ -3,6 +3,17 @@ import { PROGRESS_TOPICS } from '../data/curriculum.js';
 
 const STORAGE_KEY = 'algdatviz:progress:v1';
 
+// The furthest scene index a topic was ever read to. Resume only ever moves
+// *forward* — re-reading an earlier scene must not rewind where you pick back
+// up. Pure + exported so the merge rule is unit-testable. Treats anything
+// non-finite/negative as "scene 0" so malformed state never throws or scrolls
+// somewhere nonsensical.
+export const furthestSceneIndex = (prev, next) => {
+	const a = Number.isFinite(prev) && prev > 0 ? Math.floor(prev) : 0;
+	const b = Number.isFinite(next) && next > 0 ? Math.floor(next) : 0;
+	return Math.max(a, b);
+};
+
 const emptyState = () => ({
 	completed: [],
 	visited: [],
@@ -11,6 +22,11 @@ const emptyState = () => ({
 	// checks per topic. Added additively (Phase 1a). Migrates safely: old state
 	// simply has no `checks` key and starts empty.
 	checks: {},
+	// scenes: { [topicId]: furthestSceneIndex } — how far into each topic's
+	// scrolly the reader has reached, so entering a topic resumes at that scene
+	// instead of scene 0. Added additively: old state has no `scenes` key and
+	// every topic simply resumes at 0 (the first-run behavior).
+	scenes: {},
 });
 
 const readState = () => {
@@ -26,7 +42,11 @@ const readState = () => {
 		// stored `lastVisited` by seeding the set from what we know.
 		const visitedRaw = Array.isArray(parsed.visited) ? parsed.visited : [];
 		const visited = Array.from(
-			new Set([...visitedRaw, ...completed, ...(lastVisited ? [lastVisited] : [])])
+			new Set([
+				...visitedRaw,
+				...completed,
+				...(lastVisited ? [lastVisited] : []),
+			])
 		);
 		// `checks` is additive (added Phase 1a). Normalize to a map of maps of
 		// booleans; ignore anything malformed so old/partial state never throws.
@@ -41,7 +61,17 @@ const readState = () => {
 				if (Object.keys(inner).length > 0) checks[topicId] = inner;
 			}
 		}
-		return { completed, visited, lastVisited, checks };
+		// `scenes` is additive (added Phase 2c). Keep only positive integer
+		// indices keyed by topic; ignore anything malformed so old/partial
+		// state never throws and simply resumes at scene 0.
+		const scenes = {};
+		if (parsed.scenes && typeof parsed.scenes === 'object') {
+			for (const [topicId, idx] of Object.entries(parsed.scenes)) {
+				const n = furthestSceneIndex(0, Number(idx));
+				if (n > 0) scenes[topicId] = n;
+			}
+		}
+		return { completed, visited, lastVisited, checks, scenes };
 	} catch {
 		return emptyState();
 	}
@@ -127,6 +157,32 @@ export const useProgress = () => {
 		});
 	}, []);
 
+	// Record how far into a topic's scrolly the reader has reached. Only ever
+	// advances the stored index (furthestSceneIndex), so re-reading an earlier
+	// scene can't rewind the resume point. Returns prev unchanged when nothing
+	// moves forward — critical so the scrolly's onActiveScene notifier can fire
+	// on every scroll without looping re-renders. A topic with a recorded scene
+	// is implicitly visited (you can't read a scene without opening the topic).
+	const recordScene = useCallback((topicId, sceneIndex) => {
+		if (!topicId) return;
+		setState(prev => {
+			const current = prev.scenes[topicId] || 0;
+			const nextIdx = furthestSceneIndex(current, sceneIndex);
+			const alreadyVisited = prev.visited.includes(topicId);
+			if (nextIdx === current && alreadyVisited) return prev;
+			const next = {
+				...prev,
+				visited: alreadyVisited ? prev.visited : [...prev.visited, topicId],
+				scenes:
+					nextIdx === current
+						? prev.scenes
+						: { ...prev.scenes, [topicId]: nextIdx },
+			};
+			writeState(next);
+			return next;
+		});
+	}, []);
+
 	const reset = useCallback(() => {
 		const next = emptyState();
 		writeState(next);
@@ -148,6 +204,13 @@ export const useProgress = () => {
 	const isCheckCorrect = useCallback(
 		(topicId, checkId) => state.checks[topicId]?.[checkId] === true,
 		[state.checks]
+	);
+
+	// The furthest scene a topic was read to (0 when never opened) — the index
+	// the topic should resume at.
+	const furthestScene = useCallback(
+		topicId => state.scenes[topicId] || 0,
+		[state.scenes]
 	);
 
 	// A topic counts as completed when it is in `completed` (explicit) OR it has
@@ -199,15 +262,18 @@ export const useProgress = () => {
 		visited: state.visited,
 		lastVisited: state.lastVisited,
 		checks: state.checks,
+		scenes: state.scenes,
 		markVisited,
 		markCompleted,
 		recordCheck,
+		recordScene,
 		reset,
 		isCompleted,
 		isCompletedBy,
 		isVisited,
 		isCheckCorrect,
 		correctCheckCount,
+		furthestScene,
 		overall,
 	};
 };

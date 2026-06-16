@@ -194,11 +194,20 @@ const TopicTemplate = ({
 	children,
 }) => {
 	const reducedMotion = useReducedMotion();
-	const { markVisited, markCompleted, recordCheck, correctCheckCount } =
-		useProgress();
+	const {
+		markVisited,
+		markCompleted,
+		recordCheck,
+		recordScene,
+		correctCheckCount,
+		furthestScene,
+	} = useProgress();
 	const { seed: seedCard } = useSrs();
 	const playgroundRef = useRef(null);
 	const [activeScene, setActiveScene] = useState(0);
+	// The scene to resume at — read once on mount so a later persist (recordScene
+	// fires as the reader scrolls) can't change where this render started.
+	const resumeSceneRef = useRef(furthestScene(topicId));
 
 	const topic = CURRICULUM.find(t => t.id === topicId) || null;
 	const topicIdx = CURRICULUM.findIndex(t => t.id === topicId);
@@ -229,6 +238,18 @@ const TopicTemplate = ({
 			logActivity();
 		},
 		[submitAnswer]
+	);
+
+	// The scrolly notifies on every active-scene change; track it locally (for the
+	// optional scene navigator) and persist the furthest-reached scene so the next
+	// visit resumes here. recordScene only ever advances, so scrolling back up
+	// never rewinds the resume point.
+	const handleActiveScene = useCallback(
+		idx => {
+			setActiveScene(idx);
+			if (topicId) recordScene(topicId, idx);
+		},
+		[topicId, recordScene]
 	);
 
 	// How many correct checks complete this topic. Default = scenes carrying a
@@ -390,7 +411,8 @@ const TopicTemplate = ({
 					renderStage={renderStage}
 					checkStates={checkStates}
 					onAnswer={handleAnswer}
-					onActiveScene={setActiveScene}
+					onActiveScene={handleActiveScene}
+					initialScene={resumeSceneRef.current}
 				/>
 			)}
 

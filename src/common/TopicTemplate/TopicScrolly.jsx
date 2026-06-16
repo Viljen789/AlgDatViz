@@ -23,6 +23,9 @@ import styles from './TopicScrolly.module.css';
  *   onChoiceAnswer optional (sceneId, value) => void — backward-compatible alias
  *                  of onAnswer (kept so existing topics keep working).
  *   onActiveScene  optional (index:number) => void notifier.
+ *   initialScene   optional number — the scene to resume at on mount (the
+ *                  furthest the reader previously reached). 0 / undefined lands
+ *                  at the top with no scroll (the first-run behavior).
  */
 const TopicScrolly = ({
 	scenes,
@@ -31,11 +34,15 @@ const TopicScrolly = ({
 	onAnswer,
 	onChoiceAnswer,
 	onActiveScene,
+	initialScene = 0,
 }) => {
 	// Generic submit handler; onChoiceAnswer remains supported as an alias.
 	const handleAnswer = onAnswer || onChoiceAnswer;
 	const reducedMotion = useReducedMotion();
-	const [activeScene, setActiveScene] = useState(0);
+	// Seed the active scene so the sticky stage renders the resumed scene from
+	// the very first frame (no flash of scene 0 before the scroll lands).
+	const startScene = Math.max(0, Math.min(initialScene, scenes.length - 1));
+	const [activeScene, setActiveScene] = useState(startScene);
 	const [isPlaying, setIsPlaying] = useState(false);
 	const sceneRefs = useRef([]);
 	const rootRef = useRef(null);
@@ -73,6 +80,58 @@ const TopicScrolly = ({
 		});
 		return () => observer.disconnect();
 	}, [onActiveScene]);
+
+	// Resume at the furthest scene the reader previously reached. Runs once on
+	// mount: if there's somewhere to resume to (> scene 0), bring that scene into
+	// view inside the page's own scroller (scrollIntoView resolves against the
+	// nearest scrollable ancestor — the .page element, never window). Deferred a
+	// frame so the route-mount transition and web-font layout have settled before
+	// we measure. First-time / no-history (startScene === 0) does nothing, so the
+	// topic lands at scene 0 cleanly. The IntersectionObserver then keeps the
+	// active scene and stage in sync as the reader scrolls from here.
+	useEffect(() => {
+		if (startScene <= 0) return undefined;
+		// Find the page's own scroller (the .page overflow element), never window.
+		let scroller = rootRef.current?.parentElement;
+		while (scroller && scroller !== document.body) {
+			const oy = getComputedStyle(scroller).overflowY;
+			if (
+				(oy === 'auto' || oy === 'scroll') &&
+				scroller.scrollHeight > scroller.clientHeight
+			)
+				break;
+			scroller = scroller.parentElement;
+		}
+		// Late layout (the sticky stage + web fonts) keeps moving the target for a
+		// few frames, so a single rAF lands at ~0. Re-aim each frame until we
+		// arrive (or give up after ~20 frames), which makes the resume robust to
+		// the scrolly settling its height. Instant, not smooth: a resume should
+		// land where the reader left off, not animate a scroll past every scene.
+		let rafId;
+		let frames = 0;
+		const aim = () => {
+			frames += 1;
+			const node = sceneRefs.current[startScene];
+			if (node && scroller?.scrollTo) {
+				const target =
+					node.getBoundingClientRect().top -
+					scroller.getBoundingClientRect().top +
+					scroller.scrollTop;
+				if (Math.abs(scroller.scrollTop - target) > 4) {
+					scroller.scrollTo({ top: target, behavior: 'auto' });
+				} else if (frames > 2) {
+					return;
+				}
+			}
+			if (frames < 20) rafId = requestAnimationFrame(aim);
+		};
+		rafId = requestAnimationFrame(aim);
+		return () => cancelAnimationFrame(rafId);
+		// Mount-only ([] deps). Under StrictMode's dev double-invoke the first aim
+		// loop is cancelled by cleanup and the second completes, so we deliberately
+		// keep NO resumedRef guard (it would skip that second, real run).
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, []);
 
 	// Explicit scene playback (Phase 2a): controls + keyboard are the primary way
 	// to move through scenes. They drive the active scene by bringing it into view
@@ -132,9 +191,7 @@ const TopicScrolly = ({
 		>
 			<div className={styles.stageColumn}>
 				<div className={styles.stageSticky}>
-					<div className={styles.stageFigure}>
-						{renderStage(activeScene)}
-					</div>
+					<div className={styles.stageFigure}>{renderStage(activeScene)}</div>
 					{total > 1 && (
 						<SceneControlBar
 							total={total}
@@ -185,9 +242,7 @@ const TopicScrolly = ({
 								// itself, where the student is reading, rather than
 								// only in the control bar's muted caption.
 								gated={activeScene === idx && Boolean(blockedReason)}
-								onAnswer={payload =>
-									handleAnswer?.(scene.id, payload)
-								}
+								onAnswer={payload => handleAnswer?.(scene.id, payload)}
 							/>
 						)}
 					</article>
