@@ -7,10 +7,13 @@ import {
 	SELF_GRADED_KINDS,
 	accentTokens,
 	buildReviewBank,
+	buildTopicQueue,
 	isSelfGraded,
 	sampleSession,
 	shuffleWithSeed,
+	topicBankSlice,
 } from './reviewBank.js';
+import { DAY_MS } from './srsSchedule.js';
 import { checkAnswer } from '../../common/TopicTemplate/checkAnswer.js';
 import { TOPIC_BY_ID } from '../../data/curriculum.js';
 
@@ -100,9 +103,16 @@ test('shuffleWithSeed is deterministic for a given seed and pure', () => {
 	const a = shuffleWithSeed(list, 42);
 	const b = shuffleWithSeed(list, 42);
 	assert.deepEqual(a, b, 'same seed → same order');
-	assert.deepEqual(list, Array.from({ length: 25 }, (_, i) => i), 'input intact');
+	assert.deepEqual(
+		list,
+		Array.from({ length: 25 }, (_, i) => i),
+		'input intact'
+	);
 	// It is a permutation (same multiset of elements).
-	assert.deepEqual([...a].sort((x, y) => x - y), list);
+	assert.deepEqual(
+		[...a].sort((x, y) => x - y),
+		list
+	);
 });
 
 test('shuffleWithSeed varies with the seed (and accepts string seeds)', () => {
@@ -139,7 +149,11 @@ test('sampleSession returns count questions and covers multiple topics', () => {
 	for (const e of session) assert.ok(ids.has(e.id), `${e.id} is a bank entry`);
 	// No duplicate questions within one session.
 	const sessionIds = session.map(e => e.id);
-	assert.equal(new Set(sessionIds).size, sessionIds.length, 'no dupes in a session');
+	assert.equal(
+		new Set(sessionIds).size,
+		sessionIds.length,
+		'no dupes in a session'
+	);
 });
 
 test('sampleSession round-robins so a short session maximizes topic spread', () => {
@@ -184,5 +198,112 @@ test('every bank entry accent resolves to topic ink/contrast tokens', () => {
 		const t = accentTokens(entry.accent);
 		assert.match(t.ink, /^var\(--topic-[a-z0-9]+-ink\)$/);
 		assert.match(t.contrast, /^var\(--topic-[a-z0-9]+-contrast\)$/);
+	}
+});
+
+// ── Per-topic drill queue (revision plan → scoped retrieval) ───────────────────
+
+// A small two-topic bank fixture; the real bank is exercised separately below.
+const drillBank = [
+	{ id: 'a:1', topicId: 'a' },
+	{ id: 'a:2', topicId: 'a' },
+	{ id: 'a:3', topicId: 'a' },
+	{ id: 'b:1', topicId: 'b' },
+];
+
+test('topicBankSlice keeps only one topic, in order, without mutating the bank', () => {
+	const slice = topicBankSlice('a', drillBank);
+	assert.deepEqual(
+		slice.map(e => e.id),
+		['a:1', 'a:2', 'a:3']
+	);
+	// A view, not a mutation: the source bank is untouched.
+	assert.equal(drillBank.length, 4);
+	assert.deepEqual(topicBankSlice('zzz', drillBank), []);
+	assert.deepEqual(topicBankSlice('a', null), []);
+});
+
+test('buildTopicQueue scopes the queue to the topic and reports availability', () => {
+	const q = buildTopicQueue({
+		topicId: 'a',
+		cards: {},
+		now: 0,
+		bank: drillBank,
+	});
+	// available = every bank entry for the topic; the queue is a subset of those.
+	assert.equal(q.available, 3);
+	assert.ok(
+		q.queue.every(e => e.topicId === 'a'),
+		'no foreign-topic question leaks into the drill'
+	);
+	assert.ok(!q.queue.some(e => e.id === 'b:1'), 'topic b is excluded entirely');
+});
+
+test('buildTopicQueue lists due cards first (most overdue first), then fresh', () => {
+	const now = 10 * DAY_MS;
+	const cards = {
+		'a:1': { box: 1, reps: 1, lapses: 0, last: 0, due: 9 * DAY_MS }, // due, less overdue
+		'a:2': { box: 2, reps: 1, lapses: 0, last: 0, due: 2 * DAY_MS }, // due, most overdue
+		// a:3 has no card ⇒ fresh, trails the due cards.
+	};
+	const q = buildTopicQueue({ topicId: 'a', cards, now, bank: drillBank });
+	assert.equal(q.dueCount, 2);
+	assert.equal(q.freshCount, 1);
+	assert.deepEqual(
+		q.queue.map(e => e.id),
+		['a:2', 'a:1', 'a:3'],
+		'most-overdue due card first, then the remaining due, then fresh'
+	);
+});
+
+test('buildTopicQueue admits fresh cards with NO visited gate (the click is the intent)', () => {
+	// Unlike /review, a plan-day drill has no isNewEligible gate: clicking the day
+	// scopes intent to this topic, so all its never-seen cards are fair game.
+	const q = buildTopicQueue({
+		topicId: 'a',
+		cards: {},
+		now: 0,
+		bank: drillBank,
+	});
+	assert.equal(q.dueCount, 0);
+	assert.equal(q.freshCount, 3, 'every fresh card in the topic is eligible');
+	assert.equal(q.queue.length, 3);
+});
+
+test('buildTopicQueue honours the new-card cap', () => {
+	const many = Array.from({ length: 12 }, (_, i) => ({
+		id: `a:${i}`,
+		topicId: 'a',
+	}));
+	const q = buildTopicQueue({
+		topicId: 'a',
+		cards: {},
+		now: 0,
+		newCap: 4,
+		bank: many,
+	});
+	assert.equal(q.freshCount, 4, 'capped at newCap');
+	assert.equal(q.freshAvailable, 12, 'but reports how many were available');
+	assert.equal(q.available, 12);
+	assert.equal(q.queue.length, 4);
+});
+
+test('buildTopicQueue is empty and safe for a topic with no bank entries', () => {
+	const q = buildTopicQueue({ topicId: 'nope', cards: {}, now: 0 });
+	assert.equal(q.available, 0);
+	assert.deepEqual(q.queue, []);
+	assert.equal(q.dueCount, 0);
+	assert.equal(q.freshCount, 0);
+});
+
+test('buildTopicQueue against the real bank yields only that topic, gradeable', () => {
+	const topicId = REVIEW_TOPIC_IDS[0];
+	const q = buildTopicQueue({ topicId, cards: {}, now: 0 });
+	assert.ok(q.available > 0, `the bank has ${topicId} questions to drill`);
+	assert.ok(q.queue.length > 0, 'a fresh schedule yields a non-empty drill');
+	for (const entry of q.queue) {
+		assert.equal(entry.topicId, topicId, 'scoped to the chosen topic');
+		// Each drawn entry grades through the same pure core as /review.
+		assert.equal(typeof checkAnswer(entry.check, undefined).correct, 'boolean');
 	}
 });

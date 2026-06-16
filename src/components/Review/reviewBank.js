@@ -23,6 +23,7 @@
 // shuffler/sampler can be unit-tested (reviewBank.test.js).
 
 import { TOPIC_BY_ID } from '../../data/curriculum.js';
+import { DEFAULT_NEW_CAP, planSession } from './srsSchedule.js';
 
 // Each topic's scrolly scenes, imported read-only. The map key is the topic id
 // from curriculum.js so every entry resolves a real curriculum node (name,
@@ -96,9 +97,7 @@ export const accentTokens = accent => {
 	const suffix = /^var\(--topic-([a-z0-9]+)\)$/.exec(accent || '')?.[1];
 	return {
 		accent: accent || 'var(--color-accent-blue)',
-		ink: suffix
-			? `var(--topic-${suffix}-ink)`
-			: 'var(--topic-accent-ink)',
+		ink: suffix ? `var(--topic-${suffix}-ink)` : 'var(--topic-accent-ink)',
 		contrast: suffix
 			? `var(--topic-${suffix}-contrast)`
 			: 'var(--color-text-on-accent)',
@@ -258,6 +257,58 @@ export const sampleSession = ({
 
 	// Mix the final order so consecutive questions hop topics (seeded → stable).
 	return shuffleWithSeed(chosen, `${toSeed(seed)}:session`);
+};
+
+/**
+ * topicBankSlice — every bank entry belonging to one topic, in teaching order.
+ * Pure: a filtered view of the bank, never mutated.
+ *
+ * @param {string} topicId             curriculum topic id (`entry.topicId`).
+ * @param {Array}  [bank=REVIEW_BANK]  source list (override for tests).
+ * @returns {Array} the topic's bank entries (possibly empty).
+ */
+export const topicBankSlice = (topicId, bank = REVIEW_BANK) =>
+	(Array.isArray(bank) ? bank : []).filter(e => e.topicId === topicId);
+
+/**
+ * buildTopicQueue — the spaced-retrieval queue for ONE topic, for the revision
+ * plan's one-click "drill this day" launch.
+ *
+ * This is the per-topic analogue of how /review builds its session: it reuses the
+ * SAME scheduler (planSession) over the topic-filtered bank slice, so the due /
+ * fresh split, ordering (most-overdue first, then a capped trickle of new), and
+ * card contract are identical to the whole-course queue — no bespoke scheduling.
+ * The only scoping change is the candidate set (one topic) and the eligibility
+ * gate: a plan day is an explicit "drill THIS topic" intent, so every fresh card
+ * in the topic is eligible (no isNewEligible "visited" gate — clicking IS the
+ * signal). Grading the returned entries through useSrs.grade reschedules exactly
+ * the cards that buildRevisionPlan reads to rank tomorrow's plan.
+ *
+ * Pure: reads `cards` + `bank`, returns a plan; mutates nothing.
+ *
+ * @param {object} args
+ * @param {string} args.topicId            curriculum topic id to scope to.
+ * @param {Record<string,object>} args.cards  the SRS schedule (useSrs cards).
+ * @param {number} args.now                ms epoch "now" (drives due math).
+ * @param {number} [args.newCap]           max never-seen cards to introduce.
+ * @param {Array}  [args.bank=REVIEW_BANK] source bank (override for tests).
+ * @returns {{queue:Array, dueCount:number, freshCount:number,
+ *            freshAvailable:number, scheduledCount:number, available:number}}
+ *          available = total bank entries for the topic (queue ≤ available).
+ */
+export const buildTopicQueue = ({
+	topicId,
+	cards,
+	now = 0,
+	newCap = DEFAULT_NEW_CAP,
+	bank = REVIEW_BANK,
+} = {}) => {
+	const slice = topicBankSlice(topicId, bank);
+	// No isNewEligible: the click scopes intent to this topic, so all its fresh
+	// cards are fair game (planSession admits every new card when the gate is
+	// omitted). The plan is otherwise the standard due-first + capped-new queue.
+	const plan = planSession(cards || {}, slice, { now, newCap });
+	return { ...plan, available: slice.length };
 };
 
 export default REVIEW_BANK;

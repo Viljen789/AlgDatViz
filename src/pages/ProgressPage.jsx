@@ -1,17 +1,32 @@
-import { useCallback, useMemo } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowRight, ChevronRight, Flame, RotateCcw } from 'lucide-react';
+import {
+	ArrowRight,
+	ChevronRight,
+	Flame,
+	RotateCcw,
+	Target,
+	X,
+} from 'lucide-react';
 import { BUILT_TOPICS, FIRST_TOPIC, TOPIC_BY_ID } from '../data/curriculum.js';
-import { REVIEW_BANK } from '../components/Review/reviewBank.js';
+import {
+	REVIEW_BANK,
+	buildTopicQueue,
+} from '../components/Review/reviewBank.js';
+import ReviewSession from '../components/Review/ReviewSession.jsx';
 import { allMastery } from '../lib/mastery.js';
 import { rankWeakTopics } from '../lib/weakTopics.js';
 import { buildRevisionPlan } from '../lib/revisionPlan.js';
 import { clearExamLog, useExamLog } from '../lib/examLog.js';
-import { addDays, todayKey } from '../lib/activityLog.js';
+import { addDays, logActivity, todayKey } from '../lib/activityLog.js';
 import useProgress from '../hooks/useProgress.js';
 import useSrs from '../hooks/useSrs.js';
 import useActivity from '../hooks/useActivity.js';
 import styles from './ProgressPage.module.css';
+
+// How many never-seen cards a single topic drill introduces at once. Matches the
+// /review new-card cap so a topic's first drill isn't a wall of new questions.
+const TOPIC_NEW_CAP = 8;
 
 const HEAT_WEEKS = 13;
 const pct = s => Math.round(s * 100);
@@ -74,7 +89,7 @@ const ProgressPage = () => {
 		overall,
 		reset: resetProgress,
 	} = useProgress();
-	const { cards, reset: resetSrs } = useSrs();
+	const { cards, grade, reset: resetSrs } = useSrs();
 	const { examScores } = useExamLog();
 	const {
 		days,
@@ -130,6 +145,51 @@ const ProgressPage = () => {
 	const revisionPlan = useMemo(
 		() => buildRevisionPlan({ topics, mastery, daysUntilExam, today }),
 		[topics, mastery, daysUntilExam, today]
+	);
+
+	// ── One-click topic drill (revision plan → scoped retrieval) ─────────────────
+	// Clicking a plan-day topic launches a ReviewSession scoped to THAT topic. We
+	// reuse the same scheduler /review uses (buildTopicQueue → planSession) and the
+	// same grade path (useSrs.grade + logActivity), so the cards that decide
+	// tomorrow's plan get rescheduled. The queue is snapshot at launch so it doesn't
+	// reshuffle as cards reschedule out of "due" on each answer (mirrors /review).
+	const [drill, setDrill] = useState(null); // { topicId, questions, runId } | null
+
+	const startDrill = useCallback(
+		topicId => {
+			const plan = buildTopicQueue({
+				topicId,
+				cards,
+				now: Date.now(),
+				newCap: TOPIC_NEW_CAP,
+			});
+			if (plan.queue.length === 0) return; // nothing to drill — leave the link
+			setDrill(prev => ({
+				topicId,
+				questions: plan.queue,
+				// Bump a run id so re-launching the SAME topic remounts ReviewSession.
+				runId: (prev?.topicId === topicId ? prev.runId : 0) + 1,
+			}));
+		},
+		[cards]
+	);
+
+	const closeDrill = useCallback(() => setDrill(null), []);
+
+	// Re-snapshot the SAME topic (ReviewSession's "start over") against the now
+	// freshly-graded schedule, so a restart pulls whatever is still due.
+	const restartDrill = useCallback(() => {
+		if (drill) startDrill(drill.topicId);
+	}, [drill, startDrill]);
+
+	// Grade the card AND log a day of study — the EXACT path /review uses, so a
+	// drill reschedules cards and lights the heatmap identically.
+	const handleDrillGraded = useCallback(
+		(id, correct) => {
+			grade(id, correct);
+			logActivity();
+		},
+		[grade]
 	);
 
 	// "Touched" = the student has answered a check or finished the topic. We sort
@@ -375,29 +435,96 @@ const ProgressPage = () => {
 									</span>
 								</div>
 								{day.topics.length > 0 ? (
-									<ul className={styles.planTopics}>
-										{day.topics.map(topic => (
-											<li key={topic.id}>
-												<Link
-													to={TOPIC_BY_ID[topic.id]?.to ?? '/'}
-													className={styles.planTopic}
-													style={{ '--accent': topic.accent }}
-												>
-													<span className={styles.planTopicNum}>
-														{topic.number}
-													</span>
-													<span className={styles.planTopicName}>
-														{topic.name}
-													</span>
-													<ArrowRight
-														size={13}
-														strokeWidth={2.2}
-														aria-hidden="true"
-													/>
-												</Link>
-											</li>
-										))}
-									</ul>
+									<div className={styles.planBody}>
+										<ul className={styles.planTopics}>
+											{day.topics.map(topic => {
+												const active = drill?.topicId === topic.id;
+												return (
+													<li key={topic.id} className={styles.planTopicItem}>
+														{/* Primary action: drill THIS topic inline. A real
+														    button so it's keyboard-operable; aria-expanded
+														    ties it to the session panel below. */}
+														<button
+															type="button"
+															className={styles.planTopic}
+															style={{ '--accent': topic.accent }}
+															aria-expanded={active}
+															aria-controls={
+																active ? `drill-${topic.id}` : undefined
+															}
+															onClick={() =>
+																active ? closeDrill() : startDrill(topic.id)
+															}
+														>
+															<span className={styles.planTopicNum}>
+																{topic.number}
+															</span>
+															<span className={styles.planTopicName}>
+																{topic.name}
+															</span>
+															<Target
+																size={13}
+																strokeWidth={2.2}
+																aria-hidden="true"
+															/>
+															<span className={styles.srOnly}>
+																{active
+																	? ', close retrieval drill'
+																	: ', start a retrieval drill'}
+															</span>
+														</button>
+														{/* Quiet secondary path: open the topic page to
+														    re-read, preserving the original chip link. */}
+														<Link
+															to={TOPIC_BY_ID[topic.id]?.to ?? '/'}
+															className={styles.planTopicOpen}
+															aria-label={`Open ${topic.name}`}
+														>
+															<ArrowRight
+																size={13}
+																strokeWidth={2.2}
+																aria-hidden="true"
+															/>
+														</Link>
+													</li>
+												);
+											})}
+										</ul>
+										{/* The scoped retrieval session expands in place under the day
+										    it belongs to, so the plan stays in view while you drill. */}
+										{drill && day.topics.some(t => t.id === drill.topicId) && (
+											<div
+												id={`drill-${drill.topicId}`}
+												className={styles.planDrill}
+											>
+												<div className={styles.planDrillHead}>
+													<p className={styles.planDrillTitle}>
+														Retrieving{' '}
+														<strong>
+															{TOPIC_BY_ID[drill.topicId]?.name ??
+																drill.topicId}
+														</strong>{' '}
+														· {drill.questions.length} question
+														{drill.questions.length === 1 ? '' : 's'}
+													</p>
+													<button
+														type="button"
+														className={styles.planDrillClose}
+														onClick={closeDrill}
+													>
+														<X size={14} strokeWidth={2.2} aria-hidden="true" />
+														<span>Close</span>
+													</button>
+												</div>
+												<ReviewSession
+													key={`${drill.topicId}:${drill.runId}`}
+													questions={drill.questions}
+													onRestart={restartDrill}
+													onGraded={handleDrillGraded}
+												/>
+											</div>
+										)}
+									</div>
 								) : (
 									<p className={styles.planRest}>Buffer or rest.</p>
 								)}

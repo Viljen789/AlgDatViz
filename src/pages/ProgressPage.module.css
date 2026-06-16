@@ -345,6 +345,14 @@
 	color: var(--color-text-muted);
 }
 
+/* The second column of a plan day: the topic chips, plus the drill session that
+   expands beneath them in place. */
+.planBody {
+	display: flex;
+	flex-direction: column;
+	gap: var(--space-md);
+}
+
 .planTopics {
 	list-style: none;
 	margin: 0;
@@ -354,25 +362,40 @@
 	gap: var(--space-xs);
 }
 
+/* Each chip pairs the drill button (primary) with a quiet "open the topic" link
+   (re-read path), joined into one pill so the two affordances read as a unit. */
+.planTopicItem {
+	display: inline-flex;
+	align-items: stretch;
+	border: 1px solid var(--color-border);
+	border-radius: var(--radius-pill);
+	background: var(--color-bg-app);
+	overflow: hidden;
+	transition: border-color var(--transition);
+}
+
+.planTopicItem:hover {
+	border-color: color-mix(in srgb, var(--accent) 45%, transparent);
+}
+
+/* The drill trigger. A button reset to match the chip type, so it reads exactly
+   like the old link chip but launches a scoped retrieval session. */
 .planTopic {
 	display: inline-flex;
 	align-items: center;
 	gap: var(--space-xs);
 	padding: var(--space-2xs) var(--space-sm);
-	border: 1px solid var(--color-border);
-	border-radius: var(--radius-pill);
-	background: var(--color-bg-app);
-	text-decoration: none;
+	border: none;
+	background: transparent;
 	color: var(--color-text-primary);
+	font-family: inherit;
 	font-size: var(--font-size-label);
-	transition:
-		background-color var(--transition),
-		border-color var(--transition);
+	cursor: pointer;
+	transition: background-color var(--transition);
 }
 
 .planTopic:hover {
 	background: var(--surface-hover);
-	border-color: color-mix(in srgb, var(--accent) 45%, transparent);
 }
 
 .planTopic:focus-visible {
@@ -381,7 +404,12 @@
 }
 
 .planTopic svg {
-	color: var(--color-text-muted);
+	color: var(--accent);
+}
+
+/* The active drill chip stays lit so it's clear which day is open. */
+.planTopic[aria-expanded='true'] {
+	background: color-mix(in srgb, var(--accent) 14%, transparent);
 }
 
 .planTopicNum {
@@ -392,6 +420,85 @@
 
 .planTopicName {
 	white-space: nowrap;
+}
+
+/* The quiet re-read link, divided from the drill button by a hairline. */
+.planTopicOpen {
+	display: inline-flex;
+	align-items: center;
+	padding: var(--space-2xs) var(--space-sm);
+	border-left: 1px solid var(--color-border);
+	color: var(--color-text-muted);
+	text-decoration: none;
+	transition:
+		background-color var(--transition),
+		color var(--transition);
+}
+
+.planTopicOpen:hover {
+	background: var(--surface-hover);
+	color: var(--color-text-primary);
+}
+
+.planTopicOpen:focus-visible {
+	outline: none;
+	box-shadow: var(--shadow-focus);
+}
+
+/* The expanded retrieval session: a sunken card under the day's chips, set off by
+   the topic accent on the left edge so it reads as "this topic's drill". */
+.planDrill {
+	border: 1px solid var(--color-border);
+	border-radius: var(--radius-md);
+	background: var(--color-bg-app);
+	padding: var(--space-md);
+}
+
+.planDrillHead {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: var(--space-md);
+	margin-bottom: var(--space-sm);
+}
+
+.planDrillTitle {
+	margin: 0;
+	font-family: var(--font-family-mono);
+	font-size: var(--font-size-caption);
+	color: var(--color-text-secondary);
+}
+
+.planDrillTitle strong {
+	color: var(--color-text-primary);
+	font-weight: var(--font-weight-bold);
+}
+
+.planDrillClose {
+	display: inline-flex;
+	align-items: center;
+	gap: var(--space-2xs);
+	padding: var(--space-2xs) var(--space-sm);
+	border: 1px solid var(--color-border);
+	border-radius: var(--radius-md);
+	background: transparent;
+	color: var(--color-text-muted);
+	font-family: var(--font-family-sans);
+	font-size: var(--font-size-label);
+	cursor: pointer;
+	transition:
+		color var(--transition),
+		border-color var(--transition);
+}
+
+.planDrillClose:hover {
+	color: var(--color-text-primary);
+	border-color: var(--color-border-strong);
+}
+
+.planDrillClose:focus-visible {
+	outline: none;
+	box-shadow: var(--shadow-focus);
 }
 
 .planRest {
