@@ -25,8 +25,8 @@ export const SCENES = [
 			options: ['1', '2', '4', 'n'],
 			answer: '2',
 			misconceptions: {
-				'1': 'You read off one recursive call from the single T term, but the coefficient in front of it, a = 2, is the count. The term T(n/2) appears, yet the 2 multiplying it says it happens twice.',
-				'4': 'You squared the branching instead of reading it. a² = 4 is the number of calls two levels down, not the one call splitting into a = 2 children at a single step.',
+				1: 'You read off one recursive call from the single T term, but the coefficient in front of it, a = 2, is the count. The term T(n/2) appears, yet the 2 multiplying it says it happens twice.',
+				4: 'You squared the branching instead of reading it. a² = 4 is the number of calls two levels down, not the one call splitting into a = 2 children at a single step.',
 				n: 'You mistook the work term for the branching count. The +n is the combine cost f(n), not the number of subproblems; the branching factor is the coefficient a = 2 on T.',
 			},
 			explanation:
@@ -45,8 +45,10 @@ export const SCENES = [
 			answer: 'a',
 			misconceptions: {
 				b: 'You picked the shrink factor, not the branch factor. b divides the subproblem size each level (n to n/b); the number of calls is multiplied by a, the branching count.',
-				'a/b': 'You blended the two roles into one ratio. a/b = r is the per-level work multiplier in the sum, not the call-count growth; the call count alone scales by a each level.',
-				'log n': 'You named the number of levels, not the per-level growth. log_b(n) is how deep the tree goes; the calls grow by a at every one of those levels.',
+				'a/b':
+					'You blended the two roles into one ratio. a/b = r is the per-level work multiplier in the sum, not the call-count growth; the call count alone scales by a each level.',
+				'log n':
+					'You named the number of levels, not the per-level growth. log_b(n) is how deep the tree goes; the calls grow by a at every one of those levels.',
 			},
 			explanation:
 				'Level 0 has 1 call, level 1 has a, level 2 has a², and so on. After log_b(n) levels the calls are size 1. So the leaf count is a^(log_b n) = n^(log_b a) — that exponent log_b(a) is the whole game.',
@@ -59,14 +61,16 @@ export const SCENES = [
 		body: 'Work at the leaves grows like n^(log_b a) — call that exponent c. The combine work f(n) ≈ n^d sits at every level. The Master Theorem is a single comparison: is c bigger than d, equal to it, or smaller?',
 		check: {
 			kind: 'choice',
-			prompt:
-				'For merge sort, c = log₂(2) = 1 and d = 1. How do they compare?',
+			prompt: 'For merge sort, c = log₂(2) = 1 and d = 1. How do they compare?',
 			options: ['c > d', 'c = d', 'c < d', 'cannot tell'],
 			answer: 'c = d',
 			misconceptions: {
-				'c > d': 'You read the leaves as winning, but both exponents equal 1. c > d would mean the leaf count outgrows the combine work; here log₂(2) = 1 exactly matches d = 1, so neither pulls ahead.',
-				'c < d': 'You read the root combine as winning, but the two exponents are equal. c < d would put f(n) ahead; with c = d = 1 the per-level work stays flat instead.',
-				'cannot tell': 'You hesitated although both numbers are given. c = log₂(2) = 1 and d = 1 are concrete, so the comparison is fully decidable: they are equal.',
+				'c > d':
+					'You read the leaves as winning, but both exponents equal 1. c > d would mean the leaf count outgrows the combine work; here log₂(2) = 1 exactly matches d = 1, so neither pulls ahead.',
+				'c < d':
+					'You read the root combine as winning, but the two exponents are equal. c < d would put f(n) ahead; with c = d = 1 the per-level work stays flat instead.',
+				'cannot tell':
+					'You hesitated although both numbers are given. c = log₂(2) = 1 and d = 1 are concrete, so the comparison is fully decidable: they are equal.',
 			},
 			explanation:
 				'Both exponents are 1, so neither side runs away from the other. When c = d the work is balanced — the leaves and the root pull equally hard. That balance is exactly Case 2.',
@@ -76,6 +80,9 @@ export const SCENES = [
 		id: 'levels',
 		eyebrow: 'The deciding comparison',
 		title: 'Whichever side grows faster wins.',
+		// Stage shape: the check below is a=8,b=2,f(n)=n, so pin that recurrence
+		// and let the silhouette go bottom-heavy — Case 1, leaves win.
+		recurrence: { a: 8, b: 2, d: 1, k: 0 },
 		body: 'If c > d the leaves dominate (Case 1) → Θ(n^c). If c < d the root-side combine work dominates (Case 3) → Θ(n^d). If they tie, every level does the same work and the log n levels stack up (Case 2) → Θ(n^d log n).',
 		check: {
 			kind: 'choice',
@@ -84,9 +91,12 @@ export const SCENES = [
 			options: ['Case 1', 'Case 2', 'Case 3', 'none apply'],
 			answer: 'Case 1',
 			misconceptions: {
-				'Case 2': 'You assumed a tie, but c = 3 and d = 1 are far apart. Case 2 needs c = d so every level does equal work; here the leaves grow as n³ while combine is only n.',
-				'Case 3': 'You let the root combine win, but it is the smaller side. Case 3 needs c < d; here c = 3 exceeds d = 1, so the leaves dominate, not the combine work.',
-				'none apply': 'You expected a gap the theorem cannot cover, but this is a clean polynomial split. c = 3 is polynomially larger than d = 1, so Case 1 applies squarely.',
+				'Case 2':
+					'You assumed a tie, but c = 3 and d = 1 are far apart. Case 2 needs c = d so every level does equal work; here the leaves grow as n³ while combine is only n.',
+				'Case 3':
+					'You let the root combine win, but it is the smaller side. Case 3 needs c < d; here c = 3 exceeds d = 1, so the leaves dominate, not the combine work.',
+				'none apply':
+					'You expected a gap the theorem cannot cover, but this is a clean polynomial split. c = 3 is polynomially larger than d = 1, so Case 1 applies squarely.',
 			},
 			explanation:
 				'c = 3 is greater than d = 1, so the leaves vastly outnumber the combine work and dominate the total: T(n) = Θ(n³). The leaf level alone carries the cost.',
@@ -134,6 +144,9 @@ export const SCENES = [
 		id: 'compute-c',
 		eyebrow: 'Do the comparison',
 		title: 'Compute the exponent yourself.',
+		// Stage shape: this scene works the a=8,b=2 example, so keep the same
+		// bottom-heavy Case-1 silhouette the student is computing c for.
+		recurrence: { a: 8, b: 2, d: 1, k: 0 },
 		body: 'Everything hinges on c = log_b(a): the exponent on n that the leaves grow by. For a = 8, b = 2 you are asking "2 to what power is 8?" — count the doublings.',
 		check: {
 			kind: 'numeric',
@@ -150,6 +163,10 @@ export const SCENES = [
 		id: 'classify-cases',
 		eyebrow: 'Put it together',
 		title: 'Which side wins each recurrence?',
+		// Stage shape: among the three items being sorted, show the root-winning
+		// exemplar (T = 2T(n/2) + n²) so the top-heavy silhouette — the one new
+		// shape the earlier scenes have not shown — is on screen as they classify.
+		recurrence: { a: 2, b: 2, d: 2, k: 0 },
 		body: 'For each recurrence, compare c = log_b(a) against d (where f(n) = n^d), then drop it into the case its dominant side names: the leaves (c > d), every level tied (c = d), or the root (c < d).',
 		check: {
 			kind: 'classify',

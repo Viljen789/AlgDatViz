@@ -1,20 +1,31 @@
 import { useMemo } from 'react';
-import { STORY_PARAMS } from './scenes.js';
-import { analyseRecurrence, buildLevels, formatNumber } from './masterMath.js';
+import { SCENES, STORY_PARAMS } from './scenes.js';
+import {
+	recurrenceShape,
+	formatNumber,
+	formatPower,
+	formatLog,
+} from './masterMath.js';
 import styles from './MasterTheoremStage.module.css';
 
 // Stage geometry. The recursion tree is laid out top-down in a fixed viewBox so
 // the prose column can drive how many levels are revealed per scene without the
-// layout jumping. Node x-positions are spread evenly within each level.
+// layout jumping. Node x-positions are spread evenly within each level. The
+// *shape* of the tree (branching, width) and the per-level work bars are driven
+// by the active scene's recurrence, so the silhouette re-shapes per case:
+// bottom-heavy when the leaves win, even on a tie, top-heavy when the root wins.
 const VIEW_W = 480;
 const VIEW_H = 300;
 const PAD_X = 28;
 const PAD_TOP = 26;
-const LEVEL_GAP = 64;
 const NODE_R = 9;
-const TREE_DEPTH = 3; // levels 0..3 for the merge-sort example (a=2, b=2)
 
+// Lay out a^level nodes per level inside the viewBox. `depth` is the legibility-
+// capped tree depth from recurrenceShape, so a high branching factor a is drawn
+// over fewer levels rather than spilling hundreds of leaves off the stage. The
+// vertical gap adapts to the depth so 1-level and 3-level trees both fill height.
 const buildTreeNodes = (a, depth) => {
+	const levelGap = depth > 0 ? (VIEW_H - PAD_TOP * 2) / depth : 0;
 	const levels = [];
 	for (let level = 0; level <= depth; level += 1) {
 		const count = a ** level;
@@ -23,7 +34,7 @@ const buildTreeNodes = (a, depth) => {
 			id: `${level}-${i}`,
 			level,
 			x: PAD_X + ((i + 0.5) / count) * usableW,
-			y: PAD_TOP + level * LEVEL_GAP,
+			y: PAD_TOP + level * levelGap,
 		}));
 		levels.push(nodes);
 	}
@@ -31,30 +42,34 @@ const buildTreeNodes = (a, depth) => {
 };
 
 const MasterTheoremStage = ({ activeScene = 0 }) => {
-	const { a, b } = STORY_PARAMS;
-	const analysis = useMemo(() => analyseRecurrence(STORY_PARAMS), []);
-	const levelData = useMemo(() => buildLevels(STORY_PARAMS, TREE_DEPTH), []);
-	const treeLevels = useMemo(() => buildTreeNodes(a, TREE_DEPTH), [a]);
+	// Each scene may pin its own recurrence so the stage demonstrates that case's
+	// shape; scenes without one fall back to the running merge-sort example.
+	const params = SCENES[activeScene]?.recurrence ?? STORY_PARAMS;
+	const { a, b, d, k } = params;
 
-	// How much of the tree is revealed per scene.
-	//   0 setup       → just the root
-	//   1 unfold      → full tree
-	//   2 leaves      → full tree, leaves emphasised
-	//   3 levels      → full tree + per-level work bars
-	//   4 result      → bars + the dominant side called out
-	const visibleDepth = activeScene >= 1 ? TREE_DEPTH : 0;
+	// One analysis drives the whole picture, so the silhouette, the colouring,
+	// and the verdict chip can never disagree with each other or with the prose.
+	const shape = useMemo(() => recurrenceShape(params), [params]);
+	const { treeDepth, dominantLevel, profile, levels: levelData } = shape;
+	const treeLevels = useMemo(
+		() => buildTreeNodes(a, treeDepth),
+		[a, treeDepth]
+	);
+
+	// How much of the stage is revealed.
+	//   scene 0 (setup) → just the root, no bars, no verdict
+	//   scenes 1–2      → the tree unfolds (leaves emphasised on scene 2)
+	//   scene 3+        → tree + per-level work bars
+	//   scene 4+        → bars + the dominant side called out + verdict chip
+	// Any scene that pins a recurrence is *about* its shape, so it always shows
+	// the full silhouette (full tree, bars, verdict) regardless of index.
+	const pinned = Boolean(SCENES[activeScene]?.recurrence);
+	const unfolded = activeScene >= 1 || pinned;
 	const emphasiseLeaves = activeScene === 2;
-	const showBars = activeScene >= 3;
-	const showResult = activeScene >= 4;
-	const { dominant } = analysis;
+	const showBars = activeScene >= 3 || pinned;
+	const showResult = activeScene >= 4 || pinned;
 
-	// Which level rows are part of the "winning" side, for restrained colouring.
-	const isDominantLevel = level => {
-		if (!showResult) return false;
-		if (dominant === 'leaves') return level === TREE_DEPTH;
-		if (dominant === 'root') return level === 0;
-		return true; // levels tie
-	};
+	const visibleDepth = unfolded ? treeDepth : 0;
 
 	const renderEdges = () => {
 		if (visibleDepth < 1) return null;
@@ -81,12 +96,17 @@ const MasterTheoremStage = ({ activeScene = 0 }) => {
 		return lines;
 	};
 
+	// The f(n) combine term, written honestly from d and k (e.g. "n", "n^2",
+	// "n log n"), so the notation matches whichever recurrence is on screen.
+	const combineTerm = `${formatPower(d)}${formatLog(k)}`.trim();
+
 	return (
 		<div
 			className={styles.wrap}
 			data-scene={activeScene}
+			data-profile={profile}
 			role="img"
-			aria-label="Recursion tree for T(n) = a·T(n/b) + f(n), showing where the work piles up"
+			aria-label={`Recursion tree for T(n) = ${a}·T(n/${b}) + ${combineTerm}: a ${profile.replace('-', ' ')} shape where ${shape.dominant === 'leaves' ? 'the leaves carry the work' : shape.dominant === 'root' ? 'the root carries the work' : 'every level carries equal work'}`}
 		>
 			<svg
 				viewBox={`0 0 ${VIEW_W} ${VIEW_H}`}
@@ -96,11 +116,11 @@ const MasterTheoremStage = ({ activeScene = 0 }) => {
 				<g className={styles.edgeGroup}>{renderEdges()}</g>
 
 				{treeLevels.slice(0, visibleDepth + 1).map((nodes, level) => {
-					const isLeafRow = level === TREE_DEPTH;
+					const isLeafRow = level === treeDepth;
 					let nodeClass = styles.node;
-					if (isLeafRow && (emphasiseLeaves || dominant === 'leaves')) {
+					if (isLeafRow && (emphasiseLeaves || dominantLevel === treeDepth)) {
 						nodeClass = `${styles.node} ${styles.nodeLeaf}`;
-					} else if (level === 0 && dominant === 'root' && showResult) {
+					} else if (level === 0 && dominantLevel === 0 && showResult) {
 						nodeClass = `${styles.node} ${styles.nodeRoot}`;
 					}
 					return (
@@ -123,7 +143,9 @@ const MasterTheoremStage = ({ activeScene = 0 }) => {
 				})}
 			</svg>
 
-			{/* Per-level work bars: leaves-vs-combine, the heart of the theorem. */}
+			{/* Per-level work bars: leaves-vs-combine, the heart of the theorem.
+			    Their profile (growing, flat, shrinking down the column) IS the
+			    case, driven by the same per-level work the verdict cites. */}
 			<div
 				className={`${styles.bars} ${showBars ? styles.barsShow : ''}`}
 				aria-hidden={!showBars}
@@ -132,13 +154,11 @@ const MasterTheoremStage = ({ activeScene = 0 }) => {
 				<ol className={styles.barRows}>
 					{levelData.map(level => (
 						<li key={level.level} className={styles.barRow}>
-							<span className={styles.barLabel}>
-								L{level.level}
-							</span>
+							<span className={styles.barLabel}>L{level.level}</span>
 							<span className={styles.barTrack}>
 								<span
 									className={`${styles.barFill} ${
-										isDominantLevel(level.level)
+										showResult && level.level === dominantLevel
 											? styles.barFillDominant
 											: ''
 									}`}
@@ -153,17 +173,17 @@ const MasterTheoremStage = ({ activeScene = 0 }) => {
 				</ol>
 			</div>
 
-			{/* The verdict, revealed on the final scene. */}
+			{/* The verdict, revealed once the dominant side is called out. */}
 			<div
 				className={`${styles.verdict} ${showResult ? styles.verdictShow : ''}`}
 				aria-hidden={!showResult}
 			>
-				<span className={styles.verdictCase}>{analysis.name}</span>
-				<span className={styles.verdictResult}>{analysis.result}</span>
+				<span className={styles.verdictCase}>{shape.name}</span>
+				<span className={styles.verdictResult}>{shape.result}</span>
 			</div>
 
 			<div className={styles.notation} aria-hidden="true">
-				T(n) = {a}·T(n/{b}) + n
+				T(n) = {a}·T(n/{b}) + {combineTerm}
 			</div>
 		</div>
 	);

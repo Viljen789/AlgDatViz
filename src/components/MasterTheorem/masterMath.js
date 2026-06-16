@@ -114,6 +114,76 @@ export const buildLevels = ({ a, b, d }, depth = 6) => {
 	}));
 };
 
+/**
+ * recurrenceShape — the recursion-tree *silhouette* a recurrence makes, so a
+ * stage can re-shape itself per case instead of hard-coding one tree. Every
+ * field is derived from the same `analyseRecurrence` / `buildLevels` the prose
+ * cites, so the picture can never disagree with the verdict.
+ *
+ *   profile       'bottom-heavy' (leaves win, work grows down the tree)
+ *                 'even'         (every level ties)
+ *                 'top-heavy'    (root wins, work shrinks down the tree)
+ *   dominantLevel the level index carrying the most work: `treeDepth` when the
+ *                 leaves win, 0 when the root wins, null on a tie. Read off the
+ *                 same per-level work, so it tracks `dominant` exactly.
+ *   treeDepth     a legibility-capped depth for the *dot* tree: a^level nodes
+ *                 stays structurally honest, but a high branching factor a is
+ *                 drawn over fewer levels so the bottom row does not overflow.
+ *   workDepth     a deeper cap for the per-level work *bars* (rows, not dots, so
+ *                 they can afford more levels and let the slope read clearly).
+ *   levels        buildLevels(params, workDepth) — the per-level work profile.
+ *
+ * @param {{a,b,d,k}} params  the recurrence parameters.
+ * @param {{maxTreeDepth?:number, maxLeafNodes?:number, workDepth?:number}} [opts]
+ */
+export const recurrenceShape = (params, opts = {}) => {
+	const { maxTreeDepth = 3, maxLeafNodes = 10, minWorkDepth = 3 } = opts;
+	const { a } = params;
+	const analysis = analyseRecurrence(params);
+
+	// Keep the bottom row legible: with branching a, the deepest level we can
+	// draw without exceeding maxLeafNodes is floor(log_a(maxLeafNodes)). a = 1
+	// never branches, so it always gets the full maxTreeDepth rows.
+	const branchCap =
+		a <= 1 ? maxTreeDepth : Math.floor(Math.log(maxLeafNodes) / Math.log(a));
+	const treeDepth = Math.max(1, Math.min(maxTreeDepth, branchCap));
+
+	// The work bars are rows, not dots, so a wide tree (small treeDepth) can still
+	// chart enough levels for its slope to read. Match the tree depth when that is
+	// already deep enough, else extend to minWorkDepth purely for the bars.
+	const workDepth = Math.max(treeDepth, minWorkDepth);
+
+	const profile =
+		analysis.dominant === 'leaves'
+			? 'bottom-heavy'
+			: analysis.dominant === 'root'
+				? 'top-heavy'
+				: 'even';
+
+	// The level whose work bar is widest, read off the same per-level work the
+	// verdict uses: deepest level when leaves win, root when root wins, none on a
+	// tie. By construction this can never disagree with `dominant`.
+	const dominantLevel =
+		analysis.dominant === 'leaves'
+			? workDepth
+			: analysis.dominant === 'root'
+				? 0
+				: null;
+
+	return {
+		caseId: analysis.caseId,
+		name: analysis.name,
+		dominant: analysis.dominant,
+		result: analysis.result,
+		profile,
+		dominantLevel,
+		treeDepth,
+		workDepth,
+		ratio: analysis.ratio,
+		levels: buildLevels(params, workDepth),
+	};
+};
+
 // The pseudocode the recursion-tree walk is synced against. The frame generator
 // below emits a `line` index into this array per step (see PseudoState's frame
 // contract), so the executing line is highlighted in lockstep with the readout.

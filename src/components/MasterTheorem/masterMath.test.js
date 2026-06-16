@@ -4,8 +4,14 @@ import {
 	analyseRecurrence,
 	buildLevels,
 	buildRecursionFrames,
+	recurrenceShape,
 	RECURSION_PSEUDOCODE,
 } from './masterMath.js';
+
+// The three canonical recurrences the scrolly scenes pin, one per case.
+const MERGE = { a: 2, b: 2, d: 1, k: 0 }; // c = d = 1  → Case 2, even
+const LEAFY = { a: 8, b: 2, d: 1, k: 0 }; // c = 3 > 1  → Case 1, bottom-heavy
+const ROOTY = { a: 2, b: 2, d: 2, k: 0 }; // c = 1 < 2  → Case 3, top-heavy
 
 // ── analyseRecurrence: the three cases via c = log_b(a) vs d ──
 
@@ -87,4 +93,86 @@ test('buildRecursionFrames — verdict comparison sign tracks the case', () => {
 	const root = buildRecursionFrames({ a: 2, b: 2, d: 2, k: 0 }, 3).at(-1);
 	assert.equal(tie.state.find(r => r.id === 'compare').value, 'c = d');
 	assert.equal(root.state.find(r => r.id === 'compare').value, 'c < d');
+});
+
+// ── recurrenceShape: the silhouette must agree with the verdict ──
+
+test('recurrenceShape — profile names the case the same analysis decides', () => {
+	assert.equal(recurrenceShape(MERGE).profile, 'even');
+	assert.equal(recurrenceShape(LEAFY).profile, 'bottom-heavy');
+	assert.equal(recurrenceShape(ROOTY).profile, 'top-heavy');
+	// caseId mirrors analyseRecurrence, so picture and prose share one source.
+	assert.equal(recurrenceShape(MERGE).caseId, analyseRecurrence(MERGE).caseId);
+	assert.equal(recurrenceShape(LEAFY).caseId, analyseRecurrence(LEAFY).caseId);
+	assert.equal(recurrenceShape(ROOTY).caseId, analyseRecurrence(ROOTY).caseId);
+});
+
+test('recurrenceShape — the widest work bar IS the dominant level', () => {
+	// Honesty contract: the level the helper marks dominant must be the level
+	// whose relative work is actually the maximum, so the colour can never lie.
+	for (const params of [MERGE, LEAFY, ROOTY]) {
+		const shape = recurrenceShape(params);
+		const works = shape.levels.map(l => l.relativeWork);
+		const maxWork = Math.max(...works);
+		const analysis = analyseRecurrence(params);
+
+		if (analysis.dominant === 'leaves') {
+			// Bottom-heavy: last level carries (strictly) the most work.
+			assert.equal(shape.dominantLevel, shape.workDepth);
+			assert.equal(shape.levels.at(-1).relativeWork, maxWork);
+			assert.ok(
+				shape.levels.at(-1).relativeWork > shape.levels[0].relativeWork
+			);
+		} else if (analysis.dominant === 'root') {
+			// Top-heavy: the root carries (strictly) the most work.
+			assert.equal(shape.dominantLevel, 0);
+			assert.equal(shape.levels[0].relativeWork, maxWork);
+			assert.ok(
+				shape.levels[0].relativeWork > shape.levels.at(-1).relativeWork
+			);
+		} else {
+			// Even: no single level dominates and every level ties.
+			assert.equal(shape.dominantLevel, null);
+			for (const work of works) {
+				assert.ok(Math.abs(work - maxWork) < 1e-9, 'every level ties');
+			}
+		}
+	}
+});
+
+test('recurrenceShape — work-bar widths slope the right way per case', () => {
+	const shapeOf = params => recurrenceShape(params).levels;
+	// Even: every level ties, so all bars share the busiest width (100).
+	const even = shapeOf(MERGE);
+	assert.ok(even.every(l => Math.abs(l.width - 100) < 1e-9));
+
+	// Bottom-heavy: relative work grows strictly down the tree, and the widest
+	// bar (the busiest level, normalised to 100) is the bottom row. Display
+	// widths are only non-decreasing because a tiny-work floor keeps faint bars
+	// visible, so the strict-monotonicity claim is made on the true work.
+	const leafy = shapeOf(LEAFY);
+	for (let i = 1; i < leafy.length; i += 1) {
+		assert.ok(leafy[i].relativeWork > leafy[i - 1].relativeWork);
+		assert.ok(leafy[i].width >= leafy[i - 1].width);
+	}
+	assert.equal(leafy.at(-1).width, 100);
+
+	// Top-heavy: relative work shrinks strictly down the tree; the root bar is
+	// the widest (100), later bars only non-increasing for the same floor reason.
+	const rooty = shapeOf(ROOTY);
+	for (let i = 1; i < rooty.length; i += 1) {
+		assert.ok(rooty[i].relativeWork < rooty[i - 1].relativeWork);
+		assert.ok(rooty[i].width <= rooty[i - 1].width);
+	}
+	assert.equal(rooty[0].width, 100);
+});
+
+test('recurrenceShape — dot-tree depth stays legible as branching a grows', () => {
+	// a = 8 must not try to draw 8^3 = 512 leaves; the cap keeps the bottom row
+	// under maxLeafNodes while a = 2 still gets the full tree depth.
+	assert.equal(recurrenceShape(MERGE).treeDepth, 3); // 2^3 = 8 leaves, fine
+	assert.equal(recurrenceShape(LEAFY).treeDepth, 1); // 8^1 = 8 leaves, fine
+	assert.ok(recurrenceShape(LEAFY).treeDepth >= 1);
+	// Binary search (a = 1) never branches, so it keeps the full depth.
+	assert.equal(recurrenceShape({ a: 1, b: 2, d: 0, k: 0 }).treeDepth, 3);
 });
