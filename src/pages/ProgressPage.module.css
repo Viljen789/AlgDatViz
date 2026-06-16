@@ -731,6 +731,55 @@
 	color: var(--brand-ink);
 }
 
+/* The exam trend chip: a sparkline of the climb + a signed delta. It reads as one
+   unit pushed to the end of the meta row. Colour-blind-safe by construction — the
+   direction is carried by a glyph AND a +/- sign AND the number, so the data-dir
+   hue below is only reinforcement, never the sole channel. */
+.trend {
+	display: inline-flex;
+	align-items: center;
+	gap: var(--space-2xs);
+	margin-left: auto;
+}
+
+/* The sparkline inherits the chip's direction colour via currentColor, so its line
+   matches the delta glyph. Kept faint enough to read as texture, not a second
+   metric (the chip is the readable signal). */
+.spark {
+	display: block;
+	flex: 0 0 auto;
+	color: color-mix(in srgb, currentColor 55%, transparent);
+}
+
+.trendDelta {
+	display: inline-flex;
+	align-items: center;
+	gap: 1px;
+	font-variant-numeric: tabular-nums;
+}
+
+.trendNum {
+	font-family: var(--font-family-mono);
+	font-size: var(--font-size-caption);
+	font-weight: var(--font-weight-bold);
+	letter-spacing: 0;
+}
+
+/* Direction tints, paired ALWAYS with the glyph + sign above (never colour alone).
+   Up borrows success, down borrows error, flat stays muted. The whole chip sets
+   `color`, so both the sparkline (currentColor) and the glyph inherit it. */
+.trend[data-dir='up'] {
+	color: var(--color-success);
+}
+
+.trend[data-dir='down'] {
+	color: var(--color-error);
+}
+
+.trend[data-dir='flat'] {
+	color: var(--color-text-muted);
+}
+
 /* Untouched topics recede: a flat surface and dimmer body so the grid reads as a
    priority map (work-to-do up top, untouched below) — state by contrast, never a
    coloured side-stripe. They brighten to full strength on hover/focus. */

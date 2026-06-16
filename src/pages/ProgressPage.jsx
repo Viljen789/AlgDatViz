@@ -4,8 +4,11 @@ import {
 	ArrowRight,
 	ChevronRight,
 	Flame,
+	Minus,
 	RotateCcw,
 	Target,
+	TrendingDown,
+	TrendingUp,
 	X,
 } from 'lucide-react';
 import { BUILT_TOPICS, FIRST_TOPIC, TOPIC_BY_ID } from '../data/curriculum.js';
@@ -74,6 +77,76 @@ const formatPlanDate = key => {
 	return `${WEEKDAYS[d.getDay()]} ${d.getDate()} ${MONTHS[d.getMonth()]}`;
 };
 
+// A tiny exam-score sparkline: the climb across sittings, oldest-left. Purely
+// decorative reinforcement of the delta chip beside it (the chip carries the
+// readable signal), so it is aria-hidden. Points are normalised to a fixed 0..1
+// band — a flat line means flat scores, not "no data". One point can't draw a
+// line, so the dot fallback keeps a single-sit topic from rendering blank (the
+// grid only mounts this for >= 2 sits anyway).
+const SPARK_W = 40;
+const SPARK_H = 14;
+const SPARK_PAD = 2;
+const Sparkline = ({ history }) => {
+	const n = history.length;
+	const span = SPARK_W - SPARK_PAD * 2;
+	const x = i => SPARK_PAD + (n <= 1 ? span / 2 : (i / (n - 1)) * span);
+	// y inverts the ratio: a higher score sits higher on the strip.
+	const y = v => SPARK_PAD + (1 - v) * (SPARK_H - SPARK_PAD * 2);
+	const points = history.map((v, i) => `${x(i)},${y(v)}`).join(' ');
+	return (
+		<svg
+			className={styles.spark}
+			viewBox={`0 0 ${SPARK_W} ${SPARK_H}`}
+			width={SPARK_W}
+			height={SPARK_H}
+			aria-hidden="true"
+			focusable="false"
+		>
+			<polyline
+				points={points}
+				fill="none"
+				stroke="currentColor"
+				strokeWidth="1.5"
+				strokeLinecap="round"
+				strokeLinejoin="round"
+			/>
+			{/* A filled dot on the latest sitting anchors the eye at "today". */}
+			<circle
+				cx={x(n - 1)}
+				cy={y(history[n - 1])}
+				r="1.6"
+				fill="currentColor"
+			/>
+		</svg>
+	);
+};
+
+// The per-topic exam trend: a sparkline of the climb plus a delta chip. The chip
+// is colour-blind-safe by construction — it pairs a direction GLYPH (up/down/flat
+// arrow) with an explicit +/- SIGN and the point count, so the meaning never rides
+// on hue alone. `delta` is a ratio change in [-1,1]; we show it as signed points.
+const DELTA_GLYPH = { 1: TrendingUp, '-1': TrendingDown, 0: Minus };
+const ExamTrend = ({ trend }) => {
+	const points = Math.round(trend.delta * 100);
+	const signed = points > 0 ? `+${points}` : `${points}`; // 0 ⇒ "0", down ⇒ "-N"
+	const Glyph = DELTA_GLYPH[trend.direction];
+	const dir =
+		trend.direction === 1 ? 'up' : trend.direction === -1 ? 'down' : 'flat';
+	const word = trend.direction === 0 ? 'level' : `${signed} points`;
+	return (
+		<span className={styles.trend} data-dir={dir}>
+			<Sparkline history={trend.history} />
+			<span className={styles.trendDelta}>
+				<Glyph size={12} strokeWidth={2.4} aria-hidden="true" />
+				<span className={styles.trendNum}>{signed}</span>
+			</span>
+			<span className={styles.srOnly}>
+				{`Exam trend: ${word} across ${trend.count} sittings since the first sit.`}
+			</span>
+		</span>
+	);
+};
+
 /**
  * ProgressPage (/progress) — the mastery dashboard.
  *
@@ -90,7 +163,7 @@ const ProgressPage = () => {
 		reset: resetProgress,
 	} = useProgress();
 	const { cards, grade, reset: resetSrs } = useSrs();
-	const { examScores } = useExamLog();
+	const { examScores, examDeltas } = useExamLog();
 	const {
 		days,
 		examDate,
@@ -126,9 +199,11 @@ const ProgressPage = () => {
 					total: m?.total ?? 0,
 					hasData: m?.hasData ?? false,
 					fromExam: m?.fromExam ?? false,
+					// Evidence-of-motion across exam sittings (null until >= 2 sits).
+					examDelta: examDeltas[t.id] ?? null,
 				};
 			}),
-		[mastery, isCompleted, isVisited]
+		[mastery, isCompleted, isVisited, examDeltas]
 	);
 
 	// One shared weakness ranking (lib/weakTopics.js) at the shared WEAK_THRESHOLD,
@@ -633,6 +708,10 @@ const ProgressPage = () => {
 										{t.fromExam && (
 											<span className={styles.cardFromExam}>from exam</span>
 										)}
+										{/* The climb across exam sittings — a sparkline + signed
+										    delta with a redundant glyph. Only present once a topic
+										    has >= 2 real sittings (a single sit shows no trend). */}
+										{t.examDelta && <ExamTrend trend={t.examDelta} />}
 									</span>
 								</Link>
 							</li>
