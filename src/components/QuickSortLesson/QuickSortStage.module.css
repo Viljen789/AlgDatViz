@@ -1,0 +1,323 @@
+/* =============================================================================
+   QuickSortStage — the honest partition visualization. Canonical tokens only;
+   tinted by --topic-accent from TopicTemplate. State colours reuse the same
+   State-Quartet vocabulary the merge-sort stage uses (active = comparing,
+   flight = in-transit, done = settled) so the two sorting lessons read alike.
+   ============================================================================ */
+
+.wrap {
+	position: relative;
+	width: 100%;
+	height: 100%;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	gap: var(--space-md);
+	padding: clamp(var(--space-lg), 3vw, var(--space-2xl));
+	box-sizing: border-box;
+	background: var(--surface-1);
+	border-radius: var(--radius-lg);
+	border: 1px solid var(--color-border);
+	overflow: hidden;
+	box-shadow: var(--shadow-2);
+}
+
+.svg {
+	width: 100%;
+	height: auto;
+	max-width: min(100%, 560px);
+	display: block;
+}
+
+/* ---------- Bars ---------- */
+
+.barDefault,
+.barBelow,
+.barCompare,
+.barFlight,
+.barPivot,
+.barLocked,
+.barPivotHome,
+.barLeftSide,
+.barRightSide {
+	transition:
+		fill var(--duration-step) var(--ease-quiet),
+		x var(--duration-step) var(--ease-quiet),
+		y var(--duration-step) var(--ease-quiet),
+		height var(--duration-step) var(--ease-quiet);
+}
+
+.barDefault {
+	fill: var(--color-text-muted);
+}
+
+/* A value already pulled inside the boundary i (known to be < pivot). A faint
+   accent wash distinguishes "claimed by the small side" from untouched bars. */
+.barBelow {
+	fill: var(--topic-accent);
+	opacity: 0.5;
+}
+
+/* The two values being compared against the pivot this frame. */
+.barCompare {
+	fill: var(--state-active);
+}
+
+/* A value mid-swap. */
+.barFlight {
+	fill: var(--state-flight);
+}
+
+/* The pivot while the partition is in flight — outlined so it reads as "the
+   value everything is measured against", not yet placed. */
+.barPivot {
+	fill: var(--state-active);
+	stroke: var(--color-text-primary);
+	stroke-width: 1.5px;
+	stroke-dasharray: 3 2;
+}
+
+/* A pivot that has snapped to its FINAL index. Solid done-green, ringed in the
+   topic accent so "this one is sorted forever" is unmistakable + colourblind-safe
+   (shape ring + colour, not colour alone). */
+.barPivotHome {
+	fill: var(--state-done);
+	stroke: var(--topic-accent);
+	stroke-width: 2px;
+}
+
+/* Any index locked in its final slot by an earlier partition. */
+.barLocked {
+	fill: var(--state-done);
+	opacity: 0.7;
+}
+
+/* Recursion scene: the two ranges quicksort will descend into. Distinct hues so
+   the divide is legible; the accent wash (left) vs muted-strong (right) pair is
+   redundant with their position, so colourblind readers still see two groups. */
+.barLeftSide {
+	fill: var(--topic-accent);
+	opacity: 0.62;
+}
+
+.barRightSide {
+	fill: var(--color-text-secondary);
+	opacity: 0.78;
+}
+
+.barValue {
+	fill: var(--color-text-secondary);
+	font-family: var(--font-family-mono);
+	font-size: 12px;
+	font-weight: var(--font-weight-bold);
+	text-anchor: middle;
+}
+
+.slotIndex {
+	fill: var(--color-text-muted);
+	font-family: var(--font-family-mono);
+	font-size: 9.5px;
+	text-anchor: middle;
+}
+
+/* ---------- Pointers (i boundary, j scanner) ---------- */
+
+.pointerLabel {
+	font-family: var(--font-family-mono);
+	font-size: 12px;
+	font-weight: var(--font-weight-bold);
+	text-anchor: middle;
+}
+
+.pointerBoundary .pointerLabel {
+	fill: var(--topic-accent-ink);
+}
+
+.pointerScan .pointerLabel {
+	fill: var(--state-active);
+}
+
+.pointerBoundary .pointerCaret {
+	fill: var(--topic-accent);
+}
+
+.pointerScan .pointerCaret {
+	fill: var(--state-active);
+}
+
+.pointerBoundary,
+.pointerScan {
+	transition: transform var(--duration-step) var(--ease-quiet);
+}
+
+/* ---------- Caption ---------- */
+
+.caption {
+	margin: 0;
+	font-family: var(--font-family-mono);
+	font-size: var(--font-size-caption);
+	color: var(--color-text-secondary);
+	text-align: center;
+	line-height: 1.5;
+	max-width: 52ch;
+	min-height: 2.8em;
+}
+
+/* ---------- Worst-case staircase (scenes 4 & 5) ---------- */
+
+.stick {
+	display: flex;
+	flex-direction: column;
+	gap: 5px;
+	width: 100%;
+	max-width: 460px;
+	padding: var(--space-sm) 0;
+}
+
+.stickRow {
+	display: flex;
+	align-items: center;
+	gap: var(--space-sm);
+}
+
+.stickSize {
+	flex: 0 0 2.6rem;
+	font-family: var(--font-family-mono);
+	font-size: 11px;
+	color: var(--color-text-muted);
+	text-align: right;
+}
+
+.stickBlocks {
+	display: flex;
+	gap: 3px;
+}
+
+.stickCell {
+	width: 16px;
+	height: 16px;
+	border-radius: 2px;
+	background: var(--color-text-muted);
+	opacity: 0.55;
+}
+
+/* The peeled pivot at the end of each row — the one element that partition
+   places before recursing on everything to its left. */
+.stickPivot {
+	background: var(--topic-accent);
+	opacity: 1;
+}
+
+/* ---------- Recurrence overlay (scene 5) ---------- */
+
+.recurrence {
+	position: absolute;
+	right: clamp(14px, 2.5vw, 28px);
+	bottom: clamp(14px, 2.5vw, 28px);
+	display: flex;
+	flex-direction: column;
+	gap: 10px;
+	max-width: 250px;
+	opacity: 0;
+	transform: translateY(8px);
+	transition:
+		opacity 360ms var(--ease-quiet),
+		transform 360ms var(--ease-quiet);
+	pointer-events: none;
+}
+
+.recurrenceShow {
+	opacity: 1;
+	transform: translateY(0);
+}
+
+.recurrenceList {
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+	font-family: var(--font-family-mono);
+	font-size: 11.5px;
+	color: var(--color-text-muted);
+	line-height: 1.5;
+}
+
+.recurrenceTotal {
+	display: flex;
+	flex-direction: column;
+	gap: 2px;
+	padding-top: 8px;
+	border-top: 1px solid var(--color-border);
+}
+
+.recurrenceMath {
+	font-family: var(--font-family-mono);
+	font-size: 16px;
+	font-weight: var(--font-weight-bold);
+	color: var(--color-text-primary);
+}
+
+.recurrenceLabel {
+	font-family: var(--font-family-mono);
+	font-size: var(--font-size-label);
+	color: var(--topic-accent);
+}
+
+/* ---------- Top-right notation ---------- */
+
+.notation {
+	position: absolute;
+	top: clamp(14px, 2.2vw, 24px);
+	right: clamp(14px, 2.5vw, 28px);
+	font-family: var(--font-family-mono);
+	font-size: 12px;
+	color: var(--color-text-secondary);
+	letter-spacing: 0.02em;
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.barDefault,
+	.barBelow,
+	.barCompare,
+	.barFlight,
+	.barPivot,
+	.barLocked,
+	.barPivotHome,
+	.barLeftSide,
+	.barRightSide,
+	.pointerBoundary,
+	.pointerScan {
+		transition-duration: 0ms;
+	}
+	.recurrence {
+		transition-duration: 0ms;
+	}
+}
+
+@media (max-width: 720px) {
+	.svg {
+		max-width: 100%;
+	}
+	.recurrence {
+		position: static;
+		right: auto;
+		bottom: auto;
+		max-width: 100%;
+		flex-direction: row;
+		align-items: flex-end;
+		justify-content: space-between;
+		gap: 16px;
+		padding-top: 8px;
+		border-top: 1px solid var(--color-border);
+		width: 100%;
+	}
+	.recurrenceTotal {
+		padding-top: 0;
+		border-top: none;
+		text-align: right;
+		align-items: flex-end;
+	}
+	.notation {
+		font-size: 11px;
+	}
+}

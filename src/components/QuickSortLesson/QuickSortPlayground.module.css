@@ -1,0 +1,242 @@
+/* QuickSortPlayground — the step/scrub/replay sandbox. Canonical tokens only;
+   tinted by --topic-accent. Bar + pointer state colours match QuickSortStage so
+   the lesson and the playground read as one visual language. */
+
+.shell {
+	width: 100%;
+	display: flex;
+	flex-direction: column;
+	gap: var(--space-xl);
+}
+
+.layout {
+	display: grid;
+	grid-template-columns: minmax(0, 1.6fr) minmax(260px, 1fr);
+	gap: var(--space-xl);
+	align-items: stretch;
+	min-height: 0;
+}
+
+.canvas {
+	position: relative;
+	background: var(--surface-1);
+	border: 1px solid var(--color-border);
+	border-radius: var(--radius-lg);
+	padding: clamp(var(--space-lg), 3vw, var(--space-2xl));
+	display: flex;
+	flex-direction: column;
+	justify-content: center;
+	min-height: 360px;
+	box-shadow: var(--shadow-2);
+	overflow: hidden;
+}
+
+.notation {
+	position: absolute;
+	top: clamp(var(--space-lg), 2vw, var(--space-xl));
+	right: clamp(var(--space-lg), 2.4vw, var(--space-xl));
+	font-family: var(--font-family-mono);
+	font-size: var(--font-size-label);
+	color: var(--color-text-secondary);
+	letter-spacing: var(--tracking-wide);
+	z-index: 1;
+}
+
+.canvasStage {
+	flex: 1;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	min-height: 0;
+}
+
+.svg {
+	width: 100%;
+	height: auto;
+	max-width: min(100%, 520px);
+	display: block;
+}
+
+.pseudo {
+	min-height: 0;
+	max-height: 460px;
+}
+
+/* ---------- Bars (shared role vocabulary with the Stage) ---------- */
+
+.barDefault,
+.barBelow,
+.barCompare,
+.barFlight,
+.barPivot,
+.barLocked,
+.barPivotHome {
+	transition:
+		fill var(--duration-step) var(--ease-quiet),
+		y var(--duration-step) var(--ease-quiet),
+		height var(--duration-step) var(--ease-quiet);
+}
+
+.barDefault {
+	fill: var(--color-text-muted);
+}
+
+.barBelow {
+	fill: var(--topic-accent);
+	opacity: 0.5;
+}
+
+.barCompare {
+	fill: var(--state-active);
+}
+
+.barFlight {
+	fill: var(--state-flight);
+}
+
+.barPivot {
+	fill: var(--state-active);
+	stroke: var(--color-text-primary);
+	stroke-width: 1.5px;
+	stroke-dasharray: 3 2;
+}
+
+.barPivotHome {
+	fill: var(--state-done);
+	stroke: var(--topic-accent);
+	stroke-width: 2px;
+}
+
+.barLocked {
+	fill: var(--state-done);
+	opacity: 0.7;
+}
+
+.barValue {
+	fill: var(--color-text-secondary);
+	font-family: var(--font-family-mono);
+	font-size: 12px;
+	font-weight: var(--font-weight-bold);
+	text-anchor: middle;
+}
+
+.slotIndex {
+	fill: var(--color-text-muted);
+	font-family: var(--font-family-mono);
+	font-size: 9.5px;
+	text-anchor: middle;
+}
+
+/* ---------- Pointers ---------- */
+
+.pointerLabel {
+	font-family: var(--font-family-mono);
+	font-size: 12px;
+	font-weight: var(--font-weight-bold);
+	text-anchor: middle;
+}
+
+.pointerBoundary .pointerLabel {
+	fill: var(--topic-accent-ink);
+}
+
+.pointerScan .pointerLabel {
+	fill: var(--state-active);
+}
+
+.pointerBoundary .pointerCaret {
+	fill: var(--topic-accent);
+}
+
+.pointerScan .pointerCaret {
+	fill: var(--state-active);
+}
+
+.pointerBoundary,
+.pointerScan {
+	transition: transform var(--duration-step) var(--ease-quiet);
+}
+
+/* ---------- Narration + controls ---------- */
+
+.narration {
+	margin: var(--space-lg) 0 0;
+	font-family: var(--font-family-mono);
+	font-size: var(--font-size-label);
+	line-height: var(--line-height-body);
+	color: var(--color-text-secondary);
+	max-width: 65ch;
+	min-height: 2.6em;
+	text-align: center;
+}
+
+.controlsDock {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	gap: var(--space-md);
+	flex-wrap: wrap;
+}
+
+.shuffleBtn {
+	display: inline-flex;
+	align-items: center;
+	gap: 7px;
+	padding: var(--space-sm) var(--space-md);
+	background: var(--surface-hover);
+	border: 1px solid var(--color-border);
+	border-radius: var(--radius-md);
+	color: var(--color-text-secondary);
+	font-family: var(--font-family-sans);
+	font-size: var(--font-size-label);
+	font-weight: var(--font-weight-medium);
+	cursor: pointer;
+	transition:
+		color var(--transition),
+		border-color var(--transition),
+		background-color var(--transition);
+}
+
+.shuffleBtn:hover {
+	color: var(--color-text-primary);
+	border-color: var(--color-border-strong);
+	background: var(--surface-2);
+}
+
+.shuffleBtn:focus-visible {
+	outline: none;
+	box-shadow: var(--shadow-focus);
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.barDefault,
+	.barBelow,
+	.barCompare,
+	.barFlight,
+	.barPivot,
+	.barLocked,
+	.barPivotHome,
+	.pointerBoundary,
+	.pointerScan {
+		transition-duration: 0ms;
+	}
+}
+
+@media (max-width: 960px) {
+	.layout {
+		grid-template-columns: minmax(0, 1fr);
+	}
+	.pseudo {
+		max-height: none;
+	}
+}
+
+@media (max-width: 720px) {
+	.canvas {
+		padding: 18px;
+		min-height: 300px;
+	}
+	.notation {
+		font-size: 11px;
+	}
+}

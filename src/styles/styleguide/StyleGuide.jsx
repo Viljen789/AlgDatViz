@@ -14,6 +14,7 @@ const TOPICS = [
 	{ id: 'stacks-queues', label: 'Stacks & Queues', token: '--topic-stacks' },
 	{ id: 'master-theorem', label: 'Master Theorem', token: '--topic-master' },
 	{ id: 'sorting', label: 'Sorting', token: '--topic-sorting' },
+	{ id: 'quicksort', label: 'Quicksort', token: '--topic-quicksort' },
 	{ id: 'linsort', label: 'Linear-time Sorting', token: '--topic-linsort' },
 	{ id: 'hashing', label: 'Hashing', token: '--topic-hashing' },
 	{ id: 'trees', label: 'Trees', token: '--topic-trees' },
@@ -35,12 +36,36 @@ const SEMANTIC = [
 ];
 
 const TYPE_SCALE = [
-	{ name: 'Display 2XL', cls: styles.display2xl, token: '--font-size-display-2xl' },
-	{ name: 'Display XL', cls: styles.displayXl, token: '--font-size-display-xl' },
-	{ name: 'Display LG', cls: styles.displayLg, token: '--font-size-display-lg' },
-	{ name: 'Heading LG', cls: styles.headingLg, token: '--font-size-heading-lg' },
-	{ name: 'Heading MD', cls: styles.headingMd, token: '--font-size-heading-md' },
-	{ name: 'Heading SM', cls: styles.headingSm, token: '--font-size-heading-sm' },
+	{
+		name: 'Display 2XL',
+		cls: styles.display2xl,
+		token: '--font-size-display-2xl',
+	},
+	{
+		name: 'Display XL',
+		cls: styles.displayXl,
+		token: '--font-size-display-xl',
+	},
+	{
+		name: 'Display LG',
+		cls: styles.displayLg,
+		token: '--font-size-display-lg',
+	},
+	{
+		name: 'Heading LG',
+		cls: styles.headingLg,
+		token: '--font-size-heading-lg',
+	},
+	{
+		name: 'Heading MD',
+		cls: styles.headingMd,
+		token: '--font-size-heading-md',
+	},
+	{
+		name: 'Heading SM',
+		cls: styles.headingSm,
+		token: '--font-size-heading-sm',
+	},
 	{ name: 'Body LG', cls: styles.bodyLg, token: '--font-size-body-lg' },
 	{ name: 'Body', cls: styles.body, token: '--font-size-body' },
 	{ name: 'Label', cls: styles.labelType, token: '--font-size-label' },
@@ -101,7 +126,11 @@ const StyleGuide = () => {
 					token-wired primitives. Everything here reads from{' '}
 					<code>src/styles/theme.css</code>.
 				</p>
-				<div className={styles.themeBar} role="group" aria-label="Preview theme">
+				<div
+					className={styles.themeBar}
+					role="group"
+					aria-label="Preview theme"
+				>
 					<span className={styles.themeBarLabel}>Theme</span>
 					<div className={styles.themeSeg}>
 						<button
@@ -130,7 +159,7 @@ const StyleGuide = () => {
 
 			<Section
 				title="Per-topic signature hues"
-				subtitle="One harmonized HSL family across all 15 topics — shared saturation/lightness (dark 72%/66%, light 62%/38%); only the hue rotates. Each hue is defined once and re-tones per theme. Small colored text uses the AA-safe --topic-*-ink variant."
+				subtitle="One harmonized HSL family across all 16 topics — shared saturation/lightness (dark 72%/66%, light 62%/38%); only the hue rotates. Each hue is defined once and re-tones per theme. Small colored text uses the AA-safe --topic-*-ink variant."
 			>
 				<div className={styles.swatchGrid}>
 					{TOPICS.map(t => (
@@ -175,14 +204,20 @@ const StyleGuide = () => {
 								<span className={styles.typeName}>{t.name}</span>
 								<code className={styles.swatchToken}>{t.token}</code>
 							</div>
-							<p className={t.cls}>The quick brown fox jumps over 12 lazy dogs.</p>
+							<p className={t.cls}>
+								The quick brown fox jumps over 12 lazy dogs.
+							</p>
 						</div>
 					))}
 				</div>
 				<div className={styles.fontFamilies}>
 					<p className={styles.famDisplay}>Bricolage Grotesque — Display</p>
-					<p className={styles.famBody}>Inter — Body copy for first-time students.</p>
-					<p className={styles.famMono}>JetBrains Mono — for(i=0; i&lt;n; i++)</p>
+					<p className={styles.famBody}>
+						Inter — Body copy for first-time students.
+					</p>
+					<p className={styles.famMono}>
+						JetBrains Mono — for(i=0; i&lt;n; i++)
+					</p>
 				</div>
 			</Section>
 
@@ -199,7 +234,9 @@ const StyleGuide = () => {
 							className={styles.surfaceTile}
 						>
 							<span className={styles.surfaceName}>{s.name}</span>
-							<code className={styles.swatchToken}>elevation {s.level + 1}</code>
+							<code className={styles.swatchToken}>
+								elevation {s.level + 1}
+							</code>
 						</Surface>
 					))}
 					<Surface inset className={styles.surfaceTile}>
@@ -213,7 +250,10 @@ const StyleGuide = () => {
 				title="Motion easings"
 				subtitle="Hover a tile to replay its easing curve. Respects prefers-reduced-motion."
 			>
-				<button className={styles.replay} onClick={() => setAnimKey(k => k + 1)}>
+				<button
+					className={styles.replay}
+					onClick={() => setAnimKey(k => k + 1)}
+				>
 					Replay all
 				</button>
 				<div className={styles.easeGrid}>
@@ -246,13 +286,23 @@ const StyleGuide = () => {
 					<Button variant="danger">Danger</Button>
 				</div>
 				<div className={styles.row}>
-					<Button variant="primary" size="sm">Small</Button>
-					<Button variant="primary" size="md">Medium</Button>
-					<Button variant="primary" size="lg">Large</Button>
+					<Button variant="primary" size="sm">
+						Small
+					</Button>
+					<Button variant="primary" size="md">
+						Medium
+					</Button>
+					<Button variant="primary" size="lg">
+						Large
+					</Button>
 				</div>
 				<div className={styles.row}>
-					<Button variant="primary" disabled>Disabled</Button>
-					<Button variant="secondary" disabled>Disabled</Button>
+					<Button variant="primary" disabled>
+						Disabled
+					</Button>
+					<Button variant="secondary" disabled>
+						Disabled
+					</Button>
 					<Button
 						variant="primary"
 						loading={loading}
@@ -311,10 +361,7 @@ const StyleGuide = () => {
 						</p>
 					</Card>
 					<Card padded={false}>
-						<CardEmpty
-							icon={<Trash2 size={22} />}
-							title="Nothing here yet"
-						>
+						<CardEmpty icon={<Trash2 size={22} />} title="Nothing here yet">
 							Empty-state slot for lists and playgrounds.
 						</CardEmpty>
 					</Card>
@@ -328,9 +375,23 @@ const StyleGuide = () => {
 				<Surface level={1} className={styles.tabsShell}>
 					<Tabs
 						tabs={[
-							{ label: 'Overview', content: <p className={styles.cardBody}>First panel content.</p> },
-							{ label: 'Details', content: <p className={styles.cardBody}>Second panel content.</p> },
-							{ label: 'Locked', content: <p className={styles.cardBody}>Hidden.</p>, disabled: true },
+							{
+								label: 'Overview',
+								content: (
+									<p className={styles.cardBody}>First panel content.</p>
+								),
+							},
+							{
+								label: 'Details',
+								content: (
+									<p className={styles.cardBody}>Second panel content.</p>
+								),
+							},
+							{
+								label: 'Locked',
+								content: <p className={styles.cardBody}>Hidden.</p>,
+								disabled: true,
+							},
 						]}
 					/>
 				</Surface>
@@ -356,7 +417,12 @@ const StyleGuide = () => {
 						disabled
 						onChange={() => {}}
 					/>
-					<ToggleSwitch label="Off (disabled)" checked={false} disabled onChange={() => {}} />
+					<ToggleSwitch
+						label="Off (disabled)"
+						checked={false}
+						disabled
+						onChange={() => {}}
+					/>
 				</div>
 			</Section>
 		</div>

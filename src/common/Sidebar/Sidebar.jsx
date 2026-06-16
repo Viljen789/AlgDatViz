@@ -21,6 +21,7 @@ import {
 	Route,
 	Share2,
 	Sigma,
+	SplitSquareHorizontal,
 	Triangle,
 	Workflow,
 } from 'lucide-react';
@@ -50,6 +51,7 @@ const ICONS = {
 	Route,
 	Share2,
 	Sigma,
+	SplitSquareHorizontal,
 	Triangle,
 	Workflow,
 };

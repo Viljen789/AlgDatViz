@@ -244,7 +244,16 @@ export const glossaryTerms = [
 		no: 'in-place',
 		note: 'Kept in English by the course; sometimes written "på plass".',
 	},
-	// 05 · Linear-time sorting
+	// 05 · Quicksort
+	{ topicId: 'quicksort', en: 'quicksort', no: 'kvikksortering' },
+	{
+		topicId: 'quicksort',
+		en: 'pivot',
+		no: 'pivot',
+		note: 'Also "pivotelement" — the value the range is partitioned around.',
+	},
+	{ topicId: 'quicksort', en: 'partition', no: 'partisjonering' },
+	// 06 · Linear-time sorting
 	{ topicId: 'linear-time-sorting', en: 'counting sort', no: 'tellesortering' },
 	{ topicId: 'linear-time-sorting', en: 'radix sort', no: 'radikssortering' },
 	{ topicId: 'linear-time-sorting', en: 'bucket sort', no: 'bøttesortering' },

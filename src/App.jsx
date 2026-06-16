@@ -30,6 +30,9 @@ const NpCompletenessPage = lazy(() => import('./pages/NpCompletenessPage.jsx'));
 const MergeSortLessonPage = lazy(
 	() => import('./pages/MergeSortLessonPage.jsx')
 );
+const QuickSortLessonPage = lazy(
+	() => import('./pages/QuickSortLessonPage.jsx')
+);
 const StyleGuide = lazy(() => import('./styles/styleguide/StyleGuide.jsx'));
 const ReviewPage = lazy(() => import('./pages/ReviewPage.jsx'));
 const ProgressPage = lazy(() => import('./pages/ProgressPage.jsx'));
@@ -177,6 +180,10 @@ const AppLayout = () => {
 									<Route
 										path="/lessons/merge-sort"
 										element={<MergeSortLessonPage />}
+									/>
+									<Route
+										path="/lessons/quicksort"
+										element={<QuickSortLessonPage />}
 									/>
 									<Route path="/review" element={<ReviewPage />} />
 									<Route path="/progress" element={<ProgressPage />} />

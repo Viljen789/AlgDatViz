@@ -80,6 +80,7 @@
 	--topic-stacks-h: 250; /* indigo */
 	--topic-master-h: 48; /* gold */
 	--topic-sorting-h: 210; /* azure */
+	--topic-quicksort-h: 200; /* cyan-azure — quicksort, sorting's sibling (white-on-fill clears AA in both themes, like sorting; no light flip needed) */
 	--topic-hashing-h: 28; /* amber */
 	--topic-trees-h: 286; /* violet */
 	--topic-graphs-h: 162; /* teal-green */
@@ -92,14 +93,21 @@
 	--topic-maxflow-h: 68; /* gold-green — maximum flow */
 	--topic-npc-h: 178; /* cyan — NP-completeness */
 
-	--topic-foundations: hsl(var(--topic-foundations-h) var(--topic-s) var(--topic-l));
+	--topic-foundations: hsl(
+		var(--topic-foundations-h) var(--topic-s) var(--topic-l)
+	);
 	--topic-stacks: hsl(var(--topic-stacks-h) var(--topic-s) var(--topic-l));
 	--topic-master: hsl(var(--topic-master-h) var(--topic-s) var(--topic-l));
 	--topic-sorting: hsl(var(--topic-sorting-h) var(--topic-s) var(--topic-l));
+	--topic-quicksort: hsl(
+		var(--topic-quicksort-h) var(--topic-s) var(--topic-l)
+	);
 	--topic-hashing: hsl(var(--topic-hashing-h) var(--topic-s) var(--topic-l));
 	--topic-trees: hsl(var(--topic-trees-h) var(--topic-s) var(--topic-l));
 	--topic-graphs: hsl(var(--topic-graphs-h) var(--topic-s) var(--topic-l));
-	--topic-strategies: hsl(var(--topic-strategies-h) var(--topic-s) var(--topic-l));
+	--topic-strategies: hsl(
+		var(--topic-strategies-h) var(--topic-s) var(--topic-l)
+	);
 	--topic-linsort: hsl(var(--topic-linsort-h) var(--topic-s) var(--topic-l));
 	--topic-heaps: hsl(var(--topic-heaps-h) var(--topic-s) var(--topic-l));
 	--topic-mst: hsl(var(--topic-mst-h) var(--topic-s) var(--topic-l));
@@ -112,20 +120,45 @@
 	   uses a topic hue as SMALL TEXT (eyebrow labels, badges, active cells).
 	   Identical to the bright hue in dark; deep-toned in light so it clears
 	   4.5:1 on white. Use these instead of the bright hue for <13px colored text. */
-	--topic-foundations-ink: hsl(var(--topic-foundations-h) var(--topic-s) var(--topic-l-ink));
-	--topic-stacks-ink: hsl(var(--topic-stacks-h) var(--topic-s) var(--topic-l-ink));
-	--topic-master-ink: hsl(var(--topic-master-h) var(--topic-s) var(--topic-l-ink));
-	--topic-sorting-ink: hsl(var(--topic-sorting-h) var(--topic-s) var(--topic-l-ink));
-	--topic-hashing-ink: hsl(var(--topic-hashing-h) var(--topic-s) var(--topic-l-ink));
-	--topic-trees-ink: hsl(var(--topic-trees-h) var(--topic-s) var(--topic-l-ink));
-	--topic-graphs-ink: hsl(var(--topic-graphs-h) var(--topic-s) var(--topic-l-ink));
-	--topic-strategies-ink: hsl(var(--topic-strategies-h) var(--topic-s) var(--topic-l-ink));
-	--topic-linsort-ink: hsl(var(--topic-linsort-h) var(--topic-s) var(--topic-l-ink));
-	--topic-heaps-ink: hsl(var(--topic-heaps-h) var(--topic-s) var(--topic-l-ink));
+	--topic-foundations-ink: hsl(
+		var(--topic-foundations-h) var(--topic-s) var(--topic-l-ink)
+	);
+	--topic-stacks-ink: hsl(
+		var(--topic-stacks-h) var(--topic-s) var(--topic-l-ink)
+	);
+	--topic-master-ink: hsl(
+		var(--topic-master-h) var(--topic-s) var(--topic-l-ink)
+	);
+	--topic-sorting-ink: hsl(
+		var(--topic-sorting-h) var(--topic-s) var(--topic-l-ink)
+	);
+	--topic-quicksort-ink: hsl(
+		var(--topic-quicksort-h) var(--topic-s) var(--topic-l-ink)
+	);
+	--topic-hashing-ink: hsl(
+		var(--topic-hashing-h) var(--topic-s) var(--topic-l-ink)
+	);
+	--topic-trees-ink: hsl(
+		var(--topic-trees-h) var(--topic-s) var(--topic-l-ink)
+	);
+	--topic-graphs-ink: hsl(
+		var(--topic-graphs-h) var(--topic-s) var(--topic-l-ink)
+	);
+	--topic-strategies-ink: hsl(
+		var(--topic-strategies-h) var(--topic-s) var(--topic-l-ink)
+	);
+	--topic-linsort-ink: hsl(
+		var(--topic-linsort-h) var(--topic-s) var(--topic-l-ink)
+	);
+	--topic-heaps-ink: hsl(
+		var(--topic-heaps-h) var(--topic-s) var(--topic-l-ink)
+	);
 	--topic-mst-ink: hsl(var(--topic-mst-h) var(--topic-s) var(--topic-l-ink));
 	--topic-sssp-ink: hsl(var(--topic-sssp-h) var(--topic-s) var(--topic-l-ink));
 	--topic-apsp-ink: hsl(var(--topic-apsp-h) var(--topic-s) var(--topic-l-ink));
-	--topic-maxflow-ink: hsl(var(--topic-maxflow-h) var(--topic-s) var(--topic-l-ink));
+	--topic-maxflow-ink: hsl(
+		var(--topic-maxflow-h) var(--topic-s) var(--topic-l-ink)
+	);
 	--topic-npc-ink: hsl(var(--topic-npc-h) var(--topic-s) var(--topic-l-ink));
 
 	/* "Contrast" — the AA-safe TEXT color to place ON a solid topic fill
@@ -138,6 +171,7 @@
 	--topic-stacks-contrast: var(--color-text-on-accent);
 	--topic-master-contrast: var(--color-text-on-accent);
 	--topic-sorting-contrast: var(--color-text-on-accent);
+	--topic-quicksort-contrast: var(--color-text-on-accent);
 	--topic-hashing-contrast: var(--color-text-on-accent);
 	--topic-trees-contrast: var(--color-text-on-accent);
 	--topic-graphs-contrast: var(--color-text-on-accent);
@@ -158,21 +192,54 @@
 	--topic-accent-ink: var(--topic-foundations-ink);
 
 	/* Translucent washes, same hue (for fills, hovers, selection tints) */
-	--topic-foundations-wash: hsl(var(--topic-foundations-h) var(--topic-s) var(--topic-l) / 0.14);
-	--topic-stacks-wash: hsl(var(--topic-stacks-h) var(--topic-s) var(--topic-l) / 0.14);
-	--topic-master-wash: hsl(var(--topic-master-h) var(--topic-s) var(--topic-l) / 0.14);
-	--topic-sorting-wash: hsl(var(--topic-sorting-h) var(--topic-s) var(--topic-l) / 0.14);
-	--topic-hashing-wash: hsl(var(--topic-hashing-h) var(--topic-s) var(--topic-l) / 0.14);
-	--topic-trees-wash: hsl(var(--topic-trees-h) var(--topic-s) var(--topic-l) / 0.14);
-	--topic-graphs-wash: hsl(var(--topic-graphs-h) var(--topic-s) var(--topic-l) / 0.14);
-	--topic-strategies-wash: hsl(var(--topic-strategies-h) var(--topic-s) var(--topic-l) / 0.14);
-	--topic-linsort-wash: hsl(var(--topic-linsort-h) var(--topic-s) var(--topic-l) / 0.14);
-	--topic-heaps-wash: hsl(var(--topic-heaps-h) var(--topic-s) var(--topic-l) / 0.14);
-	--topic-mst-wash: hsl(var(--topic-mst-h) var(--topic-s) var(--topic-l) / 0.14);
-	--topic-sssp-wash: hsl(var(--topic-sssp-h) var(--topic-s) var(--topic-l) / 0.14);
-	--topic-apsp-wash: hsl(var(--topic-apsp-h) var(--topic-s) var(--topic-l) / 0.14);
-	--topic-maxflow-wash: hsl(var(--topic-maxflow-h) var(--topic-s) var(--topic-l) / 0.14);
-	--topic-npc-wash: hsl(var(--topic-npc-h) var(--topic-s) var(--topic-l) / 0.14);
+	--topic-foundations-wash: hsl(
+		var(--topic-foundations-h) var(--topic-s) var(--topic-l) / 0.14
+	);
+	--topic-stacks-wash: hsl(
+		var(--topic-stacks-h) var(--topic-s) var(--topic-l) / 0.14
+	);
+	--topic-master-wash: hsl(
+		var(--topic-master-h) var(--topic-s) var(--topic-l) / 0.14
+	);
+	--topic-sorting-wash: hsl(
+		var(--topic-sorting-h) var(--topic-s) var(--topic-l) / 0.14
+	);
+	--topic-quicksort-wash: hsl(
+		var(--topic-quicksort-h) var(--topic-s) var(--topic-l) / 0.14
+	);
+	--topic-hashing-wash: hsl(
+		var(--topic-hashing-h) var(--topic-s) var(--topic-l) / 0.14
+	);
+	--topic-trees-wash: hsl(
+		var(--topic-trees-h) var(--topic-s) var(--topic-l) / 0.14
+	);
+	--topic-graphs-wash: hsl(
+		var(--topic-graphs-h) var(--topic-s) var(--topic-l) / 0.14
+	);
+	--topic-strategies-wash: hsl(
+		var(--topic-strategies-h) var(--topic-s) var(--topic-l) / 0.14
+	);
+	--topic-linsort-wash: hsl(
+		var(--topic-linsort-h) var(--topic-s) var(--topic-l) / 0.14
+	);
+	--topic-heaps-wash: hsl(
+		var(--topic-heaps-h) var(--topic-s) var(--topic-l) / 0.14
+	);
+	--topic-mst-wash: hsl(
+		var(--topic-mst-h) var(--topic-s) var(--topic-l) / 0.14
+	);
+	--topic-sssp-wash: hsl(
+		var(--topic-sssp-h) var(--topic-s) var(--topic-l) / 0.14
+	);
+	--topic-apsp-wash: hsl(
+		var(--topic-apsp-h) var(--topic-s) var(--topic-l) / 0.14
+	);
+	--topic-maxflow-wash: hsl(
+		var(--topic-maxflow-h) var(--topic-s) var(--topic-l) / 0.14
+	);
+	--topic-npc-wash: hsl(
+		var(--topic-npc-h) var(--topic-s) var(--topic-l) / 0.14
+	);
 
 	/* ---------------------------------------------------------------------------
 	   4. BRAND ACCENT (derived from the family) + algorithm "state" colors
@@ -188,7 +255,9 @@
 	--brand-s: 72%;
 	--brand-l: 68%; /* dark default; [data-theme='light'] drops to 60% */
 	--brand: hsl(var(--brand-h) var(--brand-s) var(--brand-l));
-	--brand-ink: hsl(var(--brand-h) var(--brand-s) 80%); /* small brand text (dark) */
+	--brand-ink: hsl(
+		var(--brand-h) var(--brand-s) 80%
+	); /* small brand text (dark) */
 	--brand-wash: hsl(var(--brand-h) var(--brand-s) var(--brand-l) / 0.16);
 
 	--review-h: 32;
@@ -196,7 +265,9 @@
 	--review-l: 58%; /* dark default; light drops to 45% */
 	--review-brand: hsl(var(--review-h) var(--review-s) var(--review-l));
 	--review-brand-ink: hsl(var(--review-h) var(--review-s) 70%);
-	--review-brand-wash: hsl(var(--review-h) var(--review-s) var(--review-l) / 0.16);
+	--review-brand-wash: hsl(
+		var(--review-h) var(--review-s) var(--review-l) / 0.16
+	);
 
 	/* Graph-paper substrate — opt-in via .gridPaper on working surfaces only. */
 	--grid-line: hsl(36 8% 20% / 0.55);
@@ -205,19 +276,33 @@
 	/* The chrome "blue" now resolves to the indigo brand; the per-topic foundations
 	   hue stays the algorithm "active" color (re-pinned on --state-active below). */
 	--color-accent-blue: var(--brand);
-	--color-accent-green: hsl(var(--topic-graphs-h) var(--topic-s) var(--topic-l));
-	--color-accent-orange: hsl(var(--topic-hashing-h) var(--topic-s) var(--topic-l));
-	--color-accent-purple: hsl(var(--topic-trees-h) var(--topic-s) var(--topic-l));
-	--color-accent-yellow: hsl(var(--topic-master-h) var(--topic-s) var(--topic-l));
+	--color-accent-green: hsl(
+		var(--topic-graphs-h) var(--topic-s) var(--topic-l)
+	);
+	--color-accent-orange: hsl(
+		var(--topic-hashing-h) var(--topic-s) var(--topic-l)
+	);
+	--color-accent-purple: hsl(
+		var(--topic-trees-h) var(--topic-s) var(--topic-l)
+	);
+	--color-accent-yellow: hsl(
+		var(--topic-master-h) var(--topic-s) var(--topic-l)
+	);
 	--color-accent-red: hsl(2 78% 66%);
 
 	/* AA-safe "ink" siblings of the named accents (for <13px colored text). The
 	   azure/blue/red/purple slots already clear 4.5:1 small-text on white, but
 	   green (graphs teal) and yellow (master gold) do not — these re-point to the
 	   ink lightness so labels stay on-brand AND legible in both themes. */
-	--color-accent-green-ink: hsl(var(--topic-graphs-h) var(--topic-s) var(--topic-l-ink));
-	--color-accent-orange-ink: hsl(var(--topic-hashing-h) var(--topic-s) var(--topic-l-ink));
-	--color-accent-yellow-ink: hsl(var(--topic-master-h) var(--topic-s) var(--topic-l-ink));
+	--color-accent-green-ink: hsl(
+		var(--topic-graphs-h) var(--topic-s) var(--topic-l-ink)
+	);
+	--color-accent-orange-ink: hsl(
+		var(--topic-hashing-h) var(--topic-s) var(--topic-l-ink)
+	);
+	--color-accent-yellow-ink: hsl(
+		var(--topic-master-h) var(--topic-s) var(--topic-l-ink)
+	);
 
 	/* Algorithm visualization "state" roles (kept stable — heavily referenced) */
 	/* Keep the algorithm "active" color the foundations azure — NOT the indigo
@@ -244,7 +329,9 @@
 	--color-success: hsl(145 63% 49%); /* emerald — distinct from graphs teal */
 	--color-warning: hsl(38 92% 55%); /* amber */
 	--color-error: var(--color-accent-red); /* hsl(2 78% 66%) red */
-	--color-info: hsl(196 85% 58%); /* cyan — distinct from sorting/foundations blue */
+	--color-info: hsl(
+		196 85% 58%
+	); /* cyan — distinct from sorting/foundations blue */
 
 	--color-success-wash: hsl(145 63% 49% / 0.14);
 	--color-warning-wash: hsl(38 92% 55% / 0.14);
@@ -270,7 +357,9 @@
 
 	/* Visualizer node/edge palette */
 	--viz-node-fill: var(--surface-2);
-	--viz-node-stroke: hsl(var(--topic-foundations-h) var(--topic-s) var(--topic-l));
+	--viz-node-stroke: hsl(
+		var(--topic-foundations-h) var(--topic-s) var(--topic-l)
+	);
 	--viz-edge-color: var(--color-border-strong);
 	--viz-text-color: var(--color-text-primary);
 
@@ -283,8 +372,8 @@
 	   generous line-height for readability by first-time students.
 	   --------------------------------------------------------------------------- */
 	--font-family-display: 'Newsreader', Georgia, 'Times New Roman', serif;
-	--font-family-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI',
-		sans-serif;
+	--font-family-sans:
+		'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
 	--font-family-mono: 'JetBrains Mono', 'Roboto Mono', ui-monospace, monospace;
 
 	/* Type scale (px-based, fluid via clamp where it reads as "display") */
@@ -370,15 +459,17 @@
 	   "lamp" is kept but softened and made neutral-leaning.
 	   --------------------------------------------------------------------------- */
 	--shadow-color: hsl(232 50% 2% / 0.5);
-	--shadow-glow: hsl(var(--topic-foundations-h) var(--topic-s) var(--topic-l) / 0.18);
+	--shadow-glow: hsl(
+		var(--topic-foundations-h) var(--topic-s) var(--topic-l) / 0.18
+	);
 
 	--shadow-1: 0 1px 2px hsl(232 50% 2% / 0.4);
-	--shadow-2: 0 2px 4px hsl(232 50% 2% / 0.35),
-		0 4px 12px hsl(232 50% 2% / 0.3);
-	--shadow-3: 0 4px 8px hsl(232 50% 2% / 0.35),
-		0 12px 28px hsl(232 50% 2% / 0.4);
-	--shadow-4: 0 8px 16px hsl(232 50% 2% / 0.4),
-		0 24px 56px hsl(232 50% 2% / 0.5);
+	--shadow-2:
+		0 2px 4px hsl(232 50% 2% / 0.35), 0 4px 12px hsl(232 50% 2% / 0.3);
+	--shadow-3:
+		0 4px 8px hsl(232 50% 2% / 0.35), 0 12px 28px hsl(232 50% 2% / 0.4);
+	--shadow-4:
+		0 8px 16px hsl(232 50% 2% / 0.4), 0 24px 56px hsl(232 50% 2% / 0.5);
 
 	/* ---------------------------------------------------------------------------
 	   10b. THEME-AWARE LITERALS (glass + scrim) — replace the residual raw
@@ -395,11 +486,14 @@
 	--mask-ink: hsl(0 0% 0%); /* opaque base for mask-image gradients */
 
 	/* Topic-tinted accent glow — applied via --topic-accent where a page sets it */
-	--shadow-glow-accent: 0 0 0 1px hsl(var(--brand-h) var(--brand-s) var(--brand-l) / 0.25),
+	--shadow-glow-accent:
+		0 0 0 1px hsl(var(--brand-h) var(--brand-s) var(--brand-l) / 0.25),
 		0 12px 40px hsl(var(--brand-h) var(--brand-s) var(--brand-l) / 0.18);
 
-	--shadow-focus: 0 0 0 3px hsl(var(--brand-h) var(--brand-s) var(--brand-l) / 0.4);
-	--shadow-canvas-lamp: 0 24px 80px -36px hsl(var(--topic-foundations-h) var(--topic-s) var(--topic-l) / 0.22);
+	--shadow-focus: 0 0 0 3px
+		hsl(var(--brand-h) var(--brand-s) var(--brand-l) / 0.4);
+	--shadow-canvas-lamp: 0 24px 80px -36px
+		hsl(var(--topic-foundations-h) var(--topic-s) var(--topic-l) / 0.22);
 	--shadow-card-hover: var(--shadow-3);
 
 	/* ---------------------------------------------------------------------------
@@ -433,7 +527,9 @@
 	--color-medium-grey: var(--color-border);
 	--color-dark-grey: var(--color-text-secondary);
 	--color-light-blue: var(--color-info-wash);
-	--color-lighter-blue: hsl(var(--topic-foundations-h) var(--topic-s) var(--topic-l) / 0.08);
+	--color-lighter-blue: hsl(
+		var(--topic-foundations-h) var(--topic-s) var(--topic-l) / 0.08
+	);
 	--color-dark-blue: var(--surface-2);
 	--color-swapping-bar: var(--state-flight);
 }
@@ -556,7 +652,8 @@
 	--shadow-glow-accent: 0 0 0 1px var(--brand-wash);
 	--shadow-canvas-lamp: none;
 	--shadow-card-hover: var(--shadow-2);
-	--shadow-focus: 0 0 0 3px hsl(var(--brand-h) var(--brand-s) var(--brand-l) / 0.35);
+	--shadow-focus: 0 0 0 3px
+		hsl(var(--brand-h) var(--brand-s) var(--brand-l) / 0.35);
 
 	/* 10b. THEME-AWARE LITERALS — invert the glass tint to a dark ink so the
 	   same color-mix(... var(--glass-tint) X%) hairlines/insets read on white;

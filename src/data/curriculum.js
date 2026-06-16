@@ -114,8 +114,27 @@ export const CURRICULUM = [
 		countsToProgress: true,
 	},
 	{
-		id: 'linear-time-sorting',
+		id: 'quicksort',
 		number: '05',
+		phase: 'Sorting & search',
+		name: 'Quicksort',
+		navLabel: 'Quicksort',
+		pullQuote:
+			'Partition around a pivot, then recurse. The split is the whole trick.',
+		complexity: 'O(n log n) avg',
+		tokenId: 'quicksort',
+		accent: topicAccent('quicksort'),
+		icon: 'SplitSquareHorizontal',
+		// The scroll-driven quicksort lesson: Lomuto partition, the pivot landing
+		// in its final place, recursion on the two sides, and the worst-case
+		// recurrence T(n) = T(n-1) + n set beside the Master Theorem's 2T(n/2)+n.
+		to: '/lessons/quicksort',
+		status: 'ready',
+		countsToProgress: true,
+	},
+	{
+		id: 'linear-time-sorting',
+		number: '06',
 		phase: 'Sorting & search',
 		name: 'Linear-time sorting',
 		navLabel: 'Linear-time sort',
@@ -131,7 +150,7 @@ export const CURRICULUM = [
 	},
 	{
 		id: 'hashing',
-		number: '06',
+		number: '07',
 		phase: 'Sorting & search',
 		name: 'Hashing',
 		navLabel: 'Hash maps',
@@ -146,7 +165,7 @@ export const CURRICULUM = [
 	},
 	{
 		id: 'trees',
-		number: '07',
+		number: '08',
 		phase: 'Structures',
 		name: 'Trees',
 		navLabel: 'Trees',
@@ -162,7 +181,7 @@ export const CURRICULUM = [
 	},
 	{
 		id: 'heaps',
-		number: '08',
+		number: '09',
 		phase: 'Structures',
 		name: 'Heaps & priority queues',
 		navLabel: 'Heaps',
@@ -178,7 +197,7 @@ export const CURRICULUM = [
 	},
 	{
 		id: 'graphs',
-		number: '09',
+		number: '10',
 		phase: 'Graphs',
 		name: 'Graphs',
 		navLabel: 'Graphs',
@@ -194,7 +213,7 @@ export const CURRICULUM = [
 	},
 	{
 		id: 'strategies',
-		number: '10',
+		number: '11',
 		phase: 'Graphs',
 		name: 'Strategies',
 		navLabel: 'Strategies',
@@ -210,7 +229,7 @@ export const CURRICULUM = [
 	},
 	{
 		id: 'mst',
-		number: '11',
+		number: '12',
 		phase: 'Graphs',
 		name: 'Minimum spanning trees',
 		navLabel: 'Spanning trees',
@@ -226,7 +245,7 @@ export const CURRICULUM = [
 	},
 	{
 		id: 'shortest-paths',
-		number: '12',
+		number: '13',
 		phase: 'Graphs',
 		name: 'Shortest paths (single-source)',
 		navLabel: 'Shortest paths',
@@ -242,7 +261,7 @@ export const CURRICULUM = [
 	},
 	{
 		id: 'apsp',
-		number: '13',
+		number: '14',
 		phase: 'Graphs',
 		name: 'All-pairs shortest paths',
 		navLabel: 'All-pairs SP',
@@ -258,7 +277,7 @@ export const CURRICULUM = [
 	},
 	{
 		id: 'max-flow',
-		number: '14',
+		number: '15',
 		phase: 'Graphs',
 		name: 'Maximum flow',
 		navLabel: 'Max flow',
@@ -274,7 +293,7 @@ export const CURRICULUM = [
 	},
 	{
 		id: 'np-completeness',
-		number: '15',
+		number: '16',
 		phase: 'Intractability',
 		name: 'NP-completeness',
 		navLabel: 'NP-completeness',
