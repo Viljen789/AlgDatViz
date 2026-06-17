@@ -4023,6 +4023,727 @@ const problemHM2 = {
 	],
 };
 
+// Problem S4: WHY Dijkstra needs non-negative weights, shown by it FAILING. A
+// directed graph with ONE negative edge (B→A, -2) and no cycle at all, so no
+// negative cycle. Dijkstra settles A via the cheap-looking direct S→A(2) BEFORE
+// it ever processes B; once A is settled it is never reopened, so the later
+// B→A(-2) that would undercut it is ignored (the trace literally skips a settled
+// head). Bellman-Ford relaxes every edge repeatedly and finds the true S→B→A
+// path. We DERIVE both runs and read the contrast straight off them: Dijkstra's
+// (wrong) dist[A] from dijkstraTrace, the true dist[A] from bellmanFordTrace, and
+// the mis-handled vertex from the negative edge's head. The disagreement IS the
+// lesson, so nothing here is hand-typed.
+const S4_GRAPH = {
+	nodes: [{ id: 'S' }, { id: 'A' }, { id: 'B' }, { id: 'C' }],
+	edges: [
+		{ from: 'S', to: 'A', weight: 2 },
+		{ from: 'S', to: 'B', weight: 3 },
+		{ from: 'B', to: 'A', weight: -2 },
+		{ from: 'A', to: 'C', weight: 2 },
+	],
+};
+const S4_DIJKSTRA = dijkstraTrace(S4_GRAPH, { source: 'S' });
+const S4_BF = bellmanFordTrace(S4_GRAPH, { source: 'S' });
+// The unique negative edge; its HEAD is the vertex Dijkstra settles too early.
+const S4_NEG_EDGE = S4_GRAPH.edges.find(e => e.weight < 0);
+const S4_WRONG = S4_NEG_EDGE.to; // 'A'
+// What Dijkstra REPORTS for A vs the TRUE shortest distance Bellman-Ford finds.
+const S4_DIJKSTRA_A = distVal(S4_DIJKSTRA.dist.A); // 2 (over-reported)
+const S4_TRUE_A = distVal(S4_BF.dist.A); // 1 (via S→B→A = 3 + (−2))
+// The error propagates one hop: A→C inherits A's inflated distance.
+const S4_DIJKSTRA_C = distVal(S4_DIJKSTRA.dist.C); // 4
+const S4_TRUE_C = distVal(S4_BF.dist.C); // 3
+// Distractor vertices for the "which vertex is wrong" choice: the non-source
+// vertices the two runs AGREE on (Dijkstra dist == Bellman-Ford dist). Here that
+// is exactly B (3 == 3); A and C disagree, so neither is a safe distractor.
+const S4_AGREE = S4_GRAPH.nodes
+	.map(n => n.id)
+	.filter(
+		id =>
+			id !== 'S' && distVal(S4_DIJKSTRA.dist[id]) === distVal(S4_BF.dist[id])
+	);
+
+const problemS4 = {
+	kind: 'problem',
+	stem:
+		'Directed weighted graph with one negative edge and no cycle: ' +
+		'S→A(2), S→B(3), B→A(-2), A→C(2). Run Dijkstra from S, then run ' +
+		'Bellman-Ford from S, and compare what each reports for vertex A.',
+	parts: [
+		{
+			kind: 'numeric',
+			prompt:
+				'Run Dijkstra from S. Dijkstra settles the closest unsettled vertex ' +
+				'and never reopens it. What distance does Dijkstra end up REPORTING ' +
+				'for dist[A]?',
+			answer: S4_DIJKSTRA_A,
+			placeholder: 'distance',
+			explanation:
+				`Dijkstra settles S(0), then sees A at 2 (direct S→A) and B at 3. Since ` +
+				`2 < 3 it settles A = 2 and locks it in. Only afterwards does it process ` +
+				`B and look at B→A(-2). But A is already settled, so that edge is skipped. ` +
+				`Dijkstra therefore reports dist[A] = ${S4_DIJKSTRA_A}.`,
+		},
+		{
+			kind: 'numeric',
+			prompt:
+				'Now run Bellman-Ford from S on the SAME graph. What is the TRUE ' +
+				'shortest distance dist[A]?',
+			answer: S4_TRUE_A,
+			placeholder: 'distance',
+			explanation:
+				`Bellman-Ford relaxes every edge each pass, so it eventually uses S→B(3) ` +
+				`then B→A(-2): the path S→B→A costs 3 + (−2) = ${S4_TRUE_A}, which beats ` +
+				`the direct S→A of 2. There is no negative cycle, so ${S4_TRUE_A} is the ` +
+				`correct shortest distance, strictly less than the ${S4_DIJKSTRA_A} ` +
+				`Dijkstra reported.`,
+		},
+		{
+			kind: 'choice',
+			prompt:
+				'Dijkstra and Bellman-Ford disagree here. Which vertex does Dijkstra ' +
+				'SETTLE (and lock in) before the negative edge B→A could lower its ' +
+				'distance, so Dijkstra reports it too high?',
+			options: [S4_WRONG, ...S4_AGREE, 'None: the two runs agree'],
+			answer: S4_WRONG,
+			misconceptions: {
+				B:
+					`B is settled correctly. Dijkstra reaches B at 3 via S→B and nothing ` +
+					`can undercut that, so Dijkstra and Bellman-Ford agree on dist[B] = 3. ` +
+					`The break is at A, the head of the negative edge B→A.`,
+				'None: the two runs agree':
+					`They disagree. Dijkstra reports dist[A] = ${S4_DIJKSTRA_A} but the true ` +
+					`distance is ${S4_TRUE_A}; the error even propagates to C ` +
+					`(${S4_DIJKSTRA_C} vs ${S4_TRUE_C}). That gap is exactly Dijkstra failing.`,
+			},
+			explanation:
+				`B→A is the only edge that can pull dist[A] below 2, but Dijkstra settles ` +
+				`A at 2 before it ever processes B, then refuses to reopen a settled ` +
+				`vertex. So A is the vertex it gets wrong: reported 2, true ${S4_TRUE_A}. ` +
+				`The mistake flows downstream too. A→C makes Dijkstra report dist[C] = ` +
+				`${S4_DIJKSTRA_C} instead of the true ${S4_TRUE_C}.`,
+		},
+		{
+			kind: 'choice',
+			prompt:
+				'What exactly is the assumption that breaks once a negative edge is ' +
+				'present, and is the reason Dijkstra reported the wrong dist[A]?',
+			options: [
+				'That the smallest tentative distance is final the moment a vertex is settled, so a settled vertex is never reopened even though a later negative edge could lower it',
+				'That the graph is connected',
+				'That the priority queue stays non-empty',
+				'That the source distance can be initialized to 0',
+			],
+			answer:
+				'That the smallest tentative distance is final the moment a vertex is settled, so a settled vertex is never reopened even though a later negative edge could lower it',
+			misconceptions: {
+				'That the graph is connected':
+					`Connectivity is unrelated. The graph here is perfectly connected from S; ` +
+					`the failure is purely that a settled vertex is treated as final.`,
+				'That the priority queue stays non-empty':
+					`The queue empties normally. Dijkstra terminates; it just terminates with ` +
+					`a wrong answer because it sealed A too early.`,
+			},
+			explanation:
+				`Dijkstra's correctness rests on one claim: when a vertex is extracted with ` +
+				`the smallest tentative distance, that distance is already optimal, so it ` +
+				`can be settled and never revisited. With non-negative weights that holds, ` +
+				`because no later edge can shorten a path already at the minimum. A negative ` +
+				`edge breaks it: a path discovered later (through B) can undercut the ` +
+				`settled value, but Dijkstra has moved on and will not reopen A. ` +
+				`Bellman-Ford makes no finality assumption. It keeps relaxing every edge, ` +
+				`which is why it stays correct on negative edges (absent a negative cycle).`,
+		},
+	],
+};
+
+// =============================================================================
+// FOUNDATIONS (amortized analysis) — a dynamic-array doubling hand-trace. A
+// dynamic array starts at capacity 1 and DOUBLES when full; appending n elements
+// copies elements ONLY at resizes, and those copies sum to 1 + 2 + 4 + … < 2n, so
+// each append is O(1) AMORTIZED even though one append (the resize) is O(n). The
+// two numeric answers — total element copies across all resizes, and the number
+// of doublings — are COMPUTED by a pure simulation (never hand-typed); the
+// amortized-vs-worst-case reasoning is conceptual (STATIC). n = 17 is chosen NOT
+// a power of two so the numbers (31 copies, 5 doublings) are non-obvious. This is
+// the DERIVED numeric complement to foundations-1#3, which only asks what
+// "amortized O(1)" MEANS in prose.
+// =============================================================================
+
+// Pure simulation: append n elements into a dynamic array that starts at
+// capacity 1 and doubles when full. Returns the total element COPIES made across
+// all resizes and the number of resize/doubling EVENTS. Copies happen only on a
+// resize, where every element already stored is moved into the doubled buffer.
+const simulateDoubling = n => {
+	let capacity = 1;
+	let size = 0;
+	let copies = 0;
+	let doublings = 0;
+	for (let i = 0; i < n; i += 1) {
+		if (size === capacity) {
+			// full → grow: copy every existing element into the doubled buffer.
+			copies += size;
+			capacity *= 2;
+			doublings += 1;
+		}
+		size += 1; // place the new element
+	}
+	return { copies, doublings, finalCapacity: capacity };
+};
+
+const F3_N = 17; // not a power of two ⇒ non-obvious counts
+const F3_SIM = simulateDoubling(F3_N);
+const F3_COPIES = F3_SIM.copies; // 1 + 2 + 4 + 8 + 16 = 31
+const F3_DOUBLINGS = F3_SIM.doublings; // resizes at sizes 1, 2, 4, 8, 16 ⇒ 5
+const F3_FINAL_CAP = F3_SIM.finalCapacity; // 32
+
+const problemF3 = {
+	kind: 'problem',
+	stem:
+		`A dynamic array starts at capacity 1 and DOUBLES its capacity whenever it ` +
+		`is full. You append n = ${F3_N} elements one at a time. A resize is the only ` +
+		`time elements are copied: growing from capacity c moves all c elements into ` +
+		`the new capacity-2c buffer. Count the copying work, then reason about why ` +
+		`each append is still O(1) on average.`,
+	parts: [
+		{
+			kind: 'numeric',
+			prompt:
+				`Across ALL the resizes triggered while appending ${F3_N} elements, how ` +
+				`many element COPIES are made in total? (Each resize copies every element ` +
+				`currently stored into the doubled buffer.)`,
+			answer: F3_COPIES,
+			placeholder: 'a copy count',
+			explanation:
+				`The array fills at sizes 1, 2, 4, 8, 16, so it resizes there, copying ` +
+				`1 + 2 + 4 + 8 + 16 = ${F3_COPIES} elements in total. This geometric sum is ` +
+				`2·(largest power of two ≤ n) − 1, always strictly less than 2n; here ` +
+				`${F3_COPIES} < 2·${F3_N} = ${2 * F3_N}. Spreading ${F3_COPIES} copies over ` +
+				`${F3_N} appends is under 2 copies per append, which is the Θ(1) amortized ` +
+				`cost.`,
+		},
+		{
+			kind: 'numeric',
+			prompt:
+				`How many times does the array DOUBLE (resize) while those ${F3_N} ` +
+				`elements are appended?`,
+			answer: F3_DOUBLINGS,
+			placeholder: 'a count',
+			explanation:
+				`A resize fires each time size reaches a power of two that is below n: at ` +
+				`sizes 1, 2, 4, 8 and 16, so ${F3_DOUBLINGS} doublings (the capacity climbs ` +
+				`1 → 2 → 4 → 8 → 16 → ${F3_FINAL_CAP}). In general there are about ` +
+				`⌊log₂ n⌋ + 1 doublings, because each one needs twice the elements of the ` +
+				`last to trigger, and that geometric spacing is exactly why the copies stay ` +
+				`O(n) total.`,
+		},
+		{
+			kind: 'choice',
+			prompt:
+				`The total copy work is the geometric series 1 + 2 + 4 + … + ` +
+				`${F3_FINAL_CAP / 2}, which sums to ${F3_COPIES} (< 2n). Why does this make ` +
+				`a single append O(1) AMORTIZED?`,
+			options: [
+				'The whole append sequence does < 2n copies, so averaged over the n appends each one costs O(1), even though individual appends differ',
+				'Every individual append copies at most 2 elements, so each is O(1) in the worst case',
+				'Doubling makes every append cost exactly the same, so they are all O(1)',
+				'Amortized means the best case, and the best-case append copies nothing',
+			],
+			answer:
+				'The whole append sequence does < 2n copies, so averaged over the n appends each one costs O(1), even though individual appends differ',
+			misconceptions: {
+				'Every individual append copies at most 2 elements, so each is O(1) in the worst case':
+					`Not per append: the append that triggers the last resize copies all ` +
+					`${F3_FINAL_CAP / 2} surviving elements, so that one is O(n). Amortized ` +
+					`cost is the TOTAL (< 2n) spread over the sequence, not a per-operation ` +
+					`worst-case bound.`,
+				'Amortized means the best case, and the best-case append copies nothing':
+					`Amortized is not best-case. It is the average over a whole sequence, ` +
+					`which deliberately accounts for the expensive resizes by charging them ` +
+					`against the many cheap appends.`,
+			},
+			explanation:
+				`Geometric resizing caps the total copying at 1 + 2 + 4 + … < 2n for n ` +
+				`appends. Dividing that total by n appends gives under 2 copies per append, ` +
+				`i.e. Θ(1) amortized. Amortized analysis charges the rare costly resize ` +
+				`against the run of cheap appends before it, so the average per operation ` +
+				`stays constant.`,
+		},
+		{
+			kind: 'choice',
+			prompt:
+				`Despite the O(1) amortized cost, what is the WORST-case cost of a SINGLE ` +
+				`append?`,
+			options: [
+				'O(n): the append that fills the array must copy all n existing elements into the doubled buffer',
+				'O(1): no single append ever copies more than a constant number of elements',
+				'O(log n): each append does work proportional to the number of doublings so far',
+				'O(n²): the resize copies every element once for each earlier resize',
+			],
+			answer:
+				'O(n): the append that fills the array must copy all n existing elements into the doubled buffer',
+			misconceptions: {
+				'O(1): no single append ever copies more than a constant number of elements':
+					`The append that triggers a resize copies the entire current contents. ` +
+					`Just before the array doubles from ${F3_FINAL_CAP / 2} it copies all ` +
+					`${F3_FINAL_CAP / 2} elements, which is Θ(n), not Θ(1). Amortized O(1) and ` +
+					`worst-case O(n) are different questions about the same operation.`,
+				'O(log n): each append does work proportional to the number of doublings so far':
+					`A resize copies elements, not doublings. The cost of the resizing append ` +
+					`is the element count it moves (up to n), so it is O(n), not O(log n).`,
+			},
+			explanation:
+				`A single append is O(n) in the worst case: when size has reached capacity, ` +
+				`growing the array copies all the stored elements (up to n) into the new ` +
+				`buffer before the new element lands. The amortized O(1) bound averages this ` +
+				`rare O(n) spike over the many O(1) appends; it does not make any individual ` +
+				`append cheap.`,
+		},
+	],
+};
+
+// =============================================================================
+// TREES — BST HEIGHT and shape. The height of the tree a fixed insert order
+// builds, the height of the degenerate chain the SAME keys make in sorted order
+// (n - 1), and the minimum achievable height floor(log2 n). Heights are computed
+// with a tiny pure recursion using the EDGE convention (height of empty = -1, a
+// single node = 0, i.e. edges on the longest root-to-leaf path) and re-derived
+// the same way in the test. Why insertion order fixes the shape, and why balanced
+// (O(log n)) beats degenerate (O(n)) for search, is conceptual (STATIC).
+// =============================================================================
+
+// Edge-convention height of a BST node: empty = -1, leaf = 0. Pure; the test
+// re-implements this identical recursion to re-derive the answers independently.
+const bstHeight = node =>
+	node == null ? -1 : 1 + Math.max(bstHeight(node.left), bstHeight(node.right));
+
+// Problem B3: insert in a balanced order, measure the height, then compare with
+// the sorted-order chain and the theoretical minimum.
+const B3_INSERT = [40, 20, 60, 10, 30, 50, 70]; // a roughly balanced insert order
+const B3_N = B3_INSERT.length; // 7
+const B3_ROOT = buildBst(B3_INSERT);
+const B3_INORDER = inorderValues(B3_ROOT); // ascending by the BST invariant
+// (1) Height of the BST as actually built from the insert order above.
+const B3_HEIGHT = bstHeight(B3_ROOT); // 2 (balanced)
+// (2) Insert the SAME keys in sorted ascending order: every key is larger than
+// all before it, so each goes right and the tree degenerates to a chain. We BUILD
+// that tree and measure it rather than assert n - 1 blindly.
+const B3_SORTED = [...B3_INSERT].sort((a, b) => a - b);
+const B3_CHAIN_HEIGHT = bstHeight(buildBst(B3_SORTED)); // 6 = n - 1
+// (3) Minimum possible height for n keys: a perfectly balanced tree, floor(log2 n).
+const B3_MIN_HEIGHT = Math.floor(Math.log2(B3_N)); // floor(log2 7) = 2
+
+const problemB3 = {
+	kind: 'problem',
+	stem:
+		`Insert the keys ${B3_INSERT.join(', ')} into an initially empty binary ` +
+		`search tree, in that order (each key goes left if smaller than the current ` +
+		`node, right if larger). Throughout, define the HEIGHT of a tree as the ` +
+		`number of EDGES on the longest path from the root down to a leaf, so a ` +
+		`single node has height 0 and an empty tree has height -1.`,
+	parts: [
+		{
+			kind: 'numeric',
+			prompt:
+				`What is the HEIGHT of the BST built from this insert order (edges on ` +
+				`the longest root-to-leaf path; a single node is height 0)?`,
+			answer: B3_HEIGHT,
+			placeholder: 'a height',
+			explanation:
+				`Inserting ${B3_INSERT.join(', ')} builds a balanced tree: 40 is the ` +
+				`root, 20 and 60 its children, and 10, 30, 50, 70 the four leaves. The ` +
+				`longest root-to-leaf path (e.g. 40 to 20 to 10) crosses ${B3_HEIGHT} ` +
+				`edges, so the height is ${B3_HEIGHT}. In-order it reads ` +
+				`${B3_INORDER.join(', ')}.`,
+		},
+		{
+			kind: 'numeric',
+			prompt:
+				`Now insert the SAME ${B3_N} keys into a fresh BST in SORTED ascending ` +
+				`order (${B3_SORTED.join(', ')}). What is the height of the resulting ` +
+				`tree (same edge convention)?`,
+			answer: B3_CHAIN_HEIGHT,
+			placeholder: 'a height',
+			explanation:
+				`In sorted order every key is larger than all inserted so far, so each ` +
+				`one becomes the right child of the previous: the tree degenerates into ` +
+				`a single right-leaning chain. A chain of ${B3_N} nodes has ${B3_N} - 1 ` +
+				`= ${B3_CHAIN_HEIGHT} edges, so its height is ${B3_CHAIN_HEIGHT}. This is ` +
+				`the worst case, where the BST behaves like a linked list.`,
+		},
+		{
+			kind: 'numeric',
+			prompt:
+				`What is the MINIMUM possible height of any BST holding all ${B3_N} ` +
+				`keys (the height of a perfectly balanced tree, floor(log2 n))?`,
+			answer: B3_MIN_HEIGHT,
+			placeholder: 'a height',
+			explanation:
+				`A binary tree of height h holds at most 2^(h+1) - 1 nodes, so storing ` +
+				`n nodes needs height at least floor(log2 n). For n = ${B3_N} that is ` +
+				`floor(log2 ${B3_N}) = ${B3_MIN_HEIGHT}, and the balanced insert above ` +
+				`hits exactly that minimum. The degenerate chain (${B3_CHAIN_HEIGHT}) is ` +
+				`as far from it as a BST on ${B3_N} keys can be.`,
+		},
+		{
+			kind: 'choice',
+			prompt:
+				`The same ${B3_N} keys gave height ${B3_HEIGHT} in one order and ` +
+				`height ${B3_CHAIN_HEIGHT} in another. Why does insertion ORDER decide ` +
+				`the height, and why does the balanced shape matter for search?`,
+			options: [
+				'Each key is placed by comparisons against the keys already in the tree, so the order fixes the shape; a balanced tree keeps the longest path O(log n), so search touches O(log n) nodes, while a degenerate chain is O(n) like a linked list',
+				'Insertion order changes which keys the tree stores, so a different set of values ends up at the leaves',
+				'A BST always rebalances itself, so the order never changes the height; both trees actually have the same height',
+				'The balanced tree is faster only because it stores fewer nodes than the chain',
+			],
+			answer:
+				'Each key is placed by comparisons against the keys already in the tree, so the order fixes the shape; a balanced tree keeps the longest path O(log n), so search touches O(log n) nodes, while a degenerate chain is O(n) like a linked list',
+			misconceptions: {
+				'Insertion order changes which keys the tree stores, so a different set of values ends up at the leaves':
+					'Both trees store exactly the same set of keys; an in-order walk of either gives the sorted sequence. What changes is the SHAPE, not the contents.',
+				'A BST always rebalances itself, so the order never changes the height; both trees actually have the same height':
+					'A plain BST does NOT self-balance. The chain really is height ' +
+					B3_CHAIN_HEIGHT +
+					' here. Self-balancing needs an AVL or red-black tree, which adds rotations on top of the plain BST.',
+			},
+			explanation:
+				'A BST inserts each key by walking down from the root and comparing, so ' +
+				'the sequence of keys already present decides where the next key lands, ' +
+				'and therefore the final shape. Search cost is proportional to the height: ' +
+				'a balanced tree has height Theta(log n), so a lookup compares against ' +
+				'O(log n) nodes, whereas the sorted-order chain has height n - 1 and a ' +
+				'lookup degrades to O(n), exactly like scanning a linked list. This is why ' +
+				'balanced search trees (AVL, red-black) enforce O(log n) height.',
+		},
+	],
+};
+
+// =============================================================================
+// MAXIMUM FLOW (bipartite matching) — the classic APPLICATION of max-flow. A
+// bipartite graph (left set L, right set R) is encoded as a unit-capacity flow
+// network: a super-source S -> each L (cap 1), each R -> a super-sink T (cap 1),
+// and every bipartite edge oriented L -> R (cap 1). With 0/1 capacities the
+// integral max flow is a set of vertex-disjoint edges, so the MAX-FLOW VALUE
+// EQUALS the MAXIMUM MATCHING size. We grade the matching size (= run.value),
+// whether a PERFECT matching exists (size == |L|), and how many right vertices
+// stay unmatched (|R| - size), all read off edmondsKarpTrace on the encoded
+// network (never hand-typed). Only "why max-flow equals max-matching" is
+// conceptual (STATIC).
+//
+// The fixed graph: L1, L2, L3 all share the neighbourhood {R1, R2} (a set of 3
+// left vertices with only 2 neighbours, a Hall's-condition violation), so they
+// fill at most 2 of the matching; L4 -> {R3, R4} adds one more. The maximum
+// matching is therefore 3, and no perfect matching exists. Not trivially all.
+// =============================================================================
+
+const MF3_LEFT = ['L1', 'L2', 'L3', 'L4'];
+const MF3_RIGHT = ['R1', 'R2', 'R3', 'R4'];
+// Bipartite edges as [leftId, rightId] pairs (each becomes a capacity-1 L->R arc).
+const MF3_BIPARTITE_EDGES = [
+	['L1', 'R1'],
+	['L1', 'R2'],
+	['L2', 'R1'],
+	['L2', 'R2'],
+	['L3', 'R1'],
+	['L3', 'R2'],
+	['L4', 'R3'],
+	['L4', 'R4'],
+];
+
+// PURE encoder: a bipartite graph (left, right, edges) -> the unit-capacity flow
+// network edmondsKarpTrace consumes. Super-source S feeds every left vertex;
+// every right vertex drains into super-sink T; each bipartite edge is an L->R
+// arc. All capacities are 1, which is exactly what forces an integral 0/1 flow
+// to be a set of vertex-disjoint matched edges.
+const encodeBipartiteAsFlow = (left, right, edges) => ({
+	nodes: ['S', ...left, ...right, 'T'].map(id => ({ id })),
+	source: 'S',
+	sink: 'T',
+	edges: [
+		...left.map(l => ({ from: 'S', to: l, capacity: 1 })),
+		...edges.map(([l, r]) => ({ from: l, to: r, capacity: 1 })),
+		...right.map(r => ({ from: r, to: 'T', capacity: 1 })),
+	],
+});
+
+const MF3_NETWORK = encodeBipartiteAsFlow(
+	MF3_LEFT,
+	MF3_RIGHT,
+	MF3_BIPARTITE_EDGES
+);
+const MF3_RUN = edmondsKarpTrace(MF3_NETWORK);
+// The maximum matching size IS the max-flow value (unit-capacity integral flow).
+const MF3_MATCHING = MF3_RUN.value;
+// A perfect matching exists iff every left vertex is matched, i.e. size == |L|.
+const MF3_PERFECT = MF3_MATCHING === MF3_LEFT.length;
+// Right vertices left unmatched = |R| - matching size (each matched edge uses one).
+const MF3_UNMATCHED_R = MF3_RIGHT.length - MF3_MATCHING;
+// The derived answer-strings for the perfect-matching choice (so the option text
+// itself is generated from run.value, never hand-typed). No em dashes in UI copy.
+const MF3_PERFECT_YES = `Yes, every left vertex is matched (size ${MF3_MATCHING} = |L| = ${MF3_LEFT.length})`;
+const MF3_PERFECT_NO = `No, the maximum matching has size ${MF3_MATCHING}, below |L| = ${MF3_LEFT.length}`;
+const MF3_PERFECT_ANSWER = MF3_PERFECT ? MF3_PERFECT_YES : MF3_PERFECT_NO;
+// A readable bipartite edge list for the stem, e.g. "L1-R1, L1-R2, ...".
+const MF3_EDGE_LIST = MF3_BIPARTITE_EDGES.map(([l, r]) => `${l}-${r}`).join(
+	', '
+);
+
+const problemMF3 = {
+	kind: 'problem',
+	stem:
+		'Maximum bipartite matching as a max-flow problem. A bipartite graph has ' +
+		`left set L = {${MF3_LEFT.join(', ')}} and right set R = {${MF3_RIGHT.join(
+			', '
+		)}}, with edges ${MF3_EDGE_LIST}. Encode it as a flow network: add a ` +
+		'super-source S with a capacity-1 edge to each L-vertex, a capacity-1 edge ' +
+		'from each R-vertex to a super-sink T, and orient every bipartite edge ' +
+		'L -> R with capacity 1. Run Edmonds-Karp from S to T; the maximum matching ' +
+		'is the value of the maximum flow.',
+	parts: [
+		{
+			kind: 'numeric',
+			prompt:
+				'What is the size of the MAXIMUM MATCHING (equivalently, the value of ' +
+				'the maximum flow from S to T in the encoded network)?',
+			answer: MF3_MATCHING,
+			placeholder: 'a matching size',
+			explanation:
+				`The maximum matching has size ${MF3_MATCHING}. With every capacity 1, ` +
+				'the integral max flow saturates ' +
+				`${MF3_MATCHING} of the S->L edges and ${MF3_MATCHING} of the R->T edges, ` +
+				`one per matched pair, e.g. L1-R1, L2-R2, L4-R3. Augmenting paths stop ` +
+				`once no S->T residual path remains, so the flow value is ${MF3_MATCHING}.`,
+		},
+		{
+			kind: 'choice',
+			prompt:
+				`Does a PERFECT matching exist — one that matches all |L| = ` +
+				`${MF3_LEFT.length} left vertices?`,
+			options: [MF3_PERFECT_NO, MF3_PERFECT_YES],
+			answer: MF3_PERFECT_ANSWER,
+			misconceptions: {
+				[MF3_PERFECT_YES]:
+					`A perfect matching would need size |L| = ${MF3_LEFT.length}, but the ` +
+					`max flow is only ${MF3_MATCHING}. L1, L2 and L3 together reach just two ` +
+					'right vertices {R1, R2}, so three of them can never all be matched ' +
+					"(Hall's condition fails).",
+			},
+			explanation:
+				`A perfect matching has size |L| = ${MF3_LEFT.length}; here the maximum ` +
+				`matching is only ${MF3_MATCHING}, so none exists. The obstruction is ` +
+				'L1, L2, L3: all three share the neighbourhood {R1, R2}, a set of three ' +
+				'left vertices with only two neighbours, so at most two of them can be ' +
+				'matched at once.',
+		},
+		{
+			kind: 'numeric',
+			prompt:
+				'After a maximum matching, how many RIGHT vertices remain UNMATCHED? ' +
+				'(There are |R| right vertices, and each matched edge uses exactly one ' +
+				'of them.)',
+			answer: MF3_UNMATCHED_R,
+			placeholder: 'a count',
+			explanation:
+				`|R| - matching size = ${MF3_RIGHT.length} - ${MF3_MATCHING} = ` +
+				`${MF3_UNMATCHED_R}. A matching of size ${MF3_MATCHING} covers ` +
+				`${MF3_MATCHING} right vertices, leaving ${MF3_UNMATCHED_R} of the ` +
+				`${MF3_RIGHT.length} unused (here one of R3/R4, since only one of L4's ` +
+				'two options can be taken).',
+		},
+		{
+			kind: 'choice',
+			prompt:
+				'WHY does the maximum flow in this unit-capacity network equal the ' +
+				'maximum matching? (This equivalence is the whole reason matching is ' +
+				'solved with max-flow.)',
+			options: [
+				'Every capacity is 1, so an integral max flow sends 0 or 1 unit through each vertex; the saturated L -> R edges are then vertex-disjoint, i.e. a matching, and the flow value counts them',
+				'Because Edmonds-Karp always finds the shortest augmenting path, which happens to be a matching',
+				'Because the network is bipartite, so any flow is automatically a matching regardless of capacities',
+				'Because the min cut equals the number of edges in the bipartite graph',
+			],
+			answer:
+				'Every capacity is 1, so an integral max flow sends 0 or 1 unit through each vertex; the saturated L -> R edges are then vertex-disjoint, i.e. a matching, and the flow value counts them',
+			misconceptions: {
+				'Because the network is bipartite, so any flow is automatically a matching regardless of capacities':
+					'Bipartiteness alone is not enough — it is the UNIT capacities that force the flow to be 0/1. The capacity-1 edge S -> L lets at most one unit reach each left vertex, and the capacity-1 edge R -> T lets at most one unit leave each right vertex, so the matched edges cannot share an endpoint.',
+			},
+			explanation:
+				'Integral max flow (the flow values are integers, and with 0/1 ' +
+				'capacities they are 0 or 1) means each S -> L and each R -> T edge ' +
+				'carries 0 or 1, so every left vertex sends at most one unit and every ' +
+				'right vertex receives at most one. The saturated L -> R edges therefore ' +
+				'form a set of vertex-disjoint edges (a matching), and the flow value, ' +
+				'which counts the units leaving S, equals the number of matched pairs. ' +
+				'Maximising the flow maximises the matching.',
+		},
+	],
+};
+
+// =============================================================================
+// NP-COMPLETENESS, set 3 — a CONCRETE polynomial-time reduction:
+// VERTEX-COVER <-> INDEPENDENT-SET on the SAME graph. np-1 classifies problems
+// and np-2 fixes the reduction DIRECTION in the abstract; np-3 actually RUNS the
+// textbook complement reduction on a fixed graph. The reduction's content is its
+// SIZE ARITHMETIC: in any graph on n vertices, a set S is independent iff its
+// complement V \ S is a vertex cover, so G has an independent set of size s iff G
+// has a vertex cover of size n - s. Those sizes (vertex cover from independent
+// set, and the inverse) are DERIVED by a pure helper here and re-derived by the
+// SAME formula in the test recipe; only the reduction DIRECTION and the
+// yes <-> yes correctness guarantee are conceptual (STATIC).
+// =============================================================================
+
+// The fixed instance: the 7-cycle C7 (vertices 1..7, edge i—i+1 around the ring).
+// For C7 the maximum independent set has size floor(7/2) = 3 and the minimum
+// vertex cover has size 7 - 3 = 4, so the numbers below are an honest instance of
+// the theorem, not just abstract arithmetic.
+const NP3_N = 7;
+const NP3_EDGES = [
+	{ u: '1', v: '2' },
+	{ u: '2', v: '3' },
+	{ u: '3', v: '4' },
+	{ u: '4', v: '5' },
+	{ u: '5', v: '6' },
+	{ u: '6', v: '7' },
+	{ u: '7', v: '1' },
+];
+
+// The reduction's size map, as a pure function of n and a given set size. S is
+// independent IFF V \ S is a vertex cover, so the two sizes are complements in n.
+// This is the ONLY computed content of the reduction; the recipe re-derives it
+// with the identical formula.
+const vcIsSize = (n, size) => n - size;
+
+// Part inputs (the sizes the prompt fixes), and their derived complements.
+const NP3_IS_GIVEN = 3; // an independent set of this size...
+const NP3_VC_FROM_IS = vcIsSize(NP3_N, NP3_IS_GIVEN); // ...maps to a vertex cover of size 4
+const NP3_VC_GIVEN = 5; // a vertex cover of this size...
+const NP3_IS_FROM_VC = vcIsSize(NP3_N, NP3_VC_GIVEN); // ...maps to an independent set of size 2
+const NP3_MAX_IS = 3; // C7's maximum independent set size (stated, true for C7)
+const NP3_MIN_VC = vcIsSize(NP3_N, NP3_MAX_IS); // its minimum vertex cover = 7 - 3 = 4
+
+const problemNP3 = {
+	kind: 'problem',
+	stem:
+		`A concrete reduction between two NP-complete problems on ONE graph. Let G be ` +
+		`the 7-cycle on vertices 1, 2, 3, 4, 5, 6, 7 with edges ` +
+		`${NP3_EDGES.map(e => `${e.u}–${e.v}`).join(', ')} (n = ${NP3_N} vertices). The ` +
+		`key fact: a set S of vertices is INDEPENDENT (no edge inside S) if and only ` +
+		`if its complement V \\ S is a VERTEX COVER (every edge has an endpoint outside ` +
+		`S). So an independent set of size s corresponds exactly to a vertex cover of ` +
+		`size n - s, and this single complement map reduces either problem to the other.`,
+	parts: [
+		{
+			kind: 'numeric',
+			prompt:
+				`Suppose S is an INDEPENDENT SET of size ${NP3_IS_GIVEN} in G. Under the ` +
+				`complement reduction, V \\ S is a vertex cover. What is its SIZE? ` +
+				`(n = ${NP3_N}.)`,
+			answer: NP3_VC_FROM_IS,
+			placeholder: 'a set size',
+			explanation:
+				`V \\ S has n - s = ${NP3_N} - ${NP3_IS_GIVEN} = ${NP3_VC_FROM_IS} vertices. ` +
+				`Every edge has at least one endpoint outside the independent set S, so the ` +
+				`complement covers all edges. (On C7 this is the optimum: size-3 independent ` +
+				`set <-> size-4 vertex cover.)`,
+		},
+		{
+			kind: 'numeric',
+			prompt:
+				`Now run the reduction the OTHER way. Suppose C is a VERTEX COVER of size ` +
+				`${NP3_VC_GIVEN} in G. Then V \\ C is an independent set. What is ITS size? ` +
+				`(n = ${NP3_N}.)`,
+			answer: NP3_IS_FROM_VC,
+			placeholder: 'a set size',
+			explanation:
+				`V \\ C has n - c = ${NP3_N} - ${NP3_VC_GIVEN} = ${NP3_IS_FROM_VC} vertices. ` +
+				`Because C covers every edge, no edge lies inside V \\ C, so V \\ C is ` +
+				`independent. The same complement map carries a vertex cover back to an ` +
+				`independent set, which is why the reduction works in both directions.`,
+		},
+		{
+			kind: 'numeric',
+			prompt:
+				`The optimization versions are complements too. The MAXIMUM independent set ` +
+				`of this 7-cycle has size ${NP3_MAX_IS}. What is the size of the MINIMUM ` +
+				`vertex cover of G?`,
+			answer: NP3_MIN_VC,
+			placeholder: 'a set size',
+			explanation:
+				`Minimum vertex cover = n - (maximum independent set) = ${NP3_N} - ` +
+				`${NP3_MAX_IS} = ${NP3_MIN_VC}. Maximizing the independent set is exactly ` +
+				`minimizing its complementary cover, so a largest independent set and a ` +
+				`smallest vertex cover always partition the n vertices.`,
+		},
+		{
+			kind: 'choice',
+			prompt:
+				`You want to PROVE that VERTEX-COVER is NP-hard, and you already know ` +
+				`INDEPENDENT-SET is NP-hard. Using this complement reduction, which ` +
+				`direction must it go?`,
+			options: [
+				'Reduce INDEPENDENT-SET to VERTEX-COVER (INDEPENDENT-SET ≤p VERTEX-COVER)',
+				'Reduce VERTEX-COVER to INDEPENDENT-SET (VERTEX-COVER ≤p INDEPENDENT-SET)',
+				'Reduce VERTEX-COVER to a problem already known to be in P',
+				'Either direction proves VERTEX-COVER NP-hard equally well',
+			],
+			answer:
+				'Reduce INDEPENDENT-SET to VERTEX-COVER (INDEPENDENT-SET ≤p VERTEX-COVER)',
+			misconceptions: {
+				'Reduce VERTEX-COVER to INDEPENDENT-SET (VERTEX-COVER ≤p INDEPENDENT-SET)':
+					`That direction maps the TARGET into the known-hard problem, which only ` +
+					`shows VERTEX-COVER is no harder than INDEPENDENT-SET (an upper bound). To ` +
+					`prove VERTEX-COVER is HARD you must map the KNOWN-hard problem INTO it: ` +
+					`INDEPENDENT-SET ≤p VERTEX-COVER.`,
+				'Either direction proves VERTEX-COVER NP-hard equally well':
+					`Here the complement map happens to be its own inverse, so both directions ` +
+					`exist, but only INDEPENDENT-SET ≤p VERTEX-COVER (known-hard INTO target) ` +
+					`establishes VERTEX-COVER's hardness. The reverse direction proves the ` +
+					`hardness of INDEPENDENT-SET instead.`,
+			},
+			explanation:
+				`To show a target B is NP-hard you reduce a KNOWN NP-hard problem A INTO B ` +
+				`(A ≤p B), so a fast solver for B would solve A too. With A = INDEPENDENT-SET ` +
+				`and B = VERTEX-COVER, you map an independent-set instance (G, s) to the ` +
+				`vertex-cover instance (G, n - s) using the same graph, which is ` +
+				`INDEPENDENT-SET ≤p VERTEX-COVER.`,
+		},
+		{
+			kind: 'choice',
+			prompt:
+				`For the reduction to be valid, the transformation must preserve the answer. ` +
+				`Exactly what biconditional does this complement reduction guarantee for ` +
+				`every threshold s?`,
+			options: [
+				'G has an independent set of size ≥ s  if and only if  G has a vertex cover of size ≤ n − s',
+				'G has an independent set of size ≥ s  if and only if  G has a vertex cover of size ≥ s',
+				'G has an independent set of size ≤ s  if and only if  G has a vertex cover of size ≤ n − s',
+				'Only the forward direction holds: an independent set of size s gives a cover of size n − s, but not conversely',
+			],
+			answer:
+				'G has an independent set of size ≥ s  if and only if  G has a vertex cover of size ≤ n − s',
+			misconceptions: {
+				'Only the forward direction holds: an independent set of size s gives a cover of size n − s, but not conversely':
+					`The complement map S ↦ V \\ S is a bijection that is its own inverse, so ` +
+					`the equivalence holds BOTH ways: a cover of size n - s also yields an ` +
+					`independent set of size s. A correct many-one reduction needs that full ` +
+					`yes <-> yes (and hence no <-> no) preservation.`,
+				'G has an independent set of size ≥ s  if and only if  G has a vertex cover of size ≥ s':
+					`A larger independent set leaves a SMALLER complement, so it corresponds to ` +
+					`a smaller (size ≤ n - s) cover, not a size ≥ s one. Mixing up the ` +
+					`direction of the size bound breaks the equivalence.`,
+			},
+			explanation:
+				`Taking complements is a size-preserving bijection between independent sets ` +
+				`of size s and vertex covers of size n - s, so a YES instance maps to a YES ` +
+				`instance and a NO to a NO: G has an independent set of size ≥ s iff G has a ` +
+				`vertex cover of size ≤ n - s. That answer-preserving equivalence, computed ` +
+				`in polynomial time, is exactly what makes it a valid reduction.`,
+		},
+	],
+};
+
 export const EXAM_SETS = [
 	{
 		id: 'mst-1',
@@ -4103,6 +4824,12 @@ export const EXAM_SETS = [
 		problem: problemS3,
 	},
 	{
+		id: 'sssp-4',
+		topicId: 'shortest-paths',
+		topicName: 'Shortest paths (single-source)',
+		problem: problemS4,
+	},
+	{
 		id: 'apsp-1',
 		topicId: 'apsp',
 		topicName: 'All-pairs shortest paths',
@@ -4143,6 +4870,12 @@ export const EXAM_SETS = [
 		topicId: 'trees',
 		topicName: 'Trees',
 		problem: problemB2,
+	},
+	{
+		id: 'trees-3',
+		topicId: 'trees',
+		topicName: 'Trees',
+		problem: problemB3,
 	},
 	{
 		id: 'graphs-1',
@@ -4195,6 +4928,12 @@ export const EXAM_SETS = [
 		problem: problemMF2,
 	},
 	{
+		id: 'maxflow-3',
+		topicId: 'max-flow',
+		topicName: 'Maximum flow',
+		problem: problemMF3,
+	},
+	{
 		id: 'foundations-1',
 		topicId: 'foundations',
 		topicName: 'Arrays & complexity',
@@ -4205,6 +4944,12 @@ export const EXAM_SETS = [
 		topicId: 'foundations',
 		topicName: 'Arrays & complexity',
 		problem: problemF2,
+	},
+	{
+		id: 'foundations-3',
+		topicId: 'foundations',
+		topicName: 'Arrays & complexity',
+		problem: problemF3,
 	},
 	{
 		id: 'stacks-queues-1',
@@ -4277,6 +5022,12 @@ export const EXAM_SETS = [
 		topicId: 'np-completeness',
 		topicName: 'NP-completeness',
 		problem: problemNP2,
+	},
+	{
+		id: 'np-3',
+		topicId: 'np-completeness',
+		topicName: 'NP-completeness',
+		problem: problemNP3,
 	},
 ];
 

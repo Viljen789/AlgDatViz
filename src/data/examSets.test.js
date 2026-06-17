@@ -218,6 +218,16 @@ const S3_GRAPH = {
 	],
 };
 
+const S4_GRAPH = {
+	nodes: [{ id: 'S' }, { id: 'A' }, { id: 'B' }, { id: 'C' }],
+	edges: [
+		{ from: 'S', to: 'A', weight: 2 },
+		{ from: 'S', to: 'B', weight: 3 },
+		{ from: 'B', to: 'A', weight: -2 },
+		{ from: 'A', to: 'C', weight: 2 },
+	],
+};
+
 const H1_INPUT = [3, 9, 2, 1, 4, 5];
 const H2_HEAP = [9, 7, 8, 1, 4, 2];
 
@@ -459,6 +469,17 @@ const RECIPES = {
 			2: distVal(run.dist.C), // numeric: final dist[C]
 		};
 	},
+	'sssp-4': () => {
+		const dij = dijkstraTrace(S4_GRAPH, { source: 'S' });
+		const bf = bellmanFordTrace(S4_GRAPH, { source: 'S' });
+		const wrong = S4_GRAPH.edges.find(e => e.weight < 0).to; // head of the neg edge
+		return {
+			0: distVal(dij.dist.A), // numeric: distance Dijkstra REPORTS for A (wrong)
+			1: distVal(bf.dist.A), // numeric: TRUE shortest dist[A] (Bellman-Ford)
+			2: wrong, // choice: the vertex Dijkstra gets wrong (= 'A')
+			// part 3 ("which assumption breaks") is conceptual (see STATIC below).
+		};
+	},
 	'apsp-1': () => {
 		const run = floydWarshall(A1_GRAPH);
 		const ids = run.ids;
@@ -680,6 +701,43 @@ const RECIPES = {
 				: 'Sink side (with T)',
 		};
 	},
+	'maxflow-3': () => {
+		// Re-encode the SAME fixed bipartite graph and re-run the SAME generator,
+		// independently of examSets.js, then read every gradeable key off run.value.
+		const left = ['L1', 'L2', 'L3', 'L4'];
+		const right = ['R1', 'R2', 'R3', 'R4'];
+		const bipartite = [
+			['L1', 'R1'],
+			['L1', 'R2'],
+			['L2', 'R1'],
+			['L2', 'R2'],
+			['L3', 'R1'],
+			['L3', 'R2'],
+			['L4', 'R3'],
+			['L4', 'R4'],
+		];
+		const network = {
+			nodes: ['S', ...left, ...right, 'T'].map(id => ({ id })),
+			source: 'S',
+			sink: 'T',
+			edges: [
+				...left.map(l => ({ from: 'S', to: l, capacity: 1 })),
+				...bipartite.map(([l, r]) => ({ from: l, to: r, capacity: 1 })),
+				...right.map(r => ({ from: r, to: 'T', capacity: 1 })),
+			],
+		};
+		const run = edmondsKarpTrace(network);
+		const matching = run.value;
+		const perfect = matching === left.length;
+		return {
+			0: matching, // numeric: maximum matching size (= max-flow value)
+			1: perfect // choice: does a perfect matching exist (derived option string)
+				? `Yes, every left vertex is matched (size ${matching} = |L| = ${left.length})`
+				: `No, the maximum matching has size ${matching}, below |L| = ${left.length}`,
+			2: right.length - matching, // numeric: unmatched right vertices
+			// part 3 ("WHY max-flow = max-matching") is conceptual → STATIC below.
+		};
+	},
 	'foundations-1': () => ({
 		0: (F1_N * (F1_N + 1)) / 2, // numeric: n(n+1)/2 body count
 	}),
@@ -687,6 +745,32 @@ const RECIPES = {
 		1: F2_N, // numeric: linear-search worst case
 		2: 1, // numeric: linear-search best case
 	}),
+	'foundations-3': () => {
+		// Re-derive the dynamic-array doubling counts from first principles
+		// (independent of examSets.js). Start at capacity 1, double when full,
+		// count copies (only at resizes) and doublings.
+		const simulate = n => {
+			let capacity = 1;
+			let size = 0;
+			let copies = 0;
+			let doublings = 0;
+			for (let i = 0; i < n; i += 1) {
+				if (size === capacity) {
+					copies += size;
+					capacity *= 2;
+					doublings += 1;
+				}
+				size += 1;
+			}
+			return { copies, doublings };
+		};
+		const sim = simulate(17);
+		return {
+			0: sim.copies, // numeric: total element copies across resizes (31)
+			1: sim.doublings, // numeric: number of doublings (5)
+			// parts 2 & 3 (amortized-vs-worst-case reasoning) are conceptual → STATIC
+		};
+	},
 	'sorting-1': () => {
 		const run = getMergeSortStepsWithStats(MS1_INPUT);
 		const steps = run.steps;
@@ -746,6 +830,19 @@ const RECIPES = {
 	'stacks-queues-2': () => ({}),
 	'np-1': () => ({}),
 	'np-2': () => ({}),
+	'np-3': () => {
+		// Re-derive the reduction's size arithmetic INDEPENDENTLY: a set S is
+		// independent iff V \ S is a vertex cover, so the sizes are complements in n.
+		// Same formula as the bank's vcIsSize, recomputed here from first principles.
+		const n = 7;
+		const vcIsSize = (total, size) => total - size;
+		return {
+			0: vcIsSize(n, 3), // numeric: vertex cover from a size-3 independent set (= 4)
+			1: vcIsSize(n, 5), // numeric: independent set from a size-5 vertex cover (= 2)
+			2: vcIsSize(n, 3), // numeric: minimum vertex cover from the size-3 maximum IS (= 4)
+			// parts 3 (reduction direction) and 4 (yes<->yes guarantee) are conceptual → STATIC
+		};
+	},
 };
 
 // SQ1 is special: its derivations come from simulating sqFrames, but two of its
@@ -822,6 +919,24 @@ RECIPES['trees-2'] = () => {
 		0: successor, // numeric: replacement key
 		2: inorderValues(after).map(String), // order: in-order after delete
 		3: `[${afterPre.join(', ')}]`, // choice: pre-order after delete
+	};
+};
+
+RECIPES['trees-3'] = () => {
+	// Re-implement the edge-convention height locally (empty = -1, leaf = 0) so
+	// the re-derivation does not trust examSets.js's bstHeight.
+	const height = node =>
+		node == null ? -1 : 1 + Math.max(height(node.left), height(node.right));
+	const insert = [40, 20, 60, 10, 30, 50, 70];
+	const n = insert.length;
+	const root = buildBst(insert);
+	const sorted = [...insert].sort((a, b) => a - b);
+	return {
+		0: height(root), // numeric: height of the built (balanced) tree
+		1: height(buildBst(sorted)), // numeric: degenerate chain height (n - 1)
+		2: Math.floor(Math.log2(n)), // numeric: minimum height floor(log2 n)
+		// part 3 ("why order determines height / balanced beats degenerate") is
+		// conceptual; see STATIC below.
 	};
 };
 
@@ -904,6 +1019,20 @@ const STATIC = {
 	'np-2#0': 'concept: reduction direction for NP-hardness',
 	'np-2#1': 'concept: properties of a hardness reduction',
 	'np-2#2': 'concept: P=NP follows from one poly NP-complete algo',
+	'sssp-4#3':
+		'concept: why a settled vertex is not final once a negative edge exists',
+	'foundations-3#2':
+		'concept: why amortized O(1) (geometric copies < 2n averaged over n appends)',
+	'foundations-3#3':
+		'concept: why a single worst-case append is still O(n) (the resize copies all elements)',
+	'trees-3#3':
+		'concept: insertion order fixes BST shape; balanced O(log n) vs degenerate O(n) search',
+	'maxflow-3#3':
+		'concept: why max-flow = max-matching (unit caps force an integral 0/1 flow into vertex-disjoint edges)',
+	'np-3#3':
+		'concept: reduction direction (known-hard INTO target) for NP-hardness',
+	'np-3#4':
+		'concept: the yes<->yes correctness guarantee (IS size ≥ s iff VC size ≤ n−s)',
 };
 
 // ── the tests ───────────────────────────────────────────────────────────────
