@@ -37,13 +37,18 @@ import { MST_VERTICES, MST_EDGES } from '../components/Mst/mstMeta.js';
 import {
 	dijkstraTrace,
 	bellmanFordTrace,
+	dagShortestPathsTrace,
 } from '../components/ShortestPaths/relaxTrace.js';
 import {
 	buildMaxHeapTrace,
 	extractMaxTrace,
 } from '../components/Heaps/heapTrace.js';
 import { analyseRecurrence } from '../components/MasterTheorem/masterMath.js';
-import { floydWarshall } from '../components/AllPairsShortestPaths/fwTrace.js';
+import {
+	floydWarshall,
+	transitiveClosure,
+} from '../components/AllPairsShortestPaths/fwTrace.js';
+import { slowApsp } from '../components/AllPairsShortestPaths/slowApsp.js';
 import { getCountingSortStepsWithStats } from '../utils/sorting/algorithms/countingSort.js';
 import { radixWithSubroutine } from '../components/LinearTimeSorting/stability.js';
 import { bucketSort } from '../components/LinearTimeSorting/bucketSortTrace.js';
@@ -61,6 +66,7 @@ import { edmondsKarpTrace } from '../components/MaxFlow/maxFlowTrace.js';
 import { sqFrames } from '../components/StacksQueues/sqFrames.js';
 import { getMergeSortStepsWithStats } from '../utils/sorting/algorithms/mergeSort.js';
 import { getQuickSortFrames } from '../utils/sorting/quickPartitionFrames.js';
+import { quickselectTrace } from '../components/QuickSortLesson/quickselectTrace.js';
 import {
 	buildCoinChangeFrames,
 	buildClimbingStairsFrames,
@@ -3477,6 +3483,168 @@ const problemQS2 = {
 };
 
 // =============================================================================
+// QUICKSELECT / RANDOMIZED-SELECT (CLRS §9.2) — selection / order statistics, the
+// one quicksort-adjacent topic the bank had no coverage of (recent exams test it:
+// worst-case running time of Randomized-Select, what problem Randomized-Select
+// solves, partition behaviour). Deterministic last-element pivot so the trace is
+// reproducible. The pivot's landing index, the array after the first PARTITION,
+// and the i-th order statistic are all read off quickselectTrace (never hand-typed);
+// the worst/expected running-time and the "what does it solve" choices are
+// conceptual. Index convention: 0-based array indices; i (the rank) is 1-based.
+// =============================================================================
+
+const QSEL3_INPUT = [50, 80, 20, 90, 10, 70, 40, 60, 30];
+const QSEL3_I = 4; // 1-based rank: select the 4th-smallest element
+const QSEL3_RUN = quickselectTrace(QSEL3_INPUT, QSEL3_I);
+const QSEL3_PIVOT = QSEL3_INPUT[QSEL3_INPUT.length - 1]; // last-element pivot = 30
+const QSEL3_AFTER = QSEL3_RUN.firstPartition.array;
+const QSEL3_AFTER_STR = `[${QSEL3_AFTER.join(', ')}]`;
+const QSEL3_PIVOT_INDEX = QSEL3_RUN.firstPartition.pivotFinalIndex; // 0-based
+const QSEL3_SELECTED = QSEL3_RUN.selected; // the i-th smallest = the return value
+const QSEL3_SORTED_STR = `[${[...QSEL3_INPUT].sort((a, b) => a - b).join(', ')}]`;
+const QSEL3_INPUT_STR = `[${QSEL3_INPUT.join(', ')}]`;
+const QSEL3_DESC_STR = `[${[...QSEL3_INPUT].sort((a, b) => b - a).join(', ')}]`;
+
+const problemQuickselect3 = {
+	kind: 'problem',
+	stem:
+		`RANDOMIZED-SELECT (CLRS §9.2) finds the i-th smallest element WITHOUT fully ` +
+		`sorting — it partitions like quicksort, then recurses into only the ONE side ` +
+		`that must contain the answer. Here we use a deterministic Lomuto PARTITION ` +
+		`with the pivot = the LAST element. Run RANDOMIZED-SELECT on ` +
+		`A = ${QSEL3_INPUT_STR} to find the ${QSEL3_I}-th smallest element.`,
+	parts: [
+		{
+			kind: 'numeric',
+			prompt:
+				`First PARTITION the whole array around its pivot ${QSEL3_PIVOT} (the last ` +
+				`element). At which 0-based index does ${QSEL3_PIVOT} come to rest (its ` +
+				`final sorted position)?`,
+			answer: QSEL3_PIVOT_INDEX,
+			placeholder: 'an index',
+			explanation:
+				`Lomuto sweeps a pointer across the array, pulling every value less than ` +
+				`${QSEL3_PIVOT} to the left, then swaps the pivot just past them. ` +
+				`${QSEL3_PIVOT_INDEX} values are smaller than ${QSEL3_PIVOT}, so it lands ` +
+				`at index ${QSEL3_PIVOT_INDEX} — its final sorted position. That index also ` +
+				`tells RANDOMIZED-SELECT the pivot's RANK, so it knows which side to recurse ` +
+				`into next.`,
+		},
+		{
+			kind: 'choice',
+			prompt: `What does the array look like immediately after that first PARTITION?`,
+			options: [
+				QSEL3_AFTER_STR,
+				QSEL3_SORTED_STR,
+				QSEL3_INPUT_STR,
+				QSEL3_DESC_STR,
+			],
+			answer: QSEL3_AFTER_STR,
+			misconceptions: {
+				[QSEL3_SORTED_STR]:
+					`That is the FULLY sorted array. PARTITION does NOT sort — and ` +
+					`RANDOMIZED-SELECT never sorts at all. One partition only places the ` +
+					`pivot at its final index and splits the rest into "below" and "not below"; ` +
+					`the two sides stay unsorted.`,
+				[QSEL3_INPUT_STR]:
+					`That is the untouched input. PARTITION rearranges the array in place: ` +
+					`values below the pivot ${QSEL3_PIVOT} move left of it and the pivot is ` +
+					`swapped into the gap, so the array does change.`,
+				[QSEL3_DESC_STR]:
+					`That is the array sorted DESCENDING. PARTITION neither sorts nor reverses; ` +
+					`it groups values around the pivot (smaller left, larger right) but leaves ` +
+					`each side in no particular order.`,
+			},
+			explanation:
+				`After partitioning, everything left of index ${QSEL3_PIVOT_INDEX} is less ` +
+				`than ${QSEL3_PIVOT} and everything right is greater, but neither side is ` +
+				`sorted: ${QSEL3_AFTER_STR}. RANDOMIZED-SELECT then recurses into just one ` +
+				`of those sides.`,
+		},
+		{
+			kind: 'choice',
+			prompt: `Which problem does the call RANDOMIZED-SELECT(A, 1, n, i) solve?`,
+			options: [
+				'It returns the i-th smallest element (the i-th order statistic).',
+				'It fully sorts A in ascending order.',
+				'It returns the element at index i of A.',
+				'It returns the i largest elements of A.',
+			],
+			answer:
+				'It returns the i-th smallest element (the i-th order statistic).',
+			misconceptions: {
+				'It fully sorts A in ascending order.':
+					`That describes a sort (e.g. quicksort). RANDOMIZED-SELECT returns a single ` +
+					`element and recurses into only ONE side of each partition, so it does work ` +
+					`Θ(n) on average rather than the Θ(n log n) a sort needs — it deliberately ` +
+					`avoids sorting.`,
+				'It returns the element at index i of A.':
+					`That is just A[i] — an O(1) array access, no algorithm needed. The i in ` +
+					`RANDOMIZED-SELECT is a RANK (the i-th smallest by value), not a position ` +
+					`in the current array.`,
+				'It returns the i largest elements of A.':
+					`RANDOMIZED-SELECT returns exactly ONE element — the i-th SMALLEST — not a ` +
+					`set, and not the largest. (The i-th largest would be the (n−i+1)-th ` +
+					`smallest, a different single value.)`,
+			},
+			explanation:
+				`RANDOMIZED-SELECT(A, 1, n, i) returns the i-th smallest element of A — its ` +
+				`i-th order statistic. i = 1 gives the minimum, i = n the maximum, and ` +
+				`i = ⌈n/2⌉ the median. It finds that one element in expected linear time ` +
+				`without sorting.`,
+		},
+		{
+			kind: 'numeric',
+			prompt:
+				`Finish the run: RANDOMIZED-SELECT returns the ${QSEL3_I}-th smallest ` +
+				`element of A. What value does it return?`,
+			answer: QSEL3_SELECTED,
+			placeholder: 'a value',
+			explanation:
+				`Sorting A would give ${QSEL3_SORTED_STR}; its ${QSEL3_I}-th entry is ` +
+				`${QSEL3_SELECTED}. RANDOMIZED-SELECT reaches the same answer without sorting: ` +
+				`the first pivot ${QSEL3_PIVOT} lands at index ${QSEL3_PIVOT_INDEX} (rank ` +
+				`${QSEL3_PIVOT_INDEX + 1}), which is below ${QSEL3_I}, so it recurses into the ` +
+				`right side; the next pivot lands at exactly rank ${QSEL3_I} and is the answer, ` +
+				`${QSEL3_SELECTED}.`,
+		},
+		{
+			kind: 'choice',
+			prompt:
+				`What are the WORST-CASE and EXPECTED running times of RANDOMIZED-SELECT ` +
+				`on n elements?`,
+			options: [
+				'Worst case Θ(n²), expected Θ(n)',
+				'Worst case Θ(n log n), expected Θ(n log n)',
+				'Worst case Θ(n), expected Θ(n)',
+				'Worst case Θ(n²), expected Θ(n log n)',
+			],
+			answer: 'Worst case Θ(n²), expected Θ(n)',
+			misconceptions: {
+				'Worst case Θ(n log n), expected Θ(n log n)':
+					`Θ(n log n) is the cost to SORT the array and then index it — a correct but ` +
+					`slower way to select. RANDOMIZED-SELECT beats it: it recurses into only one ` +
+					`side, so its EXPECTED time is Θ(n), not Θ(n log n).`,
+				'Worst case Θ(n), expected Θ(n)':
+					`Θ(n) is the EXPECTED time, not the worst case. A run of unlucky pivots ` +
+					`(each peeling off one element) gives partition sizes n + (n−1) + … = Θ(n²), ` +
+					`so the worst case is Θ(n²). (The deterministic median-of-medians SELECT is ` +
+					`Θ(n) even in the worst case, but that is a different algorithm.)`,
+				'Worst case Θ(n²), expected Θ(n log n)':
+					`The worst case Θ(n²) is right, but the expected time is Θ(n), not ` +
+					`Θ(n log n): because RANDOMIZED-SELECT recurses into only ONE side, the ` +
+					`expected work forms a geometric series n + n/2 + n/4 + … = Θ(n).`,
+			},
+			explanation:
+				`A bad pivot sequence makes each partition peel off one element, giving sizes ` +
+				`n, n−1, …, 1 and Θ(n²) total — the worst case. But with a random pivot the ` +
+				`split is balanced enough on average that the expected work is the geometric ` +
+				`series n + n/2 + n/4 + … = Θ(n). So: worst case Θ(n²), expected Θ(n).`,
+		},
+	],
+};
+
+// =============================================================================
 // TREES (BST) — deleting a TWO-CHILD node. Insert builds a fixed BST; deleting
 // the root (two children) splices in its in-order successor. The successor lives
 // two left-steps down the right subtree and carries its own right child up, so
@@ -3748,6 +3916,232 @@ const problemA2 = {
 				'It is Floyd-Warshall with min → OR and + → AND: i reaches j through ' +
 				'{1..k} iff it already did, OR it can reach k AND k can reach j. Same ' +
 				'k-outermost triple loop, Θ(V³).',
+		},
+	],
+};
+
+// =============================================================================
+// ALL-PAIRS SHORTEST PATHS #3 (apsp-3) — TRANSITIVE CLOSURE, the boolean twin of
+// Floyd-Warshall. Real exams (2017, 2018) hand a reachability matrix T and ask
+// who-can-reach-whom. apsp-1/apsp-2 trace the weighted DP and its per-k layers;
+// apsp-3 drops the weights and grades pure REACHABILITY off transitiveClosure's
+// final closure matrix `reach` (reach[i][j] === true iff i can reach j). Every
+// gradeable key is read straight off that matrix — never hand-typed.
+//
+// Recurrence: t_k[i][j] = t_{k−1}[i][j] OR (t_{k−1}[i][k] AND t_{k−1}[k][j]).
+// =============================================================================
+
+// 5-vertex digraph. a feeds a 3-cycle b→c→d→b; e→a is a one-way in-edge so e is
+// NEVER reachable from a (only a→…→? , never a→e). a→c is 2-HOP-ONLY (via b — no
+// direct a→c edge), so the closure adds edges beyond the direct ones.
+const A3_GRAPH = {
+	nodes: [{ id: 'a' }, { id: 'b' }, { id: 'c' }, { id: 'd' }, { id: 'e' }],
+	edges: [
+		{ from: 'a', to: 'b' },
+		{ from: 'b', to: 'c' },
+		{ from: 'c', to: 'd' },
+		{ from: 'd', to: 'b' },
+		{ from: 'e', to: 'a' },
+	],
+};
+const A3_TC = transitiveClosure(A3_GRAPH);
+const A3_IDS = A3_TC.ids; // ['a','b','c','d','e']
+const A3_IX = id => A3_IDS.indexOf(id);
+const A3_REACH = A3_TC.reach;
+
+// (a) classify: which vertices are reachable FROM a? Read row a of the closure;
+// every off-source vertex is bucketed reach / noreach. a reaches {b,c,d} (b direct,
+// c 2-hop via b, d 3-hop) but NOT e — the only e-edge is e→a, the wrong way.
+const A3_ROW_A = A3_REACH[A3_IX('a')];
+const A3_REACH_FROM_A = Object.fromEntries(
+	A3_IDS.filter(id => id !== 'a').map(id => [
+		id,
+		A3_ROW_A[A3_IX(id)] ? 'reach' : 'noreach',
+	])
+); // { b:'reach', c:'reach', d:'reach', e:'noreach' }
+
+// (b) numeric: how many ORDERED pairs (i, j) with i ≠ j are reachable (TRUE entries
+// off the diagonal) in the final closure?
+const A3_OFFDIAG = (() => {
+	let count = 0;
+	for (let i = 0; i < A3_TC.n; i++)
+		for (let j = 0; j < A3_TC.n; j++) if (i !== j && A3_REACH[i][j]) count += 1;
+	return count;
+})(); // 13
+
+const problemTransClosure3 = {
+	kind: 'problem',
+	stem:
+		'Directed (unweighted) graph on vertices a, b, c, d, e with edges ' +
+		'a→b, b→c, c→d, d→b, e→a. Run Transitive-Closure — the boolean twin of ' +
+		'Floyd-Warshall (t_k[i][j] = t_{k−1}[i][j] OR (t_{k−1}[i][k] AND ' +
+		't_{k−1}[k][j])) — and read the final reachability matrix T, where ' +
+		'T[i][j] is true exactly when there is a directed path i → j.',
+	parts: [
+		{
+			kind: 'classify',
+			prompt:
+				'Starting from vertex a, sort every OTHER vertex by whether a can reach ' +
+				'it (a directed path a → … → that vertex exists). Watch a→c: there is no ' +
+				'direct a→c edge, so it is reachable only via the 2-hop a → b → c.',
+			items: [
+				{ id: 'b', label: 'b' },
+				{ id: 'c', label: 'c' },
+				{ id: 'd', label: 'd' },
+				{ id: 'e', label: 'e' },
+			],
+			categories: [
+				{ id: 'reach', label: 'Reachable from a' },
+				{ id: 'noreach', label: 'NOT reachable from a' },
+			],
+			answer: A3_REACH_FROM_A,
+			explanation:
+				'From a: a → b (direct), a → b → c (the 2-hop, since there is no direct ' +
+				'a→c edge), and a → b → c → d, so b, c, d are all reachable. e is NOT: the ' +
+				'only edge touching e is e → a, which points the wrong way — nothing leaves ' +
+				'a toward e.',
+		},
+		{
+			kind: 'numeric',
+			prompt:
+				'In the final closure matrix T, how many ORDERED pairs (i, j) with i ≠ j ' +
+				'are reachable — i.e. how many TRUE entries are there OFF the diagonal? ' +
+				'(Ignore the n diagonal i = i entries, which are trivially true.)',
+			answer: A3_OFFDIAG,
+			placeholder: 'a count',
+			explanation:
+				`${A3_OFFDIAG} ordered pairs. a reaches {b, c, d} (3); each of b, c, d ` +
+				`reaches the other two members of the 3-cycle b↔c↔d (3 × 2 = 6); and e ` +
+				`reaches {a, b, c, d} (4). 3 + 6 + 4 = ${A3_OFFDIAG} off-diagonal TRUE ` +
+				`entries. (Adding the 5 diagonal entries gives ${A3_OFFDIAG + 5} TRUE total.)`,
+		},
+		{
+			kind: 'choice',
+			prompt:
+				'Transitive-Closure is Floyd-Warshall with min/+ replaced by OR/AND. ' +
+				'What is its running time on a graph with V vertices?',
+			options: ['Θ(V³)', 'Θ(V²)', 'Θ(E)', 'Θ(V² log V)'],
+			answer: 'Θ(V³)',
+			misconceptions: {
+				'Θ(V²)':
+					'Θ(V²) is the SIZE of the matrix T, not the cost of filling it. Each of ' +
+					'the V² cells is updated once per k-round, and there are V rounds, so the ' +
+					'work is V × V² = Θ(V³) — the same triple loop as Floyd-Warshall.',
+				'Θ(E)':
+					'Θ(E) counts the direct edges only. Transitive closure must consider ' +
+					'every pair routed through every intermediate vertex — three nested loops ' +
+					'over the V vertices, Θ(V³), independent of how many edges there are.',
+			},
+			explanation:
+				'It is the boolean twin of the Θ(V³) Floyd-Warshall recurrence: the same ' +
+				'k-outermost triple loop over all (i, j, k), with min/+ swapped for OR/AND. ' +
+				'Three nested Θ(V) loops give Θ(V³), not Θ(V²) or Θ(E).',
+		},
+	],
+};
+
+// =============================================================================
+// ALL-PAIRS SHORTEST PATHS #4 (apsp-4) — SLOW-APSP, the matrix-multiplication
+// view. Floyd-Warshall grows the INTERMEDIATE set; Slow-APSP grows the EDGE
+// COUNT by repeated min-plus matrix products: L^(m) = L^(m-1) ⊗ W, where
+// (A ⊗ W)_{ij} = min_k ( A_{ik} + W_{kj} ). This is the 2022-exam question
+// ("Perform SLOW-APSP … what is l^(2)_{i,j}?"). Numerics are read straight off
+// slowApsp's `layers` (layers[m-1] === L^(m), layers[0] === W); only the
+// running-time part is conceptual. Distinct 4-vertex digraph.
+// =============================================================================
+
+// Directed, weighted, vertices 1..4. Chosen so a 2-edge path does work a single
+// edge cannot: 1→3 has NO direct edge (∞) but 1→2→3 = 3 + (−2) = 1, and 2→4 is 6
+// directly yet only −1 via 2→3→4. No negative cycle (L^(3) diagonal stays 0).
+const A4_GRAPH = {
+	nodes: [{ id: '1' }, { id: '2' }, { id: '3' }, { id: '4' }],
+	edges: [
+		{ from: '1', to: '2', weight: 3 },
+		{ from: '2', to: '3', weight: -2 },
+		{ from: '3', to: '1', weight: 4 },
+		{ from: '3', to: '4', weight: 1 },
+		{ from: '4', to: '2', weight: 1 },
+		{ from: '2', to: '4', weight: 6 },
+	],
+};
+const A4 = slowApsp(A4_GRAPH);
+const A4_IDS = A4.ids; // ['1','2','3','4']
+const A4_IX = id => A4_IDS.indexOf(id);
+// L^(m) = layers[m-1]. L^(2) = layers[1] (best path of AT MOST 2 edges).
+const A4_L2 = A4.layers[1];
+const A4_L2_13 = distVal(A4_L2[A4_IX('1')][A4_IX('3')]); // 1  (1→2→3 = 3 + (−2))
+const A4_L2_24 = distVal(A4_L2[A4_IX('2')][A4_IX('4')]); // −1 (2→3→4 = −2 + 1)
+// Direct (1-edge) values, for the prose contrast.
+const A4_L1_13 = distVal(A4.layers[0][A4_IX('1')][A4_IX('3')]); // ∞
+const A4_L1_24 = distVal(A4.layers[0][A4_IX('2')][A4_IX('4')]); // 6
+
+const problemSlowApsp4 = {
+	kind: 'problem',
+	stem:
+		'Directed weighted graph on vertices 1, 2, 3, 4 with edges ' +
+		'1→2(3), 2→3(−2), 3→1(4), 3→4(1), 4→2(1), 2→4(6). ' +
+		'Perform SLOW-APSP: the min-plus matrix recurrence L⁽ᵐ⁾ = L⁽ᵐ⁻¹⁾ ⊗ W with ' +
+		'(A ⊗ W)_{ij} = min over k of (A_{ik} + W_{kj}), starting from L⁽¹⁾ = W (the ' +
+		'weight matrix: w_{ii} = 0, w_{ij} = the edge weight, ∞ if no edge). ' +
+		'l⁽ᵐ⁾_{i,j} is the lightest i→j path using at most m edges.',
+	parts: [
+		{
+			kind: 'numeric',
+			prompt:
+				'After one EXTEND-SHORTEST-PATHS step (L⁽²⁾ = W ⊗ W), what is l⁽²⁾_{1,3}, ' +
+				'the lightest 1→3 path using at most two edges? (There is no direct edge ' +
+				'1→3, so a single edge gives ∞; min over k of (w_{1,k} + w_{k,3}).)',
+			answer: A4_L2_13,
+			placeholder: 'a distance',
+			explanation:
+				`l⁽²⁾_{1,3} = ${A4_L2_13}. The direct entry w_{1,3} is ∞, but the min-plus ` +
+				`product finds k = 2: w_{1,2} + w_{2,3} = 3 + (−2) = ${A4_L2_13} (the path ` +
+				`1 → 2 → 3). Every other k gives ∞, so two edges turn an ∞ into ` +
+				`${A4_L2_13}.`,
+		},
+		{
+			kind: 'numeric',
+			prompt:
+				'Still in L⁽²⁾ (paths of at most two edges), what is l⁽²⁾_{2,4}? The direct ' +
+				'edge 2→4 has weight 6 — does a two-edge detour beat it? (min over k of ' +
+				'(w_{2,k} + w_{k,4}).)',
+			answer: A4_L2_24,
+			placeholder: 'a distance',
+			explanation:
+				`l⁽²⁾_{2,4} = ${A4_L2_24}. The product compares the direct edge ` +
+				`w_{2,4} = 6 with the detour k = 3: w_{2,3} + w_{3,4} = −2 + 1 = ` +
+				`${A4_L2_24}, which is smaller, so 2 → 3 → 4 wins. The negative edge 2→3 ` +
+				`makes a longer path the lighter one — exactly what the min in the min-plus ` +
+				`product is for.`,
+		},
+		{
+			kind: 'choice',
+			prompt:
+				'SLOW-APSP computes L⁽²⁾, L⁽³⁾, …, L⁽ⁿ⁻¹⁾ — one min-plus matrix product per ' +
+				'step. What is its total running time on an n-vertex graph?',
+			options: ['Θ(V⁴)', 'Θ(V³)', 'Θ(V³ lg V)', 'Θ(V²)'],
+			answer: 'Θ(V⁴)',
+			misconceptions: {
+				'Θ(V³)':
+					'Θ(V³) is FLOYD-WARSHALL, not Slow-APSP. Floyd-Warshall reuses each ' +
+					'k-layer in place (one triple loop, no repeated passes), so it gets the ' +
+					'answer in a flat Θ(V³). Slow-APSP instead recomputes a whole matrix ' +
+					'product V−1 times — a factor of V slower.',
+				'Θ(V³ lg V)':
+					'Θ(V³ lg V) is FASTER-APSP (repeated squaring): compute L⁽²⁾, L⁽⁴⁾, ' +
+					'L⁽⁸⁾, … and reach L⁽≥n−1⁾ in ⌈lg(n−1)⌉ products. Slow-APSP does NOT ' +
+					'square — it multiplies by W once per step, V−1 steps, so it is Θ(V⁴).',
+				'Θ(V²)':
+					'Θ(V²) is merely the size of the distance matrix. A single min-plus ' +
+					'product already costs Θ(V³) (three nested loops i, j, k), and Slow-APSP ' +
+					'performs V−1 of them.',
+			},
+			explanation:
+				'Each EXTEND-SHORTEST-PATHS product is three nested loops (i, j, k) ⇒ Θ(V³). ' +
+				'A shortest path has at most V−1 edges, so SLOW-APSP runs V−2 such products ' +
+				'after L⁽¹⁾ = W, i.e. Θ(V) products of Θ(V³) ⇒ Θ(V⁴). Repeated squaring ' +
+				'(Faster-APSP) cuts the product count to O(lg V) for Θ(V³ lg V); Floyd-' +
+				'Warshall reuses k-layers in place for a flat Θ(V³).',
 		},
 	],
 };
@@ -4153,6 +4547,123 @@ const problemS4 = {
 				`settled value, but Dijkstra has moved on and will not reopen A. ` +
 				`Bellman-Ford makes no finality assumption. It keeps relaxing every edge, ` +
 				`which is why it stays correct on negative edges (absent a negative cycle).`,
+		},
+	],
+};
+
+// Problem S5: DAG-Shortest-Paths on a weighted DAG with a negative edge. The
+// generator relaxes vertices in ONE pass over a topological order; because every
+// edge is relaxed only after its tail's distance is already final, one pass is
+// exact — and since a DAG has no cycle there is no negative cycle, so a negative
+// edge (C→D = −3) is perfectly fine here even though Dijkstra could not handle it.
+// We DERIVE every distance by calling dagShortestPathsTrace at module load. We do
+// NOT grade the topological order (it is not unique); only dist[] is graded, and
+// dist[v] is unique for a fixed graph + source.
+const S5_GRAPH = {
+	nodes: [
+		{ id: 'S' },
+		{ id: 'A' },
+		{ id: 'B' },
+		{ id: 'C' },
+		{ id: 'D' },
+		{ id: 'E' },
+	],
+	edges: [
+		{ from: 'S', to: 'A', weight: 3 },
+		{ from: 'S', to: 'B', weight: 6 },
+		{ from: 'S', to: 'E', weight: 10 }, // expensive DIRECT edge to E
+		{ from: 'A', to: 'B', weight: 1 },
+		{ from: 'A', to: 'C', weight: 4 },
+		{ from: 'B', to: 'C', weight: 2 },
+		{ from: 'B', to: 'D', weight: 5 },
+		{ from: 'C', to: 'D', weight: -3 }, // NEGATIVE edge — no cycle, so legal
+		{ from: 'C', to: 'E', weight: 3 },
+		{ from: 'D', to: 'E', weight: 1 },
+	],
+};
+const S5_DAG = dagShortestPathsTrace(S5_GRAPH, { source: 'S' });
+const S5_DIST = S5_DAG.dist; // unique per graph+source; the gradeable keys
+// Part (b) shapes the FINAL DISTANCES as a sequence keyed to a FIXED vertex order
+// (NOT the topological order). Each item is a vertex-labelled distance value, so
+// the order of the items is fixed by us and unambiguous to grade.
+const S5_VORDER = ['S', 'A', 'B', 'C', 'D', 'E'];
+const S5_DIST_SEQ = S5_VORDER.map(
+	id => `dist[${id}] = ${distVal(S5_DIST[id])}`
+);
+
+const problemDagSp5 = {
+	kind: 'problem',
+	stem:
+		'Directed ACYCLIC weighted graph (a DAG) with one negative edge: ' +
+		'S→A(3), S→B(6), S→E(10), A→B(1), A→C(4), B→C(2), B→D(5), C→D(−3), ' +
+		'C→E(3), D→E(1). Run DAG-Shortest-Paths from source S. DAG-SP first ' +
+		'topologically sorts the vertices, then relaxes each vertex’s out-edges ' +
+		'once, in that order.',
+	parts: [
+		{
+			kind: 'numeric',
+			prompt:
+				'What is the final shortest distance dist[E] from S? (There is a ' +
+				'direct edge S→E(10) — but is it the shortest way to reach E?)',
+			answer: distVal(S5_DIST.E),
+			placeholder: 'distance',
+			explanation:
+				`dist[E] = ${distVal(S5_DIST.E)} via S→A→B→C→D→E ` +
+				`(3 + 1 + 2 + (−3) + 1), which is far cheaper than the direct edge ` +
+				`S→E(10). Relaxing in topological order means E is only processed after ` +
+				`D’s distance is already final, so the one pass is exact.`,
+		},
+		{
+			kind: 'order',
+			prompt:
+				'Give the final shortest distances as a sequence, in the FIXED vertex ' +
+				'order S, A, B, C, D, E. (Order the distance values to match that ' +
+				'vertex order — this is the dist[] vector, not the topological order.)',
+			items: [...S5_DIST_SEQ].sort(),
+			answer: S5_DIST_SEQ,
+			explanation:
+				`In vertex order S,A,B,C,D,E the distances are ` +
+				`${S5_DIST_SEQ.join(', ')}. Note dist[D] = ${distVal(S5_DIST.D)} uses the ` +
+				`negative edge C→D(−3): dist[C] = ${distVal(S5_DIST.C)}, then ` +
+				`${distVal(S5_DIST.C)} + (−3) = ${distVal(S5_DIST.D)} — cheaper than B→D ` +
+				`(which would give 4 + 5 = 9). A negative edge Dijkstra could not use, ` +
+				`but DAG-SP handles correctly because a DAG has no negative cycle.`,
+		},
+		{
+			kind: 'choice',
+			prompt:
+				'DAG-Shortest-Paths relaxes the edges in just ONE pass over a ' +
+				'topological order — unlike Bellman-Ford’s |V|−1 passes — and is still ' +
+				'correct even with the negative edge C→D(−3). Why does one pass suffice, ' +
+				'and why are negative edges fine?',
+			options: [
+				'In topological order every edge (u,v) is relaxed only after dist[u] is already final, so each edge needs relaxing once; and a DAG has no cycle, hence no negative cycle, so negative edge weights cause no trouble',
+				'It needs |V|−1 passes just like Bellman-Ford; the single pass shown is only the first of several',
+				'It fails on the negative edge exactly as Dijkstra would, so the answer for D is unreliable',
+				'One pass works only because all edges happen to be non-negative in a DAG',
+			],
+			answer:
+				'In topological order every edge (u,v) is relaxed only after dist[u] is already final, so each edge needs relaxing once; and a DAG has no cycle, hence no negative cycle, so negative edge weights cause no trouble',
+			misconceptions: {
+				'It needs |V|−1 passes just like Bellman-Ford; the single pass shown is only the first of several':
+					'No — that is Bellman-Ford’s schedule. DAG-SP exploits the topological ' +
+					'order: when vertex u is processed, dist[u] is already final, so relaxing ' +
+					'u’s out-edges once is enough. The whole run is a single pass.',
+				'It fails on the negative edge exactly as Dijkstra would, so the answer for D is unreliable':
+					'No — Dijkstra fails on negatives because it seals a settled vertex. ' +
+					'DAG-SP never relies on a non-negativity assumption; it relies on the ' +
+					'topological order, which is valid with negative edges. dist[D] = ' +
+					`${distVal(S5_DIST.D)} is exactly correct.`,
+				'One pass works only because all edges happen to be non-negative in a DAG':
+					'There IS a negative edge here (C→D = −3), and one pass still works. ' +
+					'Correctness comes from the topological order, not from non-negativity.',
+			},
+			explanation:
+				'Processing vertices in topological order guarantees that when we relax ' +
+				'edge (u,v), dist[u] is already its final value — so a single relaxation ' +
+				'per edge is exact. A DAG has no directed cycle, therefore no negative ' +
+				'cycle, so negative edge weights (like C→D = −3) are harmless. That is why ' +
+				'DAG-SP needs only one pass and, unlike Dijkstra, tolerates negative edges.',
 		},
 	],
 };
@@ -4830,6 +5341,12 @@ export const EXAM_SETS = [
 		problem: problemS4,
 	},
 	{
+		id: 'sssp-5',
+		topicId: 'shortest-paths',
+		topicName: 'Shortest paths (single-source)',
+		problem: problemDagSp5,
+	},
+	{
 		id: 'apsp-1',
 		topicId: 'apsp',
 		topicName: 'All-pairs shortest paths',
@@ -4840,6 +5357,18 @@ export const EXAM_SETS = [
 		topicId: 'apsp',
 		topicName: 'All-pairs shortest paths',
 		problem: problemA2,
+	},
+	{
+		id: 'apsp-3',
+		topicId: 'apsp',
+		topicName: 'All-pairs shortest paths',
+		problem: problemTransClosure3,
+	},
+	{
+		id: 'apsp-4',
+		topicId: 'apsp',
+		topicName: 'All-pairs shortest paths',
+		problem: problemSlowApsp4,
 	},
 	{
 		id: 'linsort-1',
@@ -4992,6 +5521,12 @@ export const EXAM_SETS = [
 		topicId: 'quicksort',
 		topicName: 'Quicksort',
 		problem: problemQS2,
+	},
+	{
+		id: 'quicksort-3',
+		topicId: 'quicksort',
+		topicName: 'Quicksort',
+		problem: problemQuickselect3,
 	},
 	{
 		id: 'strategies-1',

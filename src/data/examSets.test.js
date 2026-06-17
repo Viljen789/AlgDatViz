@@ -35,6 +35,7 @@ import {
 	isSeedable,
 } from './examInstances.js';
 import { getQuickSortFrames } from '../utils/sorting/quickPartitionFrames.js';
+import { quickselectTrace } from '../components/QuickSortLesson/quickselectTrace.js';
 
 import {
 	kruskalTrace,
@@ -46,13 +47,18 @@ import { MST_VERTICES, MST_EDGES } from '../components/Mst/mstMeta.js';
 import {
 	dijkstraTrace,
 	bellmanFordTrace,
+	dagShortestPathsTrace,
 } from '../components/ShortestPaths/relaxTrace.js';
 import {
 	buildMaxHeapTrace,
 	extractMaxTrace,
 } from '../components/Heaps/heapTrace.js';
 import { analyseRecurrence } from '../components/MasterTheorem/masterMath.js';
-import { floydWarshall } from '../components/AllPairsShortestPaths/fwTrace.js';
+import {
+	floydWarshall,
+	transitiveClosure,
+} from '../components/AllPairsShortestPaths/fwTrace.js';
+import { slowApsp } from '../components/AllPairsShortestPaths/slowApsp.js';
 import { getCountingSortStepsWithStats } from '../utils/sorting/algorithms/countingSort.js';
 import { radixWithSubroutine } from '../components/LinearTimeSorting/stability.js';
 import { bucketSort } from '../components/LinearTimeSorting/bucketSortTrace.js';
@@ -228,6 +234,29 @@ const S4_GRAPH = {
 	],
 };
 
+const S5_GRAPH = {
+	nodes: [
+		{ id: 'S' },
+		{ id: 'A' },
+		{ id: 'B' },
+		{ id: 'C' },
+		{ id: 'D' },
+		{ id: 'E' },
+	],
+	edges: [
+		{ from: 'S', to: 'A', weight: 3 },
+		{ from: 'S', to: 'B', weight: 6 },
+		{ from: 'S', to: 'E', weight: 10 },
+		{ from: 'A', to: 'B', weight: 1 },
+		{ from: 'A', to: 'C', weight: 4 },
+		{ from: 'B', to: 'C', weight: 2 },
+		{ from: 'B', to: 'D', weight: 5 },
+		{ from: 'C', to: 'D', weight: -3 },
+		{ from: 'C', to: 'E', weight: 3 },
+		{ from: 'D', to: 'E', weight: 1 },
+	],
+};
+
 const H1_INPUT = [3, 9, 2, 1, 4, 5];
 const H2_HEAP = [9, 7, 8, 1, 4, 2];
 
@@ -255,6 +284,29 @@ const A2_GRAPH = {
 		{ from: '4', to: '5', weight: 3 },
 		{ from: '5', to: '1', weight: 6 },
 		{ from: '4', to: '1', weight: 2 },
+	],
+};
+
+const A3_GRAPH = {
+	nodes: [{ id: 'a' }, { id: 'b' }, { id: 'c' }, { id: 'd' }, { id: 'e' }],
+	edges: [
+		{ from: 'a', to: 'b' },
+		{ from: 'b', to: 'c' },
+		{ from: 'c', to: 'd' },
+		{ from: 'd', to: 'b' },
+		{ from: 'e', to: 'a' },
+	],
+};
+
+const A4_GRAPH = {
+	nodes: [{ id: '1' }, { id: '2' }, { id: '3' }, { id: '4' }],
+	edges: [
+		{ from: '1', to: '2', weight: 3 },
+		{ from: '2', to: '3', weight: -2 },
+		{ from: '3', to: '1', weight: 4 },
+		{ from: '3', to: '4', weight: 1 },
+		{ from: '4', to: '2', weight: 1 },
+		{ from: '2', to: '4', weight: 6 },
 	],
 };
 
@@ -480,6 +532,15 @@ const RECIPES = {
 			// part 3 ("which assumption breaks") is conceptual (see STATIC below).
 		};
 	},
+	'sssp-5': () => {
+		const run = dagShortestPathsTrace(S5_GRAPH, { source: 'S' });
+		const vorder = ['S', 'A', 'B', 'C', 'D', 'E'];
+		return {
+			0: distVal(run.dist.E), // numeric: final dist[E] (indirect, beats S→E(10))
+			1: vorder.map(id => `dist[${id}] = ${distVal(run.dist[id])}`), // order: dist[] in fixed vertex order (NOT topo order)
+			// part 2 ("why one pass + why negatives ok") is conceptual → STATIC below.
+		};
+	},
 	'apsp-1': () => {
 		const run = floydWarshall(A1_GRAPH);
 		const ids = run.ids;
@@ -524,6 +585,39 @@ const RECIPES = {
 			0: l2_13, // numeric: d[1][3] after k=2
 			1: `Vertex ${firstImprove('2', '4')}`, // choice: first vertex to improve d[2][4]
 			2: d15, // numeric: final d[1][5]
+		};
+	},
+	'apsp-3': () => {
+		const run = transitiveClosure(A3_GRAPH);
+		const ids = run.ids;
+		const ix = id => ids.indexOf(id);
+		const R = run.reach;
+		// part 0 — classify: reachable-from-a buckets.
+		const reachFromA = Object.fromEntries(
+			ids
+				.filter(id => id !== 'a')
+				.map(id => [id, R[ix('a')][ix(id)] ? 'reach' : 'noreach'])
+		);
+		// part 1 — numeric: off-diagonal TRUE count.
+		let offDiag = 0;
+		for (let i = 0; i < run.n; i += 1)
+			for (let j = 0; j < run.n; j += 1) if (i !== j && R[i][j]) offDiag += 1;
+		return {
+			0: reachFromA, // classify: who is reachable from a
+			1: offDiag, // numeric: # reachable ordered pairs (i != j)
+			// part 2 (Θ(V³) twin) is conceptual → STATIC below.
+		};
+	},
+	'apsp-4': () => {
+		const run = slowApsp(A4_GRAPH);
+		const ids = run.ids;
+		const ix = id => ids.indexOf(id);
+		// L^(2) = layers[1] (best path of at most 2 edges).
+		const l2 = run.layers[1];
+		return {
+			0: distVal(l2[ix('1')][ix('3')]), // numeric: l^(2)_{1,3} = 1
+			1: distVal(l2[ix('2')][ix('4')]), // numeric: l^(2)_{2,4} = −1
+			// part 2 (running time Θ(V⁴)) is conceptual; see STATIC below.
 		};
 	},
 	'linsort-1': () => {
@@ -879,6 +973,19 @@ RECIPES['quicksort-2'] = () => ({
 	0: getQuickSortFrames([1, 2, 3, 4, 5, 6]).comparisons,
 });
 
+// Quickselect / RANDOMIZED-SELECT: the pivot's final index after the first
+// PARTITION, the array after that partition, and the i-th order statistic are all
+// re-derived from quickselectTrace on the same input the bank uses. The "what does
+// it solve" and "worst/expected running time" choices are conceptual (STATIC).
+RECIPES['quicksort-3'] = () => {
+	const run = quickselectTrace([50, 80, 20, 90, 10, 70, 40, 60, 30], 4);
+	return {
+		0: run.firstPartition.pivotFinalIndex, // numeric: 0-based pivot landing index
+		1: `[${run.firstPartition.array.join(', ')}]`, // choice: array after 1st partition
+		3: run.selected, // numeric: the 4th-smallest = the return value
+	};
+};
+
 // Heapsort: re-derive the whole sort from buildMaxHeapTrace + chained
 // extractMaxTrace — the post-build heap, the first extracted max, the heap after
 // two extractions, and the fully-sorted (maxima reversed) array. The "why
@@ -973,6 +1080,11 @@ const STATIC = {
 	'apsp-1#3': 'concept: why k is the outermost loop',
 	'apsp-2#3':
 		'concept: transitive-closure analogue (min→OR, +→AND) of Floyd-Warshall',
+	'apsp-3#2':
+		'concept: transitive closure is the Θ(V³) boolean twin of Floyd-Warshall',
+	'apsp-4#2':
+		'concept: Slow-APSP is Θ(V⁴) (V−1 min-plus products at Θ(V³)); ' +
+		'Θ(V³)=Floyd-Warshall, Θ(V³ lg V)=Faster-APSP/repeated-squaring',
 	'linsort-1#3': 'concept: when counting sort is linear',
 	'linsort-3#3':
 		'concept: why bucket sort is expected Theta(n) (uniform spread)',
@@ -1002,6 +1114,10 @@ const STATIC = {
 		'concept: build O(n) + n*ExtractMax O(log n) = Θ(n log n), in place',
 	'quicksort-2#1': 'concept: T(n)=T(n-1)+n solves to Θ(n²)',
 	'quicksort-2#2': 'concept: a random/median pivot avoids the worst case',
+	'quicksort-3#2':
+		'concept: Randomized-Select(A,1,n,i) returns the i-th smallest (i-th order statistic)',
+	'quicksort-3#4':
+		'concept: Randomized-Select is worst-case Θ(n²), expected Θ(n)',
 	'master-3#2':
 		'concept: the Case-3 regularity condition a·f(n/b) <= c·f(n), c<1',
 	'master-3#5':
@@ -1021,6 +1137,8 @@ const STATIC = {
 	'np-2#2': 'concept: P=NP follows from one poly NP-complete algo',
 	'sssp-4#3':
 		'concept: why a settled vertex is not final once a negative edge exists',
+	'sssp-5#2':
+		'concept: why DAG-SP needs one topological-order pass and tolerates negative edges (no cycle ⇒ no negative cycle)',
 	'foundations-3#2':
 		'concept: why amortized O(1) (geometric copies < 2n averaged over n appends)',
 	'foundations-3#3':
@@ -1442,7 +1560,6 @@ const SEEDED_RECIPES = {
 		};
 	},
 	'mst-4': ({ edges, cut }) => {
-		const cutSet = new Set(cut);
 		const { crossing, light } = crossingEdges(edges, cut);
 		const label = e => `${e.u}–${e.v} (${e.w})`;
 		return {
