@@ -49,11 +49,16 @@ import {
 	bellmanFordTrace,
 	dagShortestPathsTrace,
 } from '../components/ShortestPaths/relaxTrace.js';
+import { SSSP_ALGO_ORDER } from '../components/ShortestPaths/ssspMeta.js';
 import {
 	buildMaxHeapTrace,
 	extractMaxTrace,
 } from '../components/Heaps/heapTrace.js';
 import { analyseRecurrence } from '../components/MasterTheorem/masterMath.js';
+import {
+	unrollRecurrence,
+	gPow2,
+} from '../components/MasterTheorem/iterativeRecurrence.js';
 import {
 	floydWarshall,
 	transitiveClosure,
@@ -79,6 +84,8 @@ import {
 	buildClimbingStairsFrames,
 } from '../components/Strategies/coinChangeFrames.js';
 import { activitySelect } from '../components/Strategies/activitySelect.js';
+import { tableDoubling } from '../components/Foundations/tableDoubling.js';
+import { galeShapley, blockingPairs, isStable } from '../lib/galeShapley.js';
 
 // ── derivation helpers, replicated 1:1 from examSets.js ─────────────────────
 // These intentionally mirror the bank's private helpers. The whole point is to
@@ -490,6 +497,13 @@ const RECIPES = {
 			4: r4.result, // choice: T4 Θ bound (Θ(n^3))
 		};
 	},
+	'master-4': () => {
+		const run = unrollRecurrence({ baseN: 1, baseVal: 1, g: gPow2, n: 8 });
+		return {
+			0: run.value, // numeric: T(8) by unrolling (= 2^8 − 1 = 255)
+			// parts 1 (Θ-class) and 2 (why not Master Theorem) are conceptual → STATIC
+		};
+	},
 	'mst-3': () => {
 		const base = kruskalTrace({ vertices: M3_VERTICES, edges: M3_EDGES });
 		const shifted = kruskalTrace({
@@ -539,6 +553,31 @@ const RECIPES = {
 			0: distVal(run.dist.E), // numeric: final dist[E] (indirect, beats S→E(10))
 			1: vorder.map(id => `dist[${id}] = ${distVal(run.dist[id])}`), // order: dist[] in fixed vertex order (NOT topo order)
 			// part 2 ("why one pass + why negatives ok") is conceptual → STATIC below.
+		};
+	},
+	'sssp-6': () => {
+		// Re-derive the classify buckets straight from the lesson's SSSP set.
+		// item id → its algorithm id (the 3 SSSP items use their ssspMeta ids;
+		// the 4 distractors use ids deliberately absent from SSSP_ALGO_ORDER).
+		const itemAlgoId = {
+			bellmanFord: 'bellmanFord',
+			dagShortestPaths: 'dagShortestPaths',
+			dijkstra: 'dijkstra',
+			floydWarshall: 'floydWarshall',
+			prim: 'prim',
+			kruskal: 'kruskal',
+			bfs: 'bfs',
+		};
+		const answer = Object.fromEntries(
+			Object.entries(itemAlgoId).map(([itemId, algoId]) => [
+				itemId,
+				SSSP_ALGO_ORDER.includes(algoId) ? 'sssp' : 'not-sssp',
+			])
+		);
+		return {
+			0: answer, // classify: SSSP membership derived from SSSP_ALGO_ORDER
+			// parts 1 & 2 (which one handles negatives; when BFS is correct) are
+			// conceptual choice parts → STATIC below.
 		};
 	},
 	'apsp-1': () => {
@@ -865,6 +904,14 @@ const RECIPES = {
 			// parts 2 & 3 (amortized-vs-worst-case reasoning) are conceptual → STATIC
 		};
 	},
+	'foundations-4': () => ({
+		// Re-derive the total element copies for n = 10 directly from the doubling
+		// simulator (independent of examSets.js). Resizes at sizes 1,2,4,8 →
+		// copies 1+2+4+8 = 15.
+		0: tableDoubling(10).copies, // numeric: total copies across all resizes (15)
+		// parts 1 & 2 (worst-vs-amortized meaning; why doubling beats constant-k)
+		// are conceptual → STATIC below.
+	}),
 	'sorting-1': () => {
 		const run = getMergeSortStepsWithStats(MS1_INPUT);
 		const steps = run.steps;
@@ -918,6 +965,30 @@ const RECIPES = {
 			0: run.selectedIds[0], // choice: first activity picked (earliest finish)
 			1: run.count, // numeric: maximum compatible activities
 			2: `{${run.selectedIds.join(', ')}}`, // choice: the full selected set
+		};
+	},
+	'strategies-4': () => {
+		// Replicate the instance independently (do NOT import the bank's copy).
+		const men = {
+			m1: ['w1', 'w2', 'w3'],
+			m2: ['w1', 'w3', 'w2'],
+			m3: ['w2', 'w3', 'w1'],
+		};
+		const women = {
+			w1: ['m2', 'm1', 'm3'],
+			w2: ['m1', 'm3', 'm2'],
+			w3: ['m3', 'm2', 'm1'],
+		};
+		const proposed = { m1: 'w1', m2: 'w3', m3: 'w2' };
+		const bp = blockingPairs(proposed, men, women); // exactly one: (m2,w1)
+		const gs = galeShapley(men, women); // man-optimal matching
+		return {
+			0: isStable(proposed, men, women)
+				? 'Yes — it is stable'
+				: 'No — it is not stable', // choice: stability (→ "No …")
+			1: `(${bp[0].man}, ${bp[0].woman})`, // choice: the blocking pair (→ "(m2, w1)")
+			2: Object.fromEntries(gs.pairs), // classify: man -> woman GS matching
+			// part 3 (termination + man-optimality) is conceptual → STATIC below.
 		};
 	},
 	// Purely conceptual sets: no generator produces these. Every part is static.
@@ -1122,9 +1193,15 @@ const STATIC = {
 		'concept: the Case-3 regularity condition a·f(n/b) <= c·f(n), c<1',
 	'master-3#5':
 		'concept: f=n/log n is not polynomially comparable to n^c (gap; basic theorem n/a)',
+	'master-4#1':
+		'concept: T(n)=2^n−1 simplifies to Θ(2^n) (geometric sum collapses; constants drop)',
+	'master-4#2':
+		'concept: Master Theorem needs T(n/b) (divide); T(n-1) subtracts a constant, so it does not apply',
 	'strategies-1#3': 'concept: greedy coin change not always optimal',
 	'strategies-2#2': 'concept: why memoization is efficient',
 	'strategies-3#3': 'concept: exchange argument; why greedy is optimal here',
+	'strategies-4#3':
+		'concept: Gale-Shapley always terminates with a stable matching and is man-optimal (each man gets his best partner in any stable matching)',
 	// (stacks-queues-1 has no static parts — all three are re-derived.)
 	'stacks-queues-2#0': 'concept: undo wants a stack',
 	'stacks-queues-2#1': 'concept: print queue wants a FIFO',
@@ -1139,10 +1216,19 @@ const STATIC = {
 		'concept: why a settled vertex is not final once a negative edge exists',
 	'sssp-5#2':
 		'concept: why DAG-SP needs one topological-order pass and tolerates negative edges (no cycle ⇒ no negative cycle)',
+	'sssp-6#1':
+		'concept: only Bellman-Ford handles negative edges on a general (cyclic) ' +
+		'graph (Dijkstra needs non-negative; DAG-SP needs a DAG)',
+	'sssp-6#2':
+		'concept: BFS gives shortest-path distances only on an unweighted/equal-weight graph',
 	'foundations-3#2':
 		'concept: why amortized O(1) (geometric copies < 2n averaged over n appends)',
 	'foundations-3#3':
 		'concept: why a single worst-case append is still O(n) (the resize copies all elements)',
+	'foundations-4#1':
+		'concept: Θ(n) worst-case per op vs O(1) amortized (guaranteed average over the worst-case sequence, no probability)',
+	'foundations-4#2':
+		'concept: why geometric doubling gives O(1) amortized while constant-k growth gives Θ(n) amortized (Θ(n²/k) total)',
 	'trees-3#3':
 		'concept: insertion order fixes BST shape; balanced O(log n) vs degenerate O(n) search',
 	'maxflow-3#3':

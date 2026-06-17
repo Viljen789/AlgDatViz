@@ -40,10 +40,18 @@ import {
 	dagShortestPathsTrace,
 } from '../components/ShortestPaths/relaxTrace.js';
 import {
+	SSSP_ALGO_ORDER,
+	SSSP_ALGORITHMS,
+} from '../components/ShortestPaths/ssspMeta.js';
+import {
 	buildMaxHeapTrace,
 	extractMaxTrace,
 } from '../components/Heaps/heapTrace.js';
 import { analyseRecurrence } from '../components/MasterTheorem/masterMath.js';
+import {
+	unrollRecurrence,
+	gPow2,
+} from '../components/MasterTheorem/iterativeRecurrence.js';
 import {
 	floydWarshall,
 	transitiveClosure,
@@ -72,6 +80,8 @@ import {
 	buildClimbingStairsFrames,
 } from '../components/Strategies/coinChangeFrames.js';
 import { activitySelect } from '../components/Strategies/activitySelect.js';
+import { tableDoubling } from '../components/Foundations/tableDoubling.js';
+import { galeShapley, blockingPairs, isStable } from '../lib/galeShapley.js';
 import { dijkstraSettleProbe, bfsDequeueProbe } from './traceProbes.js';
 
 // ── small derivation helpers (pure) ──────────────────────────────────────────
@@ -927,6 +937,119 @@ const problemT3 = {
 				`logarithmic factor, not a polynomial n^ε one, so no case fits: this is ` +
 				`the gap the basic Master Theorem cannot resolve. (The Akra-Bazzi method ` +
 				`handles it and gives Θ(n log log n), but the basic theorem stays silent.)`,
+		},
+	],
+};
+
+// =============================================================================
+// MASTER THEOREM, set 4 — a recurrence the Master Theorem does NOT solve. This
+// is a FIRST-ORDER recurrence T(n) = T(n-1) + g(n) (the size shrinks by a
+// CONSTANT, n-1, not by a FACTOR n/b), so the iteration (unrolling) method
+// applies, not the Master Theorem. The concrete value T(8) is DERIVED by
+// unrolling T(1)=1, T(n)=T(n-1)+2^(n-1) with unrollRecurrence; the closed-form
+// class Θ(2^n) and the "why not Master Theorem" reason are conceptual choices
+// (STATIC). Mirrors exam 2019 #11 (closed form 2^n − 1) and 2021 #7 (iteration).
+// =============================================================================
+
+// Unroll T(1) = 1, T(n) = T(n-1) + 2^(n-1) up to n = 8. The closed form is
+// 2^n − 1, so the derived value is 2^8 − 1 = 255 — but we read it off the
+// unroller, never hand-type it, so the key can only be what iteration produces.
+const ITERREC_BASE_N = 1;
+const ITERREC_BASE_VAL = 1;
+const ITERREC_N = 8;
+const iterRecRun = unrollRecurrence({
+	baseN: ITERREC_BASE_N,
+	baseVal: ITERREC_BASE_VAL,
+	g: gPow2,
+	n: ITERREC_N,
+});
+
+const problemIterRec = {
+	kind: 'problem',
+	stem:
+		'A first-order recurrence the Master Theorem cannot touch. Let T(1) = 1 ' +
+		'and T(n) = T(n-1) + 2^(n-1) for n > 1. Because each step removes a ' +
+		'CONSTANT from n (n-1), not a FACTOR (n/b), you solve it by ITERATION: ' +
+		'unroll T(n) = T(1) + Σ_{k=2}^{n} 2^(k-1) and sum the geometric series.',
+	parts: [
+		{
+			kind: 'numeric',
+			prompt:
+				'Unroll the recurrence. With T(1) = 1 and T(n) = T(n-1) + 2^(n-1), ' +
+				`what is T(${ITERREC_N})?`,
+			answer: iterRecRun.value,
+			placeholder: 'a value',
+			explanation:
+				`Unrolling gives T(n) = T(1) + (2^1 + 2^2 + … + 2^(n-1)) = 1 + ` +
+				`(2^n − 2) = 2^n − 1. For n = ${ITERREC_N} that is 2^${ITERREC_N} − 1 = ` +
+				`${iterRecRun.value}.`,
+		},
+		{
+			kind: 'choice',
+			prompt:
+				'Solved exactly, T(n) = 2^n − 1. Which Θ-class is that — i.e. the ' +
+				'tight asymptotic bound for T(n)?',
+			options: ['Θ(2^n)', 'Θ(n·2^n)', 'Θ(2^(n-1))', 'Θ(n^2)'],
+			answer: 'Θ(2^n)',
+			misconceptions: {
+				'Θ(n·2^n)':
+					'There is no factor of n. The geometric sum 1 + 2 + … + 2^(n-1) ' +
+					'COLLAPSES to 2^n − 1 (a constant times the last term), it does not ' +
+					'accumulate n equal terms. An arithmetic sum (e.g. T(n-1)+n) would ' +
+					'give a factor of n, but a geometric one does not.',
+				'Θ(2^(n-1))':
+					'Θ(2^(n-1)) = Θ(2^n / 2) = Θ(2^n): the constant factor 1/2 is ' +
+					'dropped in Θ-notation, so the simplified class is Θ(2^n).',
+				'Θ(n^2)':
+					'Θ(n^2) is the answer for T(n) = T(n-1) + n (an arithmetic sum, ' +
+					'n(n+1)/2). Here the added term 2^(n-1) grows GEOMETRICALLY, so the ' +
+					'total is exponential, not quadratic.',
+			},
+			explanation:
+				'T(n) = 2^n − 1, and dropping the −1 and any constant factor leaves ' +
+				'Θ(2^n). The sum is dominated by its last term 2^(n-1), which is ' +
+				'Θ(2^n) — the recurrence is exponential.',
+		},
+		{
+			kind: 'choice',
+			prompt:
+				'Why can the Master Theorem NOT solve T(n) = T(n-1) + 2^(n-1) ' +
+				'directly?',
+			options: [
+				'Because the subproblem is T(n-1) — the size drops by a CONSTANT (n-1), ' +
+					'not by a FACTOR (n/b); the Master Theorem only covers a·T(n/b) + f(n)',
+				'Because f(n) = 2^(n-1) is exponential, and the Master Theorem requires ' +
+					'f(n) to be a polynomial',
+				'Because there is only one subproblem (a = 1), and the Master Theorem ' +
+					'requires at least two recursive calls',
+				'Because the base case T(1) = 1 is nonzero, which the Master Theorem ' +
+					'forbids',
+			],
+			answer:
+				'Because the subproblem is T(n-1) — the size drops by a CONSTANT (n-1), ' +
+				'not by a FACTOR (n/b); the Master Theorem only covers a·T(n/b) + f(n)',
+			misconceptions: {
+				['Because f(n) = 2^(n-1) is exponential, and the Master Theorem requires ' +
+				'f(n) to be a polynomial']:
+					'The deal-breaker is the RECURSIVE term, not f(n). The Master ' +
+					'Theorem needs the subproblem to be n/b (divide by a constant). ' +
+					'T(n-1) subtracts a constant, so the form a·T(n/b)+f(n) never fits — ' +
+					'regardless of what f(n) is.',
+				['Because there is only one subproblem (a = 1), and the Master Theorem ' +
+				'requires at least two recursive calls']:
+					'a = 1 is fine for the Master Theorem (binary search is a·T(n/b) ' +
+					'with a = 1). The real issue is T(n-1) vs T(n/b): subtracting a ' +
+					'constant, not dividing by one.',
+				['Because the base case T(1) = 1 is nonzero, which the Master Theorem ' +
+				'forbids']:
+					'Base values are irrelevant to which method applies; the Master ' +
+					'Theorem ignores them. What rules it out is the T(n-1) shape.',
+			},
+			explanation:
+				'The Master Theorem solves T(n) = a·T(n/b) + f(n), where the size ' +
+				'shrinks by a FACTOR b (n/b). T(n) = T(n-1) + 2^(n-1) shrinks the size ' +
+				'by a CONSTANT (n-1), so it is a first-order recurrence outside the ' +
+				'theorem; the iteration (unrolling) method solves it instead.',
 		},
 	],
 };
@@ -3147,6 +3270,187 @@ const problemP3 = {
 };
 
 // =============================================================================
+// STABLE MATCHING (Gale-Shapley) — men-propose deferred acceptance, plus the
+// stability test for a PROPOSED matching. Tested by the two most recent real
+// exams (2023: "is this matching stable, name the blocking pair?"; 2022:
+// "meant for each other"). Filed under Strategies. EVERY gradeable key is
+// DERIVED: we CALL galeShapley / blockingPairs / isStable on the concrete
+// instance below and read the answers off the result.
+// =============================================================================
+
+// The instance. Preferences are MOST-PREFERRED FIRST (galeShapley convention).
+const SM_MEN = {
+	m1: ['w1', 'w2', 'w3'],
+	m2: ['w1', 'w3', 'w2'],
+	m3: ['w2', 'w3', 'w1'],
+};
+const SM_WOMEN = {
+	w1: ['m2', 'm1', 'm3'],
+	w2: ['m1', 'm3', 'm2'],
+	w3: ['m3', 'm2', 'm1'],
+};
+
+// The PROPOSED matching the question hands the student (man -> woman). Chosen so
+// it is UNSTABLE with EXACTLY ONE blocking pair (unique part-b answer).
+const SM_PROPOSED = { m1: 'w1', m2: 'w3', m3: 'w2' };
+
+// ── DERIVE every key by calling the generator (never hand-typed) ──
+const SM_PROPOSED_STABLE = isStable(SM_PROPOSED, SM_MEN, SM_WOMEN); // → false
+const SM_BLOCKING = blockingPairs(SM_PROPOSED, SM_MEN, SM_WOMEN); // → [{man:'m2',woman:'w1'}]
+const SM_BLOCK = SM_BLOCKING[0]; // the single blocking pair
+const SM_GS = galeShapley(SM_MEN, SM_WOMEN); // man-optimal stable matching
+
+// Readable label helpers (a pair "(mX, wY)" and a matching as a sorted string).
+const smPairLabel = (m, w) => `(${m}, ${w})`;
+const smMatchingStr = obj =>
+	Object.keys(obj)
+		.sort()
+		.map(m => `${m}–${obj[m]}`)
+		.join(', ');
+
+// Stable/unstable answers (a/b/c) as labels.
+const SM_STABLE_ANSWER = SM_PROPOSED_STABLE
+	? 'Yes — it is stable'
+	: 'No — it is not stable';
+const SM_BLOCK_ANSWER = smPairLabel(SM_BLOCK.man, SM_BLOCK.woman); // "(m2, w1)"
+// part c answer as a classify map man -> woman, read off the GS result.
+const SM_GS_MAP = Object.fromEntries(SM_GS.pairs); // { m1:'w2', m2:'w1', m3:'w3' }
+
+const problemStableMatch = {
+	kind: 'problem',
+	stem:
+		`Stable matching (Gale-Shapley). Three men {m1, m2, m3} and three women ` +
+		`{w1, w2, w3} each rank the other side, most-preferred first. A matching ` +
+		`pairs each man with one woman. It is UNSTABLE if some man m and woman w, ` +
+		`NOT matched to each other, each prefer the other to their current partner ` +
+		`(a "blocking pair"); otherwise it is STABLE.\n\n` +
+		`Men's preferences:\n` +
+		`    m1: ${SM_MEN.m1.join(' > ')}\n` +
+		`    m2: ${SM_MEN.m2.join(' > ')}\n` +
+		`    m3: ${SM_MEN.m3.join(' > ')}\n\n` +
+		`Women's preferences:\n` +
+		`    w1: ${SM_WOMEN.w1.join(' > ')}\n` +
+		`    w2: ${SM_WOMEN.w2.join(' > ')}\n` +
+		`    w3: ${SM_WOMEN.w3.join(' > ')}\n\n` +
+		`Proposed matching:  ${smMatchingStr(SM_PROPOSED)}.`,
+	parts: [
+		// a) DERIVED choice: is the proposed matching stable?
+		{
+			kind: 'choice',
+			prompt:
+				`Is the proposed matching ${smMatchingStr(SM_PROPOSED)} stable? ` +
+				`(Stable = no blocking pair.)`,
+			options: ['Yes — it is stable', 'No — it is not stable'],
+			answer: SM_STABLE_ANSWER,
+			misconceptions: {
+				'Yes — it is stable':
+					`Look for a man and woman who would BOTH rather be with each other than ` +
+					`with their assigned partner. Here m2 is matched to w3 but ranks w1 ` +
+					`first, and w1 is matched to m1 but ranks m2 first — so (m2, w1) is a ` +
+					`blocking pair and the matching is NOT stable.`,
+			},
+			explanation:
+				`A matching is stable only when NO pair blocks it. ${SM_BLOCK.man} prefers ` +
+				`${SM_BLOCK.woman} to his partner ${SM_PROPOSED[SM_BLOCK.man]}, and ` +
+				`${SM_BLOCK.woman} prefers ${SM_BLOCK.man} to her partner ` +
+				`${Object.keys(SM_PROPOSED).find(m => SM_PROPOSED[m] === SM_BLOCK.woman)}, ` +
+				`so (${SM_BLOCK.man}, ${SM_BLOCK.woman}) blocks it — the matching is unstable.`,
+		},
+		// b) DERIVED choice: which is the blocking pair? (instance has exactly one)
+		{
+			kind: 'choice',
+			prompt:
+				`Which pair is the blocking pair — the man and woman who would abandon ` +
+				`their assigned partners for each other?`,
+			options: [
+				smPairLabel('m2', 'w1'),
+				smPairLabel('m1', 'w2'),
+				smPairLabel('m3', 'w1'),
+				smPairLabel('m1', 'w3'),
+			],
+			answer: SM_BLOCK_ANSWER,
+			misconceptions: {
+				[smPairLabel('m1', 'w2')]:
+					`m1 does prefer w2 (his #2) to his partner w1 (his #1)? No — w1 IS m1's ` +
+					`top choice, so m1 is perfectly happy and will not leave. A blocking pair ` +
+					`needs BOTH partners to want to switch.`,
+				[smPairLabel('m3', 'w1')]:
+					`w1 ranks m3 LAST, so she would never leave m1 for m3. Both sides must ` +
+					`prefer each other to their current partner for a pair to block.`,
+				[smPairLabel('m1', 'w3')]:
+					`m1 is matched to his #1 (w1) and ranks w3 last, so he will not switch. ` +
+					`No blocking here.`,
+			},
+			explanation:
+				`(${SM_BLOCK.man}, ${SM_BLOCK.woman}) is the unique blocking pair: ` +
+				`${SM_BLOCK.man} ranks ${SM_BLOCK.woman} first but is stuck with ` +
+				`${SM_PROPOSED[SM_BLOCK.man]} (#2), and ${SM_BLOCK.woman} ranks ` +
+				`${SM_BLOCK.man} first but is stuck with ` +
+				`${Object.keys(SM_PROPOSED).find(m => SM_PROPOSED[m] === SM_BLOCK.woman)} ` +
+				`(#2). They each prefer the other, so they would elope.`,
+		},
+		// c) DERIVED classify: run Gale-Shapley (men propose) → matching man->woman
+		{
+			kind: 'classify',
+			prompt:
+				`Now run Gale-Shapley with the MEN proposing (each free man proposes ` +
+				`down his list; each woman keeps her best suitor so far). Match each man ` +
+				`to the woman he ends up with.`,
+			items: [
+				{ id: 'm1', label: 'm1' },
+				{ id: 'm2', label: 'm2' },
+				{ id: 'm3', label: 'm3' },
+			],
+			categories: [
+				{ id: 'w1', label: 'w1' },
+				{ id: 'w2', label: 'w2' },
+				{ id: 'w3', label: 'w3' },
+			],
+			answer: SM_GS_MAP, // { m1:'w2', m2:'w1', m3:'w3' } — DERIVED from galeShapley
+			explanation:
+				`Men-proposing deferred acceptance settles to ` +
+				`${smMatchingStr(SM_GS_MAP)}. m2 lands his first choice w1 (she prefers ` +
+				`him over m1, so m1 is bumped and re-proposes to w2); m1 then takes w2 ` +
+				`(her favourite) and m3 takes w3 (hers). The result is stable — note it ` +
+				`fixes the blocking pair (m2, w1) by actually pairing them.`,
+		},
+		// d) STATIC concept choice: termination + man-optimality
+		{
+			kind: 'choice',
+			prompt:
+				`What does Gale-Shapley (men proposing) always guarantee about its ` +
+				`output?`,
+			options: [
+				'It always terminates with a stable matching, and that matching is man-optimal: every man gets the best partner he could have in ANY stable matching',
+				'It finds the matching that maximizes total happiness summed over everyone',
+				'It may loop forever if preferences conflict, so a step limit is needed',
+				'It is woman-optimal: every woman gets her best possible stable partner',
+			],
+			answer:
+				'It always terminates with a stable matching, and that matching is man-optimal: every man gets the best partner he could have in ANY stable matching',
+			misconceptions: {
+				'It finds the matching that maximizes total happiness summed over everyone':
+					`Gale-Shapley optimizes STABILITY, not aggregate happiness. Among stable ` +
+					`matchings it is best for the proposing side, but it does not maximize a ` +
+					`sum of preferences and there may be (unstable) matchings people like more.`,
+				'It may loop forever if preferences conflict, so a step limit is needed':
+					`It always terminates: each man proposes to each woman at most once, so ` +
+					`there are at most n² proposals. No step limit is needed.`,
+				'It is woman-optimal: every woman gets her best possible stable partner':
+					`It is the reverse — MEN proposing gives the MAN-optimal (and ` +
+					`woman-pessimal) stable matching. Women get their WORST stable partner. ` +
+					`Swap the roles to make it woman-optimal.`,
+			},
+			explanation:
+				`Deferred acceptance always halts (≤ n² proposals) with a stable matching, ` +
+				`and the proposing side does best: men-proposing is man-optimal — each man ` +
+				`is matched to the best partner he has in any stable matching — and ` +
+				`simultaneously woman-pessimal.`,
+		},
+	],
+};
+
+// =============================================================================
 // NP-COMPLETENESS — conceptual classification (P / NP / NP-hard / NP-complete),
 // the reduction DIRECTION for proving NP-hardness, and the verifier-in-polynomial-
 // time definition of NP. All 'choice'/'classify' with unambiguous correct options.
@@ -4669,6 +4973,151 @@ const problemDagSp5 = {
 };
 
 // =============================================================================
+// SSSP — CLASSIFY: which curriculum algorithms solve single-source shortest
+// paths in a WEIGHTED DIRECTED graph? (the recurring 2019-#6 exam type). The
+// membership is DERIVED at module load from ssspMeta's SSSP_ALGO_ORDER: an item
+// is in the 'sssp' bucket IFF its algorithm id is in SSSP_ALGO_ORDER. So the
+// answer key can never drift from the lesson's own list of SSSP algorithms.
+// Distractors: Floyd-Warshall (all-pairs), Prim/Kruskal (MST), BFS (unweighted).
+// =============================================================================
+
+// The classify items. The three TRUE-SSSP items are keyed by their ssspMeta ids
+// (so membership is structural, derived below); their visible labels are pulled
+// from SSSP_ALGORITHMS[id].name so even the wording can't drift. The four
+// distractor items carry a non-SSSP `algoId` (deliberately NOT in
+// SSSP_ALGO_ORDER), so they fall to 'not-sssp' automatically.
+const SSSP_CLASSIFY_ITEMS = [
+	// id === ssspMeta algorithm id  → derived into the 'sssp' bucket
+	{
+		id: 'bellmanFord',
+		algoId: 'bellmanFord',
+		label: SSSP_ALGORITHMS.bellmanFord.name,
+	},
+	{
+		id: 'dagShortestPaths',
+		algoId: 'dagShortestPaths',
+		// the exam spells this "DAG-Shortest-Paths"; the lesson's short name is DAG-SP.
+		label: `DAG-Shortest-Paths (${SSSP_ALGORITHMS.dagShortestPaths.name})`,
+	},
+	{ id: 'dijkstra', algoId: 'dijkstra', label: SSSP_ALGORITHMS.dijkstra.name },
+	// distractors: algoId is NOT a member of SSSP_ALGO_ORDER → 'not-sssp'
+	{ id: 'floydWarshall', algoId: 'floydWarshall', label: 'Floyd-Warshall' },
+	{ id: 'prim', algoId: 'prim', label: 'Prim' },
+	{ id: 'kruskal', algoId: 'kruskal', label: 'Kruskal' },
+	{ id: 'bfs', algoId: 'bfs', label: 'BFS' },
+];
+
+// DERIVED answer map: bucket each item by whether its algoId is one of the
+// lesson's SSSP algorithms. NOT hand-written — recomputed from SSSP_ALGO_ORDER.
+const SSSP_CLASSIFY_ANSWER = Object.fromEntries(
+	SSSP_CLASSIFY_ITEMS.map(it => [
+		it.id,
+		SSSP_ALGO_ORDER.includes(it.algoId) ? 'sssp' : 'not-sssp',
+	])
+);
+
+const problemClassifySssp = {
+	kind: 'problem',
+	stem:
+		'A recurring exam question: of the curriculum’s graph algorithms, WHICH ones ' +
+		'compute single-source shortest paths in a WEIGHTED, DIRECTED graph? Sort each ' +
+		'algorithm by whether it solves that exact problem. (The course teaches exactly ' +
+		'three SSSP algorithms; the rest solve a DIFFERENT problem — all-pairs, minimum ' +
+		'spanning tree, or unweighted traversal.)',
+	parts: [
+		{
+			kind: 'classify',
+			prompt:
+				'Sort each algorithm into one bucket: does it solve SINGLE-SOURCE SHORTEST ' +
+				'PATHS on a weighted directed graph, or does it solve something else? (Watch ' +
+				'the distractors: Floyd-Warshall is ALL-pairs, Prim and Kruskal build a ' +
+				'minimum spanning tree, and BFS only finds shortest paths when the graph is ' +
+				'unweighted.)',
+			items: SSSP_CLASSIFY_ITEMS.map(({ id, label }) => ({ id, label })),
+			categories: [
+				{
+					id: 'sssp',
+					label: 'Solves single-source shortest paths (weighted, directed)',
+				},
+				{ id: 'not-sssp', label: 'Solves a DIFFERENT problem' },
+			],
+			answer: SSSP_CLASSIFY_ANSWER,
+			explanation:
+				'The curriculum’s three single-source shortest-path algorithms are ' +
+				'Bellman-Ford, DAG-Shortest-Paths, and Dijkstra — each takes one source and ' +
+				'fills dist[] over a weighted graph by relaxing edges. The others answer a ' +
+				'different question: Floyd-Warshall computes ALL-pairs distances (a whole ' +
+				'V×V matrix), Prim and Kruskal build a minimum spanning TREE of an undirected ' +
+				'graph (no source, no shortest paths), and BFS measures distance only when ' +
+				'every edge has the same weight (unweighted) — on a truly weighted graph it ' +
+				'can report the wrong distance.',
+		},
+		{
+			kind: 'choice',
+			prompt:
+				'Among those three SSSP algorithms, exactly one works on a GENERAL weighted ' +
+				'digraph that may have NEGATIVE edge weights AND cycles. Which one?',
+			options: [
+				'Bellman-Ford',
+				'Dijkstra',
+				'DAG-Shortest-Paths',
+				'All three handle negative edges equally well',
+			],
+			answer: 'Bellman-Ford',
+			misconceptions: {
+				Dijkstra:
+					'Dijkstra REQUIRES non-negative weights: it settles the closest frontier ' +
+					'vertex and never revisits it, so a later negative edge can prove that ' +
+					'choice wrong. It is the fastest of the three, but only on non-negative ' +
+					'graphs.',
+				'DAG-Shortest-Paths':
+					'DAG-Shortest-Paths tolerates negative weights but REQUIRES a DAG: it relies ' +
+					'on a topological order, which exists only when there are no cycles. On a ' +
+					'cyclic graph it cannot even start.',
+				'All three handle negative edges equally well':
+					'Only Bellman-Ford does. Dijkstra needs non-negative weights; ' +
+					'DAG-Shortest-Paths needs an acyclic graph.',
+			},
+			explanation:
+				'Bellman-Ford relaxes every edge |V|−1 times and then runs one extra pass to ' +
+				'detect a reachable negative-weight cycle, so it is the only one of the three ' +
+				'that handles negative edges on a general (possibly cyclic) graph. Dijkstra ' +
+				'needs weights ≥ 0; DAG-Shortest-Paths needs the graph to be acyclic.',
+		},
+		{
+			kind: 'choice',
+			prompt:
+				'BFS appears in the "different problem" bucket above. On what kind of graph ' +
+				'does BFS actually return correct SHORTEST-path distances?',
+			options: [
+				'Only when every edge has equal weight (i.e. an unweighted graph)',
+				'On any weighted directed graph, just like Dijkstra',
+				'On any graph with non-negative weights',
+				'Only on a DAG',
+			],
+			answer:
+				'Only when every edge has equal weight (i.e. an unweighted graph)',
+			misconceptions: {
+				'On any weighted directed graph, just like Dijkstra':
+					'BFS counts EDGES, not weight. A 2-edge path of light edges can be cheaper ' +
+					'than a 1-edge heavy edge, but BFS would still call the 1-edge path "closer". ' +
+					'On weighted graphs you need Dijkstra or Bellman-Ford.',
+				'On any graph with non-negative weights':
+					'Non-negativity is what Dijkstra needs, not BFS. BFS ignores weights ' +
+					'entirely, so it is correct only when the weights carry no information — i.e. ' +
+					'they are all equal / the graph is unweighted.',
+			},
+			explanation:
+				'BFS explores in order of EDGE COUNT from the source, so the layer a vertex ' +
+				'lands in equals its shortest-path distance only when every edge costs the ' +
+				'same (an unweighted graph, equivalently all-weights-1). The moment weights ' +
+				'differ, fewest-edges ≠ cheapest, and BFS can be wrong — which is exactly why ' +
+				'the weighted problem needs Dijkstra / Bellman-Ford / DAG-Shortest-Paths.',
+		},
+	],
+};
+
+// =============================================================================
 // FOUNDATIONS (amortized analysis) — a dynamic-array doubling hand-trace. A
 // dynamic array starts at capacity 1 and DOUBLES when full; appending n elements
 // copies elements ONLY at resizes, and those copies sum to 1 + 2 + 4 + … < 2n, so
@@ -4809,6 +5258,120 @@ const problemF3 = {
 				`buffer before the new element lands. The amortized O(1) bound averages this ` +
 				`rare O(n) spike over the many O(1) appends; it does not make any individual ` +
 				`append cheap.`,
+		},
+	],
+};
+
+// =============================================================================
+// FOUNDATIONS-4 — AMORTIZED ANALYSIS (Table-Insert / dynamic table, CLRS ch.17).
+// The exam's classic question (2018 #6): Table-Insert is Θ(n) worst-case yet
+// O(1) AMORTIZED. The numeric copy count is DERIVED by simulating the doubling
+// (tableDoubling); the two concept parts pin the worst-vs-amortized meaning and
+// why geometric doubling — not adding a constant — buys O(1) amortized.
+// =============================================================================
+const F4_N = 10;
+const F4_DOUBLING = tableDoubling(F4_N); // { copies, resizes, totalCost, capacity }
+const F4_COPIES = F4_DOUBLING.copies; // 15 — total element copies across resizes
+
+const problemAmortized = {
+	kind: 'problem',
+	stem:
+		`A dynamic table runs Table-Insert with table DOUBLING: it starts at ` +
+		`capacity 1, and whenever it is full the next insert allocates a buffer of ` +
+		`double the capacity and COPIES every stored element across before adding the ` +
+		`new one. You insert n = ${F4_N} items. This is the structure behind "Θ(n) ` +
+		`worst-case but O(1) amortized" — count the copying, then say precisely what ` +
+		`that phrase means and why doubling is what makes it true.`,
+	parts: [
+		{
+			kind: 'numeric',
+			prompt:
+				`Insert n = ${F4_N} items into the table (start capacity 1, double when ` +
+				`full). How many total element COPIES happen across ALL the resizes? ` +
+				`(Each resize copies every element currently stored; the very first ` +
+				`insert into capacity 1 copies nothing.)`,
+			answer: F4_COPIES,
+			placeholder: 'a copy count',
+			explanation:
+				`The table fills at sizes 1, 2, 4, 8, so it doubles there, copying ` +
+				`1 + 2 + 4 + 8 = ${F4_COPIES} elements in total (capacity climbs ` +
+				`1 → 2 → 4 → 8 → ${F4_DOUBLING.capacity}). Together with the ${F4_N} ` +
+				`inserts that is ${F4_DOUBLING.totalCost} units of work for ${F4_N} ` +
+				`inserts — under 3n — which is the Θ(1) amortized cost per insert.`,
+		},
+		{
+			kind: 'choice',
+			prompt:
+				`Table-Insert is Θ(n) in the WORST case for a single insert, yet O(1) ` +
+				`AMORTIZED. What does that pair of statements mean?`,
+			options: [
+				'One insert can cost Θ(n) (the resize copies everything), but any sequence of n inserts costs Θ(n) total, so the cost averaged over the sequence is O(1) per insert — a guaranteed average, with no probability involved',
+				'Every single insert is guaranteed to cost O(1) in the worst case, and Θ(n) is just a loose over-estimate',
+				'The amortized cost is Θ(n) per insert; "amortized" is another name for the worst case',
+				'Amortized O(1) means the average cost when the inputs are drawn at random; on a worst-case input each insert is still Θ(n)',
+			],
+			answer:
+				'One insert can cost Θ(n) (the resize copies everything), but any sequence of n inserts costs Θ(n) total, so the cost averaged over the sequence is O(1) per insert — a guaranteed average, with no probability involved',
+			misconceptions: {
+				'Every single insert is guaranteed to cost O(1) in the worst case, and Θ(n) is just a loose over-estimate':
+					`No — the insert that triggers a resize really does copy all the stored ` +
+					`elements, so its worst-case cost is Θ(n), not a loose bound. Amortized ` +
+					`O(1) is about the TOTAL over a sequence, not a per-operation worst case.`,
+				'The amortized cost is Θ(n) per insert; "amortized" is another name for the worst case':
+					`Amortized is not the worst case. n inserts do Θ(n) work in TOTAL ` +
+					`(< 3n here), so the amortized cost is that total divided by n = O(1) per ` +
+					`insert. The Θ(n) figure is the worst case for ONE insert.`,
+				'Amortized O(1) means the average cost when the inputs are drawn at random; on a worst-case input each insert is still Θ(n)':
+					`Amortized analysis has no probability in it. It is a guaranteed average ` +
+					`over the WORST-CASE sequence of operations: even the most expensive ` +
+					`possible run of n inserts costs Θ(n) total, hence O(1) each. That is ` +
+					`different from average-case analysis, which averages over a distribution ` +
+					`of inputs.`,
+			},
+			explanation:
+				`Amortized cost is the worst-case total for a sequence, spread over the ` +
+				`operations in it — a hard guarantee, not an expectation. Here n inserts ` +
+				`cost < 3n in total no matter what, so each is O(1) amortized, even though ` +
+				`the single insert that resizes is Θ(n). Worst-case-per-operation and ` +
+				`amortized are answers to two different questions about the same operation.`,
+		},
+		{
+			kind: 'choice',
+			prompt:
+				`Why does DOUBLING the capacity give O(1) amortized, while GROWING by a ` +
+				`fixed constant k (capacity += k on each resize) does not?`,
+			options: [
+				'Doubling makes resizes geometrically rarer, so their copy costs sum to Θ(n) over n inserts → O(1) each; adding a constant k forces ~n/k resizes copying Θ(n) each → Θ(n²/k) total → Θ(n) amortized, far worse',
+				'Doubling and adding a constant give the same Θ(1) amortized cost; the choice only affects how much memory is wasted',
+				'Adding a constant is better, because each resize copies fewer elements than a doubling does',
+				'Doubling is O(1) amortized because each individual insert copies at most 2 elements',
+			],
+			answer:
+				'Doubling makes resizes geometrically rarer, so their copy costs sum to Θ(n) over n inserts → O(1) each; adding a constant k forces ~n/k resizes copying Θ(n) each → Θ(n²/k) total → Θ(n) amortized, far worse',
+			misconceptions: {
+				'Doubling and adding a constant give the same Θ(1) amortized cost; the choice only affects how much memory is wasted':
+					`The growth strategy changes the TIME, not just the space. Doubling sums ` +
+					`copy costs to Θ(n) total (O(1) amortized); adding a constant k makes ` +
+					`~n/k resizes that copy Θ(n) each, totalling Θ(n²/k) = Θ(n) amortized — ` +
+					`asymptotically worse, not equal.`,
+				'Adding a constant is better, because each resize copies fewer elements than a doubling does':
+					`A single resize copies the whole current contents either way; what ` +
+					`matters is HOW OFTEN you resize. Adding a constant resizes ~n/k times ` +
+					`(linear in n), so the copies pile up to Θ(n²/k). Doubling resizes only ` +
+					`~log n times, so the geometric sum stays Θ(n).`,
+				'Doubling is O(1) amortized because each individual insert copies at most 2 elements':
+					`Not per insert — the insert that triggers the last resize copies all ~n ` +
+					`stored elements, so that one is Θ(n). Doubling is O(1) AMORTIZED because ` +
+					`the geometric series of copy costs (1 + 2 + 4 + … < 2n) is Θ(n) in TOTAL ` +
+					`across the n inserts.`,
+			},
+			explanation:
+				`With doubling, the copy costs form a geometric series 1 + 2 + 4 + … < 2n, ` +
+				`so the total over n inserts is Θ(n) → O(1) amortized. With a fixed ` +
+				`increment k, the table resizes about n/k times and the r-th resize copies ` +
+				`about r·k elements, giving k·(1 + 2 + … + n/k) = Θ(n²/k) total → Θ(n) ` +
+				`amortized. Geometric growth is exactly what collapses the total from ` +
+				`quadratic to linear.`,
 		},
 	],
 };
@@ -5317,6 +5880,12 @@ export const EXAM_SETS = [
 		problem: problemT3,
 	},
 	{
+		id: 'master-4',
+		topicId: 'master-theorem',
+		topicName: 'Recursion & the master theorem',
+		problem: problemIterRec,
+	},
+	{
 		id: 'mst-3',
 		topicId: 'mst',
 		topicName: 'Minimum spanning trees',
@@ -5345,6 +5914,12 @@ export const EXAM_SETS = [
 		topicId: 'shortest-paths',
 		topicName: 'Shortest paths (single-source)',
 		problem: problemDagSp5,
+	},
+	{
+		id: 'sssp-6',
+		topicId: 'shortest-paths',
+		topicName: 'Shortest paths (single-source)',
+		problem: problemClassifySssp,
 	},
 	{
 		id: 'apsp-1',
@@ -5481,6 +6056,12 @@ export const EXAM_SETS = [
 		problem: problemF3,
 	},
 	{
+		id: 'foundations-4',
+		topicId: 'foundations',
+		topicName: 'Arrays & complexity',
+		problem: problemAmortized,
+	},
+	{
 		id: 'stacks-queues-1',
 		topicId: 'stacks-queues',
 		topicName: 'Stacks & queues',
@@ -5545,6 +6126,12 @@ export const EXAM_SETS = [
 		topicId: 'strategies',
 		topicName: 'Strategies',
 		problem: problemP3,
+	},
+	{
+		id: 'strategies-4',
+		topicId: 'strategies',
+		topicName: 'Strategies',
+		problem: problemStableMatch,
 	},
 	{
 		id: 'np-1',
