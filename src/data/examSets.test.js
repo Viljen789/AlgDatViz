@@ -1339,6 +1339,253 @@ const SEEDED_RECIPES = {
 		const dpTable = run.frames[run.frames.length - 1].dpTable;
 		return { 0: dpTable[4], 1: dpTable[n] };
 	},
+	'quicksort-1': ({ array }) => {
+		const n = array.length;
+		const run = getQuickSortFrames(array);
+		const place = run.frames.find(
+			f =>
+				f.phase === 'place' &&
+				f.range &&
+				f.range[0] === 0 &&
+				f.range[1] === n - 1
+		);
+		const after = place.array;
+		return {
+			0: place.pivotIndex,
+			1: `[${after.join(', ')}]`,
+			2: `[${after.slice(0, place.pivotIndex).join(', ')}]`,
+			3: run.comparisons,
+		};
+	},
+	'quicksort-2': ({ sorted }) => ({
+		0: getQuickSortFrames(sorted).comparisons,
+	}),
+	'sorting-3': ({ n }) => {
+		const factorial = m => {
+			let product = 1;
+			for (let i = 2; i <= m; i += 1) product *= i;
+			return product;
+		};
+		return {
+			0: factorial(n),
+			1: Math.ceil(Math.log2(factorial(n))),
+		};
+	},
+	'linsort-3': ({ values, numBuckets, probe }) => {
+		const run = bucketSort(values, numBuckets);
+		const probeBucket = run.bucketIndexOf(probe);
+		return {
+			0: probeBucket,
+			1: run.buckets[probeBucket].map(String),
+			2: run.sorted.map(String),
+		};
+	},
+	'trees-2': ({ insertOrder, target }) => {
+		const root = buildBst(insertOrder);
+		const inorder = inorderValues(root);
+		const successor = inorder[inorder.indexOf(target) + 1];
+		const afterDel = deleteValue(root, target);
+		const afterPre = (() => {
+			const steps = getTraversalSteps(afterDel, 'preorder');
+			return steps[steps.length - 1].output.map(Number);
+		})();
+		return {
+			0: successor, // numeric: replacement key (in-order successor)
+			2: inorderValues(afterDel).map(String), // order: in-order after delete
+			3: `[${afterPre.join(', ')}]`, // choice: pre-order after delete
+		};
+	},
+	'trees-3': ({ insertOrder }) => {
+		// Re-implement the edge-convention height locally (empty = -1, leaf = 0) so
+		// the re-derivation does not trust examInstances.js's bstHeight.
+		const height = node =>
+			node == null ? -1 : 1 + Math.max(height(node.left), height(node.right));
+		const n = insertOrder.length;
+		const root = buildBst(insertOrder);
+		const sorted = [...insertOrder].sort((a, b) => a - b);
+		return {
+			0: height(root), // numeric: height of the built tree
+			1: height(buildBst(sorted)), // numeric: degenerate chain height (n - 1)
+			2: Math.floor(Math.log2(n)), // numeric: minimum height floor(log2 n)
+		};
+	},
+	'heaps-3': ({ array }) => {
+		const heap0 = buildMaxHeapTrace(array).finalHeap;
+		let heap = [...heap0];
+		const maxes = [];
+		const after = [];
+		while (heap.length > 0) {
+			const r = extractMaxTrace({ heap });
+			maxes.push(r.max);
+			heap = r.finalHeap;
+			after.push([...heap]);
+		}
+		const sorted = [...maxes].reverse();
+		return {
+			0: `[${heap0.join(', ')}]`, // choice: post-build max-heap
+			1: maxes[0], // numeric: first element extracted (the max)
+			2: `[${after[1].join(', ')}]`, // choice: heap after the first 2 extractions
+			3: `[${sorted.join(', ')}]`, // choice: final fully-sorted array
+		};
+	},
+	'graphs-2': ({ vertices, edges, candidate }) => {
+		const t = topoSort(vertices, edges);
+		const indegTarget = vertices.reduce((best, v) =>
+			t.indegree[v] > t.indegree[best] ? v : best
+		);
+		return {
+			0: t.order[0], // choice: first vertex emitted (the unique source)
+			1: t.indegree[indegTarget], // numeric: largest in-degree
+			2: t.order, // order: full topological order
+			3: isValidTopoOrder(candidate, edges) ? 'Valid' : 'Invalid', // choice: validity
+			// part 4 (cycle ⇒ no order) is conceptual → SEEDED_STATIC
+		};
+	},
+	'mst-4': ({ edges, cut }) => {
+		const cutSet = new Set(cut);
+		const { crossing, light } = crossingEdges(edges, cut);
+		const label = e => `${e.u}–${e.v} (${e.w})`;
+		return {
+			0: crossing.map(label), // order: crossing edges, ascending weight
+			1: label(light), // choice: the safe (lightest crossing) edge
+			2: light.w, // numeric: its weight
+			// part 3 (the exchange argument) is conceptual → SEEDED_STATIC
+		};
+	},
+	'apsp-2': ({ graph }) => {
+		const firstImprove = (layers, idx, i, j) => {
+			for (let k = 1; k < layers.length; k++) {
+				const prev = layers[k - 1][i][j];
+				const cur = layers[k][i][j];
+				if (JSON.stringify(prev) !== JSON.stringify(cur)) return idx[k - 1];
+			}
+			return null;
+		};
+		const run = floydWarshall(graph);
+		const idx = run.ids;
+		const ix = id => idx.indexOf(id);
+		const l2_13 = distVal(run.layers[2][ix('1')][ix('3')]);
+		const first14 = firstImprove(run.layers, idx, ix('1'), ix('4'));
+		const fin14 = distVal(run.dist[ix('1')][ix('4')]);
+		return {
+			0: l2_13, // numeric: d[1][3] after k=2
+			1: `Vertex ${first14}`, // choice: first vertex to lower d[1][4]
+			2: fin14, // numeric: final d[1][4]
+		};
+	},
+	'maxflow-2': ({ network }) => {
+		const run = edmondsKarpTrace(network);
+		const first = run.frames.find(f => f.bottleneck != null);
+		return {
+			0: first.bottleneck, // numeric: first augmenting path's bottleneck
+			1: run.value, // numeric: max-flow value
+			2: run.minCut.capacity, // numeric: min-cut capacity (= max flow)
+			3: run.minCut.S.includes('D') // choice: which side D is on
+				? 'Source side (with S)'
+				: 'Sink side (with T)',
+		};
+	},
+	'maxflow-3': ({ bipartite }) => {
+		// Re-encode the SAME fresh bipartite graph into the SAME unit-capacity
+		// network, independently of the builder, then read every key off run.value.
+		const left = ['L1', 'L2', 'L3', 'L4'];
+		const right = ['R1', 'R2', 'R3', 'R4'];
+		const network = {
+			nodes: ['S', ...left, ...right, 'T'].map(id => ({ id })),
+			source: 'S',
+			sink: 'T',
+			edges: [
+				...left.map(l => ({ from: 'S', to: l, capacity: 1 })),
+				...bipartite.map(([l, r]) => ({ from: l, to: r, capacity: 1 })),
+				...right.map(r => ({ from: r, to: 'T', capacity: 1 })),
+			],
+		};
+		const run = edmondsKarpTrace(network);
+		const matching = run.value;
+		const perfect = matching === left.length;
+		return {
+			0: matching, // numeric: maximum matching size (= max-flow value)
+			1: perfect // choice: does a perfect matching exist (derived option string)
+				? `Yes, every left vertex is matched (size ${matching} = |L| = ${left.length})`
+				: `No, the maximum matching has size ${matching}, below |L| = ${left.length}`,
+			2: right.length - matching, // numeric: unmatched right vertices
+		};
+	},
+	'sssp-4': ({ graph }) => {
+		const dij = dijkstraTrace(graph, { source: 'S' });
+		const bf = bellmanFordTrace(graph, { source: 'S' });
+		const wrong = graph.edges.find(e => e.weight < 0).to; // head of the neg edge
+		return {
+			0: distVal(dij.dist.A), // numeric: distance Dijkstra REPORTS for A (wrong)
+			1: distVal(bf.dist.A), // numeric: TRUE shortest dist[A] (Bellman-Ford)
+			2: wrong, // choice: the vertex Dijkstra gets wrong (= 'A')
+		};
+	},
+	'master-3': ({ t3, t4 }) => {
+		const r3 = analyseRecurrence(t3);
+		const r4 = analyseRecurrence(t4);
+		return {
+			0: r3.name, // choice: T3 case (Case 3)
+			1: r3.result, // choice: T3 Θ bound
+			3: r4.name, // choice: T4 case (Case 3)
+			4: r4.result, // choice: T4 Θ bound
+		};
+	},
+	'foundations-3': ({ n }) => {
+		// Re-derive the doubling counts from first principles (independent of the
+		// builder): start at capacity 1, double when full, copy only at resizes.
+		const simulate = count => {
+			let capacity = 1;
+			let size = 0;
+			let copies = 0;
+			let doublings = 0;
+			for (let i = 0; i < count; i += 1) {
+				if (size === capacity) {
+					copies += size;
+					capacity *= 2;
+					doublings += 1;
+				}
+				size += 1;
+			}
+			return { copies, doublings };
+		};
+		const sim = simulate(n);
+		return {
+			0: sim.copies, // numeric: total element copies across resizes
+			1: sim.doublings, // numeric: number of doublings
+		};
+	},
+	'hashing-2': ({ keys, capacity }) => {
+		const entries = keys.map(k => ({ key: k, value: k.length }));
+		const after = createBucketsFromEntries(entries, capacity * 2);
+		const probeAfter = after.findIndex(b => b.some(e => e.key === keys[0]));
+		return {
+			0: keys.length / capacity, // numeric: load factor alpha before resize
+			1: Math.max(...after.map(b => b.length)), // numeric: longest chain after resize
+			2: probeAfter, // numeric: keys[0]'s bucket once m doubles
+		};
+	},
+	'strategies-3': ({ activities }) => {
+		const run = activitySelect(activities);
+		return {
+			0: run.selectedIds[0], // choice: first activity picked
+			1: run.count, // numeric: maximum compatible activities
+			2: `{${run.selectedIds.join(', ')}}`, // choice: the full selected set
+		};
+	},
+	'np-3': ({ n }) => {
+		// Re-derive the reduction's size arithmetic INDEPENDENTLY: |VC| = n - |IS|,
+		// max IS of C_n = floor(n/2), min VC = n - floor(n/2). Same formula as the
+		// builder, recomputed from first principles.
+		const vcIsSize = (total, size) => total - size;
+		const maxIs = Math.floor(n / 2);
+		const minVc = vcIsSize(n, maxIs);
+		return {
+			0: vcIsSize(n, maxIs), // numeric: VC from a size-(maxIs) independent set
+			1: vcIsSize(n, minVc + 1), // numeric: IS from a size-(minVc+1) vertex cover
+			2: minVc, // numeric: minimum vertex cover from the maximum IS
+		};
+	},
 };
 
 // Conceptual parts of a seeded instance (same index → same kind as the fixed set).
@@ -1364,6 +1611,30 @@ const SEEDED_STATIC = new Set([
 	'sorting-2#2',
 	'strategies-1#3',
 	'strategies-2#2',
+	'quicksort-2#1', // concept: T(n)=T(n-1)+n solves to Θ(n²)
+	'quicksort-2#2', // concept: a random/median pivot avoids the worst case
+	'sorting-3#2', // concept: why there are n! leaves (one per input ordering)
+	'sorting-3#3', // concept: log₂(n!)=Θ(n log n) (Stirling) ⇒ Ω(n log n)
+	'sorting-3#4', // concept: counting/radix do not compare ⇒ model does not apply
+	'linsort-3#3', // concept: why bucket sort is expected Θ(n) (uniform spread)
+	'linsort-3#4', // concept: one-bucket skew degrades bucket sort to Θ(n²)
+	'trees-2#1', // concept: successor fits between left subtree and rest of right subtree
+	'trees-3#3', // concept: insertion order fixes BST shape; balanced O(log n) vs degenerate O(n)
+	'heaps-3#4', // concept: build O(n) + n*ExtractMax O(log n) = Theta(n log n), in place
+	'graphs-2#4',
+	'mst-4#3',
+	'apsp-2#3',
+	'maxflow-2#4',
+	'maxflow-3#3',
+	'sssp-4#3',
+	'master-3#2',
+	'master-3#5',
+	'foundations-3#2',
+	'foundations-3#3',
+	'hashing-2#3',
+	'strategies-3#3',
+	'np-3#3',
+	'np-3#4',
 ]);
 
 // A handful of seeds exercised per set: determinism + correctness across instances.
