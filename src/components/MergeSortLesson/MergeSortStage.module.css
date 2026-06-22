@@ -229,16 +229,27 @@
 	color: var(--topic-accent);
 }
 
-/* Top-right notation */
+/* Docked "what just happened" caption — one plain-language line per scene, so a
+   sighted student can always read the current step. Pinned to the bottom of the
+   stage so its placement is consistent across every scene; reserves a stable
+   slot (min-height) so the figure does not jump as the text changes. */
 
-.notation {
+.caption {
 	position: absolute;
-	top: clamp(16px, 2.2vw, 28px);
-	right: clamp(16px, 2.5vw, 32px);
+	left: 50%;
+	bottom: clamp(12px, 2vw, 20px);
+	/* Centered and width-capped so it stays clear of the bottom-right recurrence
+	   overlay (scene 4) and never sprawls into the corners. */
+	transform: translateX(-50%);
+	max-width: min(60%, 30rem);
+	margin: 0;
+	min-height: 1.4em;
 	font-family: var(--font-family-mono);
-	font-size: 12.5px;
+	font-size: var(--font-size-caption);
+	line-height: 1.4;
 	color: var(--color-text-secondary);
-	letter-spacing: 0.02em;
+	text-align: center;
+	pointer-events: none;
 }
 
 @media (max-width: 720px) {
@@ -274,7 +285,15 @@
 		text-align: right;
 		align-items: flex-end;
 	}
-	.notation {
+	/* In the stacked mobile layout the caption flows under the figure instead of
+	   floating, so it never overlaps the stacked tree/recurrence. */
+	.caption {
+		position: static;
+		left: auto;
+		right: auto;
+		bottom: auto;
+		transform: none;
+		max-width: 100%;
 		font-size: 11px;
 	}
 }
@@ -288,7 +307,9 @@
 	align-items: center;
 	justify-content: center;
 	gap: var(--space-xl);
-	padding: var(--space-md);
+	/* Extra bottom padding reserves the docked caption strip so the merge
+	   transport never overlaps the plain-language caption pinned below. */
+	padding: var(--space-md) var(--space-md) var(--space-xl);
 }
 
 .mergeRuns {
@@ -380,11 +401,67 @@
 	color: var(--state-active);
 }
 
-.mergeNarr {
-	margin: 0;
-	font-family: var(--font-family-mono);
-	font-size: var(--font-size-caption);
+/* Inline merge transport — prev / play-pause / next for the compare-copy frames.
+   Reuses the SceneControlBar button language (canonical tokens, accent play) so
+   the two controls feel like one system. */
+.mergeControls {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	gap: var(--space-xs);
+}
+
+.mergeBtn {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 30px;
+	height: 30px;
+	padding: 0;
+	border: 1px solid transparent;
+	border-radius: var(--radius-md);
+	background: transparent;
 	color: var(--color-text-secondary);
-	text-align: center;
-	min-height: 1.4em;
+	cursor: pointer;
+	transition:
+		color var(--transition),
+		background-color var(--transition),
+		border-color var(--transition),
+		transform var(--transition);
+}
+
+.mergeBtn:hover:not(:disabled) {
+	color: var(--color-text-primary);
+	background: var(--surface-hover);
+}
+
+.mergeBtn:active:not(:disabled) {
+	transform: translateY(1px);
+}
+
+.mergeBtn:disabled {
+	opacity: 0.35;
+	cursor: not-allowed;
+}
+
+.mergeBtn:focus-visible {
+	outline: none;
+	box-shadow: var(--shadow-focus);
+}
+
+.mergePlay {
+	color: var(--topic-accent-ink);
+	background: color-mix(in srgb, var(--topic-accent) 12%, transparent);
+	border-color: color-mix(in srgb, var(--topic-accent) 34%, transparent);
+}
+
+.mergePlay:hover:not(:disabled) {
+	color: var(--topic-accent-ink);
+	background: color-mix(in srgb, var(--topic-accent) 20%, transparent);
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.mergeBtn {
+		transition: none;
+	}
 }

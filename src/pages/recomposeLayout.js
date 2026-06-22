@@ -72,11 +72,15 @@ const treeLayout = ({ marginX, top, rowGap, scale }) => {
 	});
 };
 const treeAtoms = treeLayout({ marginX: 70, top: 96, rowGap: 104, scale: 1 });
+// The heap is the SAME complete-tree topology as `tree`, but laid out as a
+// distinctly COMPACT, narrow triangle (tighter margins + rows, NOT a shrunk copy
+// — the old scale:0.9 made tree→heap read as a meaningless zoom-out). The morph
+// now reads as "pack the airy tree into a tight, always-balanced heap."
 const heapAtoms = treeLayout({
-	marginX: 168,
-	top: 120,
-	rowGap: 92,
-	scale: 0.9,
+	marginX: 150,
+	top: 132,
+	rowGap: 84,
+	scale: 1,
 });
 
 // Tree/heap edges: parent → each existing child, in a FIXED order so the same
@@ -188,9 +192,7 @@ export const ORDER = [
 	'tree',
 	'heap',
 	'graph',
-	'shortestPath',
 	'spanningTree',
-	'maxFlow',
 ];
 
 // A topic-hue wash names the active concept (subtle, ≤0.08 alpha in CSS).
@@ -242,26 +244,16 @@ export const PHASES = {
 		note: 'edges, no inherent root',
 		tip: 'adjacency list, O(V + E)',
 	},
-	shortestPath: {
-		name: 'Shortest path',
-		note: 'the lit route, fewest hops',
-		tip: 'BFS reaches it, O(V + E)',
-	},
 	spanningTree: {
 		name: 'Spanning tree',
 		note: 'connect every node, no cycles',
 		tip: 'Kruskal or Prim, O(E log V)',
 	},
-	maxFlow: {
-		name: 'Max flow',
-		note: 'width is capacity, fill is flow',
-		tip: 'augment until none remain',
-	},
 };
 
 // The conservation thesis in words — the <960px fallback, where the live
 // instrument is hidden and only the reading column renders.
-export const THESIS_SENTENCE = 'The same fourteen values, read eight ways.';
+export const THESIS_SENTENCE = 'The same fourteen values, read six ways.';
 
 /**
  * edgeFrame — for a state and a line-pool index, the endpoint coords + whether

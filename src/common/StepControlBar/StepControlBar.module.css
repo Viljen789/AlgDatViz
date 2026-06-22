@@ -27,7 +27,11 @@
 	gap: 8px;
 	padding: 8px;
 	background:
-		linear-gradient(145deg, color-mix(in srgb, var(--glass-tint) 7.5%, transparent), transparent 42%),
+		linear-gradient(
+			145deg,
+			color-mix(in srgb, var(--glass-tint) 7.5%, transparent),
+			transparent 42%
+		),
 		color-mix(in srgb, var(--color-bg-sunken) 78%, transparent);
 	border: 1px solid color-mix(in srgb, var(--glass-tint) 8%, transparent);
 	border-radius: var(--radius-xl);
@@ -160,8 +164,7 @@
 .panel .range::-webkit-slider-thumb {
 	width: 14px;
 	height: 14px;
-	box-shadow: 0 0 0 5px
-		color-mix(in srgb, var(--play-accent) 12%, transparent);
+	box-shadow: 0 0 0 5px color-mix(in srgb, var(--play-accent) 12%, transparent);
 	background: var(--play-accent);
 }
 
@@ -269,7 +272,8 @@
 	background: var(--surface-3);
 	border-color: color-mix(in srgb, var(--glass-tint) 10%, transparent);
 	border-radius: var(--radius-lg);
-	box-shadow: 0 22px 58px -28px color-mix(in srgb, var(--scrim-ink) 85%, transparent);
+	box-shadow: 0 22px 58px -28px
+		color-mix(in srgb, var(--scrim-ink) 85%, transparent);
 }
 
 .speedItem {

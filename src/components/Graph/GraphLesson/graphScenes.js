@@ -10,6 +10,7 @@
 // SAME small graph defined below, so the prose and the picture stay in lockstep.
 
 import { createGraphAlgorithmSteps } from '../../../utils/graphAlgorithms.js';
+import { topoSort } from '../topoSort.js';
 
 // A compact 6-node teaching graph. Positions are chosen so the BFS layers from
 // A read cleanly left-to-right: layer 0 = A, layer 1 = {B, C}, layer 2 = {D, E},
@@ -65,6 +66,57 @@ export const BFS_ORDER = visitOrderFromSteps('bfs');
 //   A → B → D → F → E → C
 export const DFS_ORDER = visitOrderFromSteps('dfs');
 
+// ── A separate DIRECTED ACYCLIC graph, for the topological-sort scene only ──────
+//
+// The LESSON_GRAPH above is UNDIRECTED (GraphStage's adjacency pushes both
+// directions, and its matrix is symmetric), so it has no topological order. The
+// topo scene needs a DAG, so it carries its own tiny one. Five nodes, six
+// directed edges, laid out strictly left-to-right so every arrow points forward
+// — the picture IS the ordering. Designed to have EXACTLY ONE source (A, the only
+// in-degree-0 vertex) so "which node comes first?" has one unambiguous answer.
+//
+//   A→B  A→C  B→D  C→D  C→E  D→E
+//
+// Every edge goes from an earlier letter to a later one, so the graph is acyclic
+// by construction; topoSort confirms hasCycle === false below.
+export const TOPO_GRAPH = {
+	nodes: [
+		{ id: 'A', label: 'A', x: 55, y: 110 },
+		{ id: 'B', label: 'B', x: 165, y: 50 },
+		{ id: 'C', label: 'C', x: 165, y: 170 },
+		{ id: 'D', label: 'D', x: 290, y: 110 },
+		{ id: 'E', label: 'E', x: 405, y: 110 },
+	],
+	edges: [
+		{ from: 'A', to: 'B' },
+		{ from: 'A', to: 'C' },
+		{ from: 'B', to: 'D' },
+		{ from: 'C', to: 'D' },
+		{ from: 'C', to: 'E' },
+		{ from: 'D', to: 'E' },
+	],
+};
+
+// Run the REAL Kahn's-algorithm generator on the DAG so every fact the scene
+// asserts (the order, the in-degrees, the unique source, whether a cycle exists)
+// is derived, never hand-typed — same discipline as the exam answer keys.
+//   order    : ['A','B','C','D','E']  (smallest-id tie-break)
+//   indegree : { A:0, B:1, C:1, D:2, E:2 }
+//   hasCycle : false
+const TOPO_RESULT = topoSort(
+	TOPO_GRAPH.nodes.map(n => n.id),
+	TOPO_GRAPH.edges
+);
+export const TOPO_ORDER = TOPO_RESULT.order;
+
+// The unique in-degree-0 vertex — the only node that can legally come first in
+// ANY topological order. Derived from the in-degrees so it stays correct if the
+// DAG is ever edited (and a single source keeps the "first?" check unambiguous).
+const TOPO_SOURCES = TOPO_GRAPH.nodes
+	.map(n => n.id)
+	.filter(id => TOPO_RESULT.indegree[id] === 0);
+export const TOPO_SOURCE = TOPO_SOURCES[0];
+
 export const SCENES = [
 	{
 		id: 'nodes-edges',
@@ -94,7 +146,12 @@ export const SCENES = [
 			kind: 'choice',
 			prompt:
 				'For a graph with few edges (sparse), which representation usually wastes the least memory?',
-			options: ['Adjacency list', 'Adjacency matrix', 'Always equal', 'Neither'],
+			options: [
+				'Adjacency list',
+				'Adjacency matrix',
+				'Always equal',
+				'Neither',
+			],
 			answer: 'Adjacency list',
 			misconceptions: {
 				'Adjacency matrix':
@@ -191,7 +248,8 @@ export const SCENES = [
 	{
 		id: 'one-frontier',
 		eyebrow: 'The unifying idea',
-		title: 'One loop, one frontier — swap its discipline, change the algorithm.',
+		title:
+			'One loop, one frontier — swap its discipline, change the algorithm.',
 		body: 'BFS and DFS were the same loop with a different frontier. Push that further: key the frontier by tentative distance and the same loop becomes Dijkstra; key it by the lightest crossing edge and it becomes Prim’s MST. The only line that ever changes is extract() — which vertex leaves the frontier next. The interactive below the playground runs all four from one loop.',
 		check: {
 			kind: 'classify',
@@ -201,7 +259,10 @@ export const SCENES = [
 				{ id: 'fifo', label: 'FIFO queue (oldest out)' },
 				{ id: 'lifo', label: 'LIFO stack (newest out)' },
 				{ id: 'mindist', label: 'min priority queue keyed by distance' },
-				{ id: 'minedge', label: 'min priority queue keyed by crossing-edge weight' },
+				{
+					id: 'minedge',
+					label: 'min priority queue keyed by crossing-edge weight',
+				},
 			],
 			categories: [
 				{ id: 'bfs', label: 'BFS' },
@@ -217,6 +278,29 @@ export const SCENES = [
 			},
 			explanation:
 				'All four are one generic traversal: init the frontier with the start, then repeatedly extract a vertex, settle it, and offer its neighbours back to the frontier. Only extract() differs — FIFO → BFS, LIFO → DFS, min-distance → Dijkstra, min-edge → Prim. The frontier discipline is the algorithm.',
+		},
+	},
+	{
+		id: 'topo-sort',
+		eyebrow: 'Ordering',
+		title: 'Topological sort: line the nodes up so every arrow points forward.',
+		body: 'Switch to a DIRECTED graph. A topological order is a single line of the vertices where, for every edge u → v, u sits before v — no arrow ever points backward. Two ways to build one: repeatedly remove a node with in-degree 0 (no unmet prerequisite — that is Kahn’s algorithm), or list the vertices by DECREASING DFS finish time. Only a DAG has one: a single cycle makes it impossible, because each node on the cycle waits on another ahead of it. This ordering is the backbone of DAG shortest paths and of every dependency resolver — build systems, course prerequisites, spreadsheet recalculation.',
+		check: {
+			kind: 'choice',
+			// Derived against topoSort: the answer is whichever vertex is the unique
+			// in-degree-0 source, so it is read off the algorithm, not hand-typed.
+			// (The DAG is built with exactly one source, so this has one answer that
+			// holds for EVERY valid topological order, not just Kahn's tie-break.)
+			prompt:
+				'In this directed graph, which node must come FIRST in every topological order?',
+			options: ['A', 'B', 'D', 'E'],
+			answer: TOPO_SOURCE,
+			misconceptions: {
+				B: 'B has an incoming edge (A → B), so something must come before it — it cannot be first. The first node is the one with in-degree 0, no incoming arrows at all.',
+				D: 'D depends on both B and C (B → D, C → D), so it waits until late in the order. A node can go first only when nothing points into it; D has in-degree 2.',
+				E: 'E is the SINK — every path ends there (it has in-degree 2, from C and D), so it must come LAST, not first. First belongs to the in-degree-0 source.',
+			},
+			explanation: `Only ${TOPO_SOURCE} has in-degree 0 — no edge points into it, so it has no prerequisite and can be placed first; every other node has an incoming edge and must wait for its source. That is exactly the move Kahn’s algorithm repeats: emit an in-degree-0 vertex, delete its out-edges, and the next in-degree-0 node opens up.`,
 		},
 	},
 ];

@@ -1,0 +1,404 @@
+/* The "study instrument" — paper-and-ink, legible, calm. Self-contained palette
+   (it would inherit the app's tokens when integrated). Reuses the app's already
+   loaded families (Newsreader / Inter / JetBrains Mono). */
+.page {
+	--paper: hsl(40 33% 95%);
+	--paper-2: hsl(42 44% 98%);
+	--ink: hsl(34 22% 16%);
+	--muted: hsl(34 10% 42%);
+	--faint: hsl(36 12% 58%);
+	--line: hsl(36 16% 82%);
+	--line-strong: hsl(36 14% 70%);
+	--accent: hsl(246 56% 57%);
+	--accent-ink: hsl(246 50% 46%);
+	--glow: hsl(176 58% 44%);
+
+	min-height: 100%;
+	background:
+		radial-gradient(120% 90% at 78% 0%, hsl(42 44% 97%) 0%, transparent 60%),
+		var(--paper);
+	color: var(--ink);
+	font-family:
+		'Inter',
+		-apple-system,
+		system-ui,
+		sans-serif;
+	-webkit-font-smoothing: antialiased;
+	padding: clamp(20px, 3vw, 40px) clamp(20px, 5vw, 80px) 120px;
+	box-sizing: border-box;
+}
+
+/* ---- nav ---- */
+.nav {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	max-width: 1200px;
+	margin: 0 auto clamp(28px, 5vw, 64px);
+}
+.brand {
+	display: inline-flex;
+	align-items: baseline;
+	gap: 10px;
+	text-decoration: none;
+	color: var(--ink);
+}
+.mark {
+	width: 16px;
+	height: 16px;
+	border-radius: 5px;
+	align-self: center;
+	background: linear-gradient(135deg, var(--accent), var(--glow));
+}
+.brandName {
+	font-family: 'Newsreader', Georgia, serif;
+	font-weight: 600;
+	font-size: 19px;
+	letter-spacing: -0.01em;
+}
+.brandCourse {
+	font-family: 'JetBrains Mono', monospace;
+	font-size: 11px;
+	letter-spacing: 0.14em;
+	color: var(--faint);
+}
+.navLinks {
+	display: flex;
+	gap: 26px;
+	font-size: 14px;
+	color: var(--muted);
+}
+.navLinks span {
+	cursor: default;
+}
+.navLinks span[data-active='true'] {
+	color: var(--ink);
+	font-weight: 500;
+}
+
+/* ---- hero ---- */
+.hero {
+	max-width: 1200px;
+	margin: 0 auto;
+	display: grid;
+	grid-template-columns: minmax(0, 0.82fr) minmax(0, 1fr);
+	gap: clamp(32px, 5vw, 72px);
+	align-items: center;
+}
+@media (max-width: 900px) {
+	.hero {
+		grid-template-columns: 1fr;
+		gap: 36px;
+	}
+}
+
+.eyebrow {
+	margin: 0 0 18px;
+	font-family: 'JetBrains Mono', monospace;
+	font-size: 11px;
+	letter-spacing: 0.16em;
+	text-transform: uppercase;
+	color: var(--accent-ink);
+}
+.title {
+	margin: 0;
+	/* Explicit colour: the app's global `h1 {color}` (a type selector) otherwise
+	   beats the inherited --ink and renders this in the dark-theme light ink. */
+	color: var(--ink);
+	font-family: 'Newsreader', Georgia, serif;
+	font-weight: 600;
+	font-size: clamp(2.6rem, 1.6rem + 3vw, 4rem);
+	line-height: 1.02;
+	letter-spacing: -0.015em;
+}
+.sub {
+	margin: 22px 0 0;
+	max-width: 46ch;
+	font-size: 16px;
+	line-height: 1.65;
+	color: var(--muted);
+}
+
+/* the live teaching readout */
+.readout {
+	margin: 28px 0 0;
+	padding: 16px 18px;
+	display: grid;
+	gap: 4px;
+	background: var(--paper-2);
+	border: 1px solid var(--line);
+	border-left: 3px solid var(--accent);
+	border-radius: 12px;
+	max-width: 42ch;
+}
+.readoutName {
+	font-family: 'Newsreader', Georgia, serif;
+	font-size: 22px;
+	font-weight: 600;
+	letter-spacing: -0.01em;
+}
+.readoutNote {
+	font-size: 14.5px;
+	line-height: 1.5;
+	color: var(--muted);
+}
+.readoutCost {
+	margin-top: 2px;
+	font-family: 'JetBrains Mono', monospace;
+	font-size: 12px;
+	color: var(--faint);
+	font-variant-numeric: tabular-nums;
+}
+
+.cta {
+	margin-top: 26px;
+	display: inline-flex;
+	align-items: center;
+	gap: 8px;
+	padding: 12px 20px;
+	border: none;
+	border-radius: 999px;
+	background: var(--ink);
+	color: var(--paper);
+	font-family: inherit;
+	font-size: 14px;
+	font-weight: 500;
+	cursor: pointer;
+	transition:
+		transform 0.18s ease,
+		background 0.18s ease;
+}
+.cta:hover {
+	transform: translateY(-1px);
+	background: var(--accent-ink);
+}
+.cta:active {
+	transform: translateY(0);
+}
+
+/* ---- the instrument ---- */
+.stage {
+	margin: 0;
+	display: flex;
+	flex-direction: column;
+	gap: 18px;
+}
+.plate {
+	position: relative;
+	padding: clamp(10px, 1.6vw, 18px);
+	background: var(--paper-2);
+	border: 1px solid var(--line);
+	border-radius: 18px;
+	box-shadow:
+		0 1px 2px hsl(34 30% 20% / 0.04),
+		0 18px 40px -28px hsl(34 30% 20% / 0.25);
+}
+.svg {
+	display: block;
+	width: 100%;
+	height: auto;
+	overflow: visible;
+}
+
+.baseline {
+	stroke: var(--line-strong);
+	stroke-width: 1.4;
+	stroke-dasharray: 2 5;
+	stroke-linecap: round;
+	opacity: 0.7;
+}
+.edge {
+	stroke: var(--ink);
+	stroke-width: 1.6;
+	stroke-linecap: round;
+	opacity: 0;
+}
+.glow {
+	stroke: var(--glow);
+	stroke-width: 8;
+	stroke-linecap: round;
+	filter: blur(4px);
+	opacity: 0;
+}
+.bar {
+	fill: var(--ink);
+	opacity: 0;
+}
+.dot {
+	fill: var(--paper-2);
+	stroke: var(--ink);
+	stroke-width: 1.5;
+	transform-box: fill-box;
+	transform-origin: center;
+	transition: transform 0.18s var(--ease, ease);
+}
+.value {
+	fill: var(--ink);
+	font-family: 'JetBrains Mono', monospace;
+	font-size: 11px;
+	font-weight: 500;
+	text-anchor: middle;
+	pointer-events: none;
+	font-variant-numeric: tabular-nums;
+}
+.atomLead .dot {
+	fill: var(--accent);
+	stroke: var(--accent);
+}
+.atomLead .value {
+	fill: var(--paper);
+}
+.atom {
+	cursor: pointer;
+}
+.atom:hover .dot {
+	transform: scale(1.32);
+}
+
+/* ---- scrubber ---- */
+.scrub {
+	padding: 0 14px;
+}
+.track {
+	position: relative;
+	height: 30px;
+	display: flex;
+	align-items: center;
+	cursor: grab;
+	touch-action: none;
+}
+.track:active {
+	cursor: grabbing;
+}
+.track:focus-visible {
+	outline: 2px solid var(--accent);
+	outline-offset: 6px;
+	border-radius: 6px;
+}
+.trackBase {
+	position: absolute;
+	left: 0;
+	right: 0;
+	height: 3px;
+	border-radius: 3px;
+	background: var(--line);
+}
+.trackFill {
+	position: absolute;
+	left: 0;
+	height: 3px;
+	border-radius: 3px;
+	background: var(--accent);
+	width: 0;
+}
+.stopDot {
+	position: absolute;
+	top: 50%;
+	width: 9px;
+	height: 9px;
+	padding: 0;
+	border: 2px solid var(--line-strong);
+	background: var(--paper);
+	border-radius: 50%;
+	transform: translate(-50%, -50%);
+	cursor: pointer;
+}
+.stopDot[data-active='true'] {
+	border-color: var(--accent);
+}
+.thumb {
+	position: absolute;
+	top: 50%;
+	left: 0;
+	width: 20px;
+	height: 20px;
+	border-radius: 50%;
+	background: var(--accent);
+	border: 3px solid var(--paper-2);
+	box-shadow: 0 2px 8px hsl(246 56% 40% / 0.4);
+	transform: translate(-50%, -50%);
+	pointer-events: none;
+}
+.stopLabels {
+	display: flex;
+	justify-content: space-between;
+	margin-top: 14px;
+}
+.stopLabel {
+	appearance: none;
+	border: none;
+	background: none;
+	padding: 0;
+	font-family: 'JetBrains Mono', monospace;
+	font-size: 12px;
+	letter-spacing: 0.02em;
+	color: var(--faint);
+	cursor: pointer;
+	transition: color 0.18s ease;
+}
+.stopLabel:hover {
+	color: var(--muted);
+}
+.stopLabel[data-active='true'] {
+	color: var(--ink);
+	font-weight: 600;
+}
+.hint {
+	margin: 16px 0 0;
+	text-align: center;
+	font-size: 12px;
+	color: var(--faint);
+}
+
+/* ---- path footer ---- */
+.path {
+	max-width: 1200px;
+	margin: clamp(48px, 7vw, 90px) auto 0;
+	padding-top: 22px;
+	border-top: 1px solid var(--line);
+	display: flex;
+	align-items: center;
+	gap: 24px;
+	flex-wrap: wrap;
+}
+.pathLabel {
+	font-family: 'JetBrains Mono', monospace;
+	font-size: 11px;
+	letter-spacing: 0.14em;
+	text-transform: uppercase;
+	color: var(--faint);
+}
+.pathList {
+	display: flex;
+	gap: 26px;
+	flex-wrap: wrap;
+	margin: 0;
+	padding: 0;
+	list-style: none;
+}
+.pathItem {
+	display: inline-flex;
+	align-items: baseline;
+	gap: 8px;
+}
+.pathNum {
+	font-family: 'JetBrains Mono', monospace;
+	font-size: 11px;
+	color: var(--faint);
+}
+.pathName {
+	font-size: 14px;
+	color: var(--muted);
+}
+.pathMore {
+	font-size: 13px;
+	color: var(--faint);
+	list-style: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.dot,
+	.cta {
+		transition: none;
+	}
+}

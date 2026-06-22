@@ -1,4 +1,4 @@
-// The five scrolly scenes that build quicksort intuition before the playground.
+// The six scrolly scenes that build quicksort intuition before the playground.
 //
 // The same eight values as the merge-sort lesson, so a student recognises the
 // data and can contrast the two strategies. Quicksort here is LOMUTO partition
@@ -11,9 +11,31 @@
 //
 // The stage visualizes these scenes from the real frame generator
 // (utils/sorting/quickPartitionFrames.js) — the partition pass it shows is the
-// partition pass it computes. Honest by construction.
+// partition pass it computes. Honest by construction. The closing QUICKSELECT
+// scene reuses ./quickselectTrace.js the same way, so its prompt and answer are
+// DERIVED from the trace (the exam's quicksort-3 instance), never hand-typed.
+
+import { quickselectTrace } from './quickselectTrace.js';
 
 export const STAGE_VALUES = [38, 27, 43, 3, 9, 82, 10, 51];
+
+// The QUICKSELECT scene reuses the exam's quicksort-3 instance verbatim, so a
+// student who missed that exam question studies the very same numbers here.
+// Everything the scene asserts is read off the deterministic trace — the pivot's
+// landing index, its rank, the array after the first partition, and the answer —
+// so the lesson can never drift from the generator (or from the exam key).
+export const SELECT_INPUT = [50, 80, 20, 90, 10, 70, 40, 60, 30];
+export const SELECT_I = 4; // 1-based rank: find the 4th-smallest element
+const SELECT_RUN = quickselectTrace(SELECT_INPUT, SELECT_I);
+const SELECT_PIVOT = SELECT_INPUT[SELECT_INPUT.length - 1]; // last-element pivot = 30
+// The pivot's RANK is its 0-based landing index + 1 (i = 1 is the minimum). The
+// recursion compares the requested rank i against this to pick a side: i < rank
+// ⇒ left, i > rank ⇒ right, i === rank ⇒ done. We DERIVE the side, never pick it.
+const SELECT_PIVOT_RANK = SELECT_RUN.firstPartition.pivotFinalIndex + 1; // = 3
+const SELECT_RIGHT_OPTION = 'The right part (values greater than the pivot)';
+const SELECT_LEFT_OPTION = 'The left part (values less than the pivot)';
+const SELECT_SIDE_ANSWER =
+	SELECT_I > SELECT_PIVOT_RANK ? SELECT_RIGHT_OPTION : SELECT_LEFT_OPTION;
 
 // Ground truth for the first Lomuto partition of STAGE_VALUES, used by the scene
 // copy below and verified by the generator (and quickPartitionFrames.test.js):
@@ -126,6 +148,29 @@ export const SCENES = [
 			explanation:
 				'8 + 7 + 6 + 5 + 4 + 3 + 2 + 1 = 36, but the size-1 ranges are base cases that compare nothing, so the partitions that actually compare are sizes 8 down to 2, giving 7 + 6 + 5 + 4 + 3 + 2 + 1 = 28 = n(n-1)/2. That quadratic total is what T(n) = T(n − 1) + n unrolls to. Contrast the Master Theorem: a balanced split is T(n) = 2T(n/2) + Θ(n) with a = 2, b = 2, f(n) = Θ(n) = Θ(n^{log_b a}), the tie case that yields Θ(n log n). Same algorithm, two different recurrences — the pivot decides which one you get.',
 			placeholder: 'Worst-case comparison count',
+		},
+	},
+	{
+		id: 'select',
+		eyebrow: 'Same engine, new job',
+		title: 'The same partition also finds the k-th smallest.',
+		body: `Partition does more than sort. After one pass the pivot sits at its FINAL rank r — every value below it is to the left, every value above to the right. If you only want the i-th smallest, you do not need the other side: recurse LEFT when i < r, recurse RIGHT when i > r, and you are DONE the moment i = r. Here partition lands ${SELECT_PIVOT} at rank ${SELECT_PIVOT_RANK}; we want the ${SELECT_I}-th, so ${SELECT_I} > ${SELECT_PIVOT_RANK} sends us right — the values less than the pivot are discarded untouched. Throwing away one side each step makes the expected time Θ(n), far below quicksort's Θ(n log n); the worst case is still Θ(n²). This is RANDOMIZED-SELECT.`,
+		check: {
+			kind: 'choice',
+			prompt: `Pivot ${SELECT_PIVOT} has landed at its final spot — it is the ${SELECT_PIVOT_RANK}rd smallest. To find the ${SELECT_I}th smallest, which side do you search next?`,
+			options: [
+				SELECT_RIGHT_OPTION,
+				SELECT_LEFT_OPTION,
+				`Neither — ${SELECT_PIVOT} is the answer`,
+				'Both parts, fully',
+			],
+			answer: SELECT_SIDE_ANSWER,
+			misconceptions: {
+				[SELECT_LEFT_OPTION]: `The left part holds the values SMALLER than ${SELECT_PIVOT} — ranks 1 and 2, both below the ${SELECT_I}th. You go left only when the rank you want is LESS than the pivot's rank (i < r). Here i = ${SELECT_I} is greater than r = ${SELECT_PIVOT_RANK}, so the answer must lie among the larger values on the right.`,
+				[`Neither — ${SELECT_PIVOT} is the answer`]: `The pivot would be the answer only if its rank equalled the rank you want (i = r). It landed at rank ${SELECT_PIVOT_RANK}, but you asked for rank ${SELECT_I}, and ${SELECT_I} ≠ ${SELECT_PIVOT_RANK} — so ${SELECT_PIVOT} is the wrong element and the search continues on one side.`,
+				'Both parts, fully': `Searching both sides is what QUICKSORT does, and it is exactly the work quickselect avoids. Because the pivot's rank already tells you which side can contain the i-th smallest, you recurse into ONLY that side and discard the other. Discarding a side each step is what buys the Θ(n) expected time instead of Θ(n log n).`,
+			},
+			explanation: `The pivot's landing index fixes its rank r = ${SELECT_PIVOT_RANK} (rank 1 is the minimum). Compare it to the rank you want, i = ${SELECT_I}: since ${SELECT_I} > ${SELECT_PIVOT_RANK}, the i-th smallest must be among the values GREATER than the pivot, so you recurse RIGHT and drop the ${SELECT_PIVOT_RANK} values on the left forever (had i < r you would go left; had i = r the pivot itself would be the answer). Continuing this way, RANDOMIZED-SELECT here returns the ${SELECT_I}th smallest, ${SELECT_RUN.selected}, without ever fully sorting — discarding one side each step is why the expected cost is Θ(n), not Θ(n log n).`,
 		},
 	},
 ];

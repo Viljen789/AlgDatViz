@@ -1,14 +1,31 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowDown, ArrowRight, ChevronDown, ChevronRight } from 'lucide-react';
+import {
+	ArrowDown,
+	ArrowRight,
+	Brain,
+	ChevronDown,
+	ChevronRight,
+	Target,
+	X,
+} from 'lucide-react';
 import { CURRICULUM } from '../../data/curriculum.js';
 import { logActivity } from '../../lib/activityLog.js';
-import { isSelfGraded } from '../../components/Review/reviewBank.js';
+import {
+	buildTopicQueue,
+	isSelfGraded,
+} from '../../components/Review/reviewBank.js';
+import ReviewSession from '../../components/Review/ReviewSession.jsx';
 import useProgress from '../../hooks/useProgress.js';
 import useSrs from '../../hooks/useSrs.js';
 import useReducedMotion from '../../hooks/useReducedMotion.js';
 import TopicScrolly from './TopicScrolly.jsx';
 import styles from './TopicTemplate.module.css';
+
+// How many never-seen cards the lesson-end drill introduces at once. Matches the
+// /review + /progress one-click drill cap so a topic's first drill from the lesson
+// end isn't a wall of new questions (kept in lockstep with ProgressPage).
+const TOPIC_NEW_CAP = 8;
 
 // ── Collapsible cheat-sheet (prop-driven disclosure) ──
 // cheatSheet shape:
@@ -202,7 +219,7 @@ const TopicTemplate = ({
 		correctCheckCount,
 		furthestScene,
 	} = useProgress();
-	const { seed: seedCard } = useSrs();
+	const { seed: seedCard, cards, grade } = useSrs();
 	const playgroundRef = useRef(null);
 	const [activeScene, setActiveScene] = useState(0);
 	// The scene to resume at — read once on mount so a later persist (recordScene
@@ -272,6 +289,72 @@ const TopicTemplate = ({
 		return set;
 	}, [scenes]);
 
+	// Completion signal (same derivation as the persist effect below): enough
+	// required checks answered correctly. Drives the "Lock it in" section's tone —
+	// a finished lesson gets a confident close, an unfinished one a quieter nudge.
+	const isComplete =
+		requiredForCompletion > 0 &&
+		correctCheckCount(topicId) >= requiredForCompletion;
+
+	// ── Lesson-end retrieval drill (the "Lock it in" handoff) ────────────────────
+	// Finishing a lesson hands the student straight into a topic-scoped review drill
+	// instead of only pointing at the next lesson. By lesson end this topic has SRS
+	// cards under `${topicId}:${sceneId}` (seeded from the in-lesson checks above),
+	// so we reuse the SAME scheduler /review and /progress use — buildTopicQueue →
+	// ReviewSession, graded through the SAME useSrs.grade + logActivity path — so a
+	// lesson-end drill reschedules exactly the cards the revision plan reads. The
+	// queue is snapshot at launch so it doesn't reshuffle as cards reschedule out of
+	// "due" on each answer (mirrors /review and ProgressPage's plan-day drill).
+	const drillStats = useMemo(
+		() =>
+			buildTopicQueue({
+				topicId,
+				cards,
+				now: Date.now(),
+				newCap: TOPIC_NEW_CAP,
+			}),
+		[topicId, cards]
+	);
+	// The topic has bank-backed cards seeded from the in-lesson checks (a skimmer
+	// who answered nothing seeds none → available 0). Distinguish two empty cases:
+	//   • nothing seeded at all  → coach to answer the checks (no drill button).
+	//   • cards seeded but none due/fresh right now → all scheduled out; the drill
+	//     button would be a dead end, so we say "scheduled" and keep the exam link.
+	const hasCards = drillStats.available > 0;
+	const canDrill = drillStats.queue.length > 0;
+	const [drill, setDrill] = useState(null); // { questions, runId } | null
+
+	const startDrill = useCallback(() => {
+		const plan = buildTopicQueue({
+			topicId,
+			cards,
+			now: Date.now(),
+			newCap: TOPIC_NEW_CAP,
+		});
+		if (plan.queue.length === 0) return; // nothing due/fresh right now
+		setDrill(prev => ({
+			questions: plan.queue,
+			// Bump a run id so re-launching remounts ReviewSession from the top.
+			runId: (prev?.runId ?? 0) + 1,
+		}));
+	}, [topicId, cards]);
+
+	const closeDrill = useCallback(() => setDrill(null), []);
+
+	// "Start over" re-snapshots the SAME topic against the now freshly-graded
+	// schedule, so a restart pulls whatever is still due (mirrors ProgressPage).
+	const restartDrill = useCallback(() => startDrill(), [startDrill]);
+
+	// Grade the card AND log a day of study — the EXACT path /review uses, so a
+	// lesson-end drill reschedules cards and lights the heatmap identically.
+	const handleDrillGraded = useCallback(
+		(id, correct) => {
+			grade(id, correct);
+			logActivity();
+		},
+		[grade]
+	);
+
 	useEffect(() => {
 		if (onVisit) onVisit();
 		else if (topicId) markVisited(topicId);
@@ -309,10 +392,7 @@ const TopicTemplate = ({
 				seedCard(`${topicId}:${sceneId}`, status === 'correct');
 			}
 		});
-		if (
-			requiredForCompletion > 0 &&
-			correctCheckCount(topicId) >= requiredForCompletion
-		) {
+		if (isComplete) {
 			markCompleted(topicId);
 		}
 	}, [
@@ -322,8 +402,7 @@ const TopicTemplate = ({
 		seedCard,
 		selfGradedScenes,
 		markCompleted,
-		correctCheckCount,
-		requiredForCompletion,
+		isComplete,
 	]);
 
 	const scrollToId = useCallback(
@@ -441,6 +520,90 @@ const TopicTemplate = ({
 			)}
 
 			{children}
+
+			{/* "Lock it in" — the retrieval handoff. Finishing a lesson hands the
+			    reader into a topic-scoped review drill (re-deriving from memory is
+			    what makes it stick) and offers the topic's exam set, rather than only
+			    pointing at the next lesson. The section is confident when the lesson is
+			    complete and a quieter nudge otherwise; when no cards were seeded (a
+			    skimmer who answered nothing) it degrades to a gentle line + the exam
+			    link, never a broken drill. */}
+			<section
+				className={`${styles.lockIn} ${
+					isComplete ? styles.lockInDone : styles.lockInOpen
+				}`}
+				aria-labelledby="lockin-heading"
+			>
+				<div className={styles.lockInHead}>
+					<p className={styles.eyebrow}>Lock it in</p>
+					<h2 id="lockin-heading" className={styles.lockInTitle}>
+						{isComplete ? 'Now recall it cold' : 'Make it stick'}
+					</h2>
+					<p className={styles.lockInLede}>
+						{canDrill
+							? 'Re-deriving each idea from memory is what fixes it. Run a short retrieval drill on this topic, then come back to it in a day or two.'
+							: hasCards
+								? "Nice, this topic's cards are scheduled. Spaced review will surface them again when they are due. For now, test yourself on exam-shaped problems."
+								: 'Answering the checks as you read builds a retrieval drill for this topic. Re-deriving from memory is what makes it stick.'}
+					</p>
+				</div>
+
+				{drill ? (
+					<div id="lockin-drill" className={styles.lockInDrill}>
+						<div className={styles.lockInDrillHead}>
+							<p className={styles.lockInDrillTitle}>
+								Retrieving <strong>{topic?.name}</strong> ·{' '}
+								{drill.questions.length} question
+								{drill.questions.length === 1 ? '' : 's'}
+							</p>
+							<button
+								type="button"
+								className={styles.lockInDrillClose}
+								onClick={closeDrill}
+							>
+								<X size={14} strokeWidth={2.2} aria-hidden="true" />
+								<span>Done</span>
+							</button>
+						</div>
+						<ReviewSession
+							key={drill.runId}
+							questions={drill.questions}
+							onRestart={restartDrill}
+							onGraded={handleDrillGraded}
+						/>
+					</div>
+				) : (
+					<div className={styles.lockInActions}>
+						{canDrill && (
+							<button
+								type="button"
+								className={styles.lockInPrimary}
+								aria-controls="lockin-drill"
+								aria-expanded={false}
+								onClick={startDrill}
+							>
+								<Brain size={16} strokeWidth={2.2} aria-hidden="true" />
+								<span>
+									Recall this topic
+									{drillStats.queue.length > 0
+										? ` · ${drillStats.queue.length} card${
+												drillStats.queue.length === 1 ? '' : 's'
+											}`
+										: ''}
+								</span>
+							</button>
+						)}
+						<Link
+							to={`/exam?topic=${topicId}`}
+							className={styles.lockInSecondary}
+						>
+							<Target size={15} strokeWidth={2.2} aria-hidden="true" />
+							<span>Practice exam questions</span>
+							<ArrowRight size={14} strokeWidth={2} aria-hidden="true" />
+						</Link>
+					</div>
+				)}
+			</section>
 
 			{nextTopic && (
 				<footer className={styles.upNext}>

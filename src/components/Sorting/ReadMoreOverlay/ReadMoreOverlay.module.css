@@ -60,7 +60,7 @@
 	font-family: var(--font-family-mono);
 	font-size: 11px;
 	color: var(--state-active);
-	background: rgba(79, 124, 248, 0.1);
+	background: color-mix(in srgb, var(--state-active) 10%, transparent);
 	border-radius: var(--border-radius-sm);
 	font-weight: 700;
 }

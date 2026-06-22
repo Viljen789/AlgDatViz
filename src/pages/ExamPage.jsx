@@ -695,6 +695,23 @@ const ExamPage = () => {
 		[seed, applySeed]
 	);
 
+	// Deep-link from a lesson's "Lock it in" close: /exam?topic=<id> auto-starts
+	// that topic's exam set so the handoff lands straight in the run, not the
+	// picker. Composes with ?seed= (startTopic mints a seed if none is set, leaving
+	// the existing seed handling untouched). Guarded to a valid, exam-backed topic,
+	// and fired once per topic value via a ref so it doesn't relaunch on re-render
+	// (e.g. after the learner exits back to the picker). An unknown id is ignored,
+	// degrading to the normal picker.
+	const topicParam = searchParams.get('topic');
+	const startedTopicRef = useRef(null);
+	useEffect(() => {
+		if (!topicParam) return;
+		if (startedTopicRef.current === topicParam) return;
+		if (!EXAM_TOPIC_IDS.includes(topicParam)) return;
+		startedTopicRef.current = topicParam;
+		startTopic(topicParam);
+	}, [topicParam, startTopic]);
+
 	// A single set, picked from the picker. The picker lists the FIXED stems, so map
 	// the chosen set to this sitting's seeded instance by id (fresh seed if needed).
 	const startSet = useCallback(

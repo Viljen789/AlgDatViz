@@ -236,19 +236,20 @@ const SceneControlBar = ({
 				})}
 			</div>
 
-			<p className={styles.meta} aria-live="polite">
-				<span className={styles.metaCount}>
-					{String(active + 1).padStart(2, '0')}
-					<span className={styles.metaSep}> / </span>
-					{String(total).padStart(2, '0')}
-				</span>
-				{isPlaying && !reducedMotion && (
-					<span className={styles.metaPlaying}> · playing</span>
-				)}
-				{blockedReason && !isPlaying && (
-					<span className={styles.metaBlocked}> · {blockedReason}</span>
-				)}
-			</p>
+			{/* Position is shown by the dot scrubber above (and the scene-card index);
+			    the old "NN / NN" numeric was a third, redundant encoding, so it is
+			    dropped. This row now only carries transient playback status, and
+			    renders nothing when idle so it competes for no attention. */}
+			{((isPlaying && !reducedMotion) || (blockedReason && !isPlaying)) && (
+				<p className={styles.meta} aria-live="polite">
+					{isPlaying && !reducedMotion && (
+						<span className={styles.metaPlaying}>playing</span>
+					)}
+					{blockedReason && !isPlaying && (
+						<span className={styles.metaBlocked}>{blockedReason}</span>
+					)}
+				</p>
+			)}
 		</div>
 	);
 };

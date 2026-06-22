@@ -9,8 +9,27 @@
 // The running example is merge sort: T(n) = 2 T(n/2) + n, i.e. a = 2, b = 2,
 // d = 1. Its leaf exponent log_2(2) = 1 ties the combine exponent d = 1, so it
 // lands squarely in Case 2 — every level does the same n work.
+//
+// The FINAL scene ('iteration-method', the new highest index) deliberately
+// steps OUTSIDE the Master Theorem: a first-order recurrence T(n) = T(n-1) + g(n)
+// shrinks the size by a CONSTANT, not a factor, so the theorem is silent and the
+// stage swaps its branching tree for an unrolling step-trace. Its numeric key is
+// DERIVED from unrollRecurrence (see ITERATION_CHECK below) — never hand-typed —
+// so it can only ever be what iteration actually produces.
+
+import { unrollRecurrence, gPow2 } from './iterativeRecurrence.js';
 
 export const STORY_PARAMS = { a: 2, b: 2, d: 1, k: 0 };
+
+// The iteration scene's check is DERIVED, not authored: T(1)=1, T(n)=T(n-1)+2^(n-1)
+// unrolls to T(5) = 2^5 − 1 = 31. We read that off the same generator the stage's
+// trace renders, so the key cannot drift from what the unrolling shows.
+const ITERATION_ANSWER = unrollRecurrence({
+	baseN: 1,
+	baseVal: 1,
+	g: gPow2,
+	n: 5,
+}).value; // 31
 
 export const SCENES = [
 	{
@@ -237,6 +256,27 @@ export const SCENES = [
 			placeholder: 'e.g. 2',
 			explanation:
 				'Here c = log₂2 = 1 ties d = 1, so it is a Case-2 tie, but f carries an extra log¹n (k = 1). The generalized rule turns log^k n into log^(k+1) n, so T(n) = Θ(n · log^(1+1) n) = Θ(n log² n). The exponent p is 2.',
+		},
+	},
+	{
+		// The one scene that steps OUTSIDE the Master Theorem. A first-order
+		// recurrence subtracts a constant (n − 1) instead of dividing by b, so it is
+		// a LINEAR CHAIN, not a branching tree. The stage detects this scene by its
+		// index and swaps the aT(n/b) tree for an unrolling step-trace.
+		id: 'iteration-method',
+		eyebrow: 'When the theorem does not apply',
+		title: 'When the size shrinks by one, not by half: unroll it.',
+		body: 'The Master Theorem needs T(n/b) — the size DIVIDED by a constant. A recurrence like T(n) = T(n-1) + g(n) SUBTRACTS a constant instead; that is the wrong shape (b would be 1, and log_b a is undefined), so the theorem stays silent. Solve it by ITERATION: expand T(n) = T(n-1) + g(n) = T(n-2) + g(n-1) + g(n) = … = T(1) + Σ_{k=2}^{n} g(k). For g(k) = 2^{k-1} with T(1) = 1 the sum is the geometric series 1 + 2 + 4 + … + 2^{n-1}, giving the closed form T(n) = 2ⁿ − 1 ∈ Θ(2ⁿ).',
+		check: {
+			kind: 'numeric',
+			// DERIVED key, not hand-typed: unrollRecurrence({baseN:1, baseVal:1,
+			// g: gPow2, n:5}).value === 2^5 − 1 === 31. See ITERATION_ANSWER above.
+			prompt: 'T(1) = 1, T(n) = T(n-1) + 2ⁿ⁻¹. What is T(5)?',
+			answer: ITERATION_ANSWER,
+			tolerance: 0.01,
+			placeholder: 'e.g. 31',
+			explanation:
+				'Unroll it: T(1) = 1, then T(2) = 1 + 2 = 3, T(3) = 3 + 4 = 7, T(4) = 7 + 8 = 15, T(5) = 15 + 16 = 31. Each step adds 2^{k-1}, so T(5) = 1 + 2 + 4 + 8 + 16 = 2⁵ − 1 = 31 — the closed form T(n) = 2ⁿ − 1 evaluated at n = 5.',
 		},
 	},
 ];

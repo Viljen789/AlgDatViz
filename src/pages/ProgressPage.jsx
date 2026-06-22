@@ -17,6 +17,7 @@ import {
 	buildTopicQueue,
 } from '../components/Review/reviewBank.js';
 import ReviewSession from '../components/Review/ReviewSession.jsx';
+import Eyebrow from '../common/Eyebrow/Eyebrow.jsx';
 import { allMastery } from '../lib/mastery.js';
 import { rankWeakTopics } from '../lib/weakTopics.js';
 import { buildRevisionPlan } from '../lib/revisionPlan.js';
@@ -349,10 +350,14 @@ const ProgressPage = () => {
 			</header>
 
 			<section className={styles.hero} aria-labelledby="progress-title">
-				<p className={styles.eyebrow}>Mastery · Spaced retrieval</p>
+				<Eyebrow>Mastery · Spaced retrieval</Eyebrow>
 				<h1 id="progress-title" className={styles.title}>
 					Where you stand.
 				</h1>
+				<p className={styles.lede}>
+					Your mastery across every topic, your day-by-day study streak, and a
+					revision plan that tightens as the exam nears.
+				</p>
 
 				<dl className={styles.stats}>
 					<div className={styles.stat}>

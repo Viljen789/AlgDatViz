@@ -208,6 +208,104 @@
 	letter-spacing: var(--tracking-wide);
 }
 
+/* Iteration-method step-trace (first-order recurrence T(n)=T(n-1)+g(n)).
+   A first-order recurrence is a linear chain, not a branching tree, so this
+   scene swaps the tree for a stacked trace of the unrolling: one row per index
+   k, each showing the cost g(k) added and the running partial T(k). Reuses the
+   bars/verdict tokens (mono type, surface-0, topic-accent) — no new colours. */
+
+.iteration {
+	width: 100%;
+	max-width: min(100%, 420px);
+	display: flex;
+	flex-direction: column;
+	gap: var(--space-md);
+}
+
+.iterationTitle {
+	margin: 0;
+	font-family: var(--font-family-mono);
+	font-size: var(--font-size-caption);
+	letter-spacing: var(--tracking-caps);
+	text-transform: uppercase;
+	color: var(--color-text-muted);
+}
+
+.iterationRows {
+	list-style: none;
+	margin: 0;
+	padding: 0;
+	display: flex;
+	flex-direction: column;
+	gap: var(--space-xs);
+}
+
+.iterationRow {
+	display: grid;
+	grid-template-columns: 2.4rem 1fr auto;
+	align-items: baseline;
+	gap: var(--space-sm);
+	padding: var(--space-xs) var(--space-sm);
+	background: var(--surface-0);
+	border: 1px solid var(--color-border);
+	border-radius: var(--radius-md);
+	font-family: var(--font-family-mono);
+	font-size: var(--font-size-caption);
+	opacity: 0;
+	transform: translateY(6px);
+	animation: levelEnter 420ms var(--ease-quiet) forwards;
+	animation-delay: var(--delay, 0ms);
+}
+
+.iterationBase {
+	border-left: 3px solid var(--color-border-strong);
+}
+
+.iterationFinal {
+	border-left: 3px solid var(--topic-accent);
+}
+
+.iterationIndex {
+	color: var(--color-text-muted);
+}
+
+.iterationStep {
+	color: var(--color-text-secondary);
+}
+
+.iterationValue {
+	color: var(--color-text-primary);
+	font-weight: var(--font-weight-medium);
+	text-align: right;
+	font-variant-numeric: tabular-nums;
+}
+
+.iterationVerdict {
+	display: flex;
+	flex-direction: column;
+	gap: 2px;
+	padding: var(--space-sm) var(--space-md);
+	background: var(--surface-0);
+	border: 1px solid var(--color-border);
+	border-left: 3px solid var(--topic-accent);
+	border-radius: var(--radius-md);
+}
+
+.iterationVerdictLabel {
+	font-family: var(--font-family-mono);
+	font-size: var(--font-size-caption);
+	letter-spacing: var(--tracking-caps);
+	text-transform: uppercase;
+	color: var(--color-text-muted);
+}
+
+.iterationVerdictResult {
+	font-family: var(--font-family-mono);
+	font-size: var(--font-size-body);
+	font-weight: var(--font-weight-medium);
+	color: var(--color-text-primary);
+}
+
 @media (prefers-reduced-motion: reduce) {
 	.levelGroup {
 		animation-duration: 200ms;
@@ -217,6 +315,9 @@
 	.bars,
 	.verdict {
 		transition-duration: 200ms;
+	}
+	.iterationRow {
+		animation-duration: 200ms;
 	}
 }
 

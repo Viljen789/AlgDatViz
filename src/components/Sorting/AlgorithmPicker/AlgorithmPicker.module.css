@@ -43,12 +43,12 @@
 }
 
 .rowActive {
-	background: rgba(79, 124, 248, 0.08);
-	border-color: rgba(79, 124, 248, 0.45);
+	background: color-mix(in srgb, var(--state-active) 8%, transparent);
+	border-color: color-mix(in srgb, var(--state-active) 45%, transparent);
 }
 
 .rowActive:hover {
-	background: rgba(79, 124, 248, 0.12);
+	background: color-mix(in srgb, var(--state-active) 12%, transparent);
 }
 
 .nameBlock {

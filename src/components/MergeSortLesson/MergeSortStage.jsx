@@ -1,5 +1,6 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import gsap from 'gsap';
+import { ChevronLeft, ChevronRight, Pause, Play } from 'lucide-react';
 import useReducedMotion from '../../hooks/useReducedMotion.js';
 import { SceneNarration } from '../../common/PlaybackEngine';
 import { STAGE_VALUES } from './scenes.js';
@@ -162,28 +163,70 @@ const MergeSortStage = ({
 	leafRectsRef.current = [];
 
 	// Scene 3 is the choreographed merge. Step an index through MERGE_STEPS while
-	// it's active; reduced motion shows the finished run; leaving resets.
+	// it's active. It is NOT an uncontrollable infinite loop: a panicked student
+	// can pause it (or step frame-by-frame) with the inline control, and
+	// prefers-reduced-motion settles straight to the finished run with no motion.
 	const isCombine = activeScene === 3;
 	const [mergeStep, setMergeStep] = useState(0);
+	// Auto-play the merge while the scene is active; the inline button toggles it.
+	const [mergePlaying, setMergePlaying] = useState(true);
+	const lastMergeStep = MERGE_STEPS.length - 1;
+
+	// Reset playback each time the combine scene (re)enters: start from the first
+	// frame, auto-playing, unless reduced motion asks for the static finished run.
 	useEffect(() => {
 		if (!isCombine) {
 			setMergeStep(0);
-			return undefined;
+			return;
 		}
 		if (reducedMotion) {
-			setMergeStep(MERGE_STEPS.length - 1);
-			return undefined;
+			setMergeStep(lastMergeStep);
+			setMergePlaying(false);
+			return;
 		}
 		setMergeStep(0);
-		let idx = 0;
+		setMergePlaying(true);
+	}, [isCombine, reducedMotion, lastMergeStep]);
+
+	// The driving interval only runs while the scene is active, motion is allowed,
+	// and the student has not paused. A raw tick counter (kept in a ref so the
+	// displayed step can clamp) advances to the finished run, holds two ticks,
+	// then replays so a late scroller still sees the whole merge.
+	const mergeTickRef = useRef(mergeStep);
+	useEffect(() => {
+		if (!isCombine || reducedMotion || !mergePlaying) return undefined;
+		// Resume the raw counter from wherever the visible step currently sits.
+		mergeTickRef.current = mergeStep;
 		const id = window.setInterval(() => {
-			idx += 1;
-			// Hold the finished run for two ticks, then replay for late scrollers.
-			if (idx >= MERGE_STEPS.length + 2) idx = 0;
-			setMergeStep(Math.min(idx, MERGE_STEPS.length - 1));
+			let idx = mergeTickRef.current + 1;
+			// Hold the finished run for two ticks, then loop back for the next pass.
+			if (idx >= lastMergeStep + 3) idx = 0;
+			mergeTickRef.current = idx;
+			setMergeStep(Math.min(idx, lastMergeStep));
 		}, 1150);
 		return () => window.clearInterval(id);
-	}, [isCombine, reducedMotion]);
+		// mergeStep is the resume seed only; re-running on every tick would reset
+		// the counter, so it is intentionally not in the dep list.
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [isCombine, reducedMotion, mergePlaying, lastMergeStep]);
+
+	// Manual frame stepping (used while paused); clamps within the real frames and
+	// pauses auto-play so a step never fights the interval.
+	const stepMerge = useCallback(
+		delta => {
+			setMergePlaying(false);
+			setMergeStep(prev =>
+				Math.max(0, Math.min(prev + delta, lastMergeStep))
+			);
+		},
+		[lastMergeStep]
+	);
+
+	const toggleMergePlay = useCallback(() => {
+		// Pressing play while parked on the finished run replays from the top.
+		if (!mergePlaying && mergeStep >= lastMergeStep) setMergeStep(0);
+		setMergePlaying(prev => !prev);
+	}, [mergePlaying, mergeStep, lastMergeStep]);
 
 	const visibleLevels = activeScene >= 1 ? 4 : 1;
 	const showRecurrence = activeScene >= 4;
@@ -469,7 +512,58 @@ const MergeSortStage = ({
 						})}
 					</div>
 				</div>
-				<p className={styles.mergeNarr}>{step.narr}</p>
+				{/* Inline merge transport. The auto-play is no longer an
+				    uncontrollable loop: a student can pause it and step the
+				    compare/copy frames one beat at a time. Hidden under reduced
+				    motion, which already settles to the finished run. */}
+				{!reducedMotion && (
+					<div className={styles.mergeControls}>
+						<button
+							type="button"
+							className={styles.mergeBtn}
+							onClick={() => stepMerge(-1)}
+							disabled={mergeStep <= 0}
+							aria-label="Previous merge step"
+							title="Previous merge step"
+						>
+							<ChevronLeft size={15} strokeWidth={1.8} aria-hidden="true" />
+						</button>
+						<button
+							type="button"
+							className={`${styles.mergeBtn} ${styles.mergePlay}`}
+							onClick={toggleMergePlay}
+							aria-pressed={mergePlaying}
+							aria-label={mergePlaying ? 'Pause merge' : 'Play merge'}
+							title={mergePlaying ? 'Pause merge' : 'Play merge'}
+						>
+							{mergePlaying ? (
+								<Pause
+									size={15}
+									strokeWidth={1.8}
+									fill="currentColor"
+									aria-hidden="true"
+								/>
+							) : (
+								<Play
+									size={15}
+									strokeWidth={1.8}
+									fill="currentColor"
+									aria-hidden="true"
+								/>
+							)}
+						</button>
+						<button
+							type="button"
+							className={styles.mergeBtn}
+							onClick={() => stepMerge(1)}
+							disabled={mergeStep >= lastMergeStep}
+							aria-label="Next merge step"
+							title="Next merge step"
+						>
+							<ChevronRight size={15} strokeWidth={1.8} aria-hidden="true" />
+						</button>
+					</div>
+				)}
 			</div>
 		);
 	};
@@ -541,9 +635,13 @@ const MergeSortStage = ({
 					</div>
 				</div>
 
-				<div className={styles.notation} aria-hidden="true">
-					O(n log n) · n = {STAGE_VALUES.length}
-				</div>
+				{/* Visible "what just happened" caption, docked to the stage for EVERY
+				    scene (the same honest narration fed to the sr-only region above),
+				    so a sighted student can always read the current step in plain
+				    language. aria-hidden: the SceneNarration region already voices it. */}
+				<p className={styles.caption} aria-hidden="true">
+					{sceneNarration}
+				</p>
 			</div>
 		</>
 	);

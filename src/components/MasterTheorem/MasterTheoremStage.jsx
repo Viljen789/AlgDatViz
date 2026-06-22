@@ -6,8 +6,19 @@ import {
 	formatPower,
 	formatLog,
 } from './masterMath.js';
+import { unrollRecurrence, gPow2 } from './iterativeRecurrence.js';
 import { SceneNarration } from '../../common/PlaybackEngine';
 import styles from './MasterTheoremStage.module.css';
+
+// The final scene ('iteration-method') steps outside the Master Theorem: a
+// first-order recurrence T(n) = T(n-1) + g(n) is a linear chain, not a branching
+// tree, so the stage renders an unrolling step-trace instead of the aT(n/b) tree.
+// This index must track that scene's position (the last element of SCENES).
+const ITERATION_SCENE = SCENES.length - 1;
+
+// How many indices to unroll in the trace. n = 10 keeps the stack legible while
+// still ending on a recognisably geometric value: T(10) = 2^10 − 1 = 1023.
+const ITERATION_N = 10;
 
 // Stage geometry. The recursion tree is laid out top-down in a fixed viewBox so
 // the prose column can drive how many levels are revealed per scene without the
@@ -56,6 +67,80 @@ const MasterTheoremStage = ({ activeScene = 0 }) => {
 		() => buildTreeNodes(a, treeDepth),
 		[a, treeDepth]
 	);
+
+	// The iteration scene is a first-order recurrence — a linear chain, not a
+	// branching tree. Unroll T(1)=1, T(n)=T(n-1)+2^(n-1) once and read the trace
+	// straight off the generator (same source the exam key derives from), so the
+	// rows on screen can only ever be what iteration actually produces.
+	const isIteration = activeScene === ITERATION_SCENE;
+	const iteration = useMemo(
+		() => unrollRecurrence({ baseN: 1, baseVal: 1, g: gPow2, n: ITERATION_N }),
+		[]
+	);
+
+	// The iteration scene swaps the whole tree/bars/verdict picture for the
+	// unrolling step-trace. Returning early keeps the branching-tree render path
+	// (every scene 0..ITERATION_SCENE-1) completely untouched — no !isIteration
+	// guards threaded through it — so those scenes stay visually identical.
+	if (isIteration) {
+		const closedForm = `T(n) = 2ⁿ − 1`;
+		const narration = `First-order recurrence T(n) = T(n-1) + 2^(n-1) with T(1) = 1. Unrolling each step adds 2^(k-1); the running total reaches T(${ITERATION_N}) = ${formatNumber(iteration.value)}. The Master Theorem does not apply because the size shrinks by one, not by a factor; the iteration method gives the closed form ${closedForm} ∈ Θ(2ⁿ).`;
+		return (
+			<>
+				<SceneNarration>{narration}</SceneNarration>
+				<div
+					className={styles.wrap}
+					data-scene={activeScene}
+					data-profile="iteration"
+					role="img"
+					aria-label={`Unrolling T(n) = T(n-1) + 2^(n-1): the running total doubles-and-adds-one each step to T(${ITERATION_N}) = ${formatNumber(iteration.value)}, the closed form 2ⁿ − 1`}
+				>
+					<div className={styles.iteration}>
+						<p className={styles.iterationTitle}>
+							Iteration · unroll T(n) = T(n-1) + g(n)
+						</p>
+						<ol className={styles.iterationRows}>
+							<li
+								className={`${styles.iterationRow} ${styles.iterationBase}`}
+								style={{ '--delay': '0ms' }}
+							>
+								<span className={styles.iterationIndex}>T(1)</span>
+								<span className={styles.iterationStep}>base case</span>
+								<span className={styles.iterationValue}>= 1</span>
+							</li>
+							{iteration.steps.map((step, i) => (
+								<li
+									key={step.k}
+									className={`${styles.iterationRow} ${
+										i === iteration.steps.length - 1
+											? styles.iterationFinal
+											: ''
+									}`}
+									style={{ '--delay': `${(i + 1) * 70}ms` }}
+								>
+									<span className={styles.iterationIndex}>T({step.k})</span>
+									<span className={styles.iterationStep}>
+										T({step.k - 1}) + {formatNumber(step.gk)}
+									</span>
+									<span className={styles.iterationValue}>
+										= {formatNumber(step.partial)}
+									</span>
+								</li>
+							))}
+						</ol>
+						<div className={styles.iterationVerdict}>
+							<span className={styles.iterationVerdictLabel}>
+								Iteration method · Master Theorem silent
+							</span>
+							<span className={styles.iterationVerdictResult}>
+								{closedForm} ∈ Θ(2ⁿ)
+							</span>
+						</div>
+					</div>
+				</div>
+			</>
+		);
+	}
 
 	// How much of the stage is revealed.
 	//   scene 0 (setup) → just the root, no bars, no verdict

@@ -35,8 +35,11 @@
 	background: transparent;
 	color: var(--color-text-secondary);
 	cursor: pointer;
-	transition: color var(--transition), background-color var(--transition),
-		border-color var(--transition), transform var(--transition);
+	transition:
+		color var(--transition),
+		background-color var(--transition),
+		border-color var(--transition),
+		transform var(--transition);
 }
 
 .btn:hover:not(:disabled) {
@@ -100,7 +103,9 @@
 	height: 7px;
 	border-radius: var(--radius-pill);
 	background: var(--color-text-dim);
-	transition: background-color var(--transition), transform var(--transition);
+	transition:
+		background-color var(--transition),
+		transform var(--transition);
 }
 
 .dot:hover .dotMark {
@@ -125,14 +130,6 @@
 	font-family: var(--font-family-mono);
 	font-size: var(--font-size-caption);
 	color: var(--color-text-muted);
-}
-
-.metaCount {
-	color: var(--color-text-secondary);
-}
-
-.metaSep {
-	color: var(--color-text-dim);
 }
 
 .metaPlaying {

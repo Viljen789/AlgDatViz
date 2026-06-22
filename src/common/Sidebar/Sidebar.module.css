@@ -122,16 +122,9 @@
 	color: var(--color-text-dim);
 }
 
+/* Layout only — the look comes from the shared <Badge tone="soon">. */
 .soonBadge {
 	flex-shrink: 0;
-	font-family: var(--font-family-mono);
-	font-size: var(--font-size-caption);
-	letter-spacing: var(--tracking-wide);
-	text-transform: uppercase;
-	color: var(--color-text-muted);
-	padding: 2px 6px;
-	border: 1px solid var(--color-border);
-	border-radius: var(--radius-pill);
 }
 
 .icon {
@@ -156,14 +149,9 @@
    chrome that recedes: the same muted uppercase mono caption used for the
    footer "Progress" label, so it groups the rows without competing with them.
    Aligned to the row's text column (icon + gap), not the row inset. */
+/* Padding only — the mono uppercase look comes from the shared <Eyebrow>. */
 .phaseHead {
 	padding: var(--space-md) var(--space-lg) var(--space-xs);
-	font-family: var(--font-family-mono);
-	font-size: var(--font-size-caption);
-	font-weight: var(--font-weight-medium);
-	letter-spacing: var(--tracking-caps);
-	text-transform: uppercase;
-	color: var(--color-text-muted);
 }
 
 /* First phase header sits flush under the nav padding (no double gap). */
@@ -224,18 +212,10 @@
    chrome that survives inside a lesson, so it repeats the cue here. Quiet by
    design: a small mono chip tinted with the topic's --accent (never red). The
    word "Next" carries the meaning, so it reads without colour. */
+/* Layout only — the topic-tinted look comes from the shared <Badge tone="accent">,
+   which reads the row's --accent. */
 .nextChip {
 	flex-shrink: 0;
-	font-family: var(--font-family-mono);
-	font-size: var(--font-size-caption);
-	font-weight: var(--font-weight-medium);
-	letter-spacing: var(--tracking-wide);
-	text-transform: uppercase;
-	color: var(--accent);
-	padding: 2px 6px;
-	border: 1px solid color-mix(in srgb, var(--accent) 30%, transparent);
-	border-radius: var(--radius-pill);
-	background: color-mix(in srgb, var(--accent) 12%, transparent);
 }
 
 /* Tint the leading status dot to agree with the chip (the next row is, by
@@ -266,14 +246,7 @@
 	justify-content: space-between;
 }
 
-.progressLabel {
-	font-family: var(--font-family-mono);
-	font-size: var(--font-size-caption);
-	font-weight: var(--font-weight-medium);
-	letter-spacing: var(--tracking-caps);
-	text-transform: uppercase;
-	color: var(--color-text-muted);
-}
+/* The "Progress" label now uses the shared <Eyebrow>. */
 
 .progressCount {
 	font-family: var(--font-family-mono);

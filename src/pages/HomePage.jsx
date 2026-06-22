@@ -1,6 +1,6 @@
-import { useCallback, useLayoutEffect, useMemo, useRef } from 'react';
+import { Fragment, useCallback, useLayoutEffect, useMemo, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { ArrowRight, Clock, Flame, Lock } from 'lucide-react';
+import { ArrowRight, Clock, Flame, GraduationCap, Lock } from 'lucide-react';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { DrawSVGPlugin } from 'gsap/DrawSVGPlugin';
@@ -16,8 +16,8 @@ import { dailyGoal, examNewCap } from '../lib/activityLog.js';
 import useProgress from '../hooks/useProgress.js';
 import useSrs from '../hooks/useSrs.js';
 import useActivity from '../hooks/useActivity.js';
-import HeroRecompose from './HeroRecompose.jsx';
-import { PHASES, THESIS_SENTENCE, WASH_HUE } from './recomposeLayout.js';
+import HeroInstrument from './HeroInstrument.jsx';
+import TopicFinder from './TopicFinder.jsx';
 import styles from './HomePage.module.css';
 
 gsap.registerPlugin(ScrollTrigger, DrawSVGPlugin, MotionPathPlugin);
@@ -27,6 +27,46 @@ gsap.registerPlugin(ScrollTrigger, DrawSVGPlugin, MotionPathPlugin);
 // Rendered as an inline <path> so it can ink on (drawSVG) the first time a
 // finished node scrolls into view.
 const NODE_CHECK_D = 'M14.5 20.5 l3.5 3.5 l7 -8';
+
+// A stable DOM id for a phase chapter, so the overview map can jump-scroll to it.
+const phaseSlug = name =>
+	`phase-${name
+		.toLowerCase()
+		.replace(/[^a-z0-9]+/g, '-')
+		.replace(/^-|-$/g, '')}`;
+
+// Roman numerals for the five acts — quieter and more "chapter" than 1..5.
+const PHASE_NUMERALS = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII'];
+
+// ---- Serpentine spine geometry ----------------------------------------------
+// The rail is a gentle sine that snakes down the column instead of a dead-straight
+// line. The path lives in a fixed 0..1000 user space (the rail SVG is stretched to
+// the spine's true pixel height via preserveAspectRatio="none", x-scale 1 since the
+// box width == the viewBox width). ONE amplitude + wave count drives three things
+// that must agree: the drawn path, each station dot's horizontal nudge onto that
+// path, and the comet that rides it. With no JS / reduced motion the rail stays a
+// straight centred line (the static markup `d`), so nothing depends on the snake.
+const RAIL_W = 48; // rail box + marker gutter width (px == viewBox units)
+const RAIL_CX = RAIL_W / 2; // centreline
+const RAIL_AMP = 13; // horizontal swing (px)
+const RAIL_WAVES = 3.5; // gentle S-curves over the whole spine
+// Horizontal offset from the centreline at vertical fraction f ∈ [0,1].
+const railWaveX = f => RAIL_AMP * Math.sin(2 * Math.PI * RAIL_WAVES * f);
+// The snake as an SVG path in 0..1000 user space (sampled finely enough to read as
+// a smooth curve). Used for both the base + ink strokes once JS takes over.
+const RAIL_PATH = (() => {
+	const STEPS = 160;
+	let d = '';
+	for (let i = 0; i <= STEPS; i += 1) {
+		const f = i / STEPS;
+		const x = (RAIL_CX + railWaveX(f)).toFixed(2);
+		const y = (f * 1000).toFixed(1);
+		d += `${i === 0 ? 'M' : 'L'}${x} ${y} `;
+	}
+	return d.trim();
+})();
+// The straight centreline fallback drawn in the markup (no-JS / reduced motion).
+const RAIL_STRAIGHT = `M${RAIL_CX} 0 L${RAIL_CX} 1000`;
 
 const PreviewBars = () => (
 	<svg
@@ -525,56 +565,6 @@ const HomePage = () => {
 	const { todayCount, currentStreak, daysUntilExam } = useActivity();
 	const pageRef = useRef(null);
 	const nodeRefs = useRef([]);
-	// The live figure legend is updated imperatively (5× per loop) to avoid a
-	// React re-render on every morph boundary.
-	const figureRef = useRef(null);
-	const figureNameRef = useRef(null);
-	const figureNoteRef = useRef(null);
-	const figureTipRef = useRef(null);
-	const tipTween = useRef(null);
-	const flipTimer = useRef(null);
-
-	// HeroRecompose calls this at each morph completion: swap the structure name
-	// and its one defining fact, retint the "Fig. 1" mark to the active concept
-	// hue, and play a brief flip.
-	const handleHeroState = useCallback(state => {
-		const phase = PHASES[state];
-		const fig = figureRef.current;
-		const nameEl = figureNameRef.current;
-		const noteEl = figureNoteRef.current;
-		if (nameEl && phase) nameEl.textContent = phase.name;
-		if (noteEl && phase) noteEl.textContent = phase.note;
-		// The deeper DSA hint surfaces a beat AFTER the structure settles: fade the
-		// previous tip out, swap its text while hidden, then ease it back in. Killed
-		// and restarted on each state change so reveals never stack.
-		const tipEl = figureTipRef.current;
-		if (tipEl && phase) {
-			tipTween.current?.kill();
-			tipTween.current = gsap
-				.timeline()
-				.to(tipEl, { autoAlpha: 0, duration: 0.3, ease: 'power1.in' })
-				.add(() => {
-					tipEl.textContent = phase.tip;
-				})
-				.to(
-					tipEl,
-					{ autoAlpha: 0.8, duration: 0.55, ease: 'power1.out' },
-					'+=0.8'
-				);
-		}
-		if (fig && WASH_HUE[state] != null) {
-			fig.style.setProperty('--wash-h', String(WASH_HUE[state]));
-			fig.classList.remove(styles.isFlipping);
-			// force reflow so the flip animation restarts on each swap
-			void fig.offsetWidth;
-			fig.classList.add(styles.isFlipping);
-			clearTimeout(flipTimer.current);
-			flipTimer.current = setTimeout(() => {
-				if (figureRef.current)
-					figureRef.current.classList.remove(styles.isFlipping);
-			}, 220);
-		}
-	}, []);
 
 	const allComplete = overall.allComplete;
 	const started = overall.visited > 0;
@@ -611,6 +601,39 @@ const HomePage = () => {
 		const firstOpen = BUILT_TOPICS.find(topic => !isCompleted(topic.id));
 		return firstOpen || FIRST_TOPIC;
 	}, [allComplete, isCompleted]);
+
+	// The macro-arc: the curriculum's `phase` field, collapsed to the ordered set
+	// of acts with each act's topic count and how many are finished. Drives both
+	// the at-a-glance overview map (in the header) and the inline chapter markers
+	// on the spine. Derived from the same single source of truth as the nodes.
+	const phases = useMemo(() => {
+		const order = [];
+		const byName = new Map();
+		CURRICULUM.forEach(topic => {
+			let entry = byName.get(topic.phase);
+			if (!entry) {
+				entry = { name: topic.phase, total: 0, done: 0 };
+				byName.set(topic.phase, entry);
+				order.push(entry);
+			}
+			entry.total += 1;
+			if (isCompleted(topic.id)) entry.done += 1;
+		});
+		return order.map((entry, i) => ({ ...entry, index: i }));
+	}, [isCompleted]);
+
+	const phaseIndexByName = useMemo(
+		() => new Map(phases.map(p => [p.name, p])),
+		[phases]
+	);
+
+	// Jump-scroll the page's own scroller to a chapter. Programmatic smooth scroll
+	// is safe here (the spine's scrubbed comet just rides along) — unlike a global
+	// CSS scroll-behavior, which would desync the scrub.
+	const scrollToPhase = useCallback(name => {
+		const el = document.getElementById(phaseSlug(name));
+		if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+	}, []);
 
 	const heroState = useMemo(() => {
 		if (allComplete) {
@@ -654,23 +677,6 @@ const HomePage = () => {
 		const pageEl = pageRef.current;
 		if (!pageEl) return undefined;
 
-		// Seed the live figure legend to the static-tree frame. HeroRecompose then
-		// drives it imperatively via onState; reduced-motion / no-JS users never get
-		// an onState call, so this is the legend they keep — "Binary tree", tinted to
-		// match the drawn tree the static SVG shows.
-		if (figureRef.current) {
-			figureRef.current.style.setProperty('--wash-h', String(WASH_HUE.tree));
-		}
-		if (figureNameRef.current) {
-			figureNameRef.current.textContent = PHASES.tree.name;
-		}
-		if (figureNoteRef.current) {
-			figureNoteRef.current.textContent = PHASES.tree.note;
-		}
-		if (figureTipRef.current) {
-			figureTipRef.current.textContent = PHASES.tree.tip;
-		}
-
 		const ctx = gsap.context(() => {
 			const mm = gsap.matchMedia();
 			mm.add('(prefers-reduced-motion: no-preference)', () => {
@@ -685,10 +691,9 @@ const HomePage = () => {
 				const ruleEl = q('[data-hero-rule]');
 				const titleLineEls = pageEl.querySelectorAll('[data-hero-title-line]');
 				const subEl = q('[data-hero-sub]');
-				const stripEl = q('[data-hero-strip]');
 				const actionEls = pageEl.querySelectorAll('[data-hero-actions] > *');
 				const progressEl = q('[data-hero-progress]');
-				const recomposeEl = q('[data-hero-recompose]');
+				const instrumentEl = q('[data-hero-instrument]');
 
 				// The lamp warms on: a soft, slightly oversized glow easing down into
 				// place, like a desk lamp reaching temperature. Opacity + scale only,
@@ -699,12 +704,11 @@ const HomePage = () => {
 						{ autoAlpha: 0, scale: 1.14, duration: 1.7, ease: 'sine.out' },
 						0
 					);
-				// The instrument leads. Its container reveals on the very first beat,
-				// so the stems (which ink themselves on inside HeroRecompose) read as
-				// the hero drawing itself before any words arrive.
-				if (recomposeEl)
+				// The instrument leads — its plate settles in on the first beat, so the
+				// figure is present (already at the array) before the words land.
+				if (instrumentEl)
 					heroTl.from(
-						recomposeEl,
+						instrumentEl,
 						{ autoAlpha: 0, scale: 0.98, duration: 0.85, ease: 'power2.out' },
 						0
 					);
@@ -741,8 +745,6 @@ const HomePage = () => {
 					);
 				if (subEl)
 					heroTl.from(subEl, { y: 18, opacity: 0, duration: 0.7 }, 0.5);
-				if (stripEl)
-					heroTl.from(stripEl, { y: 12, opacity: 0, duration: 0.6 }, 0.58);
 				if (actionEls.length)
 					heroTl.from(
 						actionEls,
@@ -751,14 +753,6 @@ const HomePage = () => {
 					);
 				if (progressEl)
 					heroTl.from(progressEl, { y: 12, opacity: 0, duration: 0.6 }, 0.7);
-				// The figure legend lands as the closing beat of the hero entrance.
-				const figCaptionEl = q('[data-hero-figure-caption]');
-				if (figCaptionEl)
-					heroTl.from(
-						figCaptionEl,
-						{ y: 10, opacity: 0, duration: 0.6, ease: 'power2.out' },
-						0.62
-					);
 
 				// ---- Hero lamp drifts down a touch as you scroll past it ----
 				const heroEl = q('[data-hero]');
@@ -787,15 +781,53 @@ const HomePage = () => {
 				const glowEl = q('[data-rail-glow]');
 				const spineEl = q('[data-spine]');
 
+				// Seat each station on the sine at its own vertical fraction so the rail
+				// threads through every stop. offsetTop (layout, transform-free) stays
+				// correct even while nodes sit pre-reveal at opacity 0 / y:30.
+				const offsetWithin = (el, stop) => {
+					let t = 0;
+					let n = el;
+					while (n && n !== stop) {
+						t += n.offsetTop;
+						n = n.offsetParent;
+					}
+					return t;
+				};
+				const placeStations = () => {
+					if (!railEl || !spineEl) return;
+					// railEl is an <svg> (no offsetTop); its top inset is the CSS 22px and
+					// its height is the spine minus the 22px top + 22px bottom insets.
+					const railTop = 22;
+					const railH = spineEl.offsetHeight - 44;
+					if (railH <= 0) return;
+					pageEl.querySelectorAll('[data-station]').forEach(st => {
+						const cy = offsetWithin(st, spineEl) + st.offsetHeight / 2;
+						const off = railWaveX((cy - railTop) / railH);
+						gsap.set(
+							st,
+							st.dataset.station === 'diamond'
+								? { x: off, rotation: 45 }
+								: { x: off }
+						);
+					});
+				};
+
 				if (railEl && fillEl && spineEl) {
+					// JS takes over: swap the straight fallback for the drawn serpentine.
+					gsap.set([baseEl, fillEl].filter(Boolean), {
+						attr: { d: RAIL_PATH },
+					});
 					gsap.set([headEl, glowEl].filter(Boolean), { opacity: 1 });
 					// The base reads as the full filament from the first frame.
 					if (baseEl) gsap.set(baseEl, { drawSVG: '100%' });
+					placeStations();
 					const railTl = gsap.timeline({
 						scrollTrigger: {
 							trigger: spineEl,
 							scroller: pageEl,
 							start: 'top 72%',
+							// Re-seat the dots whenever ScrollTrigger re-measures (resize / fonts).
+							onRefresh: placeStations,
 							end: 'bottom 60%',
 							// Lock the ink to the scroll position. scrub: true tracks the
 							// reader 1:1 with no catch-up; 0.6 then 0.2 still read as the
@@ -811,19 +843,32 @@ const HomePage = () => {
 						{ drawSVG: '100%', ease: 'none' },
 						0
 					);
-					if (headEl)
-						railTl.to(
-							headEl,
+					// The comet rides the literal ink tip. The spine is a straight
+					// vertical line, so a direct y-translate (0 → the line's pixel
+					// height) tracks the tip exactly and at the SCROLL's rate. The old
+					// MotionPath sampled the path in its 1000-unit viewBox space, which
+					// under preserveAspectRatio="none" mis-mapped to the stretched height
+					// and crawled behind the reader. (44 = the 22px top+bottom insets.)
+					// The comet rides the ink tip ALONG the curve: y tracks the scroll, x follows
+					// the same sine the path + dots use, so it stays on the rail (a straight
+					// y-translate would cut across the bends).
+					if (headEl) {
+						const head = { f: 0 };
+						railTl.fromTo(
+							head,
+							{ f: 0 },
 							{
-								motionPath: {
-									path: fillEl,
-									align: fillEl,
-									alignOrigin: [0.5, 0.5],
-								},
+								f: 1,
 								ease: 'none',
+								onUpdate: () =>
+									gsap.set(headEl, {
+										y: head.f * (spineEl.offsetHeight - 44),
+										x: railWaveX(head.f),
+									}),
 							},
 							0
 						);
+					}
 					if (glowEl)
 						railTl.fromTo(
 							glowEl,
@@ -901,7 +946,6 @@ const HomePage = () => {
 
 		return () => {
 			cancelAnimationFrame(raf);
-			clearTimeout(flipTimer.current);
 			ctx.revert();
 		};
 	}, []);
@@ -948,14 +992,6 @@ const HomePage = () => {
 					</h1>
 					<p className={styles.heroSubtitle} data-hero-sub>
 						{heroState.subtitle}
-					</p>
-					<p className={styles.heroThesisStrip} data-hero-strip>
-						{THESIS_SENTENCE}{' '}
-						<span className={styles.heroThesisForms}>
-							{Object.values(PHASES)
-								.map(p => p.name)
-								.join(' · ')}
-						</span>
 					</p>
 					<div className={styles.today} data-hero-actions>
 						<div className={styles.todayTop}>
@@ -1030,39 +1066,95 @@ const HomePage = () => {
 						)}
 					</div>
 				</div>
-				<figure className={styles.heroFigure} ref={figureRef}>
-					<HeroRecompose
-						className={styles.heroRecompose}
-						onState={handleHeroState}
-					/>
-					<figcaption
-						className={styles.heroFigcaption}
-						aria-hidden="true"
-						data-hero-figure-caption
-					>
-						{/* Legend text + the figure's --wash-h are imperative DOM, driven
-						    by HeroRecompose via onState (and seeded in the layout effect).
-						    React must not manage them, or it resets the live values on
-						    every re-render — hence no text children and no inline --wash-h. */}
-						<span className={styles.heroFigureRow}>
-							<span className={styles.heroFigureMark}>Fig. 1</span>
-							<span className={styles.heroFigureName} ref={figureNameRef} />
-						</span>
-						<span className={styles.heroFigureNote} ref={figureNoteRef} />
-						<span className={styles.heroFigureTip} ref={figureTipRef} />
-					</figcaption>
-				</figure>
+				<HeroInstrument />
 			</section>
+
+			<TopicFinder markVisited={markVisited} />
 
 			<section className={styles.pathSection} aria-labelledby="path-heading">
 				<header className={styles.pathHeader}>
-					<p className={styles.label}>The path</p>
+					<p className={styles.label}>Your path</p>
 					<h2 id="path-heading" className={styles.pathHeading}>
-						The full curriculum, in the order it teaches itself.
+						{allComplete
+							? `All ${overall.total} topics behind you — revisit anything below.`
+							: overall.completed > 0
+								? `${overall.completed} of ${overall.total} done — next up, ${nextTopic.name.toLowerCase()}.`
+								: `Your route through all ${overall.total} topics of TDT4120.`}
 					</h2>
-					<p className={styles.pathSub}>
-						Every topic in the TDT4120 syllabus, end to end — from arrays and
-						complexity through to NP-completeness.
+
+					{/* Personal progress roadmap: one segment per phase, sized by its topic
+					    count and filled by how much of it you've mastered, with a "you are
+					    here" on the active phase and the exam as the finish line. The
+					    segments double as jump links to each chapter on the spine. */}
+					<div className={styles.roadmap}>
+						<ol className={styles.roadmapTrack} aria-label="Progress by phase">
+							{phases.map(phase => {
+								const frac = phase.total ? phase.done / phase.total : 0;
+								const done = phase.done === phase.total;
+								const current = !allComplete && phase.name === nextTopic?.phase;
+								return (
+									<li
+										key={phase.name}
+										className={styles.seg}
+										style={{ flexGrow: phase.total }}
+										data-done={done || undefined}
+										data-current={current || undefined}
+									>
+										<button
+											type="button"
+											className={styles.segBtn}
+											onClick={() => scrollToPhase(phase.name)}
+											title={`${phase.name} — ${phase.done} of ${phase.total} done`}
+										>
+											<span className={styles.segHead}>
+												<span className={styles.segName}>{phase.name}</span>
+												<span className={styles.segCount}>
+													{phase.done}/{phase.total}
+												</span>
+											</span>
+											<span className={styles.segBar}>
+												<span
+													className={styles.segFill}
+													style={{ width: `${frac * 100}%` }}
+												/>
+											</span>
+											{current && (
+												<span className={styles.segHere}>you are here</span>
+											)}
+										</button>
+									</li>
+								);
+							})}
+							<li className={styles.segFinish}>
+								<GraduationCap size={15} strokeWidth={2} aria-hidden="true" />
+								<span>Exam</span>
+							</li>
+						</ol>
+					</div>
+
+					<p className={styles.pathMeta}>
+						<span className={styles.pathMetaStrong}>
+							{overall.completed}/{overall.total} mastered
+						</span>
+						{currentStreak > 0 && (
+							<span className={styles.pathMetaItem}>
+								<Flame size={12} strokeWidth={2.4} aria-hidden="true" />
+								{currentStreak}-day streak
+							</span>
+						)}
+						{daysUntilExam != null && daysUntilExam >= 0 && (
+							<span className={styles.pathMetaItem}>
+								Exam in {daysUntilExam} days
+								{overall.completed < overall.total &&
+									` · ${overall.total - overall.completed} to go`}
+							</span>
+						)}
+						{started && dueTotal > 0 && (
+							<Link to="/review" className={styles.pathMetaLink}>
+								<Clock size={12} strokeWidth={2.2} aria-hidden="true" />
+								{dueTotal} due to review
+							</Link>
+						)}
 					</p>
 				</header>
 
@@ -1078,7 +1170,7 @@ const HomePage = () => {
 						className={styles.rail}
 						aria-hidden="true"
 						data-rail
-						viewBox="0 0 2 1000"
+						viewBox={`0 0 ${RAIL_W} 1000`}
 						preserveAspectRatio="none"
 					>
 						<defs>
@@ -1125,61 +1217,104 @@ const HomePage = () => {
 							</linearGradient>
 						</defs>
 						{/* No non-scaling-stroke here: with preserveAspectRatio="none" the
-						    y-scale must drive the dash lengths so drawSVG maps to the box
-						    height, while the x-scale (2px box / 2 units = 1) already keeps
-						    the vertical stroke a crisp ~2px. */}
-						<path className={styles.railBase} data-rail-base d="M1 0 V1000" />
-						<path className={styles.railFill} data-rail-fill d="M1 0 V1000" />
+						    y-scale drives the dash lengths so drawSVG maps to the box
+						    height, while the x-scale (box width == viewBox width, so 1)
+						    keeps the stroke a crisp ~2px and the wave's amplitude honest.
+						    The static `d` is the straight centreline (the no-JS /
+						    reduced-motion rail); the motion layer swaps in the serpentine. */}
+						<path
+							className={styles.railBase}
+							data-rail-base
+							d={RAIL_STRAIGHT}
+						/>
+						<path
+							className={styles.railFill}
+							data-rail-fill
+							d={RAIL_STRAIGHT}
+						/>
 					</svg>
 					<span className={styles.railHead} aria-hidden="true" data-rail-head />
 
 					<ol className={styles.spine} aria-label="Learning path">
 						{CURRICULUM.map((topic, idx) => {
+							// At each phase boundary, emit a chapter marker before the topic
+							// so the spine reads as five labelled acts.
+							const showPhase =
+								idx === 0 || CURRICULUM[idx - 1].phase !== topic.phase;
+							const phaseMeta = phaseIndexByName.get(topic.phase);
+							const phaseHeader = showPhase ? (
+								<li
+									id={phaseSlug(topic.phase)}
+									className={styles.phaseRow}
+									data-done={phaseMeta.done === phaseMeta.total}
+								>
+									<div className={styles.phaseMarker} aria-hidden="true">
+										<span
+											className={styles.phaseDiamond}
+											data-station="diamond"
+										/>
+									</div>
+									<div className={styles.phaseLabel}>
+										<span className={styles.phaseKicker}>
+											Phase {PHASE_NUMERALS[phaseMeta.index]}
+										</span>
+										<h3 className={styles.phaseTitle}>{topic.phase}</h3>
+									</div>
+									<span className={styles.phaseCount}>
+										{phaseMeta.done > 0
+											? `${phaseMeta.done} / ${phaseMeta.total} done`
+											: `${phaseMeta.total} topics`}
+									</span>
+								</li>
+							) : null;
+
 							// Coming-soon: a clearly-labelled, non-navigable, muted node.
 							if (topic.status === 'soon') {
 								return (
-									<li
-										key={topic.id}
-										data-idx={idx}
-										data-node
-										ref={node => {
-											nodeRefs.current[idx] = node;
-										}}
-										tabIndex={-1}
-										className={`${styles.node} ${styles.nodeSoon}`}
-										style={{ '--accent': topic.accent }}
-									>
-										<div className={styles.nodeMarker} aria-hidden="true">
-											<span className={styles.nodeDot} data-dot>
-												<span className={styles.nodeDotInner} />
-											</span>
-										</div>
-										<div
-											className={styles.nodeBody}
-											aria-label={`${topic.name} — coming soon`}
+									<Fragment key={topic.id}>
+										{phaseHeader}
+										<li
+											data-idx={idx}
+											data-node
+											ref={node => {
+												nodeRefs.current[idx] = node;
+											}}
+											tabIndex={-1}
+											className={`${styles.node} ${styles.nodeSoon}`}
+											style={{ '--accent': topic.accent }}
 										>
-											<div className={styles.nodeHead}>
-												<span className={styles.nodeNumber}>
-													{topic.number}
-												</span>
-												<span className={styles.nodeSoonBadge}>
-													<Lock
-														size={11}
-														strokeWidth={2.4}
-														aria-hidden="true"
-													/>
-													Coming soon
+											<div className={styles.nodeMarker} aria-hidden="true">
+												<span className={styles.nodeDot} data-dot data-station>
+													<span className={styles.nodeDotInner} />
 												</span>
 											</div>
-											<h3 className={styles.nodeName}>{topic.name}</h3>
-											<p className={styles.nodeQuote}>{topic.pullQuote}</p>
-											<div className={styles.nodeFoot}>
-												<span className={styles.nodeComplexity}>
-													{topic.complexity}
-												</span>
+											<div
+												className={styles.nodeBody}
+												aria-label={`${topic.name} — coming soon`}
+											>
+												<div className={styles.nodeHead}>
+													<span className={styles.nodeNumber}>
+														{topic.number}
+													</span>
+													<span className={styles.nodeSoonBadge}>
+														<Lock
+															size={11}
+															strokeWidth={2.4}
+															aria-hidden="true"
+														/>
+														Coming soon
+													</span>
+												</div>
+												<h4 className={styles.nodeName}>{topic.name}</h4>
+												<p className={styles.nodeQuote}>{topic.pullQuote}</p>
+												<div className={styles.nodeFoot}>
+													<span className={styles.nodeComplexity}>
+														{topic.complexity}
+													</span>
+												</div>
 											</div>
-										</div>
-									</li>
+										</li>
+									</Fragment>
 								);
 							}
 
@@ -1195,86 +1330,110 @@ const HomePage = () => {
 										? 'In progress'
 										: '';
 							return (
-								<li
-									key={topic.id}
-									data-idx={idx}
-									data-node
-									ref={node => {
-										nodeRefs.current[idx] = node;
-									}}
-									tabIndex={-1}
-									className={`${styles.node} ${
-										completed ? styles.nodeComplete : ''
-									} ${visited ? styles.nodeVisited : ''} ${
-										isNext ? styles.nodeNext : ''
-									}`}
-									style={{
-										'--accent': topic.accent,
-										'--accent-contrast': `var(--topic-${topic.id}-contrast)`,
-									}}
-								>
-									<div className={styles.nodeMarker} aria-hidden="true">
-										<span className={styles.nodeDot} data-dot>
-											{completed ? (
-												<svg
-													className={styles.nodeCheck}
-													viewBox="12 12 16 16"
-													fill="none"
-												>
-													<path
-														className={styles.nodeCheckPath}
-														data-check
-														d={NODE_CHECK_D}
-														pathLength="1"
-														vectorEffect="non-scaling-stroke"
-													/>
-												</svg>
-											) : (
-												<span className={styles.nodeDotInner} />
-											)}
-										</span>
-										{isNext && <span className={styles.nodeRing} />}
-									</div>
-
-									<button
-										type="button"
-										className={styles.nodeBody}
-										onClick={() => visit(topic)}
-										onKeyDown={event => onKeyNavigate(event, idx)}
-										aria-describedby={`node-quote-${topic.id}`}
+								<Fragment key={topic.id}>
+									{phaseHeader}
+									<li
+										data-idx={idx}
+										data-node
+										ref={node => {
+											nodeRefs.current[idx] = node;
+										}}
+										tabIndex={-1}
+										className={`${styles.node} ${
+											completed ? styles.nodeComplete : ''
+										} ${visited ? styles.nodeVisited : ''} ${
+											isNext ? styles.nodeNext : ''
+										}`}
+										style={{
+											'--accent': topic.accent,
+											'--accent-contrast': `var(--topic-${topic.id}-contrast)`,
+										}}
 									>
-										<div className={styles.nodeHead}>
-											<span className={styles.nodeNumber}>{topic.number}</span>
-											{statusText && (
-												<span className={styles.nodeStatus}>{statusText}</span>
-											)}
-										</div>
-										<h3 className={styles.nodeName}>{topic.name}</h3>
-										<p
-											id={`node-quote-${topic.id}`}
-											className={styles.nodeQuote}
-										>
-											{topic.pullQuote}
-										</p>
-										<div className={styles.nodeFoot}>
-											<span className={styles.nodeComplexity}>
-												{topic.complexity}
+										<div className={styles.nodeMarker} aria-hidden="true">
+											<span className={styles.nodeDot} data-dot data-station>
+												{completed ? (
+													<svg
+														className={styles.nodeCheck}
+														viewBox="12 12 16 16"
+														fill="none"
+													>
+														<path
+															className={styles.nodeCheckPath}
+															data-check
+															d={NODE_CHECK_D}
+															pathLength="1"
+															vectorEffect="non-scaling-stroke"
+														/>
+													</svg>
+												) : (
+													<span className={styles.nodeDotInner} />
+												)}
+												{/* Inside the dot so it inherits the dot's serpentine x-nudge
+												    (placeStations) — otherwise it floats at the gutter centre. */}
+												{isNext && <span className={styles.nodeRing} />}
 											</span>
-											<span className={styles.nodeArrow} aria-hidden="true">
-												Open
-												<ArrowRight size={13} strokeWidth={2} />
-											</span>
 										</div>
-									</button>
 
-									{Preview && (
-										<div className={styles.nodePreview} aria-hidden="true">
-											<Preview />
-										</div>
-									)}
-								</li>
+										<button
+											type="button"
+											className={styles.nodeBody}
+											onClick={() => visit(topic)}
+											onKeyDown={event => onKeyNavigate(event, idx)}
+											aria-describedby={`node-quote-${topic.id}`}
+										>
+											<div className={styles.nodeHead}>
+												<span className={styles.nodeNumber}>
+													{topic.number}
+												</span>
+												{statusText && (
+													<span className={styles.nodeStatus}>
+														{statusText}
+													</span>
+												)}
+											</div>
+											<h4 className={styles.nodeName}>{topic.name}</h4>
+											<p
+												id={`node-quote-${topic.id}`}
+												className={styles.nodeQuote}
+											>
+												{topic.pullQuote}
+											</p>
+											<div className={styles.nodeFoot}>
+												<span className={styles.nodeComplexity}>
+													{topic.complexity}
+												</span>
+												<span className={styles.nodeArrow} aria-hidden="true">
+													Open
+													<ArrowRight size={13} strokeWidth={2} />
+												</span>
+											</div>
+										</button>
+
+										{Preview && (
+											<div className={styles.nodePreview} aria-hidden="true">
+												<Preview />
+											</div>
+										)}
+									</li>
+								</Fragment>
 							);
 						})}
+						<li className={styles.examStop}>
+							<div className={styles.examMarker} aria-hidden="true">
+								<span className={styles.examDot} data-station>
+									<GraduationCap size={14} strokeWidth={2.2} />
+								</span>
+							</div>
+							<div className={styles.examLabel}>
+								<span className={styles.examKicker}>The finish line</span>
+								<span className={styles.examName}>Exam</span>
+							</div>
+							<span className={styles.examMeta}>
+								{daysUntilExam != null && daysUntilExam >= 0
+									? `in ${daysUntilExam} days`
+									: 'when you’re ready'}
+							</span>
+						</li>
 					</ol>
 				</div>
 

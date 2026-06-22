@@ -81,7 +81,7 @@
 
 .comparingBox {
 	border-color: var(--state-active);
-	background-color: rgba(79, 124, 248, 0.16);
+	background-color: color-mix(in srgb, var(--state-active) 16%, transparent);
 	color: var(--color-text-primary);
 }
 

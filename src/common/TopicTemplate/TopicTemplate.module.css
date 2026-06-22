@@ -84,7 +84,9 @@
 	font-size: var(--font-size-label);
 	font-weight: var(--font-weight-medium);
 	cursor: pointer;
-	transition: color var(--transition), background-color var(--transition),
+	transition:
+		color var(--transition),
+		background-color var(--transition),
 		border-color var(--transition);
 }
 
@@ -333,7 +335,9 @@
 	border-left: 2px solid transparent;
 	text-decoration: none;
 	color: var(--color-text-secondary);
-	transition: color var(--transition), background-color var(--transition),
+	transition:
+		color var(--transition),
+		background-color var(--transition),
 		border-color var(--transition);
 }
 
@@ -446,6 +450,202 @@
 	font-size: var(--font-size-body);
 	line-height: var(--line-height-body);
 	color: var(--color-text-secondary);
+}
+
+/* ---------- Lock it in (retrieval handoff) ---------- */
+
+/* A calm closing card: a single hairline-bordered panel, not a dashboard. The
+   brand chrome tints it (review/retrieval is a cross-topic surface, so it reads
+   in the brand hue rather than this topic's signature accent). */
+.lockIn {
+	max-width: 1280px;
+	/* Inset from the page edges by the same horizontal rhythm the playground/up-next
+	   sections use, so the card lines up with the column above it. */
+	margin: clamp(var(--space-2xl), 6vw, var(--space-4xl))
+		clamp(var(--space-xl), 6vw, var(--space-4xl)) 0;
+	padding: clamp(var(--space-xl), 4vw, var(--space-2xl));
+	box-sizing: border-box;
+	background: var(--surface-1);
+	border: 1px solid var(--color-border);
+	border-radius: var(--radius-lg);
+	display: flex;
+	flex-direction: column;
+	gap: var(--space-lg);
+}
+
+/* Centre the capped card on very wide viewports (margins collapse to auto once the
+   1280px cap bites, keeping it aligned with the centred sections above). */
+@media (min-width: 1408px) {
+	.lockIn {
+		margin-left: auto;
+		margin-right: auto;
+	}
+}
+
+/* The quieter, unfinished-lesson state: the plain panel above, no brand rule. A
+   marker class (kept so the className is always a real, non-undefined token and a
+   future tweak has a hook). */
+.lockInOpen {
+	border-left: 3px solid var(--color-border);
+}
+
+/* A finished lesson earns a confident close: a brand-tinted left rule + wash. */
+.lockInDone {
+	border-left: 3px solid hsl(var(--brand-h) var(--brand-s) var(--brand-l));
+	background: linear-gradient(
+		to right,
+		hsl(var(--brand-h) var(--brand-s) var(--brand-l) / 0.05),
+		var(--surface-1) 40%
+	);
+}
+
+.lockInHead {
+	display: flex;
+	flex-direction: column;
+	gap: var(--space-xs);
+	max-width: 60ch;
+}
+
+.lockInTitle {
+	margin: 0;
+	font-family: var(--font-family-display);
+	font-size: var(--font-size-heading-lg);
+	font-weight: var(--font-weight-display);
+	line-height: var(--line-height-heading);
+	letter-spacing: var(--tracking-heading);
+	color: var(--color-text-primary);
+}
+
+.lockInLede {
+	margin: 0;
+	font-size: var(--font-size-body);
+	line-height: var(--line-height-body);
+	color: var(--color-text-secondary);
+}
+
+.lockInActions {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: var(--space-md);
+}
+
+/* Primary: launch the inline retrieval drill. Solid brand chrome fill. */
+.lockInPrimary {
+	display: inline-flex;
+	align-items: center;
+	gap: var(--space-sm);
+	padding: 10px 18px;
+	background: hsl(var(--brand-h) var(--brand-s) var(--brand-l));
+	border: 1px solid hsl(var(--brand-h) var(--brand-s) var(--brand-l));
+	border-radius: var(--radius-md);
+	color: var(--color-text-on-accent);
+	font-family: var(--font-family-sans);
+	font-size: var(--font-size-label);
+	font-weight: var(--font-weight-semibold);
+	cursor: pointer;
+	transition:
+		background-color var(--transition),
+		border-color var(--transition);
+}
+
+.lockInPrimary:hover {
+	background: hsl(var(--brand-h) var(--brand-s) calc(var(--brand-l) - 6%));
+	border-color: hsl(var(--brand-h) var(--brand-s) calc(var(--brand-l) - 6%));
+}
+
+.lockInPrimary:focus-visible {
+	outline: none;
+	box-shadow: var(--shadow-focus);
+}
+
+/* Secondary: a quiet outline link to the topic-scoped exam. */
+.lockInSecondary {
+	display: inline-flex;
+	align-items: center;
+	gap: var(--space-sm);
+	padding: 10px 16px;
+	background: transparent;
+	border: 1px solid var(--color-border);
+	border-radius: var(--radius-md);
+	color: var(--color-text-secondary);
+	font-family: var(--font-family-sans);
+	font-size: var(--font-size-label);
+	font-weight: var(--font-weight-medium);
+	text-decoration: none;
+	transition:
+		color var(--transition),
+		background-color var(--transition),
+		border-color var(--transition);
+}
+
+.lockInSecondary:hover {
+	color: var(--color-text-primary);
+	background: var(--surface-hover);
+	border-color: var(--color-border-strong);
+}
+
+.lockInSecondary:focus-visible {
+	outline: none;
+	box-shadow: var(--shadow-focus);
+}
+
+/* The inline drill panel, expanded in place when "Recall this topic" is pressed. */
+.lockInDrill {
+	display: flex;
+	flex-direction: column;
+	gap: var(--space-md);
+	padding-top: var(--space-xs);
+	border-top: 1px solid var(--color-border-subtle);
+}
+
+.lockInDrillHead {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: var(--space-md);
+	flex-wrap: wrap;
+}
+
+.lockInDrillTitle {
+	margin: 0;
+	font-size: var(--font-size-label);
+	color: var(--color-text-secondary);
+}
+
+.lockInDrillTitle strong {
+	color: var(--color-text-primary);
+	font-weight: var(--font-weight-semibold);
+}
+
+.lockInDrillClose {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	padding: 6px 12px;
+	background: transparent;
+	border: 1px solid var(--color-border);
+	border-radius: var(--radius-md);
+	color: var(--color-text-secondary);
+	font-family: var(--font-family-sans);
+	font-size: var(--font-size-label);
+	font-weight: var(--font-weight-medium);
+	cursor: pointer;
+	transition:
+		color var(--transition),
+		background-color var(--transition),
+		border-color var(--transition);
+}
+
+.lockInDrillClose:hover {
+	color: var(--color-text-primary);
+	background: var(--surface-hover);
+	border-color: var(--color-border-strong);
+}
+
+.lockInDrillClose:focus-visible {
+	outline: none;
+	box-shadow: var(--shadow-focus);
 }
 
 /* ---------- Responsive ---------- */

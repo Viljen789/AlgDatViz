@@ -41,6 +41,12 @@
 	stroke-width: 3.5;
 }
 
+/* Arrowhead for the directed (topological-sort) scene. Filled to match the edge
+   stroke so the arrow reads as the edge's tip rather than a separate mark. */
+.arrowHead {
+	fill: var(--color-border-strong);
+}
+
 /* Nodes */
 
 .nodeGroup {

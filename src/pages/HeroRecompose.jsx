@@ -4,10 +4,8 @@ import {
 	BARS,
 	BFS_ORDER,
 	EDGE_POOL,
-	GRAPH_ENDS,
 	HEAPIFY_PATH,
 	ORDER,
-	SP_PATH,
 	STATES,
 	VIEWBOX,
 	WASH_HUE,
@@ -42,26 +40,33 @@ const MAX_CAP = Math.max(
 // edgeLook — the non-geometry visual target (opacity, stroke width, dash offset)
 // for pooled line k in a given state. Endpoints come from edgeFrame; this is where
 // each state's *meaning* is painted:
-//   • shortest path → light the route, dim everything else (opacity contrast).
-//   • max flow      → thickness ∝ capacity, fill (1 − dashoffset) ∝ flow/cap, so an
-//                     unused pipe (flow 0) reads as an empty channel.
+//   • shortest path → light the route bright (its brand colour comes from a CSS
+//                     class, see lightRoute), keep the rest a faint-but-legible
+//                     graph as context.
+//   • max flow      → width ∝ capacity, brightness ∝ flow; every pipe FULLY drawn
+//                     (a fat bright pipe carries flow, a thin faint one is slack).
 //   • every other state → a uniform ink, fully drawn.
-// Because every morph animates toward these targets, dim/width/fill all self-reset
-// the moment the loop leaves a state — no per-state teardown needed.
+// Because every morph animates toward these targets, dim/width/brightness all
+// self-reset the moment the loop leaves a state — no per-state teardown needed.
 const edgeLook = (state, k) => {
 	const f = edgeFrame(state, k);
 	if (!f.active) return { opacity: 0, width: BASE_EDGE_W, offset: 1 };
 	if (f.flow != null && f.cap != null) {
+		// Max flow: width ∝ capacity (the pipe's bore), brightness ∝ flow. Pipes are
+		// FULLY drawn (offset 0); the old partial-length fill read as broken segments.
 		const frac = f.cap > 0 ? f.flow / f.cap : 0;
 		return {
-			opacity: frac > 0 ? EDGE_OP + 0.28 * frac : EDGE_OP * 0.3,
+			opacity: frac > 0 ? 0.45 + 0.4 * frac : EDGE_OP * 0.28,
 			width: BASE_EDGE_W + 3 * (f.cap / MAX_CAP),
-			offset: 1 - frac, // partial draw from the source end = how full the pipe is
+			offset: 0,
 		};
 	}
+	// Shortest path: the route is fully lit + a touch thicker; the rest of the graph
+	// stays faint but LEGIBLE context (the old 0.18 dimming made it vanish, so the
+	// route read as a few floating segments instead of a path picked out of a graph).
 	if (f.highlight)
-		return { opacity: 0.85, width: BASE_EDGE_W + 1.4, offset: 0 };
-	if (f.dim) return { opacity: EDGE_OP * 0.18, width: BASE_EDGE_W, offset: 0 };
+		return { opacity: 0.95, width: BASE_EDGE_W + 1.6, offset: 0 };
+	if (f.dim) return { opacity: EDGE_OP * 0.34, width: BASE_EDGE_W, offset: 0 };
 	return { opacity: EDGE_OP, width: BASE_EDGE_W, offset: 0 };
 };
 
@@ -151,12 +156,16 @@ const HeroRecompose = ({ className, onState }) => {
 					'<0.1'
 				);
 
-				// The forever loop.
+				// The forever loop. repeatRefresh re-rolls every function-based value
+				// (the random holds + the twinkle below) on each pass, so it never plays
+				// back identically — the company feels alive rather than on a fixed reel.
 				const loop = gsap.timeline({
 					repeat: -1,
+					repeatRefresh: true,
 					defaults: { ease: 'power2.inOut' },
 				});
-				const hold = (d = HOLD) => loop.to({}, { duration: d });
+				const hold = (d = HOLD) =>
+					loop.to({}, { duration: () => gsap.utils.random(d * 0.7, d * 1.5) });
 
 				// `ink` controls only the stroke-dashoffset tween (the draw-on flourish):
 				//   'draw'  → ink the active lines on, parent→child, with a growth stagger
@@ -172,7 +181,9 @@ const HeroRecompose = ({ className, onState }) => {
 						y: i => STATES[state].atoms[i].y,
 						scale: i => STATES[state].atoms[i].scale,
 						duration: MORPH,
-						stagger: { each: 0.02, from: 'center' },
+						// Reassemble in a scattered order (not tidy centre-out) so each
+						// structure forms organically.
+						stagger: { each: 0.02, from: 'random' },
 						// Name the structure the instant it has FORMED (not on start —
 						// that would lead the morph by a full MORPH and lie for ~1.7s).
 						onComplete: () => emit(state),
@@ -267,40 +278,41 @@ const HeroRecompose = ({ className, onState }) => {
 					return tl;
 				};
 
-				// Ring (or un-ring) the source + sink endpoints — shared by the graph
-				// family so shortest path and max flow read as "from here to there"
-				// without a label.
-				const { source: SRC, sink: SNK } = GRAPH_ENDS;
-				const endpoints = on =>
-					loop.to([rings[SRC], rings[SNK]], {
-						autoAlpha: on ? 0.95 : 0,
-						scale: on ? 1 : 0.6,
-						duration: on ? 0.5 : 0.35,
-						ease: on ? 'power2.out' : 'power1.in',
-					});
+				// A soft random sparkle across the company during a dwell — a few atoms
+				// glow at random, a little differently each pass (repeatRefresh re-rolls
+				// the function values), so the resting instrument feels alive, not frozen.
+				const twinkle = pos =>
+					loop.to(
+						halos,
+						{
+							autoAlpha: () =>
+								gsap.utils.random(0, 1) > 0.65
+									? gsap.utils.random(0.22, 0.5)
+									: 0,
+							scale: () => gsap.utils.random(1.5, 2.2),
+							duration: () => gsap.utils.random(0.7, 1.2),
+							ease: 'sine.inOut',
+							yoyo: true,
+							repeat: 1,
+							stagger: { each: 0.07, from: 'random' },
+						},
+						pos
+					);
 
 				hold(); // dwell on the array
+				twinkle('<'); // sparkle over the opening dwell
 				morphTo('sorted'); // the same dots slide into rank order (bars stay)
 				hold();
 				morphTo('tree', { ink: 'draw' }); // ink the tree pointers on, root → leaves
 				hold();
-				morphTo('heap'); // value-honest reseat; the skeleton lines bend, no re-ink
+				morphTo('heap'); // pack into a tight, compact complete tree
 				loop.add(beat(HEAPIFY_PATH, { step: 0.34, pop: 1.5 })); // heapify sift
 				morphTo('graph', { ink: 'draw' }); // fly to the constellation; cycle edges ink on
 				loop.add(beat(BFS_ORDER, { step: 0.1, pop: 1.32 })); // BFS frontier wave
 				hold();
-				morphTo('shortestPath'); // light the route between the two endpoints
-				endpoints(true); // ring the source + sink
-				loop.add(beat(SP_PATH, { step: 0.16, pop: 1.45 })); // a pulse runs source → sink
-				hold();
-				endpoints(false);
+				twinkle('<'); // sparkle over the settled graph
 				morphTo('spanningTree'); // trim the cycles to a tree that still spans all
 				hold();
-				morphTo('maxFlow', { ink: 'flow' }); // re-densify; fill each pipe to flow / cap
-				endpoints(true); // same source + sink
-				loop.add(beat(BFS_ORDER, { step: 0.07, pop: 1.28 })); // flow spreads from the source
-				hold();
-				endpoints(false);
 				morphTo('array', { ink: 'undraw' }); // un-ink, collapse to baseline — lands on start
 
 				master.add(loop);

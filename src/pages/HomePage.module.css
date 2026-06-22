@@ -4,13 +4,11 @@
 	overflow-x: hidden;
 	color: var(--color-text-primary);
 	background: var(--color-bg-app);
-	scroll-behavior: smooth;
-}
-
-@media (prefers-reduced-motion: reduce) {
-	.page {
-		scroll-behavior: auto;
-	}
+	/* Deliberately NO scroll-behavior: smooth. This element is the GSAP
+	   ScrollTrigger scroller for the inked spine (scrub: true). scroll-behavior:
+	   smooth animates the scroll *position*, so the scrubbed ink reads a trailing
+	   position and lags a beat behind the reader instead of tracking 1:1. Native
+	   scroll keeps the comet locked to the cursor. */
 }
 
 /* ---------- Hero ---------- */
@@ -58,9 +56,9 @@
 @media (min-width: 960px) {
 	.hero {
 		display: grid;
-		grid-template-columns: minmax(0, 58ch) 1fr;
+		grid-template-columns: minmax(0, 52ch) minmax(360px, 1fr);
 		align-items: center;
-		gap: clamp(32px, 5vw, 88px);
+		gap: clamp(36px, 4.5vw, 72px);
 	}
 }
 
@@ -85,10 +83,45 @@
 		flex-direction: column;
 		gap: var(--space-sm);
 		width: 100%;
-		max-width: 560px;
-		justify-self: center;
+		max-width: 520px;
+		/* Sit immediately beside the reading column rather than floating against
+		   the far edge of the 1fr track — the old `center` flung it right and left a
+		   dead gap between headline and instrument. `start` tucks it in; the calm
+		   whitespace then falls to the right of the framed plate, which reads as
+		   deliberate margin rather than an accident. */
+		justify-self: start;
 		align-self: center;
 	}
+}
+
+/* A quiet "plate" framing the live instrument so it reads as a deliberate figure
+   even at rest (in dark mode the atoms are faint until the loop animates). A
+   hairline border + a soft top-down surface vignette, tuned per theme by the
+   tokens. overflow:hidden clips the concept wash to the rounded corners. */
+.heroPlate {
+	position: relative;
+	border-radius: var(--radius-xl);
+	border: 1px solid var(--color-border-subtle);
+	background: radial-gradient(
+		135% 120% at 50% 0%,
+		color-mix(in srgb, var(--surface-1) 70%, transparent),
+		transparent 72%
+	);
+	padding: clamp(10px, 1.8vw, 22px);
+	overflow: hidden;
+}
+
+/* On paper the fade-to-transparent vignette is near-invisible (surface-1 ≈ the
+   cream canvas). Instead make the plate a clean raised panel: a solid paper-white
+   ground gently deepening toward the canvas at the foot, framed by the border +
+   shadow. The white ground also lifts the ink atoms' contrast at rest. */
+:global([data-theme='light']) .heroPlate {
+	background: linear-gradient(
+		180deg,
+		var(--surface-1),
+		color-mix(in srgb, var(--surface-1) 84%, var(--color-bg-app))
+	);
+	box-shadow: var(--shadow-2);
 }
 
 /* ---- The live figure legend: "Fig. 1 — <structure>" + its one defining fact ---- */
@@ -633,6 +666,285 @@
 	max-width: 52ch;
 }
 
+/* ---------- Phase overview map ----------
+   The course at a glance: one quiet chip per macro-phase, in teaching order, each
+   a jump-link to its chapter on the spine. Lets a newcomer read the shape of the
+   whole course (five acts) and navigate it without scrolling the full list. */
+.phaseNav {
+	margin-top: clamp(20px, 2.6vw, 32px);
+	display: flex;
+	flex-wrap: wrap;
+	gap: var(--space-sm);
+}
+
+.phaseNavItem {
+	display: inline-flex;
+	align-items: baseline;
+	gap: var(--space-sm);
+	padding: var(--space-sm) var(--space-md);
+	border: 1px solid var(--color-border-subtle);
+	border-radius: var(--radius-md);
+	background: var(--surface-1);
+	color: var(--color-text-secondary);
+	font-family: inherit;
+	cursor: pointer;
+	text-align: left;
+	transition:
+		border-color var(--transition),
+		background-color var(--transition),
+		transform var(--duration-step) var(--ease-quiet);
+}
+
+.phaseNavItem:hover {
+	border-color: var(--color-border-strong);
+	background: var(--surface-2);
+	transform: translateY(-1px);
+}
+
+.phaseNavItem:focus-visible {
+	outline: none;
+	box-shadow: var(--shadow-focus);
+}
+
+.phaseNavNum {
+	font-family: var(--font-family-mono);
+	font-size: var(--font-size-caption);
+	font-variant-numeric: tabular-nums;
+	letter-spacing: var(--tracking-wide);
+	color: var(--color-text-dim);
+}
+
+.phaseNavName {
+	font-size: var(--font-size-label);
+	font-weight: var(--font-weight-medium);
+	color: var(--color-text-primary);
+}
+
+.phaseNavCount {
+	font-family: var(--font-family-mono);
+	font-size: var(--font-size-caption);
+	font-variant-numeric: tabular-nums;
+	color: var(--color-text-muted);
+}
+
+/* A phase whose every topic is finished gets a subtle done treatment. */
+.phaseNavItem[data-done='true'] .phaseNavName {
+	color: var(--color-text-muted);
+}
+
+/* ---------- Personal progress roadmap ----------
+   One segment per phase (width ∝ topic count), filled by how much of that phase is
+   mastered, with a "you are here" on the active phase and the exam as the finish
+   line. Segments are jump links to each chapter on the spine. */
+.roadmap {
+	margin-top: clamp(22px, 2.8vw, 34px);
+	padding-bottom: 24px; /* room for the "you are here" label */
+}
+.roadmapTrack {
+	display: flex;
+	align-items: flex-end;
+	gap: 10px;
+	margin: 0;
+	padding: 0;
+	list-style: none;
+}
+.seg {
+	display: flex;
+	min-width: 0;
+	/* basis 0 so segment widths are purely proportional to topic count (flex-grow),
+	   not driven by the label length. */
+	flex-basis: 0;
+}
+.segBtn {
+	position: relative;
+	width: 100%;
+	display: flex;
+	flex-direction: column;
+	gap: 9px;
+	padding: 2px;
+	border: none;
+	background: none;
+	cursor: pointer;
+	text-align: left;
+	font-family: inherit;
+}
+.segHead {
+	display: flex;
+	align-items: baseline;
+	justify-content: space-between;
+	gap: 8px;
+	min-width: 0;
+}
+.segName {
+	font-size: var(--font-size-label);
+	font-weight: var(--font-weight-medium);
+	color: var(--color-text-muted);
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	transition: color var(--transition);
+}
+.segCount {
+	font-family: var(--font-family-mono);
+	font-size: var(--font-size-caption);
+	font-variant-numeric: tabular-nums;
+	color: var(--color-text-dim);
+	white-space: nowrap;
+}
+.segBar {
+	position: relative;
+	height: 6px;
+	border-radius: 3px;
+	background: var(--color-border);
+	overflow: hidden;
+}
+.segFill {
+	position: absolute;
+	inset: 0 auto 0 0;
+	border-radius: 3px;
+	background: var(--brand);
+	transition: width 0.55s var(--ease-quiet);
+}
+.segBtn:hover .segName {
+	color: var(--color-text-primary);
+}
+.seg[data-done] .segName {
+	color: var(--color-text-secondary);
+}
+.seg[data-current] .segName {
+	color: var(--color-text-primary);
+	font-weight: var(--font-weight-semibold);
+}
+.seg[data-current] .segBar {
+	box-shadow: 0 0 0 2px var(--brand-wash);
+}
+.segHere {
+	position: absolute;
+	top: calc(100% + 5px);
+	left: 2px;
+	display: inline-flex;
+	align-items: center;
+	gap: 4px;
+	font-family: var(--font-family-mono);
+	font-size: 10px;
+	letter-spacing: 0.08em;
+	text-transform: uppercase;
+	color: var(--brand-ink);
+	white-space: nowrap;
+}
+.segHere::before {
+	content: '▲';
+	font-size: 7px;
+	line-height: 1;
+}
+.segFinish {
+	flex: 0 0 auto;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: 5px;
+	padding: 0 2px 1px;
+	color: var(--color-text-muted);
+	font-family: var(--font-family-mono);
+	font-size: var(--font-size-caption);
+	letter-spacing: 0.08em;
+	text-transform: uppercase;
+}
+
+/* the quiet stats line under the roadmap */
+.pathMeta {
+	margin: 6px 0 0;
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 8px 16px;
+	font-size: var(--font-size-label);
+}
+.pathMetaStrong {
+	color: var(--color-text-primary);
+	font-weight: var(--font-weight-semibold);
+	font-variant-numeric: tabular-nums;
+}
+.pathMetaItem,
+.pathMetaLink {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	color: var(--color-text-muted);
+	font-variant-numeric: tabular-nums;
+}
+.pathMetaItem svg {
+	color: var(--review-brand);
+}
+.pathMetaLink {
+	text-decoration: none;
+	transition: color var(--transition);
+}
+.pathMetaLink svg {
+	color: var(--brand);
+}
+.pathMetaLink:hover {
+	color: var(--color-text-primary);
+}
+
+/* ---------- Exam finish-line station on the spine ---------- */
+.examStop {
+	position: relative;
+	display: grid;
+	grid-template-columns: 48px minmax(0, 1fr) auto;
+	gap: clamp(16px, 2.5vw, 32px);
+	align-items: center;
+	max-width: 920px;
+	margin-top: clamp(10px, 1.6vw, 22px);
+	padding: clamp(24px, 3vw, 38px) 0 clamp(12px, 2vw, 20px);
+	border-top: 1px solid var(--color-border);
+}
+.examMarker {
+	width: 48px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+.examDot {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 30px;
+	height: 30px;
+	border-radius: 50%;
+	background: var(--brand);
+	color: var(--color-text-on-accent);
+	box-shadow: 0 0 0 5px var(--color-bg-app);
+}
+.examLabel {
+	display: flex;
+	flex-direction: column;
+	gap: 3px;
+	min-width: 0;
+}
+.examKicker {
+	font-family: var(--font-family-mono);
+	font-size: var(--font-size-caption);
+	letter-spacing: var(--tracking-caps);
+	text-transform: uppercase;
+	color: var(--color-text-muted);
+}
+.examName {
+	font-family: var(--font-family-display);
+	font-size: clamp(1.5rem, 1.2rem + 0.9vw, 2rem);
+	font-weight: var(--font-weight-display);
+	line-height: var(--line-height-heading);
+	letter-spacing: var(--tracking-display);
+	color: var(--color-text-primary);
+}
+.examMeta {
+	font-family: var(--font-family-mono);
+	font-size: var(--font-size-caption);
+	font-variant-numeric: tabular-nums;
+	color: var(--color-text-muted);
+	white-space: nowrap;
+}
+
 /* ---------- Spine ---------- */
 
 .spineWrap {
@@ -669,11 +981,15 @@
 .rail {
 	position: absolute;
 	z-index: 1;
-	left: 19px;
+	left: 0;
 	top: 22px;
-	bottom: 22px;
-	width: 2px;
-	height: auto;
+	/* The box spans the full marker gutter (48px) so the serpentine has room to
+	   swing; its viewBox width matches (x-scale 1, so the wave's amplitude is honest
+	   px and the stroke stays a crisp ~2px). An explicit height defeats the <svg>'s
+	   intrinsic sizing; preserveAspectRatio="none" stretches the 0..1000 path to the
+	   spine's true height, so drawSVG and the comet map to it 1:1. */
+	height: calc(100% - 44px);
+	width: 48px;
 	overflow: visible;
 	pointer-events: none;
 }
@@ -696,15 +1012,15 @@
 	fill: none;
 }
 
-/* The comet head riding the literal ink tip (placed by MotionPath). Anchored at
-   the SVG's own origin so MotionPath's translate lands on the path point. */
+/* The comet head riding the ink tip. Centred on the rail's centreline (24px); the
+   scroll timeline translates it x+y along the same sine the path uses. */
 .railHead {
 	position: absolute;
 	top: 22px;
-	left: 19px;
+	left: 24px;
 	width: 10px;
 	height: 10px;
-	margin: -5px 0 0 -4px;
+	margin: -5px 0 0 -5px;
 	border-radius: 50%;
 	background: hsl(var(--brand-h) var(--brand-s) var(--brand-l));
 	opacity: 0;
@@ -743,19 +1059,108 @@
 .node {
 	position: relative;
 	display: grid;
-	grid-template-columns: 40px 1fr auto;
+	grid-template-columns: 48px minmax(0, 1fr) auto;
 	gap: clamp(16px, 2.5vw, 32px);
 	align-items: stretch;
 	padding: clamp(20px, 2.6vw, 32px) 0;
+	/* Cap the row so the margin-figure preview is pulled in beside its text
+	   instead of being flung to the 1280px section edge with a dead gap between. */
+	max-width: 920px;
 }
 
 .node + .node {
 	border-top: 1px solid var(--color-border-subtle);
 }
 
+/* ---------- Phase chapter marker (on the spine) ----------
+   The rail threads through five labelled "acts." A diamond station (vs. the round
+   topic stops) marks each chapter, a mono kicker numbers it, and a serif title +
+   count name it — so the course's structure is legible as you scroll, like part
+   titles in a book. Neutral ink only: per-topic hue stays the path's lone colour. */
+.phaseRow {
+	position: relative;
+	display: grid;
+	grid-template-columns: 48px minmax(0, 1fr) auto;
+	gap: clamp(16px, 2.5vw, 32px);
+	align-items: center;
+	max-width: 920px;
+	padding: clamp(28px, 3.4vw, 44px) 0 clamp(10px, 1.4vw, 18px);
+	scroll-margin-top: clamp(16px, 3vw, 40px);
+}
+
+.phaseRow:first-child {
+	padding-top: 4px;
+}
+
+/* From the second chapter on, a stronger rule sets the act apart from the topic
+   above it (topics are divided by the faint subtle hairline; chapters by a full
+   border + extra breathing room). */
+.phaseRow:not(:first-child) {
+	margin-top: clamp(10px, 1.6vw, 22px);
+	border-top: 1px solid var(--color-border);
+}
+
+.phaseMarker {
+	width: 48px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+
+.phaseDiamond {
+	width: 13px;
+	height: 13px;
+	border-radius: 3px;
+	background: var(--color-bg-app);
+	border: 1.5px solid var(--color-border-strong);
+	transform: rotate(45deg);
+	box-shadow: 0 0 0 5px var(--color-bg-app);
+}
+
+/* A finished act fills its diamond with ink so completed chapters read at a glance. */
+.phaseRow[data-done='true'] .phaseDiamond {
+	background: var(--color-text-muted);
+	border-color: var(--color-text-muted);
+}
+
+.phaseLabel {
+	display: flex;
+	flex-direction: column;
+	gap: 5px;
+	min-width: 0;
+}
+
+.phaseKicker {
+	font-family: var(--font-family-mono);
+	font-size: var(--font-size-caption);
+	font-variant-numeric: tabular-nums;
+	letter-spacing: var(--tracking-caps);
+	text-transform: uppercase;
+	color: var(--color-text-muted);
+}
+
+.phaseTitle {
+	margin: 0;
+	font-family: var(--font-family-display);
+	font-size: clamp(1.5rem, 1.2rem + 0.9vw, 2rem);
+	font-weight: var(--font-weight-display);
+	line-height: var(--line-height-heading);
+	letter-spacing: var(--tracking-display);
+	color: var(--color-text-primary);
+}
+
+.phaseCount {
+	font-family: var(--font-family-mono);
+	font-size: var(--font-size-caption);
+	font-variant-numeric: tabular-nums;
+	letter-spacing: var(--tracking-wide);
+	color: var(--color-text-muted);
+	white-space: nowrap;
+}
+
 .nodeMarker {
 	position: relative;
-	width: 40px;
+	width: 48px;
 	display: flex;
 	align-items: flex-start;
 	justify-content: center;
@@ -763,6 +1168,8 @@
 }
 
 .nodeDot {
+	/* The "next" ring lives inside the dot now, so anchor it here. */
+	position: relative;
 	display: flex;
 	align-items: center;
 	justify-content: center;
@@ -830,10 +1237,9 @@
 
 .nodeRing {
 	position: absolute;
-	/* Centre on the dot, not the marker box: the marker's padding-top (18px) drops
-	   the dot, so the dot's centre is 18px + half the 18px dot. translate keeps the
-	   ring and its pulse centred on that point regardless of the ring's size. */
-	top: calc(18px + 9px);
+	/* Centre on the parent dot (top/left 50% + the translate in tracerPulse), so the
+	   ring rides the dot's serpentine x-nudge instead of floating at the gutter. */
+	top: 50%;
 	left: 50%;
 	transform: translate(-50%, -50%);
 	width: 26px;
@@ -1103,21 +1509,38 @@
 	}
 
 	.node {
-		grid-template-columns: 32px 1fr;
+		grid-template-columns: 48px 1fr;
 	}
 
-	.rail {
-		left: 15px;
+	/* The chapter row keeps its count in a third column on phones (it is short). */
+	.phaseRow {
+		grid-template-columns: 48px 1fr auto;
 	}
 
-	/* Keep the comet's anchor on the narrower rail so MotionPath lands true. */
-	.railHead {
-		left: 15px;
+	/* The roadmap stacks to a vertical progress list on phones. */
+	.roadmap {
+		padding-bottom: 4px;
+	}
+	.roadmapTrack {
+		flex-direction: column;
+		align-items: stretch;
+		gap: 14px;
+	}
+	.seg {
+		flex: none !important;
+	}
+	.segHere {
+		position: static;
+		margin-top: 6px;
+	}
+	.segFinish {
+		flex-direction: row;
+		justify-content: center;
+		padding-top: 4px;
 	}
 
-	.nodeMarker {
-		width: 32px;
-	}
+	/* The rail gutter + comet stay at the desktop 48px so the serpentine geometry
+	   (path, dots, comet — all keyed to one centreline) holds on phones too. */
 
 	.nodeFoot {
 		flex-wrap: wrap;

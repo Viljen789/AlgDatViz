@@ -1,5 +1,6 @@
 import { useMemo } from 'react';
 import { floydWarshall, reconstructPath, formatDist } from './fwTrace.js';
+import { slowApsp } from './slowApsp.js';
 import { SHARED_GRAPH } from './apspMeta.js';
 import { buildEdges, projectNodes, VIEW_H, VIEW_W } from './graphLayout.js';
 import { SceneNarration } from '../../common/PlaybackEngine';
@@ -10,6 +11,12 @@ const FW = floydWarshall(SHARED_GRAPH);
 const IDS = FW.ids;
 const LAYERS = FW.layers; // LAYERS[k] = D after allowing {1..k}; LAYERS[0] = direct
 const PATH_1_3 = reconstructPath(FW.pred, IDS, '1', '3'); // ['1','2','4','3']
+
+// Slow-APSP layers for the matrix-multiplication scene. DIFFERENT indexing from
+// FW: SLOW.layers[m−1] === L^(m), so SLOW.layers[0] === L^(1) === W and
+// SLOW.layers[1] === L^(2) (shortest paths of ≤ 2 edges). Never conflate these
+// with FW's LAYERS, which are indexed by the intermediate-vertex k.
+const SLOW = slowApsp(SHARED_GRAPH);
 
 const NODES = projectNodes(SHARED_GRAPH.nodes);
 const EDGES = buildEdges(SHARED_GRAPH.edges, NODES);
@@ -94,8 +101,7 @@ const SCENE_VIEW = activeScene => {
 				caption: 'D = the (min, +) "product" — combining paths through every k',
 			};
 		// 7 when — final matrix; spotlight the diagonal (neg-cycle diagnostic).
-		case 7:
-		default: {
+		case 7: {
 			const diag = new Set(IDS.map((_, i) => cellKey(i, i)));
 			return {
 				layer: LAYERS.length - 1,
@@ -103,6 +109,25 @@ const SCENE_VIEW = activeScene => {
 				diagCells: diag,
 				caption:
 					'Diagonal stays 0 here — a negative d[v][v] would flag a neg cycle',
+			};
+		}
+		// 8 slow-apsp — the (min, +) matrix product. Source = SLOW.layers (indexed
+		// by edge count, NOT by FW's intermediate k). Show L^(2) (≤ 2-edge paths)
+		// and spotlight d[2][3]: ∞ at one edge, but 2→4→3 = 1 + (−5) = −4 at two.
+		case 8:
+		default: {
+			const i = idxOf('2');
+			const j = idxOf('3');
+			const k = idxOf('4'); // the single intermediate that achieves the min
+			return {
+				slow: true,
+				layer: 1, // SLOW.layers[1] === L^(2)
+				kLabel: 'L⁽²⁾',
+				write: [i, j],
+				readIK: [i, k], // L⁽¹⁾[2][4] = 1
+				readKJ: [k, j], // W[4][3] = −5
+				caption:
+					'L⁽²⁾ = L⁽¹⁾ ⊗ W: d[2][3] drops to −4 via 2→4→3 (no direct 2→3 edge)',
 			};
 		}
 	}
@@ -121,7 +146,9 @@ const NODE_R = 7;
  */
 const AllPairsShortestPathsStage = ({ activeScene = 0 }) => {
 	const view = useMemo(() => SCENE_VIEW(activeScene), [activeScene]);
-	const matrix = LAYERS[view.layer];
+	// Most scenes read FW's k-indexed layers; the Slow-APSP scene reads the
+	// edge-indexed L^(m) layers instead (view.slow flips the source).
+	const matrix = view.slow ? SLOW.layers[view.layer] : LAYERS[view.layer];
 
 	const write = view.write || null;
 	const readIK = view.readIK || null;
@@ -243,11 +270,15 @@ const AllPairsShortestPathsStage = ({ activeScene = 0 }) => {
 											if (sameCell([i, j], readKJ)) cls.push(styles.cellRead);
 											if (pathCells.has(key)) cls.push(styles.cellPath);
 											if (diagCells.has(key)) cls.push(styles.cellDiag);
+											// Slow-APSP layers use Infinity for ∞ (FW uses null);
+											// normalize both so unreachable cells render as ∞.
 											const display = isBoolean
 												? v === null || v === undefined
 													? '·'
 													: '✓'
-												: formatDist(v);
+												: v === Infinity
+													? '∞'
+													: formatDist(v);
 											return (
 												<td key={colId} className={cls.join(' ')}>
 													{display}

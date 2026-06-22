@@ -32,6 +32,8 @@ import {
 } from '../../data/curriculum.js';
 import useProgress from '../../hooks/useProgress.js';
 import ThemeToggle from '../ThemeToggle/ThemeToggle.jsx';
+import Eyebrow from '../Eyebrow/Eyebrow.jsx';
+import Badge from '../Badge/Badge.jsx';
 import styles from './Sidebar.module.css';
 
 // Maps the `icon` name stored on each curriculum topic to a lucide component.
@@ -200,13 +202,14 @@ const Sidebar = () => {
 					// its own full a11y label below.
 					const phaseHeader =
 						topic.phase !== CURRICULUM[index - 1]?.phase ? (
-							<li
+							<Eyebrow
 								key={`phase-${topic.phase}`}
+								as="li"
 								className={styles.phaseHead}
 								aria-hidden="true"
 							>
 								{topic.phase}
-							</li>
+							</Eyebrow>
 						) : null;
 
 					// The teaching-order number, prefixing the label in muted mono.
@@ -234,13 +237,14 @@ const Sidebar = () => {
 											<Lock size={14} strokeWidth={2.2} />
 										</span>
 										<span className={styles.label}>{topic.navLabel}</span>
-										<span
+										<Badge
+											tone="soon"
 											className={styles.soonBadge}
 											aria-hidden="true"
 											title="Coming soon"
 										>
 											Soon
-										</span>
+										</Badge>
 									</span>
 								</li>
 							</Fragment>
@@ -292,13 +296,14 @@ const Sidebar = () => {
 									</span>
 									<span className={styles.label}>{topic.navLabel}</span>
 									{isNext && (
-										<span
+										<Badge
+											tone="accent"
 											className={styles.nextChip}
 											aria-hidden="true"
 											title="Next up"
 										>
 											Next
-										</span>
+										</Badge>
 									)}
 									<span
 										className={styles.status}
@@ -330,7 +335,7 @@ const Sidebar = () => {
 					aria-label={`Overall progress: ${overall.completed} of ${overall.total} topics completed`}
 				>
 					<div className={styles.progressHead}>
-						<span className={styles.progressLabel}>Progress</span>
+						<Eyebrow as="span">Progress</Eyebrow>
 						<span className={styles.progressCount}>
 							{overall.completed}/{overall.total}
 						</span>

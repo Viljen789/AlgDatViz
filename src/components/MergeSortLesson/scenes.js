@@ -83,13 +83,18 @@ export const SCENES = [
 		title: 'Coming back up, neighboring pieces merge in order.',
 		body: 'Two sorted runs become one sorted run by reading their front cursors and copying the smaller value out, repeatedly.',
 		check: {
-			kind: 'order',
+			kind: 'predict',
 			prompt:
-				'Merge the sorted runs [3, 7] and [5, 9]. Put the values into the order they get copied to the output.',
-			items: [7, 3, 9, 5],
-			answer: [3, 5, 7, 9],
+				'The two sorted runs [27, 38] and [3, 43] are about to merge. Which value gets copied out first?',
+			options: [3, 27, 38, 43],
+			answer: 3,
+			misconceptions: {
+				27: 'Merge compares only the two front cursors: 27 vs 3. 3 is smaller, so it leads; 27 follows only after the right run advances past 3.',
+				38: '38 is the rear of the left run. The merge never looks past the front cursor 27, and 27 itself loses to 3.',
+				43: '43 is the larger of the two fronts, so it waits. The smaller front, 3, is copied first.',
+			},
 			explanation:
-				'Merge always compares the two front cursors and copies the smaller, then advances that run. 3 vs 5 → 3; 7 vs 5 → 5; 7 vs 9 → 7; the right run is exhausted, so 9 trails out. The merge never looks past the cursors — that is what keeps it linear in the merged length.',
+				'Merge always copies the smaller of the two front cursors. 3 < 27, so 3 leads the merged run, exactly the value you can watch travel out first below. The merge never looks past the cursors, which is what keeps it linear.',
 		},
 	},
 	{

@@ -20,8 +20,9 @@
 	width: 100%;
 	max-width: 600px;
 	overflow: hidden;
-	box-shadow: 0 24px 48px color-mix(in srgb, var(--scrim-ink) 50%, transparent), 
-	            0 0 0 1px color-mix(in srgb, var(--glass-tint) 5%, transparent);
+	box-shadow:
+		0 24px 48px color-mix(in srgb, var(--scrim-ink) 50%, transparent),
+		0 0 0 1px color-mix(in srgb, var(--glass-tint) 5%, transparent);
 }
 
 .header {
@@ -45,13 +46,13 @@
 
 .header h2 {
 	margin: 0;
-	font-size: 1.5rem;
+	font-size: var(--font-size-heading-md);
 	color: var(--color-text-primary);
 }
 
 .header p {
 	margin: 0;
-	font-size: 0.875rem;
+	font-size: var(--font-size-body);
 	color: var(--color-text-secondary);
 }
 
@@ -62,7 +63,7 @@
 	cursor: pointer;
 	padding: var(--spacing-xs);
 	border-radius: var(--border-radius-sm);
-	transition: all 0.2s;
+	transition: all var(--transition);
 	display: flex;
 	align-items: center;
 	justify-content: center;
@@ -93,7 +94,7 @@
 	flex-shrink: 0;
 	width: 32px;
 	height: 32px;
-	background: rgba(79, 124, 248, 0.1);
+	background: color-mix(in srgb, var(--color-accent-blue) 12%, transparent);
 	border-radius: var(--border-radius-md);
 	display: flex;
 	align-items: center;
@@ -103,8 +104,8 @@
 
 .tipItem p {
 	margin: 0;
-	font-size: 1rem;
-	line-height: 1.5;
+	font-size: var(--font-size-body);
+	line-height: var(--line-height-snug);
 	color: var(--color-text-primary);
 }
 
@@ -120,20 +121,22 @@
 .infoBadge {
 	display: flex;
 	align-items: center;
-	gap: 6px;
+	gap: var(--space-sm);
 	color: var(--color-text-secondary);
-	font-size: 0.75rem;
+	font-size: var(--font-size-caption);
 }
 
 .gotItButton {
 	background: var(--color-accent-blue);
-	color: white;
+	color: var(--color-text-on-accent);
 	border: none;
-	padding: 10px 24px;
+	padding: var(--space-sm) var(--space-lg);
 	border-radius: var(--border-radius-md);
-	font-weight: 600;
+	font-weight: var(--font-weight-semibold);
 	cursor: pointer;
-	transition: transform 0.2s, opacity 0.2s;
+	transition:
+		transform var(--transition),
+		opacity var(--transition);
 }
 
 .gotItButton:hover {

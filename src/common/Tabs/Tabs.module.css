@@ -27,7 +27,9 @@
 	letter-spacing: var(--tracking-label);
 	color: var(--color-text-secondary);
 	border-radius: var(--radius-sm) var(--radius-sm) 0 0;
-	transition: color var(--transition), background-color var(--transition);
+	transition:
+		color var(--transition),
+		background-color var(--transition);
 }
 
 .tabButton:hover:not(:disabled):not(.tabButtonActive) {
@@ -62,7 +64,8 @@
 	border-radius: var(--radius-pill);
 	background-color: var(--color-primary);
 	box-shadow: 0 0 8px var(--shadow-glow);
-	transition: left var(--duration-step) var(--ease-step),
+	transition:
+		left var(--duration-step) var(--ease-step),
 		width var(--duration-step) var(--ease-step);
 }
 

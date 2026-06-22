@@ -43,7 +43,7 @@
 	padding: var(--spacing-xs) var(--spacing-sm);
 	margin-right: var(--spacing-sm);
 	border-radius: var(--border-radius-md);
-	transition: background-color 0.2s ease-in-out;
+	transition: background-color var(--transition);
 	border-left: 3px solid transparent;
 }
 

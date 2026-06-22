@@ -136,6 +136,7 @@
 }
 
 .complexityCard {
+	box-shadow: var(--shadow-1);
 	--q-accent: var(--color-accent-blue);
 }
 
@@ -293,6 +294,7 @@
 }
 
 .decisionCard {
+	box-shadow: var(--shadow-1);
 	--q-accent: var(--color-accent-blue);
 	display: flex;
 	flex-direction: column;
@@ -501,6 +503,7 @@
 }
 
 .glossaryGroup {
+	box-shadow: var(--shadow-1);
 	--q-accent: var(--color-accent-blue);
 	border: 1px solid var(--color-border);
 	border-radius: var(--radius-lg);

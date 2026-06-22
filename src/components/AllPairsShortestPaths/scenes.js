@@ -11,6 +11,7 @@
 // fwTrace.test.js) so the scrolly and the matrix view can never disagree.
 
 import { floydWarshall, reconstructPath } from './fwTrace.js';
+import { slowApsp } from './slowApsp.js';
 import { SHARED_GRAPH } from './apspMeta.js';
 
 const FW = floydWarshall(SHARED_GRAPH);
@@ -19,8 +20,19 @@ const FINAL = FW.dist; // final distance matrix
 const L0 = FW.layers[0]; // k = 0 (direct edges)
 const L2 = FW.layers[2]; // after allowing {1, 2}
 
-const at = (m, from, to) =>
-	m[IDS.indexOf(from)][IDS.indexOf(to)]; // distance lookup by id
+// Slow-APSP layers for the matrix-multiplication scene. NOTE the contract
+// (slowApsp.js): SLOW.layers[m−1] === L^(m), so SLOW.layers[0] === L^(1) === W
+// and SLOW.layers[1] === L^(2) (shortest paths of ≤ 2 edges). This indexing is
+// by EDGE COUNT — unrelated to FW's k-indexed layers above; never conflate them.
+const SLOW = slowApsp(SHARED_GRAPH);
+const SLOW_L2 = SLOW.layers[1]; // L^(2): every shortest path of at most two edges
+
+const at = (m, from, to) => m[IDS.indexOf(from)][IDS.indexOf(to)]; // distance lookup by id
+
+// The entry that DRAMATICALLY improves after one matrix product: 2→3 has no
+// direct edge (L^(1)[2][3] = ∞), but the two-edge route 2→4→3 = 1 + (−5) gives
+// L^(2)[2][3] = −4. Derived from the generator, never hand-typed.
+const SLOW_L2_2_3 = at(SLOW_L2, '2', '3'); // −4 — best ≤ 2-edge path, via 4
 
 // Path 1 → 3 only becomes short once intermediates are allowed: 1→2→4→3.
 const PATH_1_3 = reconstructPath(FW.pred, IDS, '1', '3'); // ['1','2','4','3']
@@ -53,8 +65,7 @@ export const SCENES = [
 		body: `Number the vertices 1..n. Define d_k[i][j] = the shortest i→j distance using only intermediate vertices drawn from the set {1, …, k}. With k = 0 no intermediates are allowed, so d_0 is just the direct edges (∞ where none, 0 on the diagonal). As k grows, you unlock one more vertex you may route through — and when k = n, every vertex is allowed and d_n[i][j] is the true shortest distance. The whole algorithm is: grow that allowed set one vertex at a time.`,
 		check: {
 			kind: 'choice',
-			prompt:
-				'What does d_k[i][j] mean in Floyd-Warshall?',
+			prompt: 'What does d_k[i][j] mean in Floyd-Warshall?',
 			options: [
 				'The shortest i→j path whose intermediate vertices all come from {1, …, k}',
 				'The shortest path that uses exactly k edges',
@@ -172,8 +183,15 @@ export const SCENES = [
 			kind: 'classify',
 			prompt: 'Match each task to the algorithm you should reach for.',
 			items: [
-				{ id: 'allpairs', label: 'Shortest distance between every pair (dense graph, maybe negatives)' },
-				{ id: 'onesrc', label: 'Shortest paths from a single source, non-negative weights' },
+				{
+					id: 'allpairs',
+					label:
+						'Shortest distance between every pair (dense graph, maybe negatives)',
+				},
+				{
+					id: 'onesrc',
+					label: 'Shortest paths from a single source, non-negative weights',
+				},
 				{ id: 'reach', label: 'Only need: can i reach j, for all pairs?' },
 			],
 			categories: [
@@ -184,6 +202,20 @@ export const SCENES = [
 			answer: { allpairs: 'fw', onesrc: 'dij', reach: 'tc' },
 			explanation:
 				'All pairs (and negatives) → Floyd-Warshall at Θ(V³). One source, non-negative → a single Dijkstra, much cheaper than the full matrix. Pure reachability → transitive closure, the boolean form of the same triple loop. Matching the algorithm to what you actually need is the whole point.',
+		},
+	},
+	{
+		id: 'slow-apsp',
+		eyebrow: 'The matrix-multiplication view',
+		title:
+			'Slow-APSP: multiply the matrix into itself, one extra edge at a time.',
+		body: `The previous scene called Floyd-Warshall a (min, +) matrix "multiplication." Here is what that product actually computes. Start from L⁽¹⁾ = W, the one-edge distances (direct edges, ∞ where none, 0 on the diagonal). Each min-plus product extends every path by exactly one more edge:\n\n  L⁽ᵐ⁾[i][j] = min over k of ( L⁽ᵐ⁻¹⁾[i][k] + W[k][j] )\n\nso L⁽ᵐ⁾[i][j] is the best i→j route using at most m edges. On this graph 2→3 has no direct edge (L⁽¹⁾[2][3] = ∞), but after one product the two-edge route 2→4→3 = 1 + (−5) makes L⁽²⁾[2][3] = ${SLOW_L2_2_3}. A shortest path in an n-vertex graph (no negative cycle) uses at most n−1 edges, so L⁽ⁿ⁻¹⁾ already holds every shortest distance — that is V−1 products of Θ(V³) each, O(V⁴); repeated squaring (L⁽²⁾, L⁽⁴⁾, L⁽⁸⁾, …) trims it to O(V³ log V). Floyd-Warshall reaches the same answer in flat Θ(V³) by reusing each k-layer in place instead of redoing a full product per round.`,
+		check: {
+			kind: 'numeric',
+			prompt: `After one matrix product, L⁽²⁾ holds every shortest path of at most two edges. There is no direct edge 2→3, but 2→4→3 = 1 + (−5). What is L⁽²⁾[2][3]?`,
+			answer: SLOW_L2_2_3,
+			placeholder: 'a distance',
+			explanation: `L⁽²⁾[2][3] = min over k of (L⁽¹⁾[2][k] + W[k][3]). The only finite term is k = 4: L⁽¹⁾[2][4] + W[4][3] = 1 + (−5) = ${SLOW_L2_2_3}, beating L⁽¹⁾[2][3] = ∞. One min-plus product unlocked the two-edge route; further products keep extending until L⁽ⁿ⁻¹⁾ is the full all-pairs answer — the same matrix Floyd-Warshall builds in Θ(V³).`,
 		},
 	},
 ];

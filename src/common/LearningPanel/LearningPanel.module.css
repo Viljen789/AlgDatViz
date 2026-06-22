@@ -95,10 +95,15 @@
 .walkthrough {
 	display: grid;
 	gap: 9px;
-	border: 1px solid color-mix(in srgb, var(--learning-accent) 38%, var(--color-border));
+	border: 1px solid
+		color-mix(in srgb, var(--learning-accent) 38%, var(--color-border));
 	border-radius: var(--border-radius-md);
 	background:
-		linear-gradient(135deg, color-mix(in srgb, var(--learning-accent) 16%, transparent), transparent),
+		linear-gradient(
+			135deg,
+			color-mix(in srgb, var(--learning-accent) 16%, transparent),
+			transparent
+		),
 		var(--color-bg-elevated);
 	padding: 12px;
 }
@@ -135,7 +140,7 @@
 .walkthroughFill {
 	height: 100%;
 	border-radius: inherit;
-	transition: width 0.2s ease;
+	transition: width var(--duration-step) var(--ease-quiet);
 }
 
 .walkthroughCard {
@@ -344,7 +349,8 @@
 	grid-template-columns: 18px 1fr;
 	gap: 8px;
 	align-items: start;
-	border: 1px solid color-mix(in srgb, var(--learning-accent) 42%, var(--color-border));
+	border: 1px solid
+		color-mix(in srgb, var(--learning-accent) 42%, var(--color-border));
 	border-radius: var(--border-radius-md);
 	background: color-mix(in srgb, var(--learning-accent) 12%, transparent);
 	padding: 11px 12px;

@@ -67,7 +67,8 @@
 	   see every scene at opacity 1. */
 	opacity: var(--scene-inactive-opacity, 0.62);
 	transform: translateY(0);
-	transition: opacity var(--duration-step) var(--ease-quiet),
+	transition:
+		opacity var(--duration-step) var(--ease-quiet),
 		transform var(--duration-step) var(--ease-quiet);
 }
 
@@ -104,7 +105,9 @@
 	font-weight: var(--font-weight-medium);
 	letter-spacing: var(--tracking-wide);
 	margin-bottom: var(--space-xs);
-	transition: color var(--transition), border-color var(--transition),
+	transition:
+		color var(--transition),
+		border-color var(--transition),
 		background-color var(--transition);
 }
 

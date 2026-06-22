@@ -15,7 +15,8 @@
 	border: 1px solid color-mix(in srgb, var(--glass-tint) 7%, transparent);
 	border-radius: 16px;
 	background: color-mix(in srgb, var(--glass-tint) 3.5%, transparent);
-	box-shadow: inset 0 1px 0 color-mix(in srgb, var(--glass-tint) 6%, transparent);
+	box-shadow: inset 0 1px 0
+		color-mix(in srgb, var(--glass-tint) 6%, transparent);
 }
 
 .phaseLabel {
@@ -98,8 +99,8 @@
 }
 
 .comparing {
-	border-color: rgba(79, 124, 248, 0.56);
-	background: rgba(79, 124, 248, 0.14);
+	border-color: color-mix(in srgb, var(--state-active) 56%, transparent);
+	background: color-mix(in srgb, var(--state-active) 14%, transparent);
 	transform: translateY(-2px);
 }
 
@@ -172,7 +173,11 @@
 	border: 1px solid color-mix(in srgb, var(--glass-tint) 7%, transparent);
 	border-radius: 18px;
 	background:
-		linear-gradient(180deg, color-mix(in srgb, var(--glass-tint) 4%, transparent), transparent 44%),
+		linear-gradient(
+			180deg,
+			color-mix(in srgb, var(--glass-tint) 4%, transparent),
+			transparent 44%
+		),
 		color-mix(in srgb, var(--glass-tint) 2.4%, transparent);
 	overflow-x: auto;
 }
@@ -220,8 +225,8 @@
 }
 
 .comparingNode {
-	border-color: rgba(79, 124, 248, 0.55);
-	background: rgba(79, 124, 248, 0.13);
+	border-color: color-mix(in srgb, var(--state-active) 55%, transparent);
+	background: color-mix(in srgb, var(--state-active) 13%, transparent);
 	transform: translateY(-2px);
 }
 

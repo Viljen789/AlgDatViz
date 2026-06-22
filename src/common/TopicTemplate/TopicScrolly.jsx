@@ -139,15 +139,22 @@ const TopicScrolly = ({
 	// snaps instantly. The IntersectionObserver above stays active so natural
 	// scrolling still works and keeps the controls in sync.
 	const goToScene = useCallback(
-		(idx, { fromAuto = false } = {}) => {
+		(idx, { fromAuto = false, scroll = true } = {}) => {
 			const clamped = Math.max(0, Math.min(idx, scenes.length - 1));
 			if (!fromAuto) setIsPlaying(false); // any manual interaction pauses
 			setActiveScene(clamped);
 			onActiveScene?.(clamped);
-			sceneRefs.current[clamped]?.scrollIntoView({
-				behavior: reducedMotion ? 'auto' : 'smooth',
-				block: 'center',
-			});
+			// Stepping one beat (Prev/Next) updates the active scene + stage but
+			// holds the page still, so a panicked reader can rewind WITHOUT the
+			// page scrolling out from under them. Jump targets (dots, First/Last)
+			// keep scroll:true and recenter. Default true preserves prior behavior
+			// for every existing caller across all topics.
+			if (scroll) {
+				sceneRefs.current[clamped]?.scrollIntoView({
+					behavior: reducedMotion ? 'auto' : 'smooth',
+					block: 'center',
+				});
+			}
 		},
 		[scenes.length, onActiveScene, reducedMotion]
 	);
@@ -201,8 +208,8 @@ const TopicScrolly = ({
 							blockedReason={blockedReason}
 							scopeRef={rootRef}
 							reducedMotion={reducedMotion}
-							onPrev={() => goToScene(activeScene - 1)}
-							onNext={() => goToScene(activeScene + 1)}
+							onPrev={() => goToScene(activeScene - 1, { scroll: false })}
+							onNext={() => goToScene(activeScene + 1, { scroll: false })}
 							onFirst={() => goToScene(0)}
 							onLast={() => goToScene(total - 1)}
 							onJump={idx => goToScene(idx)}

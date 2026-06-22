@@ -2,7 +2,8 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import useReducedMotion from '../../hooks/useReducedMotion.js';
 import { getQuickSortFrames } from '../../utils/sorting/quickPartitionFrames.js';
 import { SceneNarration } from '../../common/PlaybackEngine';
-import { STAGE_VALUES } from './scenes.js';
+import { STAGE_VALUES, SELECT_INPUT, SELECT_I } from './scenes.js';
+import { quickselectTrace } from './quickselectTrace.js';
 import styles from './QuickSortStage.module.css';
 
 // Stage geometry. A fixed slot grid keeps each value's column stable while the
@@ -45,6 +46,24 @@ const STICK_LEVELS = Array.from({ length: N }, (_, depth) => ({
 	from: depth,
 }));
 
+// QUICKSELECT scene (index 5). The SAME Lomuto partition, now doing selection:
+// we show the array AFTER the first partition, with the pivot placed, the left
+// (smaller) side discarded, and the right (larger) side kept as the search range.
+// Every position here is read off the deterministic trace of the exam's
+// quicksort-3 instance (./quickselectTrace.js) — nothing is hand-placed.
+const SELECT_RUN = quickselectTrace(SELECT_INPUT, SELECT_I);
+const SELECT_VALUES = SELECT_RUN.firstPartition.array; // array after partition 1
+const SELECT_PIVOT_INDEX = SELECT_RUN.firstPartition.pivotFinalIndex; // 0-based
+const SELECT_N = SELECT_VALUES.length;
+// i (1-based) vs the pivot's rank (landing index + 1) decides the kept side. The
+// answer is DERIVED, exactly as the scene's check derives it, so the bars and the
+// prompt can never disagree: i > rank ⇒ keep the right, else keep the left.
+const SELECT_KEEP_RIGHT = SELECT_I > SELECT_PIVOT_INDEX + 1;
+
+// The select array has one more element than STAGE_VALUES, so give it its own slot
+// grid (same SLOT/PAD metrics) — the partition scenes keep their own geometry.
+const SELECT_VIEW_W = PAD_X * 2 + SELECT_N * SLOT;
+
 const QuickSortStage = ({ activeScene = 0 }) => {
 	const reducedMotion = useReducedMotion();
 	const wrapRef = useRef(null);
@@ -55,6 +74,9 @@ const QuickSortStage = ({ activeScene = 0 }) => {
 	const isRecurse = activeScene === 2;
 	const isWorstCase = activeScene === 3 || activeScene === 4;
 	const showRecurrence = activeScene === 4;
+	// Scene 5 (quickselect) reuses the bar row, never the worst-case stick or the
+	// partition animation — it is a static "after one partition" snapshot.
+	const isSelect = activeScene === 5;
 
 	const [frameIdx, setFrameIdx] = useState(0);
 
@@ -90,22 +112,29 @@ const QuickSortStage = ({ activeScene = 0 }) => {
 		if (isRecurse) {
 			return { values: PARTITIONED, frame: PLACE_FRAME };
 		}
+		if (isSelect) {
+			// Selection: the array AFTER the first partition. No live frame — the
+			// roles (placed pivot, discarded side, kept side) are static per slot.
+			return { values: SELECT_VALUES, frame: null };
+		}
 		// Worst case + recurrence scenes reuse the sorted-stick illustration below;
 		// the bar row shows the already-sorted array to motivate the bad pivot.
 		return {
 			values: [...STAGE_VALUES].sort((a, b) => a - b),
 			frame: null,
 		};
-	}, [isPartitionScene, isRecurse, frame]);
+	}, [isPartitionScene, isRecurse, isSelect, frame]);
 
 	const caption = useMemo(() => {
 		if (isPartitionScene) return frame.caption;
 		if (isRecurse)
 			return 'Pivot home. Recurse on the left range and the right range — never across the pivot.';
+		if (isSelect)
+			return `Pivot ${SELECT_VALUES[SELECT_PIVOT_INDEX]} placed at rank ${SELECT_PIVOT_INDEX + 1}. Want the ${SELECT_I}th smallest, so search the ${SELECT_KEEP_RIGHT ? 'right' : 'left'} side only — the other side is discarded.`;
 		if (activeScene === 3)
 			return 'Already sorted: the last-element pivot is always the maximum, so every split is lopsided.';
 		return 'Each partition peels one element: sizes n, n−1, …, 1. The work stacks to Θ(n²).';
-	}, [isPartitionScene, isRecurse, activeScene, frame]);
+	}, [isPartitionScene, isRecurse, isSelect, activeScene, frame]);
 
 	const barClassFor = slot => {
 		const f = view.frame;
@@ -116,6 +145,15 @@ const QuickSortStage = ({ activeScene = 0 }) => {
 			if (RIGHT_RANGE && slot >= RIGHT_RANGE[0] && slot <= RIGHT_RANGE[1])
 				return styles.barRightSide;
 			return styles.barDefault;
+		}
+		if (isSelect) {
+			// Pivot placed at its final rank; the KEPT side (where the i-th smallest
+			// lives) is highlighted as the search range, the DISCARDED side is dimmed.
+			// Which side is kept is derived, so this never contradicts the prompt.
+			if (slot === SELECT_PIVOT_INDEX) return styles.barPivotHome;
+			const onRight = slot > SELECT_PIVOT_INDEX;
+			const kept = SELECT_KEEP_RIGHT ? onRight : !onRight;
+			return kept ? styles.barRightSide : styles.barLocked;
 		}
 		if (!f) return styles.barDefault;
 		// Partition scenes: colour by the live algorithm role at this frame.
@@ -136,66 +174,75 @@ const QuickSortStage = ({ activeScene = 0 }) => {
 		return styles.barDefault;
 	};
 
-	const renderBars = () => (
-		<svg
-			viewBox={`0 0 ${VIEW_W} ${VIEW_H}`}
-			className={styles.svg}
-			preserveAspectRatio="xMidYMid meet"
-		>
-			{/* Pointer rails (i boundary, j scanner) only during the partition. */}
-			{isPartitionScene && view.frame && (
-				<g aria-hidden="true">
-					{view.frame.i != null &&
-						view.frame.i >= (view.frame.range?.[0] ?? 0) && (
+	const renderBars = () => {
+		// The select scene shows a 9-value array (one wider than STAGE_VALUES) with a
+		// larger max, so widen the viewBox and scale heights to its own max — every
+		// other scene keeps the original 8-slot geometry.
+		const viewW = isSelect ? SELECT_VIEW_W : VIEW_W;
+		const maxValue = isSelect ? Math.max(...view.values, 1) : VALUE_MAX;
+		const barHeight = value =>
+			isSelect ? Math.max(8, (value / maxValue) * BAR_MAX_H) : heightFor(value);
+		return (
+			<svg
+				viewBox={`0 0 ${viewW} ${VIEW_H}`}
+				className={styles.svg}
+				preserveAspectRatio="xMidYMid meet"
+			>
+				{/* Pointer rails (i boundary, j scanner) only during the partition. */}
+				{isPartitionScene && view.frame && (
+					<g aria-hidden="true">
+						{view.frame.i != null &&
+							view.frame.i >= (view.frame.range?.[0] ?? 0) && (
+								<PointerMark
+									slot={view.frame.i}
+									label="i"
+									className={styles.pointerBoundary}
+								/>
+							)}
+						{view.frame.j != null && (
 							<PointerMark
-								slot={view.frame.i}
-								label="i"
-								className={styles.pointerBoundary}
+								slot={view.frame.j}
+								label="j"
+								className={styles.pointerScan}
 							/>
 						)}
-					{view.frame.j != null && (
-						<PointerMark
-							slot={view.frame.j}
-							label="j"
-							className={styles.pointerScan}
-						/>
-					)}
-				</g>
-			)}
-
-			{view.values.map((value, slot) => {
-				const h = heightFor(value);
-				const x = PAD_X + slot * SLOT + (SLOT - BAR_W) / 2;
-				const y = BASE_Y - h;
-				return (
-					<g key={slot}>
-						<rect
-							x={x}
-							y={y}
-							width={BAR_W}
-							height={h}
-							rx="2"
-							className={barClassFor(slot)}
-						/>
-						<text
-							x={PAD_X + slot * SLOT + SLOT / 2}
-							y={BASE_Y + 16}
-							className={styles.barValue}
-						>
-							{value}
-						</text>
-						<text
-							x={PAD_X + slot * SLOT + SLOT / 2}
-							y={BASE_Y + 30}
-							className={styles.slotIndex}
-						>
-							{slot}
-						</text>
 					</g>
-				);
-			})}
-		</svg>
-	);
+				)}
+
+				{view.values.map((value, slot) => {
+					const h = barHeight(value);
+					const x = PAD_X + slot * SLOT + (SLOT - BAR_W) / 2;
+					const y = BASE_Y - h;
+					return (
+						<g key={slot}>
+							<rect
+								x={x}
+								y={y}
+								width={BAR_W}
+								height={h}
+								rx="2"
+								className={barClassFor(slot)}
+							/>
+							<text
+								x={PAD_X + slot * SLOT + SLOT / 2}
+								y={BASE_Y + 16}
+								className={styles.barValue}
+							>
+								{value}
+							</text>
+							<text
+								x={PAD_X + slot * SLOT + SLOT / 2}
+								y={BASE_Y + 30}
+								className={styles.slotIndex}
+							>
+								{slot}
+							</text>
+						</g>
+					);
+				})}
+			</svg>
+		);
+	};
 
 	// The lopsided-recursion staircase for the worst-case scenes. Each row is a
 	// range; the top is the full array, each lower row drops the just-placed
@@ -239,7 +286,9 @@ const QuickSortStage = ({ activeScene = 0 }) => {
 						? 'Lomuto partition: two pointers sweep and the pivot snaps to its final index'
 						: isRecurse
 							? 'The array partitioned around its pivot, with the two recursion subranges marked'
-							: 'Quicksort worst case: a lopsided recursion'
+							: isSelect
+								? 'Quickselect: after one partition, the pivot is placed, one side is discarded, and the other is kept as the search range'
+								: 'Quicksort worst case: a lopsided recursion'
 				}
 			>
 				{isWorstCase ? renderStick() : renderBars()}
@@ -263,7 +312,9 @@ const QuickSortStage = ({ activeScene = 0 }) => {
 				</div>
 
 				<div className={styles.notation} aria-hidden="true">
-					partition · n = {STAGE_VALUES.length}
+					{isSelect
+						? `select · i = ${SELECT_I} · n = ${SELECT_N}`
+						: `partition · n = ${STAGE_VALUES.length}`}
 				</div>
 			</div>
 		</>
