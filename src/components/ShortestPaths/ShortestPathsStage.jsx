@@ -10,11 +10,23 @@ import {
 import { SHARED_GRAPH, SHARED_SOURCE } from './ssspMeta.js';
 import { buildEdges, projectNodes, VIEW_H, VIEW_W } from './graphLayout.js';
 import useReducedMotion from '../../hooks/useReducedMotion.js';
+import StateLegend from '../../common/StateLegend/StateLegend';
 import { SceneNarration } from '../../common/PlaybackEngine';
 import styles from './ShortestPathsStage.module.css';
 
 // Same idempotent-registration pattern HomePage uses for ScrollTrigger.
 gsap.registerPlugin(MotionPathPlugin);
+
+// Swatch colours mirror what ShortestPathsStage.module.css actually paints. The
+// settled source, pred tree, shortest path and relaxing edge all ride the topic
+// accent (sssp = blue-violet) at different intensities; the over-estimate
+// subpath edge borrows --color-warning and is dashed, so it never reads by hue
+// alone. The relax dot is the shared --state-active blue.
+const SW_SETTLED = 'var(--topic-accent)';
+const SW_RELAX = 'var(--state-active)';
+const SW_OVERSHOOT = 'var(--color-warning)';
+const SW_FRONTIER =
+	'color-mix(in srgb, var(--topic-accent) 55%, var(--color-border-strong))';
 
 // Canonical answers measured once from the generators (shared by every scene).
 const BF = bellmanFordTrace(SHARED_GRAPH, { source: SHARED_SOURCE });
@@ -312,6 +324,36 @@ const ShortestPathsStage = ({ activeScene = 0 }) => {
 		return () => ctx.revert();
 	}, [relaxEdge, relaxTarget, activeScene, reducedMotion, view, ids]);
 
+	// Scene-aware key: only the states this scene actually paints. Hue is never
+	// the sole signal — the over-estimate subpath edge stays dashed as well as
+	// amber, so it reads apart from the accent path on a colour-blind canvas.
+	const legend = (() => {
+		switch (activeScene) {
+			// 0 relax: the firing edge plus the node it settles.
+			case 0:
+				return [
+					{ swatch: SW_SETTLED, label: 'relaxing edge', aria: 'accent' },
+					{ swatch: SW_RELAX, label: 'settling node', aria: 'blue' },
+				];
+			// 1 optimal substructure: shortest path vs its longer over-estimate.
+			case 1:
+				return [
+					{ swatch: SW_SETTLED, label: 'shortest s→b', aria: 'accent' },
+					{
+						swatch: SW_OVERSHOOT,
+						label: 'over-estimate (dashed)',
+						aria: 'amber',
+					},
+				];
+			// 3 Bellman-Ford: every edge lit as "the schedule".
+			case 3:
+				return [{ swatch: SW_FRONTIER, label: 'every edge relaxed', aria: 'accent' }];
+			// 2, 4-7: the converged pred tree (rooted at the source).
+			default:
+				return [{ swatch: SW_SETTLED, label: 'pred tree', aria: 'accent' }];
+		}
+	})();
+
 	return (
 		<>
 			{/* Per-scene narration for screen readers, OUTSIDE the role=img figure
@@ -511,6 +553,8 @@ const ShortestPathsStage = ({ activeScene = 0 }) => {
 						)}
 					</div>
 				</div>
+
+				<StateLegend items={legend} />
 
 				<p className={styles.caption}>{view.caption}</p>
 			</div>

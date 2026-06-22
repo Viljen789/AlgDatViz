@@ -175,25 +175,6 @@
 	color: var(--topic-accent-ink);
 }
 
-/* ---------- Read/write legend ---------- */
-
-.readLegend {
-	display: flex;
-	flex-wrap: wrap;
-	gap: var(--space-sm);
-	font-family: var(--font-family-mono);
-	font-size: var(--font-size-caption);
-	letter-spacing: var(--tracking-wide);
-}
-
-.legRead {
-	color: var(--topic-accent-ink);
-}
-
-.legWrite {
-	color: var(--color-text-secondary);
-}
-
 /* ---------- Caption ---------- */
 
 .caption {

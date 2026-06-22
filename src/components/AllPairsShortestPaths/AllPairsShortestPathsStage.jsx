@@ -3,8 +3,18 @@ import { floydWarshall, reconstructPath, formatDist } from './fwTrace.js';
 import { slowApsp } from './slowApsp.js';
 import { SHARED_GRAPH } from './apspMeta.js';
 import { buildEdges, projectNodes, VIEW_H, VIEW_W } from './graphLayout.js';
+import StateLegend from '../../common/StateLegend/StateLegend';
 import { SceneNarration } from '../../common/PlaybackEngine';
 import styles from './AllPairsShortestPathsStage.module.css';
+
+// Swatch colours mirror what AllPairsShortestPathsStage.module.css paints in the
+// matrix. The write target and the two cells it reads ride the topic accent
+// (apsp = lime) at two intensities; the reconstructed-path cells borrow
+// --color-warning; the diagonal spotlight is the accent again.
+const SW_WRITE = 'var(--topic-accent)';
+const SW_READ = 'color-mix(in srgb, var(--topic-accent) 22%, var(--surface-2))';
+const SW_PATH = 'color-mix(in srgb, var(--color-warning) 20%, var(--surface-2))';
+const SW_DIAG = 'color-mix(in srgb, var(--topic-accent) 60%, var(--surface-2))';
 
 // Canonical answers measured once from the generator (shared by every scene).
 const FW = floydWarshall(SHARED_GRAPH);
@@ -159,6 +169,25 @@ const AllPairsShortestPathsStage = ({ activeScene = 0 }) => {
 
 	const sameCell = (a, b) => a && b && a[0] === b[0] && a[1] === b[1];
 
+	// Scene-aware key, replacing the old aria-hidden read/write legend so the
+	// matrix colours are spoken too. Only the states this scene paints: the
+	// relaxed cell + the two it reads, the reconstructed path, or the diagonal.
+	const legend = (() => {
+		if (pathCells.size) {
+			return [{ swatch: SW_PATH, label: 'reconstructed path', aria: 'amber' }];
+		}
+		if (diagCells.size) {
+			return [{ swatch: SW_DIAG, label: 'diagonal d[v][v]', aria: 'accent' }];
+		}
+		if (write || readIK) {
+			return [
+				{ swatch: SW_WRITE, label: 'writes d[i][j]', aria: 'accent' },
+				{ swatch: SW_READ, label: 'reads d[i][k], d[k][j]', aria: 'accent tint' },
+			];
+		}
+		return [];
+	})();
+
 	return (
 		<>
 			{/* Per-scene narration for screen readers, OUTSIDE the role=img figure
@@ -290,12 +319,7 @@ const AllPairsShortestPathsStage = ({ activeScene = 0 }) => {
 							</tbody>
 						</table>
 
-						{(write || readIK) && (
-							<div className={styles.readLegend} aria-hidden="true">
-								<span className={styles.legRead}>reads d[i][k], d[k][j]</span>
-								<span className={styles.legWrite}>writes d[i][j]</span>
-							</div>
-						)}
+						<StateLegend items={legend} />
 					</div>
 				</div>
 
