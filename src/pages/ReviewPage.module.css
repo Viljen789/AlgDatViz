@@ -228,11 +228,22 @@
 }
 
 .caughtUp {
+	display: flex;
+	align-items: flex-start;
+	gap: var(--space-xs);
 	margin: 0;
-	max-width: 46ch;
+	max-width: 52ch;
 	font-size: var(--font-size-body);
 	line-height: var(--line-height-snug);
 	color: var(--color-text-secondary);
+}
+
+/* The clock-calendar glyph is the redundant, color-free cue that this line is
+   about the schedule (not just muted text). Nudged onto the first text line. */
+.caughtUpIcon {
+	flex: none;
+	margin-top: 0.15em;
+	color: var(--review-brand-ink);
 }
 
 /* Inline "study a topic" link inside the caught-up line; the review accent ties

@@ -114,6 +114,19 @@ const buildMergeSteps = (left, right) => {
 };
 const MERGE_STEPS = buildMergeSteps(MERGE_L, MERGE_R);
 
+// FIX 1 — the honest pre-merge frame held while the prediction is unanswered:
+// both runs lined up in full, cursors parked at the start (i = j = 0), nothing
+// copied out, and no compare highlighted yet. This is the TRUE setup, not a
+// placeholder — it is exactly what the merge starts from before any frame plays.
+const MERGE_HELD_FRAME = {
+	i: 0,
+	j: 0,
+	out: [],
+	comparing: false,
+	copied: null,
+	narr: 'Two sorted runs, lined up and ready to merge.',
+};
+
 const heightFor = value => Math.max(4, (value / VALUE_MAX) * BAR_MAX_H);
 
 // Return the slot index of each bar within the original array. We always
@@ -151,6 +164,10 @@ const MergeSortStage = ({
 	exampleSlots = [],
 	answerStatus = null,
 	onBarClick,
+	// FIX 1 — reveal gate. While true (the merge scene's predict check is not yet
+	// answered) the stage HOLDS the honest pre-merge frame and does not auto-play,
+	// so "3 gets copied out first" can't animate before the student predicts it.
+	holdReveal = false,
 }) => {
 	const levels = useMemo(() => buildLevels(STAGE_VALUES), []);
 	const sorted = useMemo(() => sortGroups(levels), [levels]);
@@ -172,11 +189,19 @@ const MergeSortStage = ({
 	const [mergePlaying, setMergePlaying] = useState(true);
 	const lastMergeStep = MERGE_STEPS.length - 1;
 
-	// Reset playback each time the combine scene (re)enters: start from the first
-	// frame, auto-playing, unless reduced motion asks for the static finished run.
+	// Reset playback each time the combine scene (re)enters, or when the reveal
+	// gate lifts: start from the first frame, auto-playing, unless reduced motion
+	// asks for the static finished run. While the gate is HELD (prediction not yet
+	// made) we park on the first frame with playback off, so nothing animates and
+	// the held pre-merge frame stays honest until the student answers.
 	useEffect(() => {
 		if (!isCombine) {
 			setMergeStep(0);
+			return;
+		}
+		if (holdReveal) {
+			setMergeStep(0);
+			setMergePlaying(false);
 			return;
 		}
 		if (reducedMotion) {
@@ -186,7 +211,7 @@ const MergeSortStage = ({
 		}
 		setMergeStep(0);
 		setMergePlaying(true);
-	}, [isCombine, reducedMotion, lastMergeStep]);
+	}, [isCombine, reducedMotion, lastMergeStep, holdReveal]);
 
 	// The driving interval only runs while the scene is active, motion is allowed,
 	// and the student has not paused. A raw tick counter (kept in a ref so the
@@ -194,7 +219,10 @@ const MergeSortStage = ({
 	// then replays so a late scroller still sees the whole merge.
 	const mergeTickRef = useRef(mergeStep);
 	useEffect(() => {
-		if (!isCombine || reducedMotion || !mergePlaying) return undefined;
+		// holdReveal short-circuits the interval too: while the prediction is
+		// pending nothing may advance, so the held frame can never be spoiled.
+		if (!isCombine || reducedMotion || !mergePlaying || holdReveal)
+			return undefined;
 		// Resume the raw counter from wherever the visible step currently sits.
 		mergeTickRef.current = mergeStep;
 		const id = window.setInterval(() => {
@@ -208,7 +236,7 @@ const MergeSortStage = ({
 		// mergeStep is the resume seed only; re-running on every tick would reset
 		// the counter, so it is intentionally not in the dep list.
 		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [isCombine, reducedMotion, mergePlaying, lastMergeStep]);
+	}, [isCombine, reducedMotion, mergePlaying, lastMergeStep, holdReveal]);
 
 	// Manual frame stepping (used while paused); clamps within the real frames and
 	// pauses auto-play so a step never fights the interval.
@@ -232,9 +260,16 @@ const MergeSortStage = ({
 	const showRecurrence = activeScene >= 4;
 	const leafPulse = activeScene === 2;
 
+	// FIX 1 — the held flag for THIS render: only the combine scene can hold, and
+	// only while its prediction is pending. The merge demo and captions read this
+	// so the honest pre-merge frame stays parked and unspoiled.
+	const mergeHeld = isCombine && holdReveal;
+
 	// Honest per-scene narration for screen readers — the SAME thing the figure
 	// shows at this scene, no value-ordering the index-packed bars do not satisfy.
-	// The combine scene reuses the live compare/copy line that drives the demo.
+	// The combine scene reuses the live compare/copy line that drives the demo,
+	// except while held, where it reads the neutral pre-merge line so the VISIBLE
+	// caption never spoils which value leads.
 	const sceneNarration = (() => {
 		switch (activeScene) {
 			case 0:
@@ -244,11 +279,24 @@ const MergeSortStage = ({
 			case 2:
 				return 'At the bottom every piece is one element, trivially sorted.';
 			case 3:
-				return (MERGE_STEPS[mergeStep] || MERGE_STEPS[0]).narr;
+				return mergeHeld
+					? MERGE_HELD_FRAME.narr
+					: (MERGE_STEPS[mergeStep] || MERGE_STEPS[0]).narr;
 			default:
 				return 'The same n-work merge runs at every level: n log n total.';
 		}
 	})();
+
+	// FIX 2 — screen-reader narration for the aria-live region. On the combine
+	// scene the merge loops a fresh compare/copy line every ~1.15s, which would
+	// make a screen reader re-announce endlessly. So scene 3 gets ONE stable
+	// sentence that announces once on entry; every other scene voices the live
+	// caption as before. The VISIBLE caption keeps its per-frame line for sighted
+	// students (see the docked caption below, still on sceneNarration).
+	const srNarration =
+		activeScene === 3
+			? 'Merging two sorted runs by repeatedly copying the smaller front element, until one run remains.'
+			: sceneNarration;
 
 	// The base-case "click": when scene 2 becomes active the recursion has reached
 	// single-element leaves (already sorted), and the bottom row settles with one
@@ -449,7 +497,12 @@ const MergeSortStage = ({
 	// caption. Tokens reuse the State Quartet: comparing = active, just-copied =
 	// in-flight, placed = done; the follow value keeps its accent outline.
 	const renderMergeDemo = () => {
-		const step = MERGE_STEPS[mergeStep] || MERGE_STEPS[0];
+		// While held (prediction pending) render the honest pre-merge frame: both
+		// runs in full, cursors at the start, nothing copied, no compare lit. Once
+		// the student answers (mergeHeld false) the live MERGE_STEPS frame drives.
+		const step = mergeHeld
+			? MERGE_HELD_FRAME
+			: MERGE_STEPS[mergeStep] || MERGE_STEPS[0];
 		const tokenClass = (value, role) =>
 			[styles.mToken, role, value === FOLLOW_VALUE ? styles.mFollow : '']
 				.filter(Boolean)
@@ -512,11 +565,15 @@ const MergeSortStage = ({
 						})}
 					</div>
 				</div>
-				{/* Inline merge transport. The auto-play is no longer an
-				    uncontrollable loop: a student can pause it and step the
-				    compare/copy frames one beat at a time. Hidden under reduced
-				    motion, which already settles to the finished run. */}
-				{!reducedMotion && (
+				{/* Inline merge transport — prev / play-pause / next. The auto-play is
+				    no longer an uncontrollable loop: a student can pause it and step
+				    the compare/copy frames one beat at a time. FIX 2: it renders for
+				    reduced-motion users too (they park on the finished run with no
+				    auto-motion, and these controls let them step the frames manually).
+				    FIX 1 reconcile: hidden while the prediction is HELD, so manual
+				    stepping can never spoil the answer; it returns the moment the
+				    student answers (mergeHeld false). */}
+				{!mergeHeld && (
 					<div className={styles.mergeControls}>
 						<button
 							type="button"
@@ -528,30 +585,35 @@ const MergeSortStage = ({
 						>
 							<ChevronLeft size={15} strokeWidth={1.8} aria-hidden="true" />
 						</button>
-						<button
-							type="button"
-							className={`${styles.mergeBtn} ${styles.mergePlay}`}
-							onClick={toggleMergePlay}
-							aria-pressed={mergePlaying}
-							aria-label={mergePlaying ? 'Pause merge' : 'Play merge'}
-							title={mergePlaying ? 'Pause merge' : 'Play merge'}
-						>
-							{mergePlaying ? (
-								<Pause
-									size={15}
-									strokeWidth={1.8}
-									fill="currentColor"
-									aria-hidden="true"
-								/>
-							) : (
-								<Play
-									size={15}
-									strokeWidth={1.8}
-									fill="currentColor"
-									aria-hidden="true"
-								/>
-							)}
-						</button>
+						{/* Play/Pause only when motion is allowed. Reduced-motion users
+						    keep Prev/Next to step the frames by hand, but no auto-play
+						    button (auto-motion stays off for them by design). */}
+						{!reducedMotion && (
+							<button
+								type="button"
+								className={`${styles.mergeBtn} ${styles.mergePlay}`}
+								onClick={toggleMergePlay}
+								aria-pressed={mergePlaying}
+								aria-label={mergePlaying ? 'Pause merge' : 'Play merge'}
+								title={mergePlaying ? 'Pause merge' : 'Play merge'}
+							>
+								{mergePlaying ? (
+									<Pause
+										size={15}
+										strokeWidth={1.8}
+										fill="currentColor"
+										aria-hidden="true"
+									/>
+								) : (
+									<Play
+										size={15}
+										strokeWidth={1.8}
+										fill="currentColor"
+										aria-hidden="true"
+									/>
+								)}
+							</button>
+						)}
 						<button
 							type="button"
 							className={styles.mergeBtn}
@@ -571,8 +633,11 @@ const MergeSortStage = ({
 	return (
 		<>
 			{/* Per-scene narration for screen readers, OUTSIDE the role=img figure
-			    below (which collapses its in-figure caption into one static label). */}
-			<SceneNarration>{sceneNarration}</SceneNarration>
+			    below (which collapses its in-figure caption into one static label).
+			    FIX 2: on the looping merge scene this is a STABLE single sentence
+			    (srNarration), so a screen reader announces it once on entry instead
+			    of re-announcing a fresh compare/copy line every ~1.15s. */}
+			<SceneNarration>{srNarration}</SceneNarration>
 			<div
 				ref={wrapRef}
 				className={styles.wrap}
@@ -636,9 +701,11 @@ const MergeSortStage = ({
 				</div>
 
 				{/* Visible "what just happened" caption, docked to the stage for EVERY
-				    scene (the same honest narration fed to the sr-only region above),
-				    so a sighted student can always read the current step in plain
-				    language. aria-hidden: the SceneNarration region already voices it. */}
+				    scene, so a sighted student can always read the CURRENT step in
+				    plain language. It stays on the per-frame sceneNarration (the merge
+				    scene updates it every beat); the sr-only region above uses the
+				    stable srNarration instead so a screen reader is not spammed by the
+				    loop. aria-hidden: the SceneNarration region voices the scene. */}
 				<p className={styles.caption} aria-hidden="true">
 					{sceneNarration}
 				</p>

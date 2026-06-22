@@ -125,3 +125,65 @@ export const planSession = (
 		scheduledCount: Object.keys(cards || {}).length,
 	};
 };
+
+/**
+ * forecastDue — when does the schedule bring work back, and how much?
+ *
+ * planSession answers "what is due NOW"; this answers "what returns SOON", so a
+ * caught-up student gets a reason and a time to come back instead of a dead end.
+ * Reads the same cards/candidates planSession reads. Each scheduled card whose
+ * due is in the future is bucketed by whole days out (Math.ceil) into `byDay`;
+ * cards already due (due <= now) stay in `dueToday` and are never counted in the
+ * forecast, so a past-due card is not double-counted. `nextDueMs` is the soonest
+ * future due across all cards (null when nothing is scheduled for the future).
+ *
+ * Pure: reads its inputs, returns a fresh object; mutates nothing. Like every
+ * function here it takes `now` explicitly and never calls Date.now() itself.
+ *
+ * @param {Record<string,object>} cards  schedule keyed by bank-entry id
+ * @param {Array<{id:string, topicId:string}>} candidates  the review bank
+ * @param {object} [opts]
+ * @param {number} opts.now              ms epoch "now" (required for due math)
+ * @param {number} [opts.horizonDays]    how many days ahead `byDay` spans (>=)
+ * @returns {{dueToday:number,
+ *            byDay:Array<{offset:number, dateMs:number, count:number, topicIds:string[]}>,
+ *            nextDueMs:(number|null)}}
+ */
+export const forecastDue = (
+	cards,
+	candidates,
+	{ now = 0, horizonDays = 3 } = {}
+) => {
+	let dueToday = 0;
+	let nextDueMs = null;
+	// offset (1..horizonDays) → { count, topicIds:Set } for cards inside the window.
+	const buckets = new Map();
+	for (const entry of candidates || []) {
+		const card = cards?.[entry.id];
+		if (!card) continue;
+		if (card.due <= now) {
+			dueToday += 1;
+			continue;
+		}
+		// A future-due card: track the soonest, and bucket it by whole days out.
+		if (nextDueMs === null || card.due < nextDueMs) nextDueMs = card.due;
+		const offset = Math.ceil((card.due - now) / DAY_MS);
+		if (offset > horizonDays) continue;
+		let bucket = buckets.get(offset);
+		if (!bucket) {
+			bucket = { count: 0, topicIds: new Set() };
+			buckets.set(offset, bucket);
+		}
+		bucket.count += 1;
+		bucket.topicIds.add(entry.topicId);
+	}
+	const byDay = [...buckets.entries()]
+		.sort((a, b) => a[0] - b[0])
+		.map(([offset, bucket]) => ({
+			offset,
+			dateMs: now + offset * DAY_MS,
+			count: bucket.count,
+			topicIds: [...bucket.topicIds],
+		}));
+	return { dueToday, byDay, nextDueMs };
+};

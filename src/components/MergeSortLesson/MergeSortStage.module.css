@@ -296,6 +296,12 @@
 		max-width: 100%;
 		font-size: 11px;
 	}
+	/* Comfortable touch targets for the merge transport on small screens — at
+	   least 40x40px so a finger can step the frames reliably. */
+	.mergeBtn {
+		width: 40px;
+		height: 40px;
+	}
 }
 
 /* ---------- Scene 3: the choreographed merge ---------- */

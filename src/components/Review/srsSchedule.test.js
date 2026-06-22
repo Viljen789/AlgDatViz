@@ -4,6 +4,7 @@ import {
 	BOX_INTERVALS_DAYS,
 	DAY_MS,
 	MAX_BOX,
+	forecastDue,
 	gradeCard,
 	initialCard,
 	planSession,
@@ -158,4 +159,77 @@ test('planSession honours the new-card cap', () => {
 	assert.equal(plan.freshCount, 6);
 	assert.equal(plan.freshAvailable, 20);
 	assert.equal(plan.queue.length, 6);
+});
+
+// ── forecastDue: when work returns, so a caught-up student has a reason to come back ──
+
+test('forecastDue with an empty schedule has no future due (nextDueMs null)', () => {
+	const now = 10 * DAY_MS;
+	const candidates = [
+		{ id: 'a:1', topicId: 'a' },
+		{ id: 'b:1', topicId: 'b' },
+	];
+	const f = forecastDue({}, candidates, { now });
+	assert.equal(f.dueToday, 0);
+	assert.deepEqual(f.byDay, []);
+	assert.equal(f.nextDueMs, null);
+});
+
+test('forecastDue buckets a card due tomorrow into byDay offset 1, count 1', () => {
+	const now = 10 * DAY_MS;
+	const candidates = [{ id: 'mst:1', topicId: 'mst' }];
+	const cards = {
+		'mst:1': { box: 1, reps: 1, lapses: 0, last: now, due: now + DAY_MS },
+	};
+	const f = forecastDue(cards, candidates, { now });
+	assert.equal(f.dueToday, 0);
+	assert.equal(f.byDay.length, 1);
+	assert.deepEqual(f.byDay[0], {
+		offset: 1,
+		dateMs: now + DAY_MS,
+		count: 1,
+		topicIds: ['mst'],
+	});
+	assert.equal(f.nextDueMs, now + DAY_MS);
+});
+
+test('forecastDue keeps a past-due card in dueToday, never double-counted in the forecast', () => {
+	const now = 10 * DAY_MS;
+	const candidates = [
+		{ id: 'a:1', topicId: 'a' }, // overdue
+		{ id: 'b:1', topicId: 'b' }, // due tomorrow
+	];
+	const cards = {
+		'a:1': { box: 1, reps: 1, lapses: 0, last: 0, due: 9 * DAY_MS }, // due <= now
+		'b:1': { box: 2, reps: 1, lapses: 0, last: now, due: now + DAY_MS },
+	};
+	const f = forecastDue(cards, candidates, { now });
+	assert.equal(f.dueToday, 1);
+	// The overdue card never appears in byDay; only the future card does.
+	assert.equal(f.byDay.length, 1);
+	assert.equal(f.byDay[0].offset, 1);
+	assert.equal(f.byDay[0].count, 1);
+	assert.deepEqual(f.byDay[0].topicIds, ['b']);
+	assert.equal(f.nextDueMs, now + DAY_MS); // the future card, not the overdue one
+});
+
+test('forecastDue tracks the soonest future due and drops cards past the horizon', () => {
+	const now = 0;
+	const candidates = [
+		{ id: 'a:1', topicId: 'a' }, // due in 2 days
+		{ id: 'a:2', topicId: 'a' }, // due in 2 days (same bucket, same topic)
+		{ id: 'b:1', topicId: 'b' }, // due in 9 days — beyond a 3-day horizon
+	];
+	const cards = {
+		'a:1': { box: 2, reps: 1, lapses: 0, last: 0, due: 2 * DAY_MS },
+		'a:2': { box: 2, reps: 1, lapses: 0, last: 0, due: 2 * DAY_MS },
+		'b:1': { box: 4, reps: 1, lapses: 0, last: 0, due: 9 * DAY_MS },
+	};
+	const f = forecastDue(cards, candidates, { now, horizonDays: 3 });
+	assert.equal(f.byDay.length, 1); // only the day-2 bucket is inside the horizon
+	assert.equal(f.byDay[0].offset, 2);
+	assert.equal(f.byDay[0].count, 2);
+	assert.deepEqual(f.byDay[0].topicIds, ['a']); // de-duplicated topic ids
+	// nextDueMs still reflects the soonest, even when a later card is out of range.
+	assert.equal(f.nextDueMs, 2 * DAY_MS);
 });

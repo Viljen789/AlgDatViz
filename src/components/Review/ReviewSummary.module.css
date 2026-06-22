@@ -77,6 +77,24 @@
 	color: var(--color-text-secondary);
 }
 
+/* The one honest line on how the run moved the schedule ("N cards pushed further
+   out"). The calendar glyph is the redundant, color-free cue that this is about
+   the schedule, not the score. */
+.scheduleLine {
+	display: flex;
+	align-items: center;
+	gap: var(--space-2xs);
+	margin: var(--space-sm) 0 0;
+	font-size: var(--font-size-caption);
+	line-height: var(--line-height-snug);
+	color: var(--color-text-secondary);
+}
+
+.scheduleIcon {
+	flex: none;
+	color: var(--review-brand-ink);
+}
+
 /* ---------- Blocks ---------- */
 
 .block {

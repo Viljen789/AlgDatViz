@@ -84,6 +84,11 @@ export const SCENES = [
 		body: 'Two sorted runs become one sorted run by reading their front cursors and copying the smaller value out, repeatedly.',
 		check: {
 			kind: 'predict',
+			// Opt-in reveal gate: the stage holds the honest pre-merge frame (no
+			// auto-play) until this prediction is answered, so the merge cannot
+			// spoil it. An inert extra field — graders never read it (same pattern
+			// as stepProbe's frame/view), so grading is untouched.
+			revealGate: true,
 			prompt:
 				'The two sorted runs [27, 38] and [3, 43] are about to merge. Which value gets copied out first?',
 			options: [3, 27, 38, 43],

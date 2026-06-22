@@ -127,7 +127,11 @@ const MergeSortLesson = () => {
 	);
 
 	const renderStage = useCallback(
-		activeScene => {
+		// The second arg is the template's opt-in reveal gate: revealHeld is true
+		// while the merge scene's predict check is still unanswered, so the stage
+		// holds its honest pre-merge frame instead of auto-playing (and spoiling
+		// the prediction). Defaults keep it safe if a caller passes only the scene.
+		(activeScene, { revealHeld = false } = {}) => {
 			const interaction = stageInteractionFor(activeScene);
 			return (
 				<MergeSortStage
@@ -137,6 +141,7 @@ const MergeSortLesson = () => {
 					exampleSlots={interaction.exampleSlots}
 					answerStatus={interaction.answerStatus}
 					onBarClick={handleBarClick}
+					holdReveal={revealHeld}
 				/>
 			);
 		},

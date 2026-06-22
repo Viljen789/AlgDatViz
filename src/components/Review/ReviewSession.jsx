@@ -25,9 +25,12 @@ import styles from './ReviewSession.module.css';
  *   questions   the sampled bank entries (each: { id, topicId, topicName,
  *               topicNumber, to, accent, sceneId, sceneTitle, check }).
  *   onRestart   () => void — reseed and start a fresh session.
- *   onGraded    optional (entryId, correct) => void — fired once per question
- *               when first answered, so a spaced-repetition layer can reschedule
- *               the card. Omitted by free-practice callers.
+ *   onGraded    optional (entryId, correct) => { promoted, heldAtMax } | void.
+ *               Fired once per question when first answered, so a spaced-
+ *               repetition layer can reschedule the card. May return how this
+ *               answer moved the schedule (promoted = pushed to a longer
+ *               interval; heldAtMax = kept at the longest interval), which the
+ *               summary reports honestly. Omitted by free-practice callers.
  */
 const ReviewSession = ({ questions, onRestart, onGraded }) => {
 	// Per-question controlled check state, keyed by entry id. Same shape the
@@ -35,6 +38,9 @@ const ReviewSession = ({ questions, onRestart, onGraded }) => {
 	const [answers, setAnswers] = useState({});
 	const [index, setIndex] = useState(0);
 	const [finished, setFinished] = useState(false);
+	// Running tally of how this run moved the schedule, from onGraded's return:
+	// `promoted` cards got a longer interval, `heldAtMax` were already at the top.
+	const [schedule, setSchedule] = useState({ promoted: 0, heldAtMax: 0 });
 	const liveRef = useRef(null);
 
 	const total = questions.length;
@@ -68,7 +74,13 @@ const ReviewSession = ({ questions, onRestart, onGraded }) => {
 					},
 				};
 			});
-			onGraded?.(current.id, result.correct);
+			const moved = onGraded?.(current.id, result.correct);
+			if (moved) {
+				setSchedule(prev => ({
+					promoted: prev.promoted + (moved.promoted ? 1 : 0),
+					heldAtMax: prev.heldAtMax + (moved.heldAtMax ? 1 : 0),
+				}));
+			}
 		},
 		[current, answers, onGraded]
 	);
@@ -96,6 +108,7 @@ const ReviewSession = ({ questions, onRestart, onGraded }) => {
 			<ReviewSummary
 				questions={questions}
 				answers={answers}
+				schedule={schedule}
 				onRestart={onRestart}
 			/>
 		);

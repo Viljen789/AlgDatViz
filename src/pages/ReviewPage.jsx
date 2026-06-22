@@ -1,17 +1,43 @@
 import { useCallback, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ChevronRight, Clock, Shuffle } from 'lucide-react';
+import { ChevronRight, CalendarClock, Clock, Shuffle } from 'lucide-react';
 import {
 	REVIEW_BANK,
 	REVIEW_TOPIC_IDS,
 	sampleSession,
 } from '../components/Review/reviewBank.js';
+import { MAX_BOX, forecastDue } from '../components/Review/srsSchedule.js';
 import { BUILT_TOPICS, FIRST_TOPIC } from '../data/curriculum.js';
 import ReviewSession from '../components/Review/ReviewSession.jsx';
 import { logActivity } from '../lib/activityLog.js';
 import useProgress from '../hooks/useProgress.js';
 import useSrs from '../hooks/useSrs.js';
 import styles from './ReviewPage.module.css';
+
+// topicId → display name, from the bank itself (so the forecast names topics
+// without a second source of truth). Built once at module load.
+const TOPIC_NAME_BY_ID = REVIEW_BANK.reduce((map, entry) => {
+	if (!map.has(entry.topicId)) map.set(entry.topicId, entry.topicName);
+	return map;
+}, new Map());
+
+// "tomorrow", "in 2 days", … — the human read of a whole-day offset.
+const offsetLabel = offset => {
+	if (offset <= 0) return 'today';
+	if (offset === 1) return 'tomorrow';
+	return `in ${offset} days`;
+};
+
+// Turn the soonest forecast bucket into one plain line, e.g.
+// "3 cards return tomorrow (MST, Shortest paths)." Names come from the bank.
+const forecastSentence = next => {
+	const noun = next.count === 1 ? 'card returns' : 'cards return';
+	const names = next.topicIds
+		.map(id => TOPIC_NAME_BY_ID.get(id))
+		.filter(Boolean);
+	const tail = names.length ? ` (${names.join(', ')})` : '';
+	return `${next.count} ${noun} ${offsetLabel(next.offset)}${tail}.`;
+};
 
 // How many questions a single mixed (free-practice) session draws.
 const SESSION_SIZE = 10;
@@ -33,7 +59,7 @@ const NEW_CAP = 8;
  */
 const ReviewPage = () => {
 	const { isVisited } = useProgress();
-	const { grade, plan, scheduledCount } = useSrs();
+	const { cards, grade, plan, scheduledCount } = useSrs();
 
 	const [mode, setMode] = useState(null); // 'due' | 'mixed' | null
 	const [seed, setSeed] = useState(() => Date.now() % 100000);
@@ -53,6 +79,13 @@ const ReviewPage = () => {
 		[plan, isNewEligible]
 	);
 	const dueTotal = duePlan.dueCount + duePlan.freshCount;
+
+	// When nothing is due, the forecast gives the caught-up student a reason and a
+	// time to return: when the schedule next brings cards back, and which topics.
+	const forecast = useMemo(
+		() => forecastDue(cards, REVIEW_BANK, { now: Date.now() }),
+		[cards]
+	);
 
 	// Where "Study a topic" sends you: the first built topic you haven't opened
 	// yet (so review keeps unlocking new material), falling back to topic 01.
@@ -83,13 +116,22 @@ const ReviewPage = () => {
 		else startMixed();
 	}, [mode, startDue, startMixed]);
 
-	// Grade the card AND log a day of study (streak / "today" / heatmap).
+	// Grade the card AND log a day of study (streak / "today" / heatmap). Returns
+	// how this answer moved the schedule, read BEFORE grading, so the session can
+	// honestly report "N pushed further out": a correct answer on a card below the
+	// top box promotes it (a longer interval), while a card already at MAX_BOX is
+	// only held at the longest interval, never over-claimed as "advanced".
 	const handleGraded = useCallback(
 		(id, correct) => {
+			const wasAtMax = (cards[id]?.box ?? 0) >= MAX_BOX;
 			grade(id, correct);
 			logActivity();
+			return {
+				promoted: correct && !wasAtMax,
+				heldAtMax: correct && wasAtMax,
+			};
 		},
-		[grade]
+		[grade, cards]
 	);
 
 	const bankSize = REVIEW_BANK.length;
@@ -156,11 +198,31 @@ const ReviewPage = () => {
 								</button>
 							) : (
 								<p className={styles.caughtUp}>
-									You're caught up, nothing due right now.{' '}
-									<Link to={studyTopic.to} className={styles.caughtUpLink}>
-										Study {studyTopic.name}
-									</Link>
-									, or practice a mixed set below.
+									<CalendarClock
+										size={15}
+										strokeWidth={2.2}
+										aria-hidden="true"
+										className={styles.caughtUpIcon}
+									/>
+									{forecast.nextDueMs === null ? (
+										<span>
+											You're caught up. Answer a lesson check to start your
+											review schedule, or practice a mixed set below.
+										</span>
+									) : (
+										<span>
+											You're caught up.
+											{forecast.byDay.length > 0 ? (
+												<> {forecastSentence(forecast.byDay[0])} </>
+											) : (
+												<> Your next review returns soon. </>
+											)}
+											<Link to={studyTopic.to} className={styles.caughtUpLink}>
+												Study {studyTopic.name}
+											</Link>{' '}
+											or practice a mixed set below.
+										</span>
+									)}
 								</p>
 							)}
 							<button

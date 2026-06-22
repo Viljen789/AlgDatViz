@@ -1,6 +1,13 @@
 import { Fragment, useCallback, useLayoutEffect, useMemo, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { ArrowRight, Clock, Flame, GraduationCap, Lock } from 'lucide-react';
+import {
+	ArrowRight,
+	CalendarClock,
+	Clock,
+	Flame,
+	GraduationCap,
+	Lock,
+} from 'lucide-react';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { DrawSVGPlugin } from 'gsap/DrawSVGPlugin';
@@ -12,6 +19,7 @@ import {
 	TOPIC_BY_ID,
 } from '../data/curriculum.js';
 import { REVIEW_BANK } from '../components/Review/reviewBank.js';
+import { forecastDue } from '../components/Review/srsSchedule.js';
 import { dailyGoal, examNewCap } from '../lib/activityLog.js';
 import useProgress from '../hooks/useProgress.js';
 import useSrs from '../hooks/useSrs.js';
@@ -37,6 +45,14 @@ const phaseSlug = name =>
 
 // Roman numerals for the five acts — quieter and more "chapter" than 1..5.
 const PHASE_NUMERALS = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII'];
+
+// The human read of a whole-day forecast offset, for the calm "next review" chip
+// when nothing is due today (so the Today block never goes silent).
+const nextDayLabel = offset => {
+	if (offset <= 0) return 'today';
+	if (offset === 1) return 'tomorrow';
+	return `in ${offset} days`;
+};
 
 // ---- Serpentine spine geometry ----------------------------------------------
 // The rail is a gentle sine that snakes down the column instead of a dead-straight
@@ -561,7 +577,7 @@ const HomePage = () => {
 	const navigate = useNavigate();
 	const { lastVisited, markVisited, isCompleted, isVisited, overall } =
 		useProgress();
-	const { plan: srsPlan } = useSrs();
+	const { cards: srsCards, plan: srsPlan } = useSrs();
 	const { todayCount, currentStreak, daysUntilExam } = useActivity();
 	const pageRef = useRef(null);
 	const nodeRefs = useRef([]);
@@ -584,6 +600,13 @@ const HomePage = () => {
 		[srsPlan, isNewEligible, daysUntilExam]
 	);
 	const dueTotal = duePlan.dueCount + duePlan.freshCount;
+	// When nothing is due, the Today block must not go silent: the forecast says
+	// when the schedule next brings cards back, so there's a calm reason to return.
+	const forecast = useMemo(
+		() => forecastDue(srsCards, REVIEW_BANK, { now: Date.now() }),
+		[srsCards]
+	);
+	const nextReview = forecast.byDay[0] ?? null;
 	// The daily ring's target escalates as the exam nears (mirrors the new-card
 	// ramp above), so the goal and the schedule push together. Defaults to the
 	// base goal when no exam date is set.
@@ -1029,6 +1052,23 @@ const HomePage = () => {
 									<Clock size={14} strokeWidth={2.2} aria-hidden="true" />
 									<span>
 										Review <strong>{dueTotal}</strong> due
+									</span>
+								</Link>
+							)}
+							{started && dueTotal === 0 && nextReview && (
+								<Link
+									to="/review"
+									className={styles.reviewNextChip}
+									aria-label={`Next review ${nextDayLabel(nextReview.offset)}, ${nextReview.count} cards`}
+								>
+									<CalendarClock
+										size={13}
+										strokeWidth={2.2}
+										aria-hidden="true"
+									/>
+									<span>
+										Next review: {nextDayLabel(nextReview.offset)} (
+										{nextReview.count})
 									</span>
 								</Link>
 							)}

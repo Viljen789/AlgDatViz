@@ -16,7 +16,12 @@ import styles from './TopicScrolly.module.css';
  * Props
  * -----
  *   scenes         Array<{ id, eyebrow, title, body, check? }>
- *   renderStage    (activeScene:number) => node — the sticky stage.
+ *   renderStage    (activeScene:number, opts?:{ revealHeld:boolean }) => node —
+ *                  the sticky stage. The second arg is opt-in: `revealHeld` is
+ *                  true only while the active scene's check carries
+ *                  `revealGate: true` and is still unanswered, so a stage can
+ *                  hold its honest pre-reveal frame. Stages that take only
+ *                  (activeScene) ignore it, so every other topic is unaffected.
  *   checkStates    optional map { [sceneId]: state } for the inline checks.
  *   onAnswer       optional (sceneId, payload) => void — generic check submit
  *                  for every check kind (choice/numeric/text/order/classify/…).
@@ -162,10 +167,18 @@ const TopicScrolly = ({
 	// Retrieval before progress: auto-advance won't pass a scene whose check is
 	// still unanswered.
 	const currentScene = scenes[activeScene];
+	const currentAnswered = Boolean(checkStates?.[currentScene?.id]?.status);
 	const blockedReason =
-		currentScene?.check && !checkStates?.[currentScene.id]?.status
+		currentScene?.check && !currentAnswered
 			? 'answer the check to continue'
 			: null;
+
+	// Opt-in reveal gate (FIX 1): a scene whose check carries `revealGate: true`
+	// asks the stage to HOLD its honest pre-reveal frame until the check is
+	// answered, so the visualization can't spoil a predict-before-reveal beat.
+	// Pure extra signal — false for every non-gated scene, so every other topic's
+	// stage is untouched.
+	const revealHeld = Boolean(currentScene?.check?.revealGate) && !currentAnswered;
 
 	const handleTogglePlay = useCallback(() => {
 		if (isPlaying) {
@@ -198,7 +211,11 @@ const TopicScrolly = ({
 		>
 			<div className={styles.stageColumn}>
 				<div className={styles.stageSticky}>
-					<div className={styles.stageFigure}>{renderStage(activeScene)}</div>
+					{/* Second arg is opt-in: stages that take only (activeScene)
+					    ignore it, so every other topic is unaffected. */}
+					<div className={styles.stageFigure}>
+						{renderStage(activeScene, { revealHeld })}
+					</div>
 					{total > 1 && (
 						<SceneControlBar
 							total={total}

@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowRight, Check, RotateCcw, X } from 'lucide-react';
+import { ArrowRight, CalendarClock, Check, RotateCcw, X } from 'lucide-react';
 import { accentTokens } from './reviewBank.js';
 import styles from './ReviewSummary.module.css';
 
@@ -23,9 +23,12 @@ const verdictFor = ratio => {
  * Props
  *   questions   the session's bank entries (in asked order).
  *   answers     { [entryId]: { status: 'correct'|'incorrect' } } — local state.
+ *   schedule    optional { promoted, heldAtMax }: how the run moved the
+ *               spaced-repetition schedule, so the summary can show one honest
+ *               line ("N cards pushed further out"). Absent in free practice.
  *   onRestart   () => void — start a fresh, reseeded session.
  */
-const ReviewSummary = ({ questions, answers, onRestart }) => {
+const ReviewSummary = ({ questions, answers, schedule, onRestart }) => {
 	const total = questions.length;
 	const score = useMemo(
 		() => questions.filter(q => answers[q.id]?.status === 'correct').length,
@@ -33,6 +36,29 @@ const ReviewSummary = ({ questions, answers, onRestart }) => {
 	);
 	const ratio = total ? score / total : 0;
 	const percent = Math.round(ratio * 100);
+
+	// One honest line on what the run did to the schedule. A correct answer below
+	// the top box pushes the card further out; a card already at the longest
+	// interval is only "held" there, never claimed as advanced. Free-practice
+	// runs pass no schedule, so this line stays absent rather than over-claiming.
+	const promoted = schedule?.promoted ?? 0;
+	const heldAtMax = schedule?.heldAtMax ?? 0;
+	const scheduleLine = useMemo(() => {
+		if (!schedule) return null;
+		if (promoted > 0) {
+			const noun = promoted === 1 ? 'card' : 'cards';
+			const held =
+				heldAtMax > 0
+					? `, ${heldAtMax} held at the longest interval`
+					: '';
+			return `${promoted} ${noun} pushed further out${held}.`;
+		}
+		if (heldAtMax > 0) {
+			const noun = heldAtMax === 1 ? 'card' : 'cards';
+			return `${heldAtMax} ${noun} held at the longest interval.`;
+		}
+		return null;
+	}, [schedule, promoted, heldAtMax]);
 
 	// Group results by topic so we can recommend what to revisit. A topic is a
 	// "revisit" if it has any incorrect OR skipped (unanswered) question.
@@ -93,6 +119,17 @@ const ReviewSummary = ({ questions, answers, onRestart }) => {
 					/>
 				</div>
 				<p className={styles.verdict}>{verdictFor(ratio)}</p>
+				{scheduleLine && (
+					<p className={styles.scheduleLine}>
+						<CalendarClock
+							size={14}
+							strokeWidth={2.2}
+							aria-hidden="true"
+							className={styles.scheduleIcon}
+						/>
+						{scheduleLine}
+					</p>
+				)}
 			</header>
 
 			{revisit.length > 0 && (
