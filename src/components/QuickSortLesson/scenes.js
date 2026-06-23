@@ -92,7 +92,7 @@ export const SCENES = [
 		id: 'recurse',
 		eyebrow: 'Divide & conquer',
 		title: 'Now recurse on the two sides. Never across the pivot.',
-		body: 'Partition left two smaller ranges: everything below the pivot, and everything above it. Quicksort calls itself on each. The pivot in the middle is already final, so it is excluded from both calls — the recursion only ever shrinks.',
+		body: 'Partition left two smaller ranges: everything below the pivot, and everything above it. Quicksort calls itself on each, left side first. Watch the active window shrink as it descends, click shut at a one-element base case, then watch the pivots lock as each call returns up the stack. The pivot in the middle is already final, so it is excluded from both calls; the recursion only ever shrinks.',
 		check: {
 			kind: 'order',
 			prompt:

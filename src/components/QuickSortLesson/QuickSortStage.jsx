@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { ChevronLeft, ChevronRight, Pause, Play } from 'lucide-react';
 import useReducedMotion from '../../hooks/useReducedMotion.js';
 import { getQuickSortFrames } from '../../utils/sorting/quickPartitionFrames.js';
 import { SceneNarration } from '../../common/PlaybackEngine';
@@ -29,13 +30,71 @@ const firstPlaceIdx = ALL_FRAMES.findIndex(f => f.phase === 'place');
 // Frames 1..firstPlace are the first partition (frame 0 is the global init).
 const PARTITION_FRAMES = ALL_FRAMES.slice(1, firstPlaceIdx + 1);
 
-// The settled array after the first partition (pivot home), used by the
-// recursion scene. The two subranges flank the pivot.
-const PLACE_FRAME = ALL_FRAMES[firstPlaceIdx];
-const PARTITIONED = PLACE_FRAME.array;
-const PIVOT_AT = PLACE_FRAME.pivotIndex;
-const LEFT_RANGE = PLACE_FRAME.subranges.left; // [0, pivot-1]
-const RIGHT_RANGE = PLACE_FRAME.subranges.right; // [pivot+1, n-1]
+// The sorted array the recursion scene rests on: once the FIRST partition settles
+// the bars never move again (recursion only re-orders WITHIN each side, but for
+// STAGE_VALUES every later partition's writes leave the bars sorted), so the scene
+// keeps one stable row and animates only WHICH range is active and which pivots are
+// locked. We read the final array straight off the generator's last frame.
+const RECURSE_VALUES = ALL_FRAMES[ALL_FRAMES.length - 1].array;
+
+// RECURSE_STEPS is the full quicksort recursion over STAGE_VALUES, derived ENTIRELY
+// from the same generator frames the partition scenes use. We never hand-place a
+// step: a generator 'pivot' frame is a DESCENT into a range (its pivot not yet
+// home), a 'place' frame is the RETURN where that range's pivot locks, and a
+// 'locked' frame is a single-element BASE case clicking shut. The generator emits
+// them in real call order (left subtree fully, then right), so stepping this list
+// is literally watching the call stack: descend to a base case, then pivots lock on
+// the way back up. depth(R) = how many partitioned ranges STRICTLY contain R, a
+// pure function of the tree, so the staircase indent is honest too.
+const buildRecurseSteps = () => {
+	const placeRanges = ALL_FRAMES.filter(f => f.phase === 'place').map(
+		f => f.range
+	);
+	const strictlyContains = (a, b) =>
+		a[0] <= b[0] && a[1] >= b[1] && (a[0] !== b[0] || a[1] !== b[1]);
+	const depthOf = r => placeRanges.filter(p => strictlyContains(p, r)).length;
+	const steps = [];
+	for (const f of ALL_FRAMES) {
+		if (f.phase === 'pivot') {
+			steps.push({
+				activeRange: f.range,
+				depth: depthOf(f.range),
+				phase: 'descend',
+				lockedPivots: f.locked,
+				caption: `Descend into [${f.range[0]}…${f.range[1]}]. Pick its last value (${RECURSE_VALUES[f.range[1]]}) as the pivot.`,
+			});
+		} else if (f.phase === 'locked') {
+			steps.push({
+				activeRange: f.range,
+				depth: depthOf(f.range),
+				phase: 'base',
+				lockedPivots: f.locked,
+				caption: `Base case: the one-element range [${f.range[0]}] (${RECURSE_VALUES[f.range[0]]}) is already sorted. It clicks and returns.`,
+			});
+		} else if (f.phase === 'place') {
+			steps.push({
+				activeRange: f.range,
+				depth: depthOf(f.range),
+				phase: 'return',
+				lockedPivots: f.locked,
+				pivot: f.pivotIndex,
+				caption: `Return: pivot ${RECURSE_VALUES[f.pivotIndex]} locks at index ${f.pivotIndex}. Now recurse on its two sides.`,
+			});
+		}
+	}
+	return steps;
+};
+const RECURSE_STEPS = buildRecurseSteps();
+const RECURSE_LAST = RECURSE_STEPS.length - 1;
+// The settled final frame: every index locked, no active range. Reduced motion
+// settles straight here, and the closing tick rests on it before replaying.
+const RECURSE_DONE = {
+	activeRange: null,
+	depth: 0,
+	phase: 'return',
+	lockedPivots: RECURSE_VALUES.map((_, idx) => idx),
+	caption: 'Every range has bottomed out and every pivot is locked. Sorted.',
+};
 
 // The worst-case "stick": on a sorted input the last-element pivot is always the
 // max, so each partition peels ONE element and recurses on the size n-1 rest.
@@ -118,13 +177,74 @@ const QuickSortStage = ({ activeScene = 0, holdReveal = false }) => {
 
 	const frame = PARTITION_FRAMES[frameIdx] || PARTITION_FRAMES[0];
 
+	// The recursion scene steps RECURSE_STEPS (descend → base → return, in real call
+	// order). It clones the partition scene's stepper exactly: an interval while
+	// motion is allowed, a settle to the finished frame for reduced motion, and an
+	// inline transport so a student can walk the unwind by hand. A small play flag
+	// lets the inline Pause/Play stop the auto-advance without leaving the scene.
+	const [recurseIdx, setRecurseIdx] = useState(0);
+	const [recursePlaying, setRecursePlaying] = useState(true);
+
+	useEffect(() => {
+		if (!isRecurse) {
+			setRecurseIdx(0);
+			setRecursePlaying(true);
+			return undefined;
+		}
+		if (reducedMotion) {
+			// Settle on the finished recursion: every pivot locked, no active range.
+			setRecurseIdx(RECURSE_LAST + 1);
+			setRecursePlaying(false);
+			return undefined;
+		}
+		setRecurseIdx(0);
+		setRecursePlaying(true);
+	}, [isRecurse, reducedMotion]);
+
+	const recurseTickRef = useRef(recurseIdx);
+	useEffect(() => {
+		if (!isRecurse || reducedMotion || !recursePlaying) return undefined;
+		// Resume the raw counter from wherever the visible step currently sits.
+		recurseTickRef.current = recurseIdx;
+		const id = window.setInterval(() => {
+			let idx = recurseTickRef.current + 1;
+			// One extra slot past the last step rests on RECURSE_DONE (all sorted);
+			// hold it two ticks, then replay from the top for a late scroller.
+			if (idx >= RECURSE_LAST + 3) idx = 0;
+			recurseTickRef.current = idx;
+			setRecurseIdx(Math.min(idx, RECURSE_LAST + 1));
+		}, 1050);
+		return () => window.clearInterval(id);
+		// recurseIdx is the resume seed only; re-running on every tick would reset the
+		// counter, so it is intentionally not in the dep list.
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [isRecurse, reducedMotion, recursePlaying]);
+
+	const stepRecurse = delta => {
+		setRecursePlaying(false);
+		setRecurseIdx(prev => Math.max(0, Math.min(prev + delta, RECURSE_LAST + 1)));
+	};
+	const toggleRecursePlay = () => {
+		// Pressing play while parked on the finished frame replays from the top.
+		if (!recursePlaying && recurseIdx > RECURSE_LAST) setRecurseIdx(0);
+		setRecursePlaying(prev => !prev);
+	};
+
+	// The active recursion step: indices 0..RECURSE_LAST are real generator-derived
+	// steps; the one slot past the end is the settled all-sorted frame.
+	const recurseStep =
+		recurseIdx > RECURSE_LAST ? RECURSE_DONE : RECURSE_STEPS[recurseIdx];
+
 	// Which values + per-slot roles to render for the current scene.
 	const view = useMemo(() => {
 		if (isPartitionScene) {
 			return { values: frame.array, frame };
 		}
 		if (isRecurse) {
-			return { values: PARTITIONED, frame: PLACE_FRAME };
+			// One stable sorted row; the LIVE step (active range + locked pivots)
+			// drives the colours, so the eye follows one range down to its base case
+			// and watches pivots lock on the way back up.
+			return { values: RECURSE_VALUES, frame: null };
 		}
 		if (isSelect) {
 			// Selection: the array AFTER the first partition. No live frame — the
@@ -141,24 +261,33 @@ const QuickSortStage = ({ activeScene = 0, holdReveal = false }) => {
 
 	const caption = useMemo(() => {
 		if (isPartitionScene) return frame.caption;
-		if (isRecurse)
-			return 'Pivot home. Recurse on the left range and the right range — never across the pivot.';
+		if (isRecurse) return recurseStep.caption;
 		if (isSelect)
 			return `Pivot ${SELECT_VALUES[SELECT_PIVOT_INDEX]} placed at rank ${SELECT_PIVOT_INDEX + 1}. Want the ${SELECT_I}th smallest, so search the ${SELECT_KEEP_RIGHT ? 'right' : 'left'} side only — the other side is discarded.`;
 		if (activeScene === 3)
 			return 'Already sorted: the last-element pivot is always the maximum, so every split is lopsided.';
 		return 'Each partition peels one element: sizes n, n−1, …, 1. The work stacks to Θ(n²).';
-	}, [isPartitionScene, isRecurse, isSelect, activeScene, frame]);
+	}, [isPartitionScene, isRecurse, isSelect, activeScene, frame, recurseStep]);
 
 	const barClassFor = slot => {
 		const f = view.frame;
 		if (isRecurse) {
-			if (slot === PIVOT_AT) return styles.barPivotHome;
-			if (LEFT_RANGE && slot >= LEFT_RANGE[0] && slot <= LEFT_RANGE[1])
-				return styles.barLeftSide;
-			if (RIGHT_RANGE && slot >= RIGHT_RANGE[0] && slot <= RIGHT_RANGE[1])
-				return styles.barRightSide;
-			return styles.barDefault;
+			const step = recurseStep;
+			const range = step.activeRange;
+			const inActive = range && slot >= range[0] && slot <= range[1];
+			// The pivot that LOCKS on this exact step (a return's placed pivot, or a
+			// base case's single element) snaps to the home token: the visible "click".
+			const justLocked =
+				(step.phase === 'return' && slot === step.pivot) ||
+				(step.phase === 'base' && inActive);
+			if (justLocked) return styles.barPivotHome;
+			// Any pivot already finalized by an earlier call sits as a settled token.
+			if (step.lockedPivots.includes(slot)) return styles.barLocked;
+			// The call we are inside right now: highlight the whole live range so the
+			// eye follows ONE range down to its base case and back up.
+			if (inActive) return styles.barLeftSide;
+			// Everything outside the active call is dimmed (not part of this descent).
+			return styles.barRecurseDim;
 		}
 		if (isSelect) {
 			// Pivot placed at its final rank; the KEPT side (where the i-th smallest
@@ -202,6 +331,21 @@ const QuickSortStage = ({ activeScene = 0, holdReveal = false }) => {
 				className={styles.svg}
 				preserveAspectRatio="xMidYMid meet"
 			>
+				{/* Active-range bracket: under the recursion scene's bars, a bracket spans
+				    exactly the call we are inside this step, so the eye sees the window
+				    shrink as the recursion descends and the brackets vanish as ranges
+				    return. Its slots come straight from the generator-derived step. */}
+				{isRecurse && recurseStep.activeRange && (
+					<RangeBracket
+						range={recurseStep.activeRange}
+						className={
+							recurseStep.phase === 'base'
+								? styles.bracketBase
+								: styles.bracketActive
+						}
+					/>
+				)}
+
 				{/* Pointer rails (i boundary, j scanner) only during the partition. */}
 				{isPartitionScene && view.frame && (
 					<g aria-hidden="true">
@@ -299,7 +443,7 @@ const QuickSortStage = ({ activeScene = 0, holdReveal = false }) => {
 					isPartitionScene
 						? 'Lomuto partition: two pointers sweep and the pivot snaps to its final index'
 						: isRecurse
-							? 'The array partitioned around its pivot, with the two recursion subranges marked'
+							? 'Quicksort recursion: ranges shrink to base cases and pivots lock as each call returns'
 							: isSelect
 								? 'Quickselect: after one partition, the pivot is placed, one side is discarded, and the other is kept as the search range'
 								: 'Quicksort worst case: a lopsided recursion'
@@ -308,6 +452,80 @@ const QuickSortStage = ({ activeScene = 0, holdReveal = false }) => {
 				{isWorstCase ? renderStick() : renderBars()}
 
 				<p className={styles.caption}>{caption}</p>
+
+				{/* Recursion transport: a depth read-out plus prev / play-pause / next so
+				    a student can walk the descent and unwind one call at a time. The
+				    depth chips make the call-stack height visible; the active chip is the
+				    range we are in right now. Reduced-motion users keep prev/next to step
+				    by hand (auto-play stays off for them by design, like the merge stage). */}
+				{isRecurse && (
+					<div className={styles.recurseTransport}>
+						<div
+							className={styles.depthStack}
+							aria-label={`Call depth ${recurseStep.depth}`}
+						>
+							{Array.from({ length: recurseStep.depth + 1 }).map((_, d) => (
+								<span
+									key={d}
+									className={`${styles.depthChip} ${d === recurseStep.depth ? styles.depthChipActive : ''}`}
+								/>
+							))}
+							<span className={styles.depthLabel}>
+								{recurseStep.activeRange
+									? `depth ${recurseStep.depth} · [${recurseStep.activeRange[0]}…${recurseStep.activeRange[1]}]`
+									: 'sorted'}
+							</span>
+						</div>
+						<div className={styles.recurseControls}>
+							<button
+								type="button"
+								className={styles.recurseBtn}
+								onClick={() => stepRecurse(-1)}
+								disabled={recurseIdx <= 0}
+								aria-label="Previous recursion step"
+								title="Previous recursion step"
+							>
+								<ChevronLeft size={15} strokeWidth={1.8} aria-hidden="true" />
+							</button>
+							{!reducedMotion && (
+								<button
+									type="button"
+									className={`${styles.recurseBtn} ${styles.recursePlay}`}
+									onClick={toggleRecursePlay}
+									aria-pressed={recursePlaying}
+									aria-label={recursePlaying ? 'Pause recursion' : 'Play recursion'}
+									title={recursePlaying ? 'Pause recursion' : 'Play recursion'}
+								>
+									{recursePlaying ? (
+										<Pause
+											size={15}
+											strokeWidth={1.8}
+											fill="currentColor"
+											aria-hidden="true"
+										/>
+									) : (
+										<Play
+											size={15}
+											strokeWidth={1.8}
+											fill="currentColor"
+											aria-hidden="true"
+										/>
+									)}
+								</button>
+							)}
+							<button
+								type="button"
+								className={styles.recurseBtn}
+								onClick={() => stepRecurse(1)}
+								disabled={recurseIdx > RECURSE_LAST}
+								aria-label="Next recursion step"
+								title="Next recursion step"
+							>
+								<ChevronRight size={15} strokeWidth={1.8} aria-hidden="true" />
+							</button>
+						</div>
+					</div>
+				)}
 
 				<div
 					className={`${styles.recurrence} ${showRecurrence ? styles.recurrenceShow : ''}`}
@@ -332,6 +550,25 @@ const QuickSortStage = ({ activeScene = 0, holdReveal = false }) => {
 				</div>
 			</div>
 		</>
+	);
+};
+
+// A bracket drawn just under a run of slots to mark the recursion's active range.
+// It spans [lo, hi] using the same slot geometry as the bars, so the shrinking
+// window in the recursion scene lines up exactly with the bars above it.
+const RangeBracket = ({ range, className }) => {
+	const [lo, hi] = range;
+	const x1 = PAD_X + lo * SLOT + 3;
+	const x2 = PAD_X + hi * SLOT + SLOT - 3;
+	const y = BASE_Y + 36;
+	const tick = 5;
+	return (
+		<path
+			className={className}
+			d={`M ${x1} ${y - tick} L ${x1} ${y} L ${x2} ${y} L ${x2} ${y - tick}`}
+			fill="none"
+			aria-hidden="true"
+		/>
 	);
 };
 

@@ -17,6 +17,7 @@ import {
 	reconstructPath,
 } from './relaxTrace.js';
 import { SHARED_GRAPH, SHARED_SOURCE } from './ssspMeta.js';
+import { dijkstraSettleProbe } from '../../data/traceProbes.js';
 
 // Measure the canonical answers from the generators on the shared graph.
 const BF = bellmanFordTrace(SHARED_GRAPH, { source: SHARED_SOURCE });
@@ -37,6 +38,43 @@ const DIRECT_SA = SHARED_GRAPH.edges.find(
 
 // Dijkstra relaxation count on the shared graph (used in the algorithms scene).
 const DIJ = dijkstraTrace(SHARED_GRAPH, { source: SHARED_SOURCE });
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Trace-step probe: "which vertex does Dijkstra SETTLE next?"
+//
+// The same frozen-frame mechanic the exam grades (data/traceProbes.js plus the exam
+// SP-SSSP problem), brought into the lesson on the topic's OWN graph (SHARED_GRAPH
+// from ssspMeta.js), so the frozen state the student reasons from is exactly the
+// one the SSSP stage traces. We run dijkstraTrace and freeze the beat just before
+// the 3rd settle (ordinal 2 skips the trivial source-then-nearest opening). The
+// answer is read off the next settle frame, never typed. The frozen frame becomes
+// the question canvas (StepProbeFrame renders view.kind 'dijkstra-settle').
+const DIJ_IDS = SHARED_GRAPH.nodes.map(n => n.id).sort(); // ['A','B','C','D','S']
+const DIJ_PROBE = dijkstraSettleProbe(DIJ, DIJ_IDS, 2);
+
+// The settled vertex's own final tentative distance, derived from the frozen frame,
+// so the explanation quotes the generator's number, not a hand-typed one.
+const dijDistOf = id => DIJ_PROBE.frozen.dist[id];
+
+// One misconception line per OTHER option (every distractor), keyed by String(id),
+// each explaining why that unsettled vertex is NOT the next settle: it has a larger
+// (or still-infinite) tentative distance, so ExtractMin passes it over for now. The
+// numbers come from the frozen frame, so no distractor line is hand-fabricated.
+const DIJ_MISCONCEPTIONS = Object.fromEntries(
+	DIJ_PROBE.options
+		.filter(id => id !== DIJ_PROBE.answer)
+		.map(id => {
+			const d = dijDistOf(id);
+			const here =
+				d == null
+					? `${id} is still at tentative distance ∞, since no relaxed edge has reached it yet`
+					: `${id} sits at tentative distance ${d}, larger than ${DIJ_PROBE.answer}’s ${dijDistOf(DIJ_PROBE.answer)}`;
+			return [
+				String(id),
+				`${here}. Dijkstra always ExtractMin the SMALLEST tentative distance among the unsettled, so ${DIJ_PROBE.answer} is finalized before ${id}.`,
+			];
+		})
+);
 
 export const SCENES = [
 	{
@@ -165,6 +203,32 @@ export const SCENES = [
 				D: 'D settles at distance 5, still larger than C’s 3. Since Dijkstra always extracts the smallest tentative distance next, C is settled second and D follows third.',
 			},
 			explanation: `After S, the smallest tentative distance is dist[C] = ${DIST.C} (the direct S→C edge), smaller than the tentative dist[A] = ${DIRECT_SA}. Dijkstra extracts the minimum, so C is settled second — and only then does relaxing C→A lower dist[A] to ${DIST.A}. Greedily taking the closest is safe precisely because no later non-negative edge can undercut it.`,
+		},
+	},
+	{
+		id: 'dijkstra-probe',
+		eyebrow: 'Order #3, trace it',
+		title: 'Now read the next move off the real state.',
+		body: `The exam grades exactly this skill: freeze Dijkstra mid-run and ask what it does next. Below is the algorithm's REAL state on the shared graph: the settled set (each locked vertex final) and the current tentative distances at this ExtractMin. No prose to lean on, just the table the priority queue sees. Pick the vertex Dijkstra settles next, then check yourself.`,
+		check: {
+			kind: 'stepProbe',
+			// The frozen frame IS the question, stored verbatim from the generator's
+			// frame, so StepProbeFrame depicts the algorithm's real state, not a sketch.
+			frame: DIJ_PROBE.frozen,
+			view: {
+				kind: 'dijkstra-settle',
+				ids: DIJ_IDS,
+				source: SHARED_SOURCE,
+				nextLabel: 'settles next',
+			},
+			prompt:
+				'Dijkstra is mid-run on the shared graph. From the frozen state (the ' +
+				'settled set and the current tentative distances), which vertex does ' +
+				'Dijkstra SETTLE (finalize) next?',
+			options: DIJ_PROBE.options,
+			answer: DIJ_PROBE.answer,
+			misconceptions: DIJ_MISCONCEPTIONS,
+			explanation: `Dijkstra always settles the UNSETTLED vertex of smallest tentative distance. Among the unsettled vertices the minimum is ${DIJ_PROBE.answer} (dist = ${dijDistOf(DIJ_PROBE.answer)}), so it is finalized next. The picture is the generator’s real state at that ExtractMin, the same read-off the exam asks for, one decision at a time.`,
 		},
 	},
 	{

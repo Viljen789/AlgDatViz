@@ -40,9 +40,11 @@
 .barLocked,
 .barPivotHome,
 .barLeftSide,
-.barRightSide {
+.barRightSide,
+.barRecurseDim {
 	transition:
 		fill var(--duration-step) var(--ease-quiet),
+		opacity var(--duration-step) var(--ease-quiet),
 		x var(--duration-step) var(--ease-quiet),
 		y var(--duration-step) var(--ease-quiet),
 		height var(--duration-step) var(--ease-quiet);
@@ -106,6 +108,31 @@
 	opacity: 0.78;
 }
 
+/* Recursion scene: a bar outside the call we are currently inside. Dimmed back so
+   the eye stays on the one active range descending to its base case. */
+.barRecurseDim {
+	fill: var(--color-text-muted);
+	opacity: 0.28;
+}
+
+/* The bracket under the active recursion range. The accent variant marks a live
+   call window; the base variant flags the one-element range that just clicked. */
+.bracketActive,
+.bracketBase {
+	stroke-width: 2px;
+	transition:
+		stroke var(--duration-step) var(--ease-quiet),
+		opacity var(--duration-step) var(--ease-quiet);
+}
+
+.bracketActive {
+	stroke: var(--topic-accent);
+}
+
+.bracketBase {
+	stroke: var(--state-done);
+}
+
 .barValue {
 	fill: var(--color-text-secondary);
 	font-family: var(--font-family-mono);
@@ -162,6 +189,103 @@
 	line-height: 1.5;
 	max-width: 52ch;
 	min-height: 2.8em;
+}
+
+/* ---------- Recursion transport (scene 2) ---------- */
+
+.recurseTransport {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: var(--space-xs);
+}
+
+/* The call-stack depth read-out: one chip per open level, the deepest (active)
+   chip lit in the topic accent so the stack height is visible as it grows + falls. */
+.depthStack {
+	display: flex;
+	align-items: center;
+	gap: 4px;
+}
+
+.depthChip {
+	width: 8px;
+	height: 8px;
+	border-radius: 2px;
+	background: var(--color-text-muted);
+	opacity: 0.5;
+	transition:
+		background-color var(--transition),
+		opacity var(--transition);
+}
+
+.depthChipActive {
+	background: var(--topic-accent);
+	opacity: 1;
+}
+
+.depthLabel {
+	margin-left: var(--space-xs);
+	font-family: var(--font-family-mono);
+	font-size: var(--font-size-label);
+	color: var(--color-text-muted);
+	letter-spacing: 0.02em;
+}
+
+.recurseControls {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	gap: var(--space-xs);
+}
+
+.recurseBtn {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 30px;
+	height: 30px;
+	padding: 0;
+	border: 1px solid transparent;
+	border-radius: var(--radius-md);
+	background: transparent;
+	color: var(--color-text-secondary);
+	cursor: pointer;
+	transition:
+		color var(--transition),
+		background-color var(--transition),
+		border-color var(--transition),
+		transform var(--transition);
+}
+
+.recurseBtn:hover:not(:disabled) {
+	color: var(--color-text-primary);
+	background: var(--surface-hover);
+}
+
+.recurseBtn:active:not(:disabled) {
+	transform: translateY(1px);
+}
+
+.recurseBtn:disabled {
+	opacity: 0.35;
+	cursor: not-allowed;
+}
+
+.recurseBtn:focus-visible {
+	outline: none;
+	box-shadow: var(--shadow-focus);
+}
+
+.recursePlay {
+	color: var(--topic-accent-ink);
+	background: color-mix(in srgb, var(--topic-accent) 12%, transparent);
+	border-color: color-mix(in srgb, var(--topic-accent) 34%, transparent);
+}
+
+.recursePlay:hover:not(:disabled) {
+	color: var(--topic-accent-ink);
+	background: color-mix(in srgb, var(--topic-accent) 20%, transparent);
 }
 
 /* ---------- Worst-case staircase (scenes 4 & 5) ---------- */
@@ -285,6 +409,11 @@
 	.barPivotHome,
 	.barLeftSide,
 	.barRightSide,
+	.barRecurseDim,
+	.bracketActive,
+	.bracketBase,
+	.depthChip,
+	.recurseBtn,
 	.pointerBoundary,
 	.pointerScan {
 		transition-duration: 0ms;

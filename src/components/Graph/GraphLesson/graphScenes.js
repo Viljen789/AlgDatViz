@@ -11,6 +11,8 @@
 
 import { createGraphAlgorithmSteps } from '../../../utils/graphAlgorithms.js';
 import { topoSort } from '../topoSort.js';
+import { genericTraverse } from '../oneFrontier.js';
+import { bfsDequeueProbe } from '../../../data/traceProbes.js';
 
 // A compact 6-node teaching graph. Positions are chosen so the BFS layers from
 // A read cleanly left-to-right: layer 0 = A, layer 1 = {B, C}, layer 2 = {D, E},
@@ -65,6 +67,45 @@ export const BFS_ORDER = visitOrderFromSteps('bfs');
 // alphabetically-later neighbour is popped first; with this graph the run is:
 //   A → B → D → F → E → C
 export const DFS_ORDER = visitOrderFromSteps('dfs');
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Trace-step probe: "which vertex does BFS DEQUEUE next?"
+//
+// The same frozen-frame mechanic the exam grades (data/traceProbes.js plus the exam
+// SP-BFS problem), brought into the lesson on the lesson's OWN graph (LESSON_GRAPH),
+// so the frozen queue the student reads is exactly the frontier this graph produces.
+// We run the shared frontier generator (genericTraverse, discipline 'fifo') and
+// freeze the beat just before the 2nd dequeue (ordinal 1, where the queue already
+// holds more than one waiting vertex so the FIFO front is non-trivial). The answer
+// is read off the next extract frame, never typed. The frozen frame becomes the
+// question canvas (StepProbeFrame renders view.kind 'bfs-dequeue').
+const BFS_IDS = LESSON_GRAPH.nodes.map(n => n.id).sort(); // ['A'..'F']
+const BFS_RUN = genericTraverse(LESSON_GRAPH, { discipline: 'fifo', start: 'A' });
+const BFS_PROBE = bfsDequeueProbe(BFS_RUN, BFS_IDS, 1);
+
+// The frozen FIFO queue, front to rear (derived from the frame), so the distractor
+// lines below quote the real frontier rather than a hand-typed picture.
+const BFS_QUEUE = (BFS_PROBE.frozen.frontier || []).map(item => item.id);
+
+// One misconception line per OTHER option (every distractor), keyed by String(id),
+// each explaining why that vertex is NOT the next dequeue: a FIFO queue serves the
+// FRONT, so a vertex behind the front (or not in the queue at all) has to wait. The
+// queue positions come from the frozen frame, so no distractor line is fabricated.
+const BFS_MISCONCEPTIONS = Object.fromEntries(
+	BFS_PROBE.options
+		.filter(id => id !== BFS_PROBE.answer)
+		.map(id => {
+			const pos = BFS_QUEUE.indexOf(id);
+			const here =
+				pos === -1
+					? `${id} is not in the queue yet, so it has not been discovered and cannot be dequeued`
+					: `${id} is behind ${BFS_PROBE.answer} in the queue (position ${pos + 1}, not the front)`;
+			return [
+				String(id),
+				`${here}. A FIFO queue hands back the vertex that has waited LONGEST, the front ${BFS_PROBE.answer}, so it leaves before ${id}.`,
+			];
+		})
+);
 
 // ── A separate DIRECTED ACYCLIC graph, for the topological-sort scene only ──────
 //
@@ -205,6 +246,31 @@ export const SCENES = [
 			},
 			explanation:
 				'B was queued before C, so B is dequeued first; its unvisited neighbour D enters the queue ahead of C’s neighbour E. The queue preserves arrival order, so the visit sequence is A, B, C, D, E, F — strictly by distance from A.',
+		},
+	},
+	{
+		id: 'bfs-probe',
+		eyebrow: 'Breadth-first, trace it',
+		title: 'Now read the next dequeue off the real queue.',
+		body: 'The exam grades exactly this skill: freeze BFS mid-run and ask what leaves the queue next. Below is the algorithm’s REAL state on this graph: the FIFO queue, front to rear, and the visited set. No prose to lean on, just the frontier the loop sees. Pick the vertex BFS dequeues next, then check yourself.',
+		check: {
+			kind: 'stepProbe',
+			// The frozen frame IS the question, stored verbatim from the generator's
+			// frame, so StepProbeFrame depicts the algorithm's real queue, not a sketch.
+			frame: BFS_PROBE.frozen,
+			view: {
+				kind: 'bfs-dequeue',
+				ids: BFS_IDS,
+				start: 'A',
+				nextLabel: 'dequeues next',
+			},
+			prompt:
+				'BFS is mid-run from A, using a FIFO queue frontier. From the queue ' +
+				'shown, which vertex does BFS DEQUEUE (remove from the front) next?',
+			options: BFS_PROBE.options,
+			answer: BFS_PROBE.answer,
+			misconceptions: BFS_MISCONCEPTIONS,
+			explanation: `A FIFO queue hands back the vertex that has waited longest, the FRONT of the queue. Here the front is ${BFS_PROBE.answer}, so BFS dequeues it next and then considers its neighbours. The queue shown is the generator’s real frontier, the same read-off the exam asks for, one decision at a time.`,
 		},
 	},
 	{
