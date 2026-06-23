@@ -38,8 +38,6 @@ const ReviewPage = lazy(() => import('./pages/ReviewPage.jsx'));
 const ProgressPage = lazy(() => import('./pages/ProgressPage.jsx'));
 const ExamPage = lazy(() => import('./pages/ExamPage.jsx'));
 const ReferencePage = lazy(() => import('./pages/ReferencePage.jsx'));
-// Throwaway design-language lab (not linked in nav) — reachable at /lab.
-const LabPage = lazy(() => import('./pages/lab/LabPage.jsx'));
 
 const RouteFallback = () => (
 	<div className={styles.routeFallback} role="status" aria-live="polite">
@@ -194,7 +192,6 @@ const AppLayout = () => {
 									<Route path="/exam" element={<ExamPage />} />
 									<Route path="/reference" element={<ReferencePage />} />
 									<Route path="/styleguide" element={<StyleGuide />} />
-									<Route path="/lab" element={<LabPage />} />
 								</Routes>
 							</Suspense>
 						</Motion.div>
