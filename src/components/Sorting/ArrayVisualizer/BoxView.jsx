@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { LayoutGroup, motion as Motion } from 'framer-motion';
+import { LayoutGroup, motion as Motion, useReducedMotion } from 'framer-motion';
 import styles from './ArrayVisualizer.module.css';
 
 const BoxView = ({
@@ -11,6 +11,8 @@ const BoxView = ({
 	specialIndices = [],
 	isFastMode = false,
 }) => {
+	const reducedMotion = useReducedMotion();
+
 	const values = useMemo(() => {
 		if (currentFrame?.array && Array.isArray(currentFrame.array)) {
 			return currentFrame.array.map(v =>
@@ -39,16 +41,20 @@ const BoxView = ({
 
 					return (
 						<Motion.div
-							key={`v-${index}-${value}`}
-							layout
+							key={index}
+							layout={!reducedMotion}
 							className={`${styles.numberBox} ${stateClass}`}
-							transition={{
-								type: 'tween',
-								duration: 0.32,
-								ease: [0.16, 1, 0.3, 1],
-							}}
+							transition={
+								reducedMotion
+									? { duration: 0 }
+									: {
+											type: 'tween',
+											duration: 0.32,
+											ease: [0.16, 1, 0.3, 1],
+										}
+							}
 						>
-							{value}
+							{values[index]}
 						</Motion.div>
 					);
 				})}
