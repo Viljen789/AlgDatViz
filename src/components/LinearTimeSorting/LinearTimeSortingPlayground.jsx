@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { RotateCcw, Shuffle } from 'lucide-react';
 import Button from '../../common/Button/Button.jsx';
+import Input from '../../common/Input/Input.jsx';
 import StepControlBar from '../../common/StepControlBar/StepControlBar.jsx';
 import {
 	usePlayback,
@@ -13,10 +14,7 @@ import { getBucketSortStepsWithStats } from '../../utils/sorting/algorithms/buck
 import CountingSortView from '../Sorting/ArrayVisualizer/AlgorithmViews/CountingSort/CountingSortView.jsx';
 import RadixSortView from '../Sorting/ArrayVisualizer/AlgorithmViews/RadixSort/RadixSortView.jsx';
 import BucketSortView from '../Sorting/ArrayVisualizer/AlgorithmViews/BucketSort/BucketSortView.jsx';
-import {
-	PSEUDO_BY_ALGORITHM,
-	stepToPseudoFrame,
-} from './sortingPseudo.js';
+import { PSEUDO_BY_ALGORITHM, stepToPseudoFrame } from './sortingPseudo.js';
 import styles from './LinearTimeSortingPlayground.module.css';
 
 const SPEED_OPTIONS = [
@@ -56,7 +54,8 @@ const ALGORITHMS = {
 		name: 'Bucket',
 		generate: getBucketSortStepsWithStats,
 		View: BucketSortView,
-		oneLine: 'Scatter into range buckets, sort each, concatenate. O(n) expected.',
+		oneLine:
+			'Scatter into range buckets, sort each, concatenate. O(n) expected.',
 		demo: [12, 4, 27, 8, 31, 19, 2, 23, 16],
 		randomize: () =>
 			Array.from({ length: 9 }, () => Math.floor(Math.random() * 36)),
@@ -64,6 +63,37 @@ const ALGORITHMS = {
 };
 
 const ALGORITHM_ORDER = ['counting', 'radix', 'bucket'];
+
+// Custom-array limits — keep the count table + bars readable, and the keys
+// small enough that counting/radix stay legible (try all-equal, or a huge max).
+const MAX_VALUES = 12;
+const MAX_VALUE = 99;
+
+/**
+ * parseArrayInput — mirror of AdjacencyList's validateInput: split on commas
+ * or whitespace, reject anything that isn't a clean non-negative integer, and
+ * CLAMP length + value range so the canvas stays readable. Returns either
+ * { values } on success or { hint } describing what to fix (calm, not an error).
+ */
+const parseArrayInput = raw => {
+	const tokens = raw
+		.split(/[\s,]+/)
+		.map(t => t.trim())
+		.filter(Boolean);
+
+	if (tokens.length === 0) {
+		return { hint: 'Enter a few numbers, e.g. 4, 2, 2, 0, 3.' };
+	}
+	if (tokens.some(t => !/^\d+$/.test(t))) {
+		return { hint: `Whole numbers only, 0–${MAX_VALUE}, separated by commas.` };
+	}
+
+	const values = tokens
+		.slice(0, MAX_VALUES)
+		.map(t => Math.min(MAX_VALUE, Number(t)));
+
+	return { values };
+};
 
 /**
  * LinearTimeSortingPlayground — the interactive sandbox for the topic.
@@ -78,6 +108,8 @@ const LinearTimeSortingPlayground = ({ onUserInteract }) => {
 	const playerRef = useRef(null);
 	const [algorithmId, setAlgorithmId] = useState('counting');
 	const [array, setArray] = useState(ALGORITHMS.counting.demo);
+	const [customText, setCustomText] = useState('');
+	const [customHint, setCustomHint] = useState('');
 
 	const algorithm = ALGORITHMS[algorithmId];
 
@@ -100,7 +132,10 @@ const LinearTimeSortingPlayground = ({ onUserInteract }) => {
 	const sorted = frame?.sorted || [];
 
 	// Synced pseudocode + live state, from the pure bridge.
-	const lines = useMemo(() => PSEUDO_BY_ALGORITHM[algorithmId] || [], [algorithmId]);
+	const lines = useMemo(
+		() => PSEUDO_BY_ALGORITHM[algorithmId] || [],
+		[algorithmId]
+	);
 	const pseudoFrame = useMemo(
 		() => stepToPseudoFrame(algorithmId, frame),
 		[algorithmId, frame]
@@ -128,13 +163,29 @@ const LinearTimeSortingPlayground = ({ onUserInteract }) => {
 
 	const handleShuffle = useCallback(() => {
 		notify();
+		setCustomHint('');
 		setArray(algorithm.randomize());
 	}, [notify, algorithm]);
 
 	const handleReset = useCallback(() => {
 		notify();
+		setCustomText('');
+		setCustomHint('');
 		setArray(algorithm.demo);
 	}, [notify, algorithm]);
+
+	// Run the sort on a typed array. The shared seek(0)+replay effect already
+	// reseeds the timeline whenever `array` (hence `frames`) changes.
+	const handleCustomSubmit = useCallback(() => {
+		const result = parseArrayInput(customText);
+		if (result.hint) {
+			setCustomHint(result.hint);
+			return;
+		}
+		notify();
+		setCustomHint('');
+		setArray(result.values);
+	}, [customText, notify]);
 
 	const handlePlayPause = useCallback(() => {
 		notify();
@@ -189,6 +240,30 @@ const LinearTimeSortingPlayground = ({ onUserInteract }) => {
 				</div>
 
 				<div className={styles.actions}>
+					<form
+						className={styles.customForm}
+						onSubmit={e => {
+							e.preventDefault();
+							handleCustomSubmit();
+						}}
+					>
+						<Input
+							size="sm"
+							aria-label="Enter your own array"
+							className={styles.customField}
+							value={customText}
+							onChange={e => {
+								setCustomText(e.target.value);
+								if (customHint) setCustomHint('');
+							}}
+							placeholder="Try 7,7,7,7 or 5,4,3,2,1"
+							inputMode="numeric"
+							hint={customHint || undefined}
+						/>
+						<Button type="submit" variant="ghost" size="sm">
+							<span>Run</span>
+						</Button>
+					</form>
 					<Button variant="ghost" size="sm" onClick={handleShuffle}>
 						<Shuffle size={14} strokeWidth={2} />
 						<span>Shuffle</span>
@@ -210,7 +285,10 @@ const LinearTimeSortingPlayground = ({ onUserInteract }) => {
 
 			{/* ---------- Canvas + trace ---------- */}
 			<div className={styles.body}>
-				<section className={styles.canvas} aria-label={`${algorithm.name} sort`}>
+				<section
+					className={styles.canvas}
+					aria-label={`${algorithm.name} sort`}
+				>
 					<View
 						array={frame?.array || array}
 						currentFrame={frame}

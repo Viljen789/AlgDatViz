@@ -198,6 +198,71 @@
 	color: var(--topic-accent);
 }
 
+/* ---------- Climbing-stairs n stepper (per-algorithm input) ---------- */
+
+.stepper {
+	display: inline-flex;
+	align-items: center;
+	gap: var(--space-xs);
+}
+
+.stepperLabel {
+	color: var(--color-text-secondary);
+}
+
+.stepperBtn {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 24px;
+	height: 24px;
+	padding: 0;
+	background: transparent;
+	border: 1px solid var(--color-border);
+	border-radius: var(--radius-sm);
+	color: var(--color-text-secondary);
+	cursor: pointer;
+	transition:
+		color var(--transition),
+		border-color var(--transition),
+		background-color var(--transition);
+}
+
+.stepperBtn:hover:not(:disabled) {
+	background: var(--surface-hover);
+	color: var(--color-text-primary);
+	border-color: var(--color-border-strong);
+}
+
+.stepperBtn:focus-visible {
+	outline: none;
+	box-shadow: var(--shadow-focus);
+}
+
+.stepperBtn:disabled {
+	opacity: 0.4;
+	cursor: not-allowed;
+}
+
+.stepperSlider {
+	width: 96px;
+	accent-color: var(--topic-accent);
+	cursor: pointer;
+}
+
+.stepperSlider:focus-visible {
+	outline: none;
+	box-shadow: var(--shadow-focus);
+	border-radius: var(--radius-sm);
+}
+
+.stepperValue {
+	min-width: 1.5ch;
+	text-align: center;
+	color: var(--color-text-primary);
+	font-variant-numeric: tabular-nums;
+}
+
 .actions {
 	display: inline-flex;
 	align-items: center;

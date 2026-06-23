@@ -5,16 +5,49 @@ import { PSEUDO_CODE } from '../../utils/sorting/algorithmInfo.js';
 import { getQuickSortFrames } from '../../utils/sorting/quickPartitionFrames.js';
 import { quickStepToPseudoFrame } from '../../utils/sorting/quickFrames.js';
 import StepControlBar from '../../common/StepControlBar/StepControlBar.jsx';
+import Input from '../../common/Input/Input.jsx';
+import Button from '../../common/Button/Button.jsx';
 import { usePlayback, PseudoState } from '../../common/PlaybackEngine';
 import styles from './QuickSortPlayground.module.css';
 
 const QUICK_SORT_LINES = PSEUDO_CODE.quickSort;
 const PLAYGROUND_SIZE = 8;
 
+// Custom-array limits — keep the bars readable and the partition followable.
+// A sorted input (e.g. 1,2,3,4,5,6) drives Lomuto into its O(n^2) worst case.
+const MAX_VALUES = 10;
+const MAX_VALUE = 99;
+
 // A fresh random permutation of small distinct-ish values. Kept modest so the
 // bars stay readable and the partition is followable.
 const randomArray = (size = PLAYGROUND_SIZE) =>
 	Array.from({ length: size }, () => 5 + Math.floor(Math.random() * 90));
+
+/**
+ * parseArrayInput — mirror of AdjacencyList's validateInput: split on commas or
+ * whitespace, reject anything that isn't a clean non-negative integer, and CLAMP
+ * length + value range so the bars stay readable. Returns either { values } on
+ * success or { hint } describing what to fix (calm guidance, not an error).
+ */
+const parseArrayInput = raw => {
+	const tokens = raw
+		.split(/[\s,]+/)
+		.map(t => t.trim())
+		.filter(Boolean);
+
+	if (tokens.length === 0) {
+		return { hint: 'Enter a few numbers, e.g. 1, 2, 3, 4, 5.' };
+	}
+	if (tokens.some(t => !/^\d+$/.test(t))) {
+		return { hint: `Whole numbers only, 0–${MAX_VALUE}, separated by commas.` };
+	}
+
+	const values = tokens
+		.slice(0, MAX_VALUES)
+		.map(t => Math.min(MAX_VALUE, Number(t)));
+
+	return { values };
+};
 
 // The same honest generator the lesson Stage uses — so the playground shows
 // EXACTLY the algorithm's partition, never a re-skin of a different trace.
@@ -23,6 +56,8 @@ const framesFor = values => getQuickSortFrames(values).frames;
 const QuickSortPlayground = ({ onUserInteract }) => {
 	const playerRef = useRef(null);
 	const [values, setValues] = useState(() => randomArray());
+	const [customText, setCustomText] = useState('');
+	const [customHint, setCustomHint] = useState('');
 	const frames = useMemo(() => framesFor(values), [values]);
 	const valueMax = useMemo(() => Math.max(...values, 1), [values]);
 
@@ -55,7 +90,22 @@ const QuickSortPlayground = ({ onUserInteract }) => {
 
 	const handleShuffle = () => {
 		onUserInteract?.();
+		setCustomHint('');
 		setValues(randomArray());
+		first();
+	};
+
+	// Run the partition on a typed array. Reset the timeline to the start the
+	// same way Shuffle does, so the new run plays from frame 0.
+	const handleCustomSubmit = () => {
+		const result = parseArrayInput(customText);
+		if (result.hint) {
+			setCustomHint(result.hint);
+			return;
+		}
+		onUserInteract?.();
+		setCustomHint('');
+		setValues(result.values);
 		first();
 	};
 
@@ -168,6 +218,30 @@ const QuickSortPlayground = ({ onUserInteract }) => {
 			</div>
 
 			<div className={styles.controlsDock}>
+				<form
+					className={styles.customForm}
+					onSubmit={e => {
+						e.preventDefault();
+						handleCustomSubmit();
+					}}
+				>
+					<Input
+						size="sm"
+						aria-label="Enter your own array"
+						className={styles.customField}
+						value={customText}
+						onChange={e => {
+							setCustomText(e.target.value);
+							if (customHint) setCustomHint('');
+						}}
+						placeholder="Try 1,2,3,4,5,6"
+						inputMode="numeric"
+						hint={customHint || undefined}
+					/>
+					<Button type="submit" variant="ghost" size="sm">
+						<span>Run</span>
+					</Button>
+				</form>
 				<button
 					type="button"
 					className={styles.shuffleBtn}

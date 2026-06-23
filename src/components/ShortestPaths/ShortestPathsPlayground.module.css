@@ -40,7 +40,9 @@
 	font-size: var(--font-size-label);
 	font-weight: var(--font-weight-medium);
 	cursor: pointer;
-	transition: color var(--transition), background-color var(--transition);
+	transition:
+		color var(--transition),
+		background-color var(--transition);
 }
 
 .algoTab:hover {
@@ -109,7 +111,9 @@
 	font-family: var(--font-family-sans);
 	font-size: var(--font-size-label);
 	cursor: pointer;
-	transition: color var(--transition), border-color var(--transition),
+	transition:
+		color var(--transition),
+		border-color var(--transition),
 		background-color var(--transition);
 }
 
@@ -214,6 +218,23 @@
 	color: var(--color-text-dim);
 }
 
+.canvasHint {
+	position: absolute;
+	top: var(--space-md);
+	left: var(--space-md);
+	font-family: var(--font-family-sans);
+	font-size: var(--font-size-caption);
+	color: var(--color-text-muted);
+	letter-spacing: var(--tracking-wide);
+	pointer-events: none;
+	z-index: 2;
+}
+
+.canvasHint strong {
+	color: var(--topic-accent-ink);
+	font-weight: var(--font-weight-semibold);
+}
+
 /* Graph */
 
 .svg {
@@ -243,7 +264,11 @@
 }
 
 .edgeTree {
-	stroke: color-mix(in srgb, var(--topic-accent) 70%, var(--color-border-strong));
+	stroke: color-mix(
+		in srgb,
+		var(--topic-accent) 70%,
+		var(--color-border-strong)
+	);
 	stroke-width: 1.4;
 }
 
@@ -268,6 +293,29 @@
 
 .weightHot {
 	fill: var(--topic-accent);
+}
+
+.nodeGroup {
+	cursor: pointer;
+	outline: none;
+}
+
+.nodeGroup .node {
+	transition:
+		fill var(--duration-step) var(--ease-quiet),
+		stroke var(--duration-step) var(--ease-quiet),
+		stroke-width var(--duration-step) var(--ease-quiet);
+}
+
+.nodeGroup:hover .node {
+	stroke: var(--topic-accent);
+	stroke-width: 1.6;
+}
+
+.nodeGroup:focus-visible .node {
+	stroke: var(--topic-accent);
+	stroke-width: 1.8;
+	filter: drop-shadow(0 0 2px var(--topic-accent));
 }
 
 .node {

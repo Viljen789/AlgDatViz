@@ -39,7 +39,9 @@
 	font-size: var(--font-size-label);
 	font-weight: var(--font-weight-medium);
 	cursor: pointer;
-	transition: color var(--transition), background-color var(--transition);
+	transition:
+		color var(--transition),
+		background-color var(--transition);
 }
 
 .algTab:hover {
@@ -64,8 +66,22 @@
 
 .actions {
 	display: flex;
-	align-items: center;
+	align-items: flex-start;
 	gap: var(--space-sm);
+}
+
+/* "Enter your own array" — the Input owns its own hint slot below the field, so
+   the form aligns to the top of the action row and the hint flows underneath
+   without shoving the buttons down. */
+.customForm {
+	display: flex;
+	align-items: flex-start;
+	gap: var(--space-xs);
+}
+
+.customField {
+	width: 200px;
+	max-width: 48vw;
 }
 
 .opLine {

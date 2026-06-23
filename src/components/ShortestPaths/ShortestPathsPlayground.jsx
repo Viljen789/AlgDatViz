@@ -7,16 +7,8 @@ import {
 	PseudoState,
 	usePlayback,
 } from '../../common/PlaybackEngine/index.js';
-import {
-	SSSP_PSEUDO,
-	buildSsspTrace,
-	buildStateRows,
-} from './relaxTrace.js';
-import {
-	SSSP_ALGORITHMS,
-	SSSP_ALGO_ORDER,
-	SSSP_PRESETS,
-} from './ssspMeta.js';
+import { SSSP_PSEUDO, buildSsspTrace, buildStateRows } from './relaxTrace.js';
+import { SSSP_ALGORITHMS, SSSP_ALGO_ORDER, SSSP_PRESETS } from './ssspMeta.js';
 import { buildEdges, projectNodes, VIEW_H, VIEW_W } from './graphLayout.js';
 import styles from './ShortestPathsPlayground.module.css';
 
@@ -61,7 +53,8 @@ const idleFrame = (graph, source) => {
 		phase: 'idle',
 		line: null,
 		title: 'Ready',
-		description: 'Pick an algorithm, then run. Every one is the same Relax — in a different order.',
+		description:
+			'Pick an algorithm, then run. Every one is the same Relax — in a different order.',
 		relaxations: 0,
 		improvements: 0,
 	};
@@ -179,6 +172,20 @@ const ShortestPathsPlayground = ({ onUserInteract }) => {
 		[notify, graph, source]
 	);
 
+	// Click a node to make it the source: re-init distances (0 here, ∞ elsewhere)
+	// and return the timeline to the idle frame, mirroring handleAlgorithmChange.
+	const handleSourceChange = useCallback(
+		id => {
+			if (id === source) return;
+			notify();
+			setSource(id);
+			const idle = [idleFrame(graph, id)];
+			framesKeyRef.current = idle;
+			setFrames(idle);
+		},
+		[notify, graph, source]
+	);
+
 	const handlePlayPause = useCallback(() => {
 		notify();
 		if (frames.length <= 1) {
@@ -200,10 +207,7 @@ const ShortestPathsPlayground = ({ onUserInteract }) => {
 	// Highlight sets from the current frame.
 	const activeEdgeKey = frame?.edge ? edgeKey(frame.edge) : null;
 	const treeSet = useMemo(() => predTreeEdges(frame?.pred), [frame]);
-	const settledSet = useMemo(
-		() => new Set(frame?.settled || []),
-		[frame]
-	);
+	const settledSet = useMemo(() => new Set(frame?.settled || []), [frame]);
 	const activeNode = frame?.active;
 	const relaxTarget = frame?.edge ? frame.edge.to : null;
 	const relaxSource = frame?.edge ? frame.edge.from : null;
@@ -297,7 +301,11 @@ const ShortestPathsPlayground = ({ onUserInteract }) => {
 				</div>
 				<div className={`${styles.stat} ${isCycle ? styles.statWarn : ''}`}>
 					<span className={styles.statValue}>
-						{isCycle ? 'neg cycle' : algo?.handlesNegatives ? 'negatives ok' : '≥ 0 only'}
+						{isCycle
+							? 'neg cycle'
+							: algo?.handlesNegatives
+								? 'negatives ok'
+								: '≥ 0 only'}
 					</span>
 					<span className={styles.statLabel}>weights</span>
 				</div>
@@ -305,7 +313,13 @@ const ShortestPathsPlayground = ({ onUserInteract }) => {
 
 			{/* ---------- Canvas + trace ---------- */}
 			<div className={styles.body}>
-				<section className={styles.canvas} aria-label="Shortest-path graph view">
+				<section
+					className={styles.canvas}
+					aria-label="Shortest-path graph view"
+				>
+					<div className={styles.canvasHint}>
+						click a node to set the <strong>source</strong>
+					</div>
 					<div className={styles.canvasOverlay} aria-hidden="true">
 						<span className={styles.mono}>{algo?.name}</span>
 						{frame?.title && (
@@ -394,6 +408,22 @@ const ShortestPathsPlayground = ({ onUserInteract }) => {
 								<g
 									key={node.id}
 									transform={`translate(${node.px}, ${node.py})`}
+									className={styles.nodeGroup}
+									role="button"
+									tabIndex={0}
+									aria-pressed={isSource}
+									aria-label={
+										isSource
+											? `Node ${node.id}, current source`
+											: `Set node ${node.id} as source`
+									}
+									onClick={() => handleSourceChange(node.id)}
+									onKeyDown={e => {
+										if (e.key === 'Enter' || e.key === ' ') {
+											e.preventDefault();
+											handleSourceChange(node.id);
+										}
+									}}
 								>
 									<circle r={NODE_R} className={cls.join(' ')} />
 									<text

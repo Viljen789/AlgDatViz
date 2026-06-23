@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { ChevronDown, RotateCcw } from 'lucide-react';
+import { ChevronDown, Minus, Plus, RotateCcw } from 'lucide-react';
 import {
 	usePlayback,
 	FrameTrace,
@@ -16,7 +16,9 @@ import {
 	COIN_CHANGE_PRESETS,
 	COIN_CHANGE_PSEUDO,
 	CLIMBING_STAIRS_PSEUDO,
+	CLIMBING_STAIRS_RANGE,
 	INTERVAL_SCHEDULING_PSEUDO,
+	INTERVAL_SCHEDULING_PRESETS,
 } from './strategiesMeta.js';
 import {
 	buildCoinChangeFrames,
@@ -24,16 +26,6 @@ import {
 	buildIntervalSchedulingFrames,
 } from './coinChangeFrames.js';
 import styles from './StrategiesDashboard.module.css';
-
-const STAIRS_N = 6;
-
-const SCHEDULING_INTERVALS = [
-	{ id: 'A', start: 0, end: 2 },
-	{ id: 'B', start: 1, end: 4 },
-	{ id: 'C', start: 3, end: 5 },
-	{ id: 'D', start: 4, end: 7 },
-	{ id: 'E', start: 6, end: 8 },
-];
 
 // Playback speed values map directly onto usePlayback's speed. Higher = faster.
 const SPEED_OPTIONS = [
@@ -46,6 +38,10 @@ const SPEED_OPTIONS = [
 const StrategiesDashboard = ({ onUserInteract }) => {
 	const [algorithmId, setAlgorithmId] = useState('coinChange');
 	const [presetId, setPresetId] = useState('trap');
+	const [intervalPresetId, setIntervalPresetId] = useState(
+		INTERVAL_SCHEDULING_PRESETS[0].id
+	);
+	const [stairsN, setStairsN] = useState(CLIMBING_STAIRS_RANGE.default);
 	const [pickerOpen, setPickerOpen] = useState(false);
 	const [presetOpen, setPresetOpen] = useState(false);
 	const [readMoreOpen, setReadMoreOpen] = useState(false);
@@ -62,6 +58,13 @@ const StrategiesDashboard = ({ onUserInteract }) => {
 		[presetId]
 	);
 
+	const intervalPreset = useMemo(
+		() =>
+			INTERVAL_SCHEDULING_PRESETS.find(p => p.id === intervalPresetId) ||
+			INTERVAL_SCHEDULING_PRESETS[0],
+		[intervalPresetId]
+	);
+
 	const { frames, lines } = useMemo(() => {
 		if (algorithmId === 'coinChange') {
 			const built = buildCoinChangeFrames({
@@ -71,12 +74,12 @@ const StrategiesDashboard = ({ onUserInteract }) => {
 			return { frames: built.frames, lines: COIN_CHANGE_PSEUDO };
 		}
 		if (algorithmId === 'climbingStairs') {
-			const built = buildClimbingStairsFrames(STAIRS_N);
+			const built = buildClimbingStairsFrames(stairsN);
 			return { frames: built.frames, lines: CLIMBING_STAIRS_PSEUDO };
 		}
-		const built = buildIntervalSchedulingFrames(SCHEDULING_INTERVALS);
+		const built = buildIntervalSchedulingFrames(intervalPreset.intervals);
 		return { frames: built.frames, lines: INTERVAL_SCHEDULING_PSEUDO };
-	}, [algorithmId, preset]);
+	}, [algorithmId, preset, stairsN, intervalPreset]);
 
 	const player = usePlayback(frames, { speed: 200 });
 	const {
@@ -95,10 +98,11 @@ const StrategiesDashboard = ({ onUserInteract }) => {
 		reset,
 	} = player;
 
-	// Reset the cursor whenever the timeline identity changes (algorithm/preset).
+	// Reset the cursor whenever the timeline identity changes — algorithm swap,
+	// coin preset, stairs count, or interval preset all rebuild the frame list.
 	useEffect(() => {
 		reset();
-	}, [algorithmId, presetId, reset]);
+	}, [algorithmId, presetId, stairsN, intervalPresetId, reset]);
 
 	const algo = STRATEGY_ALGORITHMS[algorithmId];
 	const frame = currentFrame;
@@ -116,6 +120,21 @@ const StrategiesDashboard = ({ onUserInteract }) => {
 		notifyInteract();
 		setPresetId(id);
 		setPresetOpen(false);
+	};
+
+	const handleIntervalPresetChange = id => {
+		notifyInteract();
+		setIntervalPresetId(id);
+		setPresetOpen(false);
+	};
+
+	const { min: stairsMin, max: stairsMax } = CLIMBING_STAIRS_RANGE;
+
+	const handleStairsChange = next => {
+		const clamped = Math.min(stairsMax, Math.max(stairsMin, next));
+		if (clamped === stairsN) return;
+		notifyInteract();
+		setStairsN(clamped);
 	};
 
 	const handleReset = () => {
@@ -142,7 +161,9 @@ const StrategiesDashboard = ({ onUserInteract }) => {
 		};
 	}, [presetOpen]);
 
-	const showPreset = algorithmId === 'coinChange';
+	const showCoinPreset = algorithmId === 'coinChange';
+	const showIntervalPreset = algorithmId === 'intervalScheduling';
+	const showStairsControl = algorithmId === 'climbingStairs';
 
 	const narration = useMemo(() => {
 		if (!frame) {
@@ -176,7 +197,7 @@ const StrategiesDashboard = ({ onUserInteract }) => {
 				<div className={styles.headRight}>
 					<div className={styles.notation}>
 						<span className={styles.complexity}>{algo?.complexity}</span>
-						{showPreset && (
+						{showCoinPreset && (
 							<>
 								<span className={styles.notationDot} aria-hidden="true">
 									·
@@ -194,11 +215,7 @@ const StrategiesDashboard = ({ onUserInteract }) => {
 											target = {preset.target}¢ · coins [
 											{preset.coins.join(', ')}]
 										</span>
-										<ChevronDown
-											size={12}
-											strokeWidth={2}
-											aria-hidden="true"
-										/>
+										<ChevronDown size={12} strokeWidth={2} aria-hidden="true" />
 									</button>
 									{presetOpen && (
 										<ul className={styles.presetMenu} role="listbox">
@@ -211,9 +228,7 @@ const StrategiesDashboard = ({ onUserInteract }) => {
 													<button
 														type="button"
 														className={`${styles.presetItem} ${
-															p.id === presetId
-																? styles.presetItemActive
-																: ''
+															p.id === presetId ? styles.presetItemActive : ''
 														}`}
 														onClick={() => handlePresetChange(p.id)}
 													>
@@ -221,8 +236,8 @@ const StrategiesDashboard = ({ onUserInteract }) => {
 															{p.label}
 														</span>
 														<span className={styles.presetItemMath}>
-															target = {p.target}¢ · coins [
-															{p.coins.join(', ')}]
+															target = {p.target}¢ · coins [{p.coins.join(', ')}
+															]
 														</span>
 														<span className={styles.presetItemIntent}>
 															{p.intent}
@@ -232,6 +247,103 @@ const StrategiesDashboard = ({ onUserInteract }) => {
 											))}
 										</ul>
 									)}
+								</div>
+							</>
+						)}
+						{showIntervalPreset && (
+							<>
+								<span className={styles.notationDot} aria-hidden="true">
+									·
+								</span>
+								<div className={styles.presetWrap} ref={presetWrapRef}>
+									<button
+										type="button"
+										className={styles.presetBtn}
+										onClick={() => setPresetOpen(o => !o)}
+										aria-haspopup="listbox"
+										aria-expanded={presetOpen}
+										title="Pick an interval scenario"
+									>
+										<span>
+											{intervalPreset.intervals.length} intervals ·{' '}
+											{intervalPreset.label}
+										</span>
+										<ChevronDown size={12} strokeWidth={2} aria-hidden="true" />
+									</button>
+									{presetOpen && (
+										<ul className={styles.presetMenu} role="listbox">
+											{INTERVAL_SCHEDULING_PRESETS.map(p => (
+												<li
+													key={p.id}
+													role="option"
+													aria-selected={p.id === intervalPresetId}
+												>
+													<button
+														type="button"
+														className={`${styles.presetItem} ${
+															p.id === intervalPresetId
+																? styles.presetItemActive
+																: ''
+														}`}
+														onClick={() => handleIntervalPresetChange(p.id)}
+													>
+														<span className={styles.presetItemHead}>
+															{p.label}
+														</span>
+														<span className={styles.presetItemMath}>
+															{p.intervals
+																.map(iv => `${iv.id}[${iv.start}–${iv.end}]`)
+																.join('  ')}
+														</span>
+														<span className={styles.presetItemIntent}>
+															{p.intent}
+														</span>
+													</button>
+												</li>
+											))}
+										</ul>
+									)}
+								</div>
+							</>
+						)}
+						{showStairsControl && (
+							<>
+								<span className={styles.notationDot} aria-hidden="true">
+									·
+								</span>
+								<div className={styles.stepper}>
+									<span className={styles.stepperLabel}>n =</span>
+									<button
+										type="button"
+										className={styles.stepperBtn}
+										onClick={() => handleStairsChange(stairsN - 1)}
+										disabled={stairsN <= stairsMin}
+										aria-label="Fewer stairs"
+										title="Fewer stairs"
+									>
+										<Minus size={14} strokeWidth={2.5} aria-hidden="true" />
+									</button>
+									<input
+										type="range"
+										className={styles.stepperSlider}
+										min={stairsMin}
+										max={stairsMax}
+										step={1}
+										value={stairsN}
+										onChange={e => handleStairsChange(Number(e.target.value))}
+										aria-label={`Number of stairs: ${stairsN}`}
+									/>
+									<button
+										type="button"
+										className={styles.stepperBtn}
+										onClick={() => handleStairsChange(stairsN + 1)}
+										disabled={stairsN >= stairsMax}
+										aria-label="More stairs"
+										title="More stairs"
+									>
+										<Plus size={14} strokeWidth={2.5} aria-hidden="true" />
+									</button>
+									<span className={styles.stepperValue}>{stairsN}</span>
 								</div>
 							</>
 						)}
@@ -278,12 +390,12 @@ const StrategiesDashboard = ({ onUserInteract }) => {
 							<CoinChangeCanvas frame={frame} preset={preset} />
 						)}
 						{algorithmId === 'climbingStairs' && (
-							<ClimbingStairsCanvas frame={frame} n={STAIRS_N} />
+							<ClimbingStairsCanvas frame={frame} n={stairsN} />
 						)}
 						{algorithmId === 'intervalScheduling' && (
 							<IntervalSchedulingCanvas
 								frame={frame}
-								intervals={SCHEDULING_INTERVALS}
+								intervals={intervalPreset.intervals}
 							/>
 						)}
 					</div>

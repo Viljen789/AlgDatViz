@@ -42,15 +42,15 @@ export const COIN_CHANGE_PRESETS = [
 		label: 'Greedy fails (textbook trap)',
 		target: 10,
 		coins: [1, 5, 6],
-		intent: 'Greedy takes 6 first and is stuck with four 1¢ coins. DP finds 5+5.',
+		intent:
+			'Greedy takes 6 first and is stuck with four 1¢ coins. DP finds 5+5.',
 	},
 	{
 		id: 'canonical',
 		label: 'Greedy succeeds (canonical set)',
 		target: 14,
 		coins: [1, 5, 10],
-		intent:
-			'A canonical coin set (like real currency) — greedy and DP agree.',
+		intent: 'A canonical coin set (like real currency) — greedy and DP agree.',
 	},
 	{
 		id: 'wider-trap',
@@ -58,6 +58,57 @@ export const COIN_CHANGE_PRESETS = [
 		target: 8,
 		coins: [1, 4, 5],
 		intent: 'Greedy reaches 5+1+1+1 = 4 coins. DP finds 4+4 = 2.',
+	},
+];
+
+// Climbing Stairs takes a single input n (the number of stairs). The stepper
+// stays in this band so the DP table fits the canvas and the Fibonacci growth
+// is legible without overflowing.
+export const CLIMBING_STAIRS_RANGE = {
+	min: 2,
+	max: 12,
+	default: 6,
+};
+
+// Curated interval scenarios for the Interval Scheduling playground. Each feeds
+// buildIntervalSchedulingFrames(intervals) directly. Mirrors the shape of
+// COIN_CHANGE_PRESETS so the same preset-menu component renders both.
+export const INTERVAL_SCHEDULING_PRESETS = [
+	{
+		id: 'overlapping-trap',
+		label: 'Overlapping (earliest-finish wins)',
+		intervals: [
+			{ id: 'A', start: 0, end: 2 },
+			{ id: 'B', start: 1, end: 4 },
+			{ id: 'C', start: 3, end: 5 },
+			{ id: 'D', start: 4, end: 7 },
+			{ id: 'E', start: 6, end: 8 },
+		],
+		intent:
+			'A tangle of overlaps — greedy keeps whoever finishes first and skips the rest.',
+	},
+	{
+		id: 'all-disjoint',
+		label: 'All disjoint (everyone fits)',
+		intervals: [
+			{ id: 'A', start: 0, end: 1 },
+			{ id: 'B', start: 1, end: 2 },
+			{ id: 'C', start: 2, end: 3 },
+			{ id: 'D', start: 3, end: 4 },
+		],
+		intent: 'Nothing overlaps, so every interval is compatible and taken.',
+	},
+	{
+		id: 'nested',
+		label: 'Nested (long one swallows the rest)',
+		intervals: [
+			{ id: 'A', start: 0, end: 7 },
+			{ id: 'B', start: 1, end: 2 },
+			{ id: 'C', start: 3, end: 4 },
+			{ id: 'D', start: 5, end: 6 },
+		],
+		intent:
+			'A wide interval contains three short ones — earliest-finish keeps the three, not the giant.',
 	},
 ];
 
