@@ -5,6 +5,7 @@ import {
 	useMotionValueEvent,
 	useReducedMotion,
 } from 'framer-motion';
+import { MoveHorizontal } from 'lucide-react';
 import styles from './HeroInstrument.module.css';
 
 // The Home hero instrument: one conserved set of 14 values that the reader GRABS
@@ -136,6 +137,10 @@ const HeroInstrument = ({ className }) => {
 	const progress = useMotionValue(0);
 	const [active, setActive] = useState(0);
 	const [autoplay, setAutoplay] = useState(true);
+	// Whether to still show the "drag me" affordance. A brand-new visitor has no
+	// way to know the figure is grab-and-scrubbable — the cue invites the first
+	// interaction, then retires the moment they take control.
+	const [hinted, setHinted] = useState(true);
 	const touched = useRef(false);
 
 	const atomRefs = useRef([]);
@@ -225,6 +230,7 @@ const HeroInstrument = ({ className }) => {
 	const takeOver = () => {
 		touched.current = true;
 		if (autoplay) setAutoplay(false);
+		if (hinted) setHinted(false);
 	};
 	const settle = () =>
 		animate(
@@ -344,12 +350,19 @@ const HeroInstrument = ({ className }) => {
 			</div>
 
 			<div className={styles.scrub}>
+				<p
+					className={`${styles.dragHint} ${hinted ? '' : styles.dragHintGone}`}
+					aria-hidden="true"
+				>
+					<MoveHorizontal size={14} strokeWidth={2.2} />
+					Drag — one dataset, four shapes
+				</p>
 				<div
 					className={styles.track}
 					ref={trackRef}
 					role="slider"
 					tabIndex={0}
-					aria-label="Read the dataset as a structure"
+					aria-label="Drag to read the same 14 values as an array, a sorted array, a heap, or a graph"
 					aria-valuemin={0}
 					aria-valuemax={LAST}
 					aria-valuenow={active}

@@ -111,6 +111,42 @@
 .scrub {
 	padding: 0 14px;
 }
+/* The "drag me" affordance: a brand-new visitor can't tell the figure is
+   interactive, so this invites the first scrub and fades out the moment they
+   take control (handled by the `hinted` state toggling .dragHintGone). */
+.dragHint {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	gap: 7px;
+	margin: 0 0 11px;
+	font-family: var(--font-family-mono);
+	font-size: var(--font-size-caption);
+	letter-spacing: 0.04em;
+	text-transform: uppercase;
+	color: var(--color-text-muted);
+	transition:
+		opacity var(--duration-step, 0.3s) var(--ease-quiet, ease),
+		transform var(--duration-step, 0.3s) var(--ease-quiet, ease);
+}
+.dragHint svg {
+	color: var(--brand);
+	animation: heroDragNudge 1.7s var(--ease-quiet, ease) infinite;
+}
+.dragHintGone {
+	opacity: 0;
+	transform: translateY(-6px);
+	pointer-events: none;
+}
+@keyframes heroDragNudge {
+	0%,
+	100% {
+		transform: translateX(-3px);
+	}
+	50% {
+		transform: translateX(3px);
+	}
+}
 .track {
 	position: relative;
 	height: 30px;
@@ -225,5 +261,8 @@
 	.dot,
 	.wash {
 		transition: none;
+	}
+	.dragHint svg {
+		animation: none;
 	}
 }
