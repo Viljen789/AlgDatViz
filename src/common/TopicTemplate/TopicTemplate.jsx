@@ -380,7 +380,12 @@ const TopicTemplate = ({
 		if (!topicId || !checkStates) return;
 		Object.entries(checkStates).forEach(([sceneId, st]) => {
 			const status = st?.status;
-			if (status === 'correct') recordCheck(topicId, sceneId, true);
+			// Record EVERY resolved answer (not only correct) so the FIRST attempt's
+			// outcome is captured for honest first-try mastery. recordCheck is
+			// non-punitive and idempotent after the first attempt, so a wrong answer
+			// neither blocks completion nor loops this effect.
+			if (status === 'correct' || status === 'incorrect')
+				recordCheck(topicId, sceneId, status === 'correct');
 			// First resolved answer seeds the card. Hosts write exactly 'correct' or
 			// 'incorrect' (and reveal the explanation on 'incorrect'), so 'incorrect'
 			// IS the revealed-wrong signal → seed a lapse. The hook enforces

@@ -161,6 +161,7 @@ const ProgressPage = () => {
 		isCompleted,
 		isVisited,
 		overall,
+		firstTryStats,
 		reset: resetProgress,
 	} = useProgress();
 	const { cards, grade, reset: resetSrs } = useSrs();
@@ -379,6 +380,26 @@ const ProgressPage = () => {
 							<span className={styles.statOf}>/{overall.total}</span>
 						</dd>
 						<p className={styles.statSub}>curriculum topics</p>
+					</div>
+					<div className={styles.stat}>
+						<dt className={styles.statLabel}>First-try</dt>
+						{firstTryStats.attempted > 0 ? (
+							<>
+								<dd className={styles.statValue}>
+									{Math.round(firstTryStats.rate * 100)}
+									<span className={styles.statOf}>%</span>
+								</dd>
+								<p className={styles.statSub}>
+									{firstTryStats.firstTry}/{firstTryStats.attempted} checks
+									first try
+								</p>
+							</>
+						) : (
+							<>
+								<dd className={styles.statValueMuted}>—</dd>
+								<p className={styles.statSub}>answer a check to begin</p>
+							</>
+						)}
 					</div>
 					<div className={`${styles.stat} ${styles.statExam}`}>
 						<dt className={styles.statLabel}>Exam</dt>

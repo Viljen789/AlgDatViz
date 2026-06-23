@@ -31,6 +31,40 @@ test('topicMastery: a correct-but-unscheduled check is 0.5', () => {
 	assert.equal(m.hasData, true);
 });
 
+test('topicMastery: legacy `true` and a {firstTry:true} record both score 0.5', () => {
+	const legacy = topicMastery(groupBankByTopic(bank).t, { t: { a: true } }, {});
+	const record = topicMastery(
+		groupBankByTopic(bank).t,
+		{ t: { a: { correct: true, firstTry: true } } },
+		{}
+	);
+	assert.equal(legacy.score, 0.25); // 0.5 + 0 over two checks
+	assert.equal(record.score, 0.25); // identical — tolerant reader
+});
+
+test('topicMastery: a struggled-then-correct check scores below a first-try one', () => {
+	// firstTry:false ⇒ 0.3 (honest discount), one 0 ⇒ mean 0.15, vs 0.25 for first-try.
+	const m = topicMastery(
+		groupBankByTopic(bank).t,
+		{ t: { a: { correct: true, firstTry: false } } },
+		{}
+	);
+	assert.equal(m.score, 0.15);
+	assert.equal(m.answered, 1);
+	assert.equal(m.hasData, true);
+});
+
+test('topicMastery: an attempted-but-never-correct check scores 0 and is unanswered', () => {
+	const m = topicMastery(
+		groupBankByTopic(bank).t,
+		{ t: { a: { correct: false, firstTry: false } } },
+		{}
+	);
+	assert.equal(m.score, 0);
+	assert.equal(m.answered, 0);
+	assert.equal(m.hasData, false);
+});
+
 test('topicMastery: a maxed SRS card scores full for that check', () => {
 	const cards = {
 		't:a': { box: MAX_BOX, reps: 5, lapses: 0, last: 0, due: 0 },

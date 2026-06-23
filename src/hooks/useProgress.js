@@ -14,13 +14,67 @@ export const furthestSceneIndex = (prev, next) => {
 	return Math.max(a, b);
 };
 
+// A check record captures retrieval outcome with two fields:
+//   correct  — whether the check has EVER been answered correctly. Drives
+//              completion, which stays non-punitive: a later correct answer always
+//              counts, a wrong one never un-records a prior correct.
+//   firstTry — whether the FIRST attempt was correct. Set once and preserved
+//              forever, so a struggled-then-correct check can no longer masquerade
+//              as a clean first-try success. This is the honest mastery signal that
+//              the old "store true on correct, discard the rest" model threw away.
+// Pure + exported so the merge, migration, and stat rules are unit-testable.
+
+// Merge a newly graded answer into a check's prior record. Never punishes: the
+// first correct answer flips `correct` true; `firstTry` is decided on the first
+// attempt and never changes. Returns the SAME record object when nothing should
+// change, so the recording effect can compare by identity and never loop.
+export const mergeCheckRecord = (existing, correct) => {
+	const nowCorrect = Boolean(correct);
+	if (!existing) return { correct: nowCorrect, firstTry: nowCorrect };
+	if (nowCorrect && existing.correct !== true)
+		return { correct: true, firstTry: existing.firstTry === true };
+	return existing; // wrong re-answer, or already correct — no state change
+};
+
+// Normalize one stored check value into the { correct, firstTry } record. Tolerates
+// the legacy boolean shape (`true` = a correctly-answered check recorded before
+// first-try tracking existed; treated as a first-try success since no attempt
+// history can be reconstructed). Returns null for anything malformed so it drops.
+export const migrateCheckValue = val => {
+	if (val === true) return { correct: true, firstTry: true };
+	if (val && typeof val === 'object') {
+		const correct = val.correct === true;
+		const firstTry = typeof val.firstTry === 'boolean' ? val.firstTry : correct;
+		return { correct, firstTry };
+	}
+	return null;
+};
+
+// Overall first-try accuracy across every attempted check: the share answered
+// correctly on the very first try. The honest counterpart to completion —
+// completion says "got here eventually", this says "how often did it click first".
+export const firstTryStatsFrom = checks => {
+	let attempted = 0;
+	let firstTry = 0;
+	for (const byCheck of Object.values(checks || {})) {
+		for (const rec of Object.values(byCheck || {})) {
+			if (!rec) continue;
+			attempted += 1;
+			if (rec.firstTry === true) firstTry += 1;
+		}
+	}
+	return { attempted, firstTry, rate: attempted ? firstTry / attempted : 0 };
+};
+
 const emptyState = () => ({
 	completed: [],
 	visited: [],
 	lastVisited: null,
-	// checks: { [topicId]: { [checkId]: true } } — correctly-answered retrieval
-	// checks per topic. Added additively (Phase 1a). Migrates safely: old state
-	// simply has no `checks` key and starts empty.
+	// checks: { [topicId]: { [checkId]: { correct, firstTry } } } — per-topic
+	// retrieval record. `correct` drives non-punitive completion; `firstTry` is the
+	// honest mastery signal. Added additively (Phase 1a; first-try in Phase 3).
+	// Migrates safely: old state has no `checks` key (starts empty) and any legacy
+	// boolean values are normalized on read by migrateCheckValue.
 	checks: {},
 	// scenes: { [topicId]: furthestSceneIndex } — how far into each topic's
 	// scrolly the reader has reached, so entering a topic resumes at that scene
@@ -48,15 +102,17 @@ const readState = () => {
 				...(lastVisited ? [lastVisited] : []),
 			])
 		);
-		// `checks` is additive (added Phase 1a). Normalize to a map of maps of
-		// booleans; ignore anything malformed so old/partial state never throws.
+		// `checks` is additive (added Phase 1a). Normalize each value to a
+		// { correct, firstTry } record via migrateCheckValue (tolerates legacy
+		// booleans); drop anything malformed so old/partial state never throws.
 		const checks = {};
 		if (parsed.checks && typeof parsed.checks === 'object') {
 			for (const [topicId, byCheck] of Object.entries(parsed.checks)) {
 				if (!byCheck || typeof byCheck !== 'object') continue;
 				const inner = {};
-				for (const [checkId, correct] of Object.entries(byCheck)) {
-					if (correct) inner[checkId] = true;
+				for (const [checkId, val] of Object.entries(byCheck)) {
+					const rec = migrateCheckValue(val);
+					if (rec) inner[checkId] = rec;
 				}
 				if (Object.keys(inner).length > 0) checks[topicId] = inner;
 			}
@@ -130,26 +186,27 @@ export const useProgress = () => {
 		});
 	}, []);
 
-	// Record the outcome of a retrieval check. Only correct answers are stored
-	// (so completion can derive from required-checks-correct). A topic with a
-	// recorded check is also implicitly visited.
+	// Record the outcome of a retrieval check. Called on EVERY resolved answer
+	// (correct or wrong) so the first attempt's outcome is captured for honest
+	// first-try mastery; the merge is non-punitive (a wrong answer never un-records
+	// a prior correct, and the first correct answer flips `correct` true without
+	// rewriting `firstTry`). Anything that wouldn't change state returns prev
+	// unchanged — critical so the recording effect can't loop on re-renders. A
+	// topic with a recorded check is also implicitly visited.
 	const recordCheck = useCallback((topicId, checkId, correct) => {
 		if (!topicId || checkId == null) return;
 		setState(prev => {
 			const topicChecks = prev.checks[topicId] || {};
-			const alreadyRecorded = topicChecks[checkId] === true;
+			const existing = topicChecks[checkId];
+			const merged = mergeCheckRecord(existing, correct);
+			const recordChanged = merged !== existing;
 			const alreadyVisited = prev.visited.includes(topicId);
-			// Wrong answers are never punished and never un-record a prior correct
-			// answer. We only ever persist a *new* correct answer (or a first
-			// visit). Anything that wouldn't change state returns prev unchanged
-			// — critical so the recording effect can't loop on re-renders.
-			const willRecord = Boolean(correct) && !alreadyRecorded;
-			if (!willRecord && alreadyVisited) return prev;
+			if (!recordChanged && alreadyVisited) return prev;
 			const next = {
 				...prev,
 				visited: alreadyVisited ? prev.visited : [...prev.visited, topicId],
-				checks: willRecord
-					? { ...prev.checks, [topicId]: { ...topicChecks, [checkId]: true } }
+				checks: recordChanged
+					? { ...prev.checks, [topicId]: { ...topicChecks, [checkId]: merged } }
 					: prev.checks,
 			};
 			writeState(next);
@@ -195,14 +252,24 @@ export const useProgress = () => {
 	);
 	const visitedSet = useMemo(() => new Set(state.visited), [state.visited]);
 
-	// Count of correctly-answered checks for a topic.
+	// Count of ever-correctly-answered checks for a topic (drives completion).
 	const correctCheckCount = useCallback(
-		topicId => Object.keys(state.checks[topicId] || {}).length,
+		topicId =>
+			Object.values(state.checks[topicId] || {}).filter(
+				rec => rec?.correct === true
+			).length,
 		[state.checks]
 	);
 
 	const isCheckCorrect = useCallback(
-		(topicId, checkId) => state.checks[topicId]?.[checkId] === true,
+		(topicId, checkId) => state.checks[topicId]?.[checkId]?.correct === true,
+		[state.checks]
+	);
+
+	// Overall first-try accuracy across every attempted check — the honest signal
+	// the /progress dashboard surfaces alongside completion.
+	const firstTryStats = useMemo(
+		() => firstTryStatsFrom(state.checks),
 		[state.checks]
 	);
 
@@ -273,6 +340,7 @@ export const useProgress = () => {
 		isVisited,
 		isCheckCorrect,
 		correctCheckCount,
+		firstTryStats,
 		furthestScene,
 		overall,
 	};

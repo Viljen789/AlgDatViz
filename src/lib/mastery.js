@@ -14,13 +14,28 @@ export const groupBankByTopic = bank => {
 	return out;
 };
 
+// Read a stored check, tolerating both the legacy boolean (`true` = a correct
+// answer recorded before first-try tracking) and the { correct, firstTry } record.
+const readCheck = rec => {
+	if (rec === true) return { correct: true, firstTry: true };
+	if (rec && typeof rec === 'object')
+		return { correct: rec.correct === true, firstTry: rec.firstTry === true };
+	return { correct: false, firstTry: false };
+};
+
 // One check's mastery, 0..1: a scheduled card scores by its Leitner box (recall
-// strength); a check answered correctly but not yet in the schedule scores 0.5
-// (learned once, not yet reinforced); unseen/wrong scores 0.
+// strength); otherwise the "learned once, not yet reinforced" score is now honest
+// about effort — a first-try success is solid (0.5), a check that only came right
+// after a wrong attempt is real but shakier (0.3), and unseen/never-correct is 0.
+// (A wrong answer is never punishing: reinforcing it in /review promotes the card,
+// which takes over the score above this branch.)
 const entryScore = (entry, checks, cards) => {
 	const card = cards?.[entry.id];
 	if (card) return Math.min(card.box, MAX_BOX) / MAX_BOX;
-	if (checks?.[entry.topicId]?.[entry.sceneId] === true) return 0.5;
+	const { correct, firstTry } = readCheck(
+		checks?.[entry.topicId]?.[entry.sceneId]
+	);
+	if (correct) return firstTry ? 0.5 : 0.3;
 	return 0;
 };
 
@@ -60,7 +75,7 @@ export const topicMastery = (entries, checks, cards, examRatio) => {
 	let answered = 0;
 	for (const entry of entries) {
 		const card = cards?.[entry.id];
-		const correct = checks?.[entry.topicId]?.[entry.sceneId] === true;
+		const correct = readCheck(checks?.[entry.topicId]?.[entry.sceneId]).correct;
 		if (card || correct) answered += 1;
 		sum += entryScore(entry, checks, cards);
 	}
