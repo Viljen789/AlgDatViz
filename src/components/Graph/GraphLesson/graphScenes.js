@@ -80,7 +80,10 @@ export const DFS_ORDER = visitOrderFromSteps('dfs');
 // is read off the next extract frame, never typed. The frozen frame becomes the
 // question canvas (StepProbeFrame renders view.kind 'bfs-dequeue').
 const BFS_IDS = LESSON_GRAPH.nodes.map(n => n.id).sort(); // ['A'..'F']
-const BFS_RUN = genericTraverse(LESSON_GRAPH, { discipline: 'fifo', start: 'A' });
+const BFS_RUN = genericTraverse(LESSON_GRAPH, {
+	discipline: 'fifo',
+	start: 'A',
+});
 const BFS_PROBE = bfsDequeueProbe(BFS_RUN, BFS_IDS, 1);
 
 // The frozen FIFO queue, front to rear (derived from the frame), so the distractor
@@ -157,6 +160,44 @@ const TOPO_SOURCES = TOPO_GRAPH.nodes
 	.map(n => n.id)
 	.filter(id => TOPO_RESULT.indegree[id] === 0);
 export const TOPO_SOURCE = TOPO_SOURCES[0];
+
+// ── The "predict the next emission" beat ───────────────────────────────────────
+//
+// The scene above asks a STATIC question (which vertex is the source). This one
+// runs the algorithm one more turn: Kahn's has already emitted the source and
+// deleted its out-edges, so which vertex comes out NEXT? That is the second
+// element of the real Kahn order — derived, never typed.
+//   TOPO_ORDER = ['A','B','C','D','E']  →  source A out, B is next.
+export const TOPO_NEXT = TOPO_ORDER[1];
+
+// The in-degrees AFTER the source's out-edges are removed (the working state Kahn's
+// reads when it picks the 2nd vertex). Start from the pristine in-degrees and
+// decrement each successor of the source by one, exactly the removal step the
+// generator performs. Derived so the distractor lines below quote the real counts.
+const TOPO_INDEGREE_AFTER_SOURCE = (() => {
+	const remaining = { ...TOPO_RESULT.indegree };
+	TOPO_GRAPH.edges.forEach(({ from, to }) => {
+		if (from === TOPO_SOURCE) remaining[to] -= 1;
+	});
+	return remaining;
+})();
+
+// One misconception line per OTHER option, keyed by id, derived from the
+// after-removal in-degrees so no line is hand-fabricated. A vertex is NOT the next
+// emission either because it is still blocked (in-degree > 0 → an unmet
+// prerequisite remains) or because it is ready but loses the smallest-id tie-break
+// to TOPO_NEXT (the deterministic rule the generator uses).
+const TOPO_NEXT_OPTIONS = ['B', 'C', 'D', 'E'];
+const TOPO_NEXT_MISCONCEPTIONS = Object.fromEntries(
+	TOPO_NEXT_OPTIONS.filter(id => id !== TOPO_NEXT).map(id => {
+		const deg = TOPO_INDEGREE_AFTER_SOURCE[id];
+		const line =
+			deg > 0
+				? `${id} still has in-degree ${deg} after ${TOPO_SOURCE} is removed, so an edge still points into it — it is not free yet and Kahn's cannot emit it.`
+				: `${id} IS free now (in-degree 0), but ${TOPO_NEXT} is too, and the deterministic rule emits the smallest-id ready vertex first — ${TOPO_NEXT} before ${id}.`;
+		return [String(id), line];
+	})
+);
 
 export const SCENES = [
 	{
@@ -367,6 +408,25 @@ export const SCENES = [
 				E: 'E is the SINK — every path ends there (it has in-degree 2, from C and D), so it must come LAST, not first. First belongs to the in-degree-0 source.',
 			},
 			explanation: `Only ${TOPO_SOURCE} has in-degree 0 — no edge points into it, so it has no prerequisite and can be placed first; every other node has an incoming edge and must wait for its source. That is exactly the move Kahn’s algorithm repeats: emit an in-degree-0 vertex, delete its out-edges, and the next in-degree-0 node opens up.`,
+		},
+	},
+	{
+		id: 'topo-next',
+		eyebrow: 'Run Kahn’s one turn',
+		title: 'Now run one turn of Kahn’s — predict the next vertex out.',
+		body: `Kahn's has already emitted ${TOPO_SOURCE} (it was the only in-degree-0 node) and deleted ${TOPO_SOURCE}'s out-edges. Removing those edges drops some downstream in-degrees to 0, opening the next batch of free vertices. Before the figure numbers them, commit: which vertex does Kahn's emit NEXT? Remember the tie-break — when several are free at once, it takes the SMALLEST id.`,
+		check: {
+			kind: 'predict',
+			// Hold the stage's numbering until the learner commits, so the picture
+			// can't spoil the answer (the Stage reads holdReveal for scene 9).
+			revealGate: true,
+			// Derived against topoSort: the answer is the SECOND vertex in the real
+			// Kahn order — read off the algorithm one turn past the source, never typed.
+			prompt: `${TOPO_SOURCE} has just been emitted and its out-edges removed. Which vertex does Kahn’s algorithm emit NEXT?`,
+			options: TOPO_NEXT_OPTIONS,
+			answer: TOPO_NEXT,
+			misconceptions: TOPO_NEXT_MISCONCEPTIONS,
+			explanation: `Removing ${TOPO_SOURCE}'s out-edges drops B and C to in-degree 0 — both become free at once. Kahn's breaks the tie by smallest id, so ${TOPO_NEXT} is emitted next; D and E still have incoming edges (in-degree 2) and must wait. The full order this DAG produces is ${TOPO_ORDER.join(' → ')}.`,
 		},
 	},
 ];

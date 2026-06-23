@@ -44,8 +44,13 @@ const GraphLesson = () => {
 		}));
 	}, []);
 
+	// The second arg is the template's opt-in reveal gate: revealHeld is true while
+	// a revealGate scene's predict check is still unanswered (the topo-next beat),
+	// so the stage withholds the numbering that would spoil the prediction.
 	const renderStage = useCallback(
-		activeScene => <GraphStage activeScene={activeScene} />,
+		(activeScene, { revealHeld = false } = {}) => (
+			<GraphStage activeScene={activeScene} holdReveal={revealHeld} />
+		),
 		[]
 	);
 

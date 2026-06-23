@@ -6,10 +6,39 @@ import {
 	TOPO_GRAPH,
 	TOPO_ORDER,
 	TOPO_SOURCE,
+	TOPO_NEXT,
 } from './graphScenes.js';
 import StateLegend from '../../../common/StateLegend/StateLegend';
 import { SceneNarration } from '../../../common/PlaybackEngine';
 import styles from './GraphStage.module.css';
+
+// Scene indices, named so a future scene insertion can't silently desync this
+// stage's index branches from the SCENES array (a stepProbe scene inserted at
+// index 4 once shifted every later scene by one). These MUST mirror the order of
+// SCENES in graphScenes.js:
+//   0 nodes-edges · 1 representations · 2 frontier · 3 bfs · 4 bfs-probe
+//   5 bfs-order · 6 dfs · 7 one-frontier · 8 topo-sort · 9 topo-next
+const SCENE = {
+	REPRESENTATIONS: 1,
+	FRONTIER: 2,
+	BFS: 3,
+	BFS_PROBE: 4,
+	BFS_ORDER: 5,
+	DFS: 6,
+	ONE_FRONTIER: 7,
+	TOPO_SORT: 8,
+	TOPO_NEXT: 9,
+};
+// The scenes that paint the full BFS picture (the BFS run, the frozen-frame probe,
+// the recall, and the one-frontier thesis all illustrate the SAME BFS spread).
+const BFS_SCENES = new Set([
+	SCENE.BFS,
+	SCENE.BFS_PROBE,
+	SCENE.BFS_ORDER,
+	SCENE.ONE_FRONTIER,
+]);
+// The two directed-DAG scenes share the topological-sort visualization.
+const TOPO_SCENES = new Set([SCENE.TOPO_SORT, SCENE.TOPO_NEXT]);
 
 // The traversal scenes paint nodes with meaningful colour; the key names only
 // the states that scene actually shows. Swatches mirror GraphStage's node
@@ -20,20 +49,20 @@ const VISITED_SWATCH = 'var(--topic-accent)';
 const FRONTIER_SWATCH = 'var(--topic-graphs-wash)';
 
 const sceneLegend = activeScene => {
-	if (activeScene === 2)
+	if (activeScene === SCENE.FRONTIER)
 		return [
 			{ label: 'visited', swatch: VISITED_SWATCH, aria: 'filled' },
 			{ label: 'frontier (next up)', swatch: FRONTIER_SWATCH, aria: 'dashed' },
 		];
-	if (activeScene === 3 || activeScene === 4 || activeScene === 6)
+	if (BFS_SCENES.has(activeScene))
 		return [
 			{ label: 'visited in BFS order', swatch: VISITED_SWATCH, aria: 'filled' },
 		];
-	if (activeScene === 5)
+	if (activeScene === SCENE.DFS)
 		return [
 			{ label: 'visited in DFS order', swatch: VISITED_SWATCH, aria: 'filled' },
 		];
-	if (activeScene === 7)
+	if (TOPO_SCENES.has(activeScene))
 		return [
 			{
 				label: 'placed in topological order',
@@ -65,30 +94,40 @@ const buildAdjacency = () => {
 };
 
 // How many nodes are "visited" by the active scene, and which traversal order
-// drives the highlight. Earlier scenes show structure only. Scene indices match
-// SCENES in graphScenes.js:
-//   2 frontier · 3 bfs · 4 bfs-order (recall, shows full BFS) · 5 dfs
-//   6 one-frontier (the unifying thesis — show the full BFS frontier picture)
-//   7 topo-sort (a DIFFERENT graph — the DAG — numbered in topological order)
-const traversalFor = activeScene => {
-	if (activeScene === 2) return { order: BFS_ORDER, count: 1 }; // just A marked
-	if (activeScene === 3 || activeScene === 4 || activeScene === 6)
+// drives the highlight. Earlier scenes show structure only. Scene indices are
+// named in SCENE above and mirror SCENES in graphScenes.js.
+//
+// The topo-next scene is a PREDICT-before-reveal beat: while its prediction is
+// pending (holdReveal), the figure numbers ONLY the already-emitted source, so the
+// picture can't spoil "which vertex comes next?". Once answered, holdReveal clears
+// and the full topological numbering reveals — the same picture the topo-sort
+// scene shows.
+const traversalFor = (activeScene, holdReveal = false) => {
+	if (activeScene === SCENE.FRONTIER) return { order: BFS_ORDER, count: 1 }; // just A marked
+	if (BFS_SCENES.has(activeScene))
 		return { order: BFS_ORDER, count: BFS_ORDER.length };
-	if (activeScene === 5) return { order: DFS_ORDER, count: DFS_ORDER.length };
-	// The topo scene paints the DAG's nodes 1..n in topological order, so the
+	if (activeScene === SCENE.DFS)
+		return { order: DFS_ORDER, count: DFS_ORDER.length };
+	// The topo scenes paint the DAG's nodes 1..n in topological order, so the
 	// numbered badges read left-to-right as the line every arrow respects.
-	if (activeScene === 7) return { order: TOPO_ORDER, count: TOPO_ORDER.length };
+	if (activeScene === SCENE.TOPO_NEXT && holdReveal)
+		return { order: TOPO_ORDER, count: 1 }; // only the source emitted so far
+	if (TOPO_SCENES.has(activeScene))
+		return { order: TOPO_ORDER, count: TOPO_ORDER.length };
 	return { order: [], count: 0 };
 };
 
-// The topo scene swaps the undirected LESSON_GRAPH for the directed DAG and draws
-// arrowheads. Everything else (scenes 0–6) keeps the undirected rendering.
+// The topo scenes swap the undirected LESSON_GRAPH for the directed DAG and draw
+// arrowheads. Every other scene keeps the undirected rendering.
 const TOPO_NODE_BY_ID = id => TOPO_GRAPH.nodes.find(n => n.id === id);
 
-const GraphStage = ({ activeScene = 0 }) => {
+// holdReveal is the template's opt-in reveal gate: true while the topo-next
+// predict beat is still unanswered, so the stage withholds the to-be-predicted
+// numbering (the picture must not spoil the prediction).
+const GraphStage = ({ activeScene = 0, holdReveal = false }) => {
 	const adjacency = useMemo(buildAdjacency, []);
-	const showMatrix = activeScene === 1;
-	const { order, count } = traversalFor(activeScene);
+	const showMatrix = activeScene === SCENE.REPRESENTATIONS;
+	const { order, count } = traversalFor(activeScene, holdReveal);
 
 	// Visit-order index per node (1-based) for the highlighted prefix.
 	const visitIndex = useMemo(() => {
@@ -97,27 +136,31 @@ const GraphStage = ({ activeScene = 0 }) => {
 		return map;
 	}, [order, count]);
 
-	// The current frontier (next candidates) at scene 2: A is marked, B & C wait.
+	// The current frontier (next candidates) at the frontier scene: A is marked,
+	// B & C wait.
 	const frontier = useMemo(() => {
-		if (activeScene !== 2) return new Set();
+		if (activeScene !== SCENE.FRONTIER) return new Set();
 		const f = new Set();
 		(adjacency.get('A') || []).forEach(n => f.add(n));
 		return f;
 	}, [activeScene, adjacency]);
 
-	// Scene 7 renders the directed DAG (with arrowheads) instead of the undirected
-	// LESSON_GRAPH. isTraversalScene stays true for the shared colour/order badges,
-	// but the frontier overlay never fires (it is gated to scene 2 only).
-	const isTopo = activeScene === 7;
-	const isTraversalScene = activeScene >= 2;
+	// The topo scenes render the directed DAG (with arrowheads) instead of the
+	// undirected LESSON_GRAPH. isTraversalScene stays true for the shared
+	// colour/order badges, but the frontier overlay never fires (gated to the
+	// frontier scene only).
+	const isTopo = TOPO_SCENES.has(activeScene);
+	const isTraversalScene = activeScene >= SCENE.FRONTIER;
 	const traversalLabel =
-		activeScene === 3 || activeScene === 4
+		activeScene === SCENE.BFS ||
+		activeScene === SCENE.BFS_PROBE ||
+		activeScene === SCENE.BFS_ORDER
 			? 'BFS · queue'
-			: activeScene === 5
+			: activeScene === SCENE.DFS
 				? 'DFS · stack'
-				: activeScene === 6
+				: activeScene === SCENE.ONE_FRONTIER
 					? 'one loop · swap the frontier'
-					: activeScene === 7
+					: isTopo
 						? 'topological order'
 						: null;
 
@@ -279,25 +322,25 @@ const GraphStage = ({ activeScene = 0 }) => {
 	// (the same visit order it numbers on the nodes), spoken instead of frozen into
 	// the figure's one static aria-label.
 	const sceneNarration = (() => {
-		switch (activeScene) {
-			case 0:
-				return `A graph: ${LESSON_GRAPH.nodes.length} vertices joined by ${LESSON_GRAPH.edges.length} edges.`;
-			case 1:
-				return 'The same graph as an adjacency list and an adjacency matrix.';
-			case 2:
-				return `Start at A; its unvisited neighbors ${[...frontier].sort().join(' and ')} form the frontier.`;
-			case 3:
-			case 4:
-				return `Breadth-first from A visits nodes in the order ${BFS_ORDER.join(' → ')}.`;
-			case 5:
-				return `Depth-first from A visits nodes in the order ${DFS_ORDER.join(' → ')}.`;
-			case 6:
-				return 'BFS and DFS are one loop; swapping the frontier (queue vs stack) is the only change.';
-			case 7:
-				return `A directed acyclic graph; a topological order places its nodes as ${TOPO_ORDER.join(' → ')}, so every arrow points forward from ${TOPO_SOURCE}.`;
-			default:
-				return 'Graph concept visualization.';
-		}
+		if (activeScene === 0)
+			return `A graph: ${LESSON_GRAPH.nodes.length} vertices joined by ${LESSON_GRAPH.edges.length} edges.`;
+		if (activeScene === SCENE.REPRESENTATIONS)
+			return 'The same graph as an adjacency list and an adjacency matrix.';
+		if (activeScene === SCENE.FRONTIER)
+			return `Start at A; its unvisited neighbors ${[...frontier].sort().join(' and ')} form the frontier.`;
+		if (BFS_SCENES.has(activeScene) && activeScene !== SCENE.ONE_FRONTIER)
+			return `Breadth-first from A visits nodes in the order ${BFS_ORDER.join(' → ')}.`;
+		if (activeScene === SCENE.DFS)
+			return `Depth-first from A visits nodes in the order ${DFS_ORDER.join(' → ')}.`;
+		if (activeScene === SCENE.ONE_FRONTIER)
+			return 'BFS and DFS are one loop; swapping the frontier (queue vs stack) is the only change.';
+		if (activeScene === SCENE.TOPO_SORT)
+			return `A directed acyclic graph; a topological order places its nodes as ${TOPO_ORDER.join(' → ')}, so every arrow points forward from ${TOPO_SOURCE}.`;
+		if (activeScene === SCENE.TOPO_NEXT)
+			return holdReveal
+				? `Kahn's algorithm has emitted the source ${TOPO_SOURCE}; predict which vertex it emits next.`
+				: `After ${TOPO_SOURCE}, Kahn's algorithm emits ${TOPO_NEXT} next; the full topological order is ${TOPO_ORDER.join(' → ')}.`;
+		return 'Graph concept visualization.';
 	})();
 
 	return (
