@@ -1,12 +1,7 @@
 import { useEffect, useMemo, useRef } from 'react';
 import gsap from 'gsap';
 import { MotionPathPlugin } from 'gsap/MotionPathPlugin';
-import {
-	bellmanFordTrace,
-	dijkstraTrace,
-	formatDist,
-	reconstructPath,
-} from './relaxTrace.js';
+import { SCENES, selectViewForScene } from './scenes.js';
 import { SHARED_GRAPH, SHARED_SOURCE } from './ssspMeta.js';
 import { buildEdges, projectNodes, VIEW_H, VIEW_W } from './graphLayout.js';
 import useReducedMotion from '../../hooks/useReducedMotion.js';
@@ -28,113 +23,15 @@ const SW_OVERSHOOT = 'var(--color-warning)';
 const SW_FRONTIER =
 	'color-mix(in srgb, var(--topic-accent) 55%, var(--color-border-strong))';
 
-// Canonical answers measured once from the generators (shared by every scene).
-const BF = bellmanFordTrace(SHARED_GRAPH, { source: SHARED_SOURCE });
-const FINAL_DIST = BF.dist;
-const FINAL_PRED = BF.pred;
-const DIJ = dijkstraTrace(SHARED_GRAPH, { source: SHARED_SOURCE });
-const PATH_TO_B = reconstructPath(BF.pred, SHARED_SOURCE, 'B'); // [S,C,A,B]
-
+// Node + edge geometry for the SVG. The per-scene view (which dist/pred snapshot
+// and which edges to highlight) is selected by scene id in scenes.js
+// (selectViewForScene), so an inserted/reordered scene always paints its own
+// visual instead of inheriting a stale numeric case.
 const NODES = projectNodes(SHARED_GRAPH.nodes);
 const EDGES = buildEdges(SHARED_GRAPH.edges, NODES);
 
 // Edge equality for the path / relax highlights.
 const edgeKey = e => `${e.from}->${e.to}`;
-const pathEdges = path => {
-	if (!path || path.length < 2) return new Set();
-	const s = new Set();
-	for (let i = 0; i < path.length - 1; i++) s.add(`${path[i]}->${path[i + 1]}`);
-	return s;
-};
-// Predecessor-tree edges (pred[v] -> v).
-const predTreeEdges = pred => {
-	const s = new Set();
-	Object.entries(pred).forEach(([v, u]) => {
-		if (u != null) s.add(`${u}->${v}`);
-	});
-	return s;
-};
-
-// Per-scene emphasis. Each returns the highlight sets + a dist/pred snapshot to
-// render in the table. Distances build up across the three "story" snapshots so
-// the picture matches what the prose claims.
-const SCENE_VIEW = activeScene => {
-	switch (activeScene) {
-		// 0 relax — show the single relax C→A improving dist[A] from 10 to 7.
-		case 0:
-			return {
-				dist: { S: 0, A: 7, B: formatDist(null), C: 3, D: formatDist(null) },
-				pred: { S: null, A: 'C', B: null, C: 'S', D: null },
-				relaxEdge: 'C->A',
-				// dist[A] before this relax: the direct S→A edge = 10. The count
-				// starts here so the estimate is seen to fall to 7, not appear.
-				relaxFrom: 10,
-				caption:
-					'Relax C → A: dist[C] + 4 = 7 < 10, so dist[A] = 7, pred[A] = C',
-			};
-		// 1 optimal substructure — the S→C→A→B path; subpath S→C→A glows.
-		case 1:
-			return {
-				dist: FINAL_DIST,
-				pred: FINAL_PRED,
-				pathSet: pathEdges(PATH_TO_B),
-				subpathSet: pathEdges(['S', 'C', 'A']),
-				caption: 'A shortest S→B path; its S→A prefix is itself shortest',
-			};
-		// 2 triangle inequality — every edge satisfies dist[v] ≤ dist[u] + w.
-		case 2:
-			return {
-				dist: FINAL_DIST,
-				pred: FINAL_PRED,
-				treeSet: predTreeEdges(FINAL_PRED),
-				caption: 'Converged: no edge has dist[u] + w < dist[v]',
-			};
-		// 3 Bellman-Ford — relax ALL edges (every edge lit as "the schedule").
-		case 3:
-			return {
-				dist: FINAL_DIST,
-				pred: FINAL_PRED,
-				allEdges: true,
-				caption: 'Bellman-Ford relaxes every edge, |V|−1 times',
-			};
-		// 4 DAG-SP — relax in topological order; show the order.
-		case 4:
-			return {
-				dist: FINAL_DIST,
-				pred: FINAL_PRED,
-				treeSet: predTreeEdges(FINAL_PRED),
-				order: ['S', 'C', 'A', 'D', 'B'],
-				caption: 'DAG-SP relaxes out-edges in topological order, once',
-			};
-		// 5 Dijkstra — settle order by increasing distance.
-		case 5:
-			return {
-				dist: FINAL_DIST,
-				pred: FINAL_PRED,
-				treeSet: predTreeEdges(FINAL_PRED),
-				settleOrder: ['S', 'C', 'D', 'A', 'B'],
-				caption: 'Dijkstra settles vertices in increasing distance',
-			};
-		// 6 why non-negative — spotlight that the same Relax underlies all three.
-		case 6:
-			return {
-				dist: FINAL_DIST,
-				pred: FINAL_PRED,
-				treeSet: predTreeEdges(FINAL_PRED),
-				caption: 'Same Relax — Dijkstra alone needs non-negative weights',
-			};
-		// 7 predecessor subgraph — the pred tree + reconstructed path to B.
-		case 7:
-		default:
-			return {
-				dist: FINAL_DIST,
-				pred: FINAL_PRED,
-				treeSet: predTreeEdges(FINAL_PRED),
-				pathSet: pathEdges(PATH_TO_B),
-				caption: `pred tree rooted at S · path to B = ${PATH_TO_B.join(' → ')}`,
-			};
-	}
-};
 
 const NODE_R = 6;
 
@@ -146,7 +43,10 @@ const NODE_R = 6;
  * table so the unity is visible.
  */
 const ShortestPathsStage = ({ activeScene = 0 }) => {
-	const view = useMemo(() => SCENE_VIEW(activeScene), [activeScene]);
+	// Derive the scene id from the SCENES array, then pick the view by id, so an
+	// inserted/reordered scene always paints its own visual (see VIEW_FOR_SCENE).
+	const sceneId = SCENES[activeScene]?.id ?? SCENES[0].id;
+	const view = useMemo(() => selectViewForScene(sceneId), [sceneId]);
 	const ids = useMemo(() => SHARED_GRAPH.nodes.map(n => n.id), []);
 	const reducedMotion = useReducedMotion();
 
@@ -347,7 +247,9 @@ const ShortestPathsStage = ({ activeScene = 0 }) => {
 				];
 			// 3 Bellman-Ford: every edge lit as "the schedule".
 			case 3:
-				return [{ swatch: SW_FRONTIER, label: 'every edge relaxed', aria: 'accent' }];
+				return [
+					{ swatch: SW_FRONTIER, label: 'every edge relaxed', aria: 'accent' },
+				];
 			// 2, 4-7: the converged pred tree (rooted at the source).
 			default:
 				return [{ swatch: SW_SETTLED, label: 'pred tree', aria: 'accent' }];

@@ -14,6 +14,7 @@
 import {
 	bellmanFordTrace,
 	dijkstraTrace,
+	formatDist,
 	reconstructPath,
 } from './relaxTrace.js';
 import { SHARED_GRAPH, SHARED_SOURCE } from './ssspMeta.js';
@@ -296,3 +297,138 @@ export const SCENES = [
 		},
 	},
 ];
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Sticky-stage view selection (consumed by ShortestPathsStage).
+//
+// The stage paints one sticky visual per scene. It is keyed by scene id (NOT a
+// numeric index), mirroring StrategiesStage's SCENE_BOARDS and GraphStage's SCENE
+// map: when scenes are inserted or reordered above, the right visual still
+// follows its scene. (The two Dijkstra scenes 'dijkstra-probe' and 'dijkstra-pq'
+// were once inserted after 'dijkstra' without updating a numeric switch in the
+// stage, so the later scenes painted the WRONG sticky visual — e.g. the
+// priority-queue-cost scene showed a path-to-B reconstruction. Keying by id makes
+// that whole off-by-N bug class impossible.) Living here (a pure module) keeps the
+// selection unit-testable without importing the JSX stage.
+
+const FINAL_DIST = BF.dist;
+const FINAL_PRED = BF.pred;
+
+// Edges of the reconstructed path, as a Set of "u->v" keys (the highlight key the
+// stage matches edges against).
+const pathEdges = path => {
+	if (!path || path.length < 2) return new Set();
+	const s = new Set();
+	for (let i = 0; i < path.length - 1; i++) s.add(`${path[i]}->${path[i + 1]}`);
+	return s;
+};
+
+// Predecessor-tree edges (pred[v] -> v).
+const predTreeEdges = pred => {
+	const s = new Set();
+	Object.entries(pred).forEach(([v, u]) => {
+		if (u != null) s.add(`${u}->${v}`);
+	});
+	return s;
+};
+
+// id → view builder. Every scene id above has an explicit entry; each builder
+// returns the highlight sets + a dist/pred snapshot + caption the stage renders.
+// Distances build up across the early "story" snapshots so the picture matches
+// what the prose claims. Builders are lazy so this map sits at module scope.
+const VIEW_FOR_SCENE = {
+	// relax — the single relax C→A improving dist[A] from 10 to 7.
+	relax: () => ({
+		dist: { S: 0, A: 7, B: formatDist(null), C: 3, D: formatDist(null) },
+		pred: { S: null, A: 'C', B: null, C: 'S', D: null },
+		relaxEdge: 'C->A',
+		// dist[A] before this relax: the direct S→A edge = 10. The count starts
+		// here so the estimate is seen to fall to 7, not appear.
+		relaxFrom: 10,
+		caption: 'Relax C → A: dist[C] + 4 = 7 < 10, so dist[A] = 7, pred[A] = C',
+	}),
+	// optimal substructure — the S→C→A→B path; subpath S→C→A glows.
+	'optimal-substructure': () => ({
+		dist: FINAL_DIST,
+		pred: FINAL_PRED,
+		pathSet: pathEdges(PATH_TO_B),
+		subpathSet: pathEdges(['S', 'C', 'A']),
+		caption: 'A shortest S→B path; its S→A prefix is itself shortest',
+	}),
+	// triangle inequality — every edge satisfies dist[v] ≤ dist[u] + w.
+	triangle: () => ({
+		dist: FINAL_DIST,
+		pred: FINAL_PRED,
+		treeSet: predTreeEdges(FINAL_PRED),
+		caption: 'Converged: no edge has dist[u] + w < dist[v]',
+	}),
+	// Bellman-Ford — relax ALL edges (every edge lit as "the schedule").
+	'bellman-ford': () => ({
+		dist: FINAL_DIST,
+		pred: FINAL_PRED,
+		allEdges: true,
+		caption: 'Bellman-Ford relaxes every edge, |V|−1 times',
+	}),
+	// DAG-SP — relax in topological order; show the order.
+	'dag-sp': () => ({
+		dist: FINAL_DIST,
+		pred: FINAL_PRED,
+		treeSet: predTreeEdges(FINAL_PRED),
+		order: ['S', 'C', 'A', 'D', 'B'],
+		caption: 'DAG-SP relaxes out-edges in topological order, once',
+	}),
+	// Dijkstra — settle order by increasing distance.
+	dijkstra: () => ({
+		dist: FINAL_DIST,
+		pred: FINAL_PRED,
+		treeSet: predTreeEdges(FINAL_PRED),
+		settleOrder: ['S', 'C', 'D', 'A', 'B'],
+		caption: 'Dijkstra settles vertices in increasing distance',
+	}),
+	// Dijkstra, trace it — freeze mid-settle. The sticky visual shows the same
+	// increasing-distance settle order the frozen ExtractMin reasons from (the
+	// question itself renders in the prose column via the stepProbe frame).
+	'dijkstra-probe': () => ({
+		dist: FINAL_DIST,
+		pred: FINAL_PRED,
+		treeSet: predTreeEdges(FINAL_PRED),
+		settleOrder: ['S', 'C', 'D', 'A', 'B'],
+		caption: 'Dijkstra mid-run: settle the smallest tentative distance next',
+	}),
+	// Dijkstra, the price of the queue — the running time IS the priority queue's
+	// bill. Same pred tree (same algorithm), but the caption is about queue cost,
+	// not a path reconstruction.
+	'dijkstra-pq': () => ({
+		dist: FINAL_DIST,
+		pred: FINAL_PRED,
+		treeSet: predTreeEdges(FINAL_PRED),
+		caption:
+			'Same settle order — its cost is whatever the priority queue charges',
+	}),
+	// why non-negative — the same Relax underlies all three; only Dijkstra needs
+	// the non-negative-weight assumption.
+	'why-nonneg': () => ({
+		dist: FINAL_DIST,
+		pred: FINAL_PRED,
+		treeSet: predTreeEdges(FINAL_PRED),
+		caption: 'Same Relax — Dijkstra alone needs non-negative weights',
+	}),
+	// predecessor subgraph — the pred tree + reconstructed path to B.
+	'pred-subgraph': () => ({
+		dist: FINAL_DIST,
+		pred: FINAL_PRED,
+		treeSet: predTreeEdges(FINAL_PRED),
+		pathSet: pathEdges(PATH_TO_B),
+		caption: `pred tree rooted at S · path to B = ${PATH_TO_B.join(' → ')}`,
+	}),
+};
+
+// Pure id → view selector. Every scene id has an explicit entry above; an unknown
+// id (only possible if a scene were added without a view) falls back to the
+// pred-subgraph view rather than a numeric default meant for a different scene.
+// Exported (with the map) so stageSceneCoverage.test.js can assert every scene id
+// is mapped and no scene silently inherits a stale catch-all.
+export const selectViewForScene = sceneId =>
+	(VIEW_FOR_SCENE[sceneId] ?? VIEW_FOR_SCENE['pred-subgraph'])();
+
+export { VIEW_FOR_SCENE };
