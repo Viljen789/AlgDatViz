@@ -17,12 +17,23 @@ import {
 	STAGE_HASHES,
 	STAGE_KEYS,
 } from './scenes.js';
+import StateLegend from '../../common/StateLegend/StateLegend';
 import { SceneNarration } from '../../common/PlaybackEngine';
 import styles from './HashMapStage.module.css';
 
 // Flip captures the small-table layout; MotionPath arcs each entry into its new
 // bucket under the larger modulus. Idempotent (mirrors HomePage's pattern).
 gsap.registerPlugin(Flip, MotionPathPlugin);
+
+// Swatch colours mirror what HashMapStage.module.css actually paints. The probed
+// bucket rides the topic accent (hashing hue) as a faint wash; the collision
+// bucket + its colliding cells borrow --color-warning and also gain a solid
+// border, so the clash never reads by hue alone. The gauge fill is the accent
+// until the table overloads, when it flips to --color-warning.
+const SW_PROBED = 'color-mix(in srgb, var(--topic-accent) 10%, transparent)';
+const SW_COLLISION = 'var(--color-warning-wash)';
+const SW_FILL = 'var(--topic-accent)';
+const SW_OVERLOADED = 'var(--color-warning)';
 
 // A larger table the resize scene rehashes into. The exact value is the next
 // prime above 2 × STAGE_CAPACITY, matching the dashboard's resize rule.
@@ -220,6 +231,36 @@ const HashMapStage = ({ activeScene = 0 }) => {
 		});
 	}, [isResize, reducedMotion]);
 
+	// Scene-aware key: only the states this scene actually paints. Hue is never
+	// the sole signal: the collision bucket also carries a solid warning border,
+	// so it reads apart from the accent probe on a colour-blind canvas.
+	const legend = (() => {
+		switch (activeScene) {
+			// 0 hash: just the probed bucket the key lands in.
+			case 0:
+				return [{ swatch: SW_PROBED, label: 'probed bucket', aria: 'accent' }];
+			// 1 collision: the probe plus the bucket a second key clashes into.
+			case 1:
+				return [
+					{ swatch: SW_PROBED, label: 'probed bucket', aria: 'accent' },
+					{ swatch: SW_COLLISION, label: 'collision (bordered)', aria: 'amber' },
+				];
+			// 2 chaining: the clash chains, so only the collision bucket stays lit.
+			case 2:
+				return [
+					{ swatch: SW_COLLISION, label: 'collision (bordered)', aria: 'amber' },
+				];
+			// 3 load / 4 resize: the gauge fill, accent until it overloads.
+			case 3:
+			default:
+				return [
+					overloaded
+						? { swatch: SW_OVERLOADED, label: 'load α > 0.75', aria: 'amber' }
+						: { swatch: SW_FILL, label: 'load α', aria: 'accent' },
+				];
+		}
+	})();
+
 	// Per-scene narration for screen readers — the honest WHY the table paints at
 	// this scene, including the load factor the gauge shows once it appears.
 	const sceneNarration = (() => {
@@ -331,6 +372,8 @@ const HashMapStage = ({ activeScene = 0 }) => {
 						</span>
 					</div>
 				)}
+
+				<StateLegend items={legend} />
 			</div>
 		</>
 	);

@@ -48,6 +48,12 @@
 	}
 }
 
+/* Docked StateLegend — a normal flow child of the column wrap, centred under the
+   active view so it labels the live states without overlapping the figure. */
+.legendDock {
+	align-self: center;
+}
+
 /* ---------- Shared array / cell language ---------- */
 
 .inputRow {

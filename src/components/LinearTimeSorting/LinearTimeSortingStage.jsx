@@ -10,7 +10,21 @@ import {
 	TREE_LABELS,
 } from './scenes.js';
 import { SceneNarration } from '../../common/PlaybackEngine';
+import StateLegend from '../../common/StateLegend/StateLegend';
 import styles from './LinearTimeSortingStage.module.css';
+
+// Swatch colours mirror what LinearTimeSortingStage.module.css actually paints.
+// The comparison node and the followed/active/tied cells all ride --topic-accent
+// at different intensities; comparison nodes are pills while sorted-order leaves
+// are dashed boxes, so the tree pair reads by shape too, not hue alone. The
+// stability badges reuse --color-success (ties kept) and --color-warning (ties
+// reordered), and the active radix digit is the accent ink.
+const SW_COMPARE =
+	'color-mix(in srgb, var(--topic-accent) 40%, var(--surface-1))';
+const SW_LEAF = 'var(--color-border-strong)';
+const SW_ACCENT = 'var(--topic-accent)';
+const SW_KEPT = 'var(--color-success)';
+const SW_REORDERED = 'var(--color-warning)';
 
 // ── Scene 0–1: the comparison decision tree + the leaf-count argument ─────────
 const DecisionTreeView = ({ showBound }) => {
@@ -432,6 +446,41 @@ const LinearTimeSortingStage = ({ activeScene = 0 }) => {
 		'assumptions',
 	][Math.min(activeScene, 6)];
 
+	// Scene-aware key: only the states this scene actually paints. On the tree the
+	// two states differ by shape (pill vs dashed box) as well as by hue, and the
+	// stability badges differ by word + colour, so every entry stays colour-blind
+	// safe. Scene 5 (bucket) paints no live state, so it gets no legend.
+	const legend = (() => {
+		switch (activeScene) {
+			// 0–1 decision tree: a comparison node vs a sorted-order leaf.
+			case 0:
+			case 1:
+				return [
+					{ swatch: SW_COMPARE, label: 'comparison (pill)', aria: 'accent' },
+					{ swatch: SW_LEAF, label: 'sorted order (dashed)', aria: 'hairline' },
+				];
+			// 2 counting: the one followed value, lit through tally and output.
+			case 2:
+				return [{ swatch: SW_ACCENT, label: 'followed value', aria: 'accent' }];
+			// 3 radix: the digit this pass is stable by.
+			case 3:
+				return [{ swatch: SW_ACCENT, label: 'active digit', aria: 'accent' }];
+			// 4 stability: tied keys, plus the kept / reordered outcome badges.
+			case 4:
+				return [
+					{ swatch: SW_ACCENT, label: 'tied keys', aria: 'accent' },
+					{ swatch: SW_KEPT, label: 'ties kept', aria: 'green' },
+					{ swatch: SW_REORDERED, label: 'ties reordered', aria: 'amber' },
+				];
+			// 6 assumptions: the comparison-sort baseline highlighted in accent.
+			case 6:
+				return [{ swatch: SW_ACCENT, label: 'cost vs bound', aria: 'accent' }];
+			// 5 bucket: no live colour state.
+			default:
+				return [];
+		}
+	})();
+
 	// Per-scene narration for screen readers — the honest WHY each view paints on
 	// screen, mirroring the visible per-view caption.
 	const sceneNarration = [
@@ -461,6 +510,13 @@ const LinearTimeSortingStage = ({ activeScene = 0 }) => {
 				<div key={activeScene} className={styles.sceneSlot}>
 					{view}
 				</div>
+				{/* Colour key for the live states this scene paints. A normal flow child
+				    of the column layout, so it reflows under the figure on mobile. */}
+				{legend.length > 0 && (
+					<div className={styles.legendDock}>
+						<StateLegend items={legend} />
+					</div>
+				)}
 			</div>
 		</>
 	);

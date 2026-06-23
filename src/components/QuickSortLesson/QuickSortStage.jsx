@@ -64,13 +64,19 @@ const SELECT_KEEP_RIGHT = SELECT_I > SELECT_PIVOT_INDEX + 1;
 // grid (same SLOT/PAD metrics) — the partition scenes keep their own geometry.
 const SELECT_VIEW_W = PAD_X * 2 + SELECT_N * SLOT;
 
-const QuickSortStage = ({ activeScene = 0 }) => {
+const QuickSortStage = ({ activeScene = 0, holdReveal = false }) => {
 	const reducedMotion = useReducedMotion();
 	const wrapRef = useRef(null);
 
 	// Scenes 0 (partition) and 1 (snap home) animate the partition timeline.
 	// Scene 0 stops just before the final pivot swap; scene 1 plays it to the end.
 	const isPartitionScene = activeScene === 0 || activeScene === 1;
+	// Reveal gate: the partition scene (0) carries a predict-before-reveal check.
+	// While its prediction is pending the template passes holdReveal=true, so the
+	// stage HOLDS the honest pre-partition frame (nothing swapped, pivot marked,
+	// boundary not started) and does not auto-play the sweep that would spoil
+	// which values land on which side. The gate only ever applies to scene 0.
+	const partitionHeld = activeScene === 0 && holdReveal;
 	const isRecurse = activeScene === 2;
 	const isWorstCase = activeScene === 3 || activeScene === 4;
 	const showRecurrence = activeScene === 4;
@@ -86,6 +92,14 @@ const QuickSortStage = ({ activeScene = 0 }) => {
 			return undefined;
 		}
 		const last = PARTITION_FRAMES.length - 1;
+		if (partitionHeld) {
+			// Prediction pending: park on frame 0 (the honest pre-partition state:
+			// pivot marked, nothing swapped yet) and do not start the sweep. The
+			// instant the student answers, holdReveal flips false and this effect
+			// re-runs to play the real partition from the top.
+			setFrameIdx(0);
+			return undefined;
+		}
 		if (reducedMotion) {
 			// Settle on the finished partition — the pivot already home.
 			setFrameIdx(last);
@@ -100,7 +114,7 @@ const QuickSortStage = ({ activeScene = 0 }) => {
 			setFrameIdx(Math.min(idx, last));
 		}, 950);
 		return () => window.clearInterval(id);
-	}, [isPartitionScene, reducedMotion]);
+	}, [isPartitionScene, reducedMotion, partitionHeld]);
 
 	const frame = PARTITION_FRAMES[frameIdx] || PARTITION_FRAMES[0];
 

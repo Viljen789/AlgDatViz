@@ -229,6 +229,18 @@
 	color: var(--topic-accent);
 }
 
+/* Docked StateLegend — sits just above the plain-language caption on desktop,
+   pinned bottom-centre so it never collides with the bottom-right recurrence
+   overlay (scene 4). It mirrors the caption's responsive behaviour: static and
+   flowing under the figure on mobile (see the 720px block below). */
+.legendDock {
+	position: absolute;
+	left: 50%;
+	bottom: clamp(40px, 6vw, 56px);
+	transform: translateX(-50%);
+	pointer-events: none;
+}
+
 /* Docked "what just happened" caption — one plain-language line per scene, so a
    sighted student can always read the current step. Pinned to the bottom of the
    stage so its placement is consistent across every scene; reserves a stable
@@ -285,8 +297,15 @@
 		text-align: right;
 		align-items: flex-end;
 	}
-	/* In the stacked mobile layout the caption flows under the figure instead of
-	   floating, so it never overlaps the stacked tree/recurrence. */
+	/* In the stacked mobile layout the legend and caption flow under the figure
+	   instead of floating, so they never overlap the stacked tree/recurrence. */
+	.legendDock {
+		position: static;
+		left: auto;
+		bottom: auto;
+		transform: none;
+		align-self: center;
+	}
 	.caption {
 		position: static;
 		left: auto;

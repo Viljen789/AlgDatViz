@@ -3,8 +3,19 @@ import gsap from 'gsap';
 import { ChevronLeft, ChevronRight, Pause, Play } from 'lucide-react';
 import useReducedMotion from '../../hooks/useReducedMotion.js';
 import { SceneNarration } from '../../common/PlaybackEngine';
+import StateLegend from '../../common/StateLegend/StateLegend';
 import { STAGE_VALUES } from './scenes.js';
 import styles from './MergeSortStage.module.css';
+
+// Swatch colours mirror what MergeSortStage.module.css actually paints: the
+// compare highlight rides the shared --state-active blue, the just-copied token
+// is the --state-flight orange, sorted/placed bars and tokens are --state-done
+// green, and the follow-me element keeps a --topic-accent outline (a ring, not a
+// fill) so the one tracked piece never reads by hue alone.
+const SW_COMPARE = 'var(--state-active)';
+const SW_FLIGHT = 'var(--state-flight)';
+const SW_DONE = 'var(--state-done)';
+const SW_FOLLOW = 'var(--topic-accent)';
 
 // Stage geometry. Bars sit in a fixed 8-slot grid so vertical alignment across
 // recursion levels is preserved. Width and height of the SVG viewBox are
@@ -333,6 +344,40 @@ const MergeSortStage = ({
 	}, [leafPulse, reducedMotion]);
 
 	const isClickableScene = interactionMode === 'pair' && activeScene === 0;
+
+	// Scene-aware key: only the states this scene actually paints. The follow-me
+	// element is shape-differentiated (an accent outline, not a fill) so it never
+	// collides by hue with the green/blue/orange state fills on a colour-blind
+	// canvas. Scene 0 (the untouched array) has no live state, so it gets none.
+	const legend = (() => {
+		switch (activeScene) {
+			// 1 split: every bar is still default; only the tracked piece is marked.
+			case 1:
+				return [
+					{ swatch: SW_FOLLOW, label: 'tracked piece (outline)', aria: 'accent' },
+				];
+			// 2 base case: single-element leaves are trivially sorted.
+			case 2:
+				return [
+					{ swatch: SW_DONE, label: 'sorted leaf', aria: 'green' },
+					{ swatch: SW_FOLLOW, label: 'tracked piece (outline)', aria: 'accent' },
+				];
+			// 3 combine: the compare / just-copied / placed states of the merge demo.
+			case 3:
+				return [
+					{ swatch: SW_COMPARE, label: 'comparing', aria: 'blue' },
+					{ swatch: SW_FLIGHT, label: 'just copied', aria: 'orange' },
+					{ swatch: SW_DONE, label: 'placed', aria: 'green' },
+					{ swatch: SW_FOLLOW, label: 'tracked piece (outline)', aria: 'accent' },
+				];
+			// 4 n log n: the whole tree is sorted as the merges finish.
+			case 4:
+				return [{ swatch: SW_DONE, label: 'sorted', aria: 'green' }];
+			// 0 unsorted: nothing is encoded yet.
+			default:
+				return [];
+		}
+	})();
 
 	// Sorting propagates from the leaves upward as the merge plays out.
 	// Index = level depth (0 = root, 3 = leaves).
@@ -699,6 +744,14 @@ const MergeSortStage = ({
 						<span className={styles.recurrenceLabel}>= O(n log n)</span>
 					</div>
 				</div>
+
+				{/* Colour key for the live states this scene paints, docked just above
+				    the caption on desktop and reflowing under the figure on mobile. */}
+				{legend.length > 0 && (
+					<div className={styles.legendDock}>
+						<StateLegend items={legend} />
+					</div>
+				)}
 
 				{/* Visible "what just happened" caption, docked to the stage for EVERY
 				    scene, so a sighted student can always read the CURRENT step in

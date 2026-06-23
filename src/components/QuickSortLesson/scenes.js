@@ -51,26 +51,26 @@ export const SCENES = [
 		title: 'Quicksort makes progress with one move: partition.',
 		body: 'Pick a pivot — here, the last value, 51. Sweep the rest left to right with two pointers. A boundary i trails behind, marking everything smaller than the pivot; a scanner j walks ahead. When j finds a value below the pivot, it gets pulled inside the boundary with a swap.',
 		check: {
-			kind: 'choice',
+			kind: 'predict',
+			// Opt-in reveal gate: the stage holds the honest pre-partition frame (no
+			// auto-play) until this prediction is answered, so the sweep cannot spoil
+			// which values land on which side. An inert extra field — graders never
+			// read it (same pattern as the merge lesson's predict gate), so grading is
+			// untouched. The answer is DERIVED from the real first partition of
+			// STAGE_VALUES (see the ground-truth note above): every value below 51
+			// goes left, so 82 is the ONLY value that ends up on the pivot's right.
+			revealGate: true,
 			prompt:
-				'After one full partition pass, what is true of the pivot value 51?',
-			options: [
-				'It sits in its final sorted position and never moves again.',
-				'It is now the smallest value in the array.',
-				'It still has to be sorted on the next pass.',
-				'It moved to the exact middle index of the array.',
-			],
-			answer: 'It sits in its final sorted position and never moves again.',
+				'Before the sweep runs: the pivot is the last value, 51. Which single value ends up to the RIGHT of the pivot after this one partition?',
+			options: [82, 43, 3, 38],
+			answer: 82,
 			misconceptions: {
-				'It is now the smallest value in the array.':
-					'Partition does not rank the pivot — it only splits the rest into "below" and "not below". 51 ends up wherever that boundary falls, with smaller values left and larger values right, not as the minimum.',
-				'It still has to be sorted on the next pass.':
-					'The whole point of partition is that the pivot is DONE. Once values are split around it, its index is correct for the fully sorted array, so recursion never touches it again — it only sorts the two sides.',
-				'It moved to the exact middle index of the array.':
-					'The pivot lands wherever the count of smaller values puts it, not at the middle. With these values 51 lands at index 6, because six values are below it — an off-centre split, which is exactly how quicksort can go lopsided.',
+				43: 'Partition does not care about position, only "below the pivot or not". 43 < 51, so 43 belongs on the LEFT. The only value that goes right is one that is at-or-above the pivot.',
+				3: '3 is far below 51, so it gets pulled inside the boundary early and ends up on the LEFT. Small values never land on the right of the pivot, since that side is for values not below it.',
+				38: '38 < 51, so it stays to the LEFT of the pivot. Being near the front of the array does not matter; partition splits purely by value, and everything below 51 goes left.',
 			},
 			explanation:
-				'Partition places the pivot at its FINAL index in one linear pass: every value below it is moved left, every value at-or-above it stays right, and the pivot is swapped into the gap between them. That index never changes again — it is the one element each partition fully sorts. Everything else quicksort does is recursion on the two sides.',
+				'Partition splits the rest into "below the pivot" and "not below". Of these eight values, only 82 is at-or-above 51, so 82 is the single value on the pivot’s right; the other six (38, 27, 43, 3, 9, 10) are all smaller and land on its left. The pivot then drops into the gap between the two sides, index 6 here, its final sorted slot. Watch the sweep below confirm exactly this.',
 		},
 	},
 	{

@@ -6,8 +6,21 @@ import {
 	satisfyingAssignmentToIndependentSet,
 	verify3SAT,
 } from './certificates.js';
+import StateLegend from '../../common/StateLegend/StateLegend';
 import { SceneNarration } from '../../common/PlaybackEngine';
 import styles from './NpCompletenessStage.module.css';
+
+// Swatch colours mirror what NpCompletenessStage.module.css actually paints. The
+// focused class ring, the chosen reduction literals, the NP-complete roster and
+// the reduce-into target all ride the topic accent (NP-completeness hue); the
+// verify board grades clauses with the shared --color-success / --color-error
+// pair, which also carry a check / cross icon so they never read by hue alone;
+// the solve-side source borrows --color-info.
+const SW_ACCENT = 'var(--topic-accent)';
+const SW_NPC_WASH = 'var(--topic-npc-wash)';
+const SW_INFO = 'var(--color-info-wash)';
+const SW_SAT = 'var(--color-success)';
+const SW_UNSAT = 'var(--color-error)';
 
 // The synchronized concept stage for NP-completeness. It reacts to the active
 // scrolly scene *by id* and switches between conceptual boards:
@@ -382,11 +395,41 @@ const SCENE_NARRATION = {
 		'3-SAT reduces to Independent-Set: one true literal per clause gives a size-k independent set.',
 };
 
+// Scene-aware key: only the states the active board actually paints. Hue is
+// never the sole signal: the verify board's pass / fail rows also carry a check
+// / cross icon, so they read apart on a colour-blind canvas. Several scenes share
+// the landscape board but light a different ring, so the legend is keyed by id.
+const SCENE_LEGEND = {
+	'the-line': [{ swatch: SW_ACCENT, label: 'highlighted class', aria: 'accent' }],
+	'np-is-verify': [
+		{ swatch: SW_ACCENT, label: 'highlighted class', aria: 'accent' },
+	],
+	'hard-vs-complete': [
+		{ swatch: SW_ACCENT, label: 'highlighted class', aria: 'accent' },
+	],
+	'verify-it': [
+		{ swatch: SW_SAT, label: 'satisfied (check)', aria: 'green' },
+		{ swatch: SW_UNSAT, label: 'unsatisfied (cross)', aria: 'red' },
+	],
+	'the-roster': [{ swatch: SW_NPC_WASH, label: 'np-complete', aria: 'accent' }],
+	'reduction-tool': [
+		{ swatch: SW_INFO, label: 'problem to solve', aria: 'cyan' },
+		{ swatch: SW_NPC_WASH, label: 'solver you have', aria: 'accent' },
+	],
+	'wrong-direction': [
+		{ swatch: SW_NPC_WASH, label: 'prove this hard', aria: 'accent' },
+	],
+	'worked-reduction': [
+		{ swatch: SW_ACCENT, label: 'chosen literal', aria: 'accent' },
+	],
+};
+
 const NpCompletenessStage = ({ activeScene = 0 }) => {
 	const sceneId = SCENES[activeScene]?.id ?? SCENES[0].id;
 	const board = SCENE_BOARDS[sceneId] ?? 'landscape';
 	const meta = BOARD_META[board];
 	const narration = SCENE_NARRATION[sceneId] ?? meta.label;
+	const legend = SCENE_LEGEND[sceneId] ?? [];
 
 	return (
 		<>
@@ -404,6 +447,8 @@ const NpCompletenessStage = ({ activeScene = 0 }) => {
 				{board === 'roster' && <RosterBoard />}
 				{board === 'direction' && <DirectionBoard sceneId={sceneId} />}
 				{board === 'reduction' && <ReductionBoard />}
+
+				<StateLegend items={legend} />
 
 				<div className={styles.notation} aria-hidden="true">
 					{meta.notation}

@@ -60,7 +60,14 @@ const QuickSortLesson = () => {
 	}, [markVisited]);
 
 	const renderStage = useCallback(
-		activeScene => <QuickSortStage activeScene={activeScene} />,
+		// The second arg is the template's opt-in reveal gate: revealHeld is true
+		// while the partition scene's predict check is still unanswered, so the stage
+		// holds its honest pre-partition frame instead of auto-playing the sweep (and
+		// spoiling the prediction). Defaults keep it safe if a caller passes only the
+		// scene. Mirrors MergeSortLesson.
+		(activeScene, { revealHeld = false } = {}) => (
+			<QuickSortStage activeScene={activeScene} holdReveal={revealHeld} />
+		),
 		[]
 	);
 
