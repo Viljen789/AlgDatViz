@@ -178,6 +178,18 @@
 	transition: transform var(--duration-step) var(--ease-quiet);
 }
 
+/* ---------- State legend ---------- */
+
+/* The docked StateLegend sits in normal flow within the stage's flex column (the
+   .wrap is a centred column, unlike the merge stage's absolutely-pinned caption),
+   so it simply centres under the figure and above the caption. pointer-events off
+   because it is a passive key, never a target. */
+.legendDock {
+	display: flex;
+	justify-content: center;
+	pointer-events: none;
+}
+
 /* ---------- Caption ---------- */
 
 .caption {

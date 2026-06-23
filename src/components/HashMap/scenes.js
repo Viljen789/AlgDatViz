@@ -58,10 +58,26 @@ export const SCENES = [
 		title: 'A key becomes a number, then an address.',
 		body: `Hashing folds every character of "${FOCUS_KEY}" into one integer, then squeezes it into the table with mod capacity. Same key in, same bucket out — every time.`,
 		check: {
-			kind: 'numeric',
-			prompt: `The table has ${STAGE_CAPACITY} buckets. hash("${FOCUS_KEY}") = ${FOCUS.rawHash}. Compute the bucket it lands in (0–${STAGE_CAPACITY - 1}).`,
+			kind: 'predict',
+			// Opt-in reveal gate: scene 0's stage normally drops "cat" straight into
+			// its bucket, spotlights that slot, and the screen-reader narration even
+			// states the index — all of which spoil this prediction. So while the
+			// gate is HELD the stage parks on an honest pre-drop frame (the key hovers
+			// above an unmarked table, no spotlight, neutral narration) until the
+			// student commits. `revealGate` is an inert marker the graders never read
+			// (same pattern as the merge/quicksort predict gates); grading is
+			// untouched. The answer is DERIVED from computeHash(FOCUS_KEY): it is the
+			// same FOCUS.index the stage uses to place the key, so the key can never
+			// drift from the bucket the canvas actually fills (see lessonPredict.test).
+			revealGate: true,
+			prompt: `Before the key drops: the table has ${STAGE_CAPACITY} buckets and hash("${FOCUS_KEY}") = ${FOCUS.rawHash}. Predict which bucket (0–${STAGE_CAPACITY - 1}) "${FOCUS_KEY}" lands in.`,
+			options: [2, FOCUS.index, 4, 6],
 			answer: FOCUS.index,
-			placeholder: `0–${STAGE_CAPACITY - 1}`,
+			misconceptions: {
+				2: `That is the last digit of the hash (9 % ${STAGE_CAPACITY} = 2), not the whole number reduced. Compression uses the entire integer: ${FOCUS.rawHash} % ${STAGE_CAPACITY}, not just its final digit.`,
+				4: `Close, but this is off by one. Buckets are 0-based, so the slots run 0 through ${STAGE_CAPACITY - 1}; ${FOCUS.rawHash} % ${STAGE_CAPACITY} = ${FOCUS.index} exactly — there is no +1 after the modulo.`,
+				6: `That looks like summing the digits first (3+0+6+7+9+9 = 34, 34 % ${STAGE_CAPACITY} = 6). The hash is reduced as one number, not digit by digit: ${FOCUS.rawHash} % ${STAGE_CAPACITY} = ${FOCUS.index}.`,
+			},
 			explanation: `${FOCUS.rawHash} % ${STAGE_CAPACITY} = ${FOCUS.index}. The modulo is the "compression" step: it maps any hash, however large, onto one of the ${STAGE_CAPACITY} real slots. Change the capacity and the same key can land somewhere else — which is exactly why resizing forces a rehash.`,
 		},
 	},
@@ -97,10 +113,8 @@ export const SCENES = [
 			options: ['1', '2', `${STAGE_CAPACITY}`, 'All non-empty'],
 			answer: '1',
 			misconceptions: {
-				'2':
-					'Two is the chain length in the colliding bucket, not the number of buckets scanned. Hashing jumps to one bucket; walking its chain is comparing keys inside that single bucket, not scanning a second bucket.',
-				'7':
-					'Scanning all 7 buckets is the linear-search picture a hash table avoids. The hash gives the bucket directly, so the other buckets are never visited.',
+				2: 'Two is the chain length in the colliding bucket, not the number of buckets scanned. Hashing jumps to one bucket; walking its chain is comparing keys inside that single bucket, not scanning a second bucket.',
+				7: 'Scanning all 7 buckets is the linear-search picture a hash table avoids. The hash gives the bucket directly, so the other buckets are never visited.',
 				'All non-empty':
 					'A lookup does not survey every occupied bucket. The hash selects exactly one bucket up front, so only that chain is touched regardless of how many other buckets hold entries.',
 			},

@@ -51,15 +51,13 @@ export const SCENES = [
 		body: 'A problem is in NP if every YES-instance has a certificate — a short proposed solution — that a verifier can check in polynomial time. Is this Boolean formula satisfiable? Hand me a truth assignment and I confirm it in one pass. Finding the assignment may need exponential search; checking one is cheap. NP is the class where checking is easy even when finding is (apparently) hard.',
 		check: {
 			kind: 'choice',
-			prompt:
-				'Which property puts a decision problem in NP?',
+			prompt: 'Which property puts a decision problem in NP?',
 			options: [
 				'Every yes-instance has a polynomial-time-verifiable certificate',
 				'It can be solved by brute force',
 				'It is harder than every problem in P',
 			],
-			answer:
-				'Every yes-instance has a polynomial-time-verifiable certificate',
+			answer: 'Every yes-instance has a polynomial-time-verifiable certificate',
 			misconceptions: {
 				'It can be solved by brute force':
 					'Nearly every problem yields to brute force given enough time, so that says nothing special. NP is about CHECKING a certificate in polynomial time, not about whether an exponential search eventually finds one.',
@@ -74,17 +72,31 @@ export const SCENES = [
 		id: 'verify-it',
 		eyebrow: 'Make it tangible',
 		title: 'Check a certificate yourself — in one linear pass.',
-		body: 'Take φ = (x₁ ∨ ¬x₂ ∨ x₃) ∧ (¬x₁ ∨ x₂ ∨ x₃) and the proposed assignment x₁ = true, x₂ = false, x₃ = false. To verify, walk the clauses once and ask whether each has a satisfied literal. No search, no backtracking — just a single scan. That linear check is what "in NP" buys you.',
-		// numeric: graded against the pure verify3SAT. For this φ and assignment,
-		// clause 0: x₁=T -> satisfied; clause 1: ¬x₁=F, x₂=F, x₃=F -> NOT satisfied.
-		// So exactly 1 of the 2 clauses is satisfied (and the certificate FAILS).
+		body: 'Take φ = (x₁ ∨ ¬x₂ ∨ x₃) ∧ (¬x₁ ∨ x₂ ∨ x₃) and the proposed certificate x₁ = true, x₂ = false, x₃ = false. To verify, walk the clauses once and ask whether each has a satisfied literal — the AND holds only if every clause does. No search, no backtracking, just a single scan. Commit to the verdict before the board scans it for you.',
+		// predict (choice-mode), revealGate: the stage's VerifyBoard auto-paints the
+		// per-clause check/cross verdict the instant this scene is active, so without
+		// a gate it would spoil the answer. While the prediction is pending the board
+		// holds an honest pre-scan frame (certificate shown, clauses not yet judged).
+		//
+		// The answer is DERIVED from the pure verify3SAT — the SAME verifier the board
+		// (NpCompletenessStage's VerifyBoard) animates. For this φ and certificate:
+		// clause 0 (x₁ ∨ ¬x₂ ∨ x₃) -> x₁=T satisfies; clause 1 (¬x₁ ∨ x₂ ∨ x₃) ->
+		// ¬x₁=F, x₂=F, x₃=F, nothing satisfied. One clause fails, so the AND fails and
+		// the verifier REJECTS. lessonPredict.test.js re-derives answer from verify3SAT.
 		check: {
-			kind: 'numeric',
+			kind: 'predict',
+			revealGate: true,
 			prompt:
-				'With x₁ = true, x₂ = false, x₃ = false, how many of the 2 clauses are satisfied?',
-			answer: 1,
+				'Before the board scans it: does the verifier ACCEPT this certificate (φ is satisfied) or REJECT it?',
+			options: ['Accepts', 'Rejects'],
+			// DERIVED: verify3SAT(DEMO_FORMULA, {x1:true,x2:false,x3:false}).ok === false.
+			answer: 'Rejects',
+			misconceptions: {
+				Accepts:
+					'The first clause does pass on x₁ = true, which is tempting — but φ is an AND of clauses, so the verifier accepts only if EVERY clause holds. Clause 2 (¬x₁ ∨ x₂ ∨ x₃) has ¬x₁ = false, x₂ = false, x₃ = false: no true literal. One failing clause sinks the whole certificate, so the verifier rejects.',
+			},
 			explanation:
-				'Clause 1 (x₁ ∨ ¬x₂ ∨ x₃) is satisfied by x₁ = true. Clause 2 (¬x₁ ∨ x₂ ∨ x₃) has ¬x₁ = false, x₂ = false, x₃ = false — none satisfied. So 1 of 2 clauses holds: the verifier rejects this certificate. Crucially, you reached that verdict in a single linear pass — that is verification in polynomial time.',
+				'Clause 1 (x₁ ∨ ¬x₂ ∨ x₃) is satisfied by x₁ = true, but clause 2 (¬x₁ ∨ x₂ ∨ x₃) has no true literal, and φ is the AND of its clauses — so the verifier REJECTS this certificate. The point is not the verdict but the cost of reaching it: one linear pass over the clauses, no search. That is verification in polynomial time, which is exactly what "in NP" buys you.',
 		},
 	},
 	{
@@ -95,11 +107,7 @@ export const SCENES = [
 		check: {
 			kind: 'choice',
 			prompt: 'A problem is NP-complete exactly when it is…',
-			options: [
-				'in NP and NP-hard',
-				'NP-hard but not in NP',
-				'in P and in NP',
-			],
+			options: ['in NP and NP-hard', 'NP-hard but not in NP', 'in P and in NP'],
 			answer: 'in NP and NP-hard',
 			misconceptions: {
 				'NP-hard but not in NP':

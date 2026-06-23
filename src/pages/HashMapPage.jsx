@@ -91,7 +91,14 @@ const HashMapPage = () => {
 	}, []);
 
 	const renderStage = useCallback(
-		activeScene => <HashMapStage activeScene={activeScene} />,
+		// The second arg is the template's opt-in reveal gate: revealHeld is true
+		// while scene 0's predict-the-bucket check is still unanswered, so the stage
+		// holds its honest pre-drop frame (the key hovers, no bucket spotlighted)
+		// instead of dropping "cat" into its slot and spoiling the prediction.
+		// Defaults keep it safe if a caller passes only the scene (the other lessons).
+		(activeScene, { revealHeld = false } = {}) => (
+			<HashMapStage activeScene={activeScene} holdReveal={revealHeld} />
+		),
 		[]
 	);
 

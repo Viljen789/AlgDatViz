@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { ArrowRight, Check, Search, X } from 'lucide-react';
+import { ArrowRight, Check, HelpCircle, Search, X } from 'lucide-react';
 import { SCENES } from './scenes.js';
 import {
 	reduce3SatToIndependentSet,
@@ -52,8 +52,9 @@ const DEMO_FORMULA = {
 const clauseText = clause =>
 	clause.map(l => `${l.negated ? '¬' : ''}${l.var}`).join(' ∨ ');
 
-// The assignment shown in the 'verify-it' scene (matches the scene's numeric
-// check). Hoisted so it is a stable reference for the verifier memo.
+// The certificate shown in the 'verify-it' scene (the same assignment the scene's
+// predict-before-reveal check derives its verdict from). Hoisted so it is a stable
+// reference for the verifier memo.
 const VERIFY_ASSIGNMENT = { x1: true, x2: false, x3: false };
 
 // ── Landscape: nested complexity-class map ───────────────────────────────────
@@ -138,12 +139,19 @@ const LandscapeBoard = ({ sceneId }) => {
 
 // ── Verify: a 3-SAT certificate checked clause by clause ─────────────────────
 
-const VerifyBoard = () => {
+const VerifyBoard = ({ holdReveal = false }) => {
 	const assignment = VERIFY_ASSIGNMENT;
 	const result = useMemo(
 		() => verify3SAT(DEMO_FORMULA, assignment),
 		[assignment]
 	);
+	// Reveal gate: the verify-it scene carries a predict-before-reveal check
+	// ("does the verifier accept or reject?"). While that prediction is pending,
+	// the template passes holdReveal=true and we HOLD an honest pre-scan frame —
+	// the certificate is shown, but no clause is judged yet and the verdict line
+	// is replaced by a "scan pending" prompt — so the board never spoils the very
+	// answer the student is committing to. The instant they answer, holdReveal
+	// flips false and the real clause-by-clause scan paints in.
 	return (
 		<div className={styles.verifyBoard}>
 			<div className={styles.assignRow} aria-label="Proposed assignment">
@@ -161,11 +169,17 @@ const VerifyBoard = () => {
 						<li
 							key={i}
 							className={`${styles.clause} ${
-								sat ? styles.clauseSat : styles.clauseUnsat
+								holdReveal
+									? styles.clausePending
+									: sat
+										? styles.clauseSat
+										: styles.clauseUnsat
 							}`}
 						>
 							<span className={styles.clauseIcon} aria-hidden="true">
-								{sat ? (
+								{holdReveal ? (
+									<HelpCircle size={14} strokeWidth={2.5} />
+								) : sat ? (
 									<Check size={14} strokeWidth={2.5} />
 								) : (
 									<X size={14} strokeWidth={2.5} />
@@ -173,21 +187,33 @@ const VerifyBoard = () => {
 							</span>
 							<code className={styles.clauseCode}>({clauseText(clause)})</code>
 							<span className={styles.clauseVerdict}>
-								{sat ? 'satisfied' : 'no true literal'}
+								{holdReveal
+									? 'scan to judge'
+									: sat
+										? 'satisfied'
+										: 'no true literal'}
 							</span>
 						</li>
 					);
 				})}
 			</ul>
-			<p
-				className={`${styles.caption} ${
-					result.ok ? styles.captionGood : styles.captionBad
-				}`}
-			>
-				<Search size={13} strokeWidth={2} aria-hidden="true" />
-				{result.satisfiedClauses}/{result.totalClauses} clauses — verifier{' '}
-				{result.ok ? 'accepts' : 'rejects'}, in one linear pass
-			</p>
+			{holdReveal ? (
+				<p className={styles.caption}>
+					<Search size={13} strokeWidth={2} aria-hidden="true" />
+					Predict the verdict, then the scan judges each clause in one linear
+					pass.
+				</p>
+			) : (
+				<p
+					className={`${styles.caption} ${
+						result.ok ? styles.captionGood : styles.captionBad
+					}`}
+				>
+					<Search size={13} strokeWidth={2} aria-hidden="true" />
+					{result.satisfiedClauses}/{result.totalClauses} clauses — verifier{' '}
+					{result.ok ? 'accepts' : 'rejects'}, in one linear pass
+				</p>
+			)}
 		</div>
 	);
 };
@@ -400,7 +426,9 @@ const SCENE_NARRATION = {
 // / cross icon, so they read apart on a colour-blind canvas. Several scenes share
 // the landscape board but light a different ring, so the legend is keyed by id.
 const SCENE_LEGEND = {
-	'the-line': [{ swatch: SW_ACCENT, label: 'highlighted class', aria: 'accent' }],
+	'the-line': [
+		{ swatch: SW_ACCENT, label: 'highlighted class', aria: 'accent' },
+	],
 	'np-is-verify': [
 		{ swatch: SW_ACCENT, label: 'highlighted class', aria: 'accent' },
 	],
@@ -424,11 +452,17 @@ const SCENE_LEGEND = {
 	],
 };
 
-const NpCompletenessStage = ({ activeScene = 0 }) => {
+const NpCompletenessStage = ({ activeScene = 0, holdReveal = false }) => {
 	const sceneId = SCENES[activeScene]?.id ?? SCENES[0].id;
 	const board = SCENE_BOARDS[sceneId] ?? 'landscape';
 	const meta = BOARD_META[board];
-	const narration = SCENE_NARRATION[sceneId] ?? meta.label;
+	// The reveal gate only ever applies to the verify-it scene's predict check.
+	const verifyHeld = sceneId === 'verify-it' && holdReveal;
+	// While the verdict is held, narrate the honest pre-scan state for screen
+	// readers instead of announcing accept/reject (which would spoil the predict).
+	const narration = verifyHeld
+		? 'A 3-SAT certificate is shown but not yet judged; predict whether the verifier accepts or rejects it before the clause-by-clause scan.'
+		: (SCENE_NARRATION[sceneId] ?? meta.label);
 	const legend = SCENE_LEGEND[sceneId] ?? [];
 
 	return (
@@ -443,7 +477,7 @@ const NpCompletenessStage = ({ activeScene = 0 }) => {
 				aria-label={meta.label}
 			>
 				{board === 'landscape' && <LandscapeBoard sceneId={sceneId} />}
-				{board === 'verify' && <VerifyBoard />}
+				{board === 'verify' && <VerifyBoard holdReveal={verifyHeld} />}
 				{board === 'roster' && <RosterBoard />}
 				{board === 'direction' && <DirectionBoard sceneId={sceneId} />}
 				{board === 'reduction' && <ReductionBoard />}

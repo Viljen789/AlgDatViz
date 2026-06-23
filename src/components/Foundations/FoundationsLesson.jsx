@@ -1,7 +1,9 @@
 import { useCallback, useMemo, useState } from 'react';
 import { TOPIC_BY_ID } from '../../data/curriculum.js';
 import useProgress from '../../hooks/useProgress.js';
-import TopicTemplate, { checkAnswer } from '../../common/TopicTemplate/index.js';
+import TopicTemplate, {
+	checkAnswer,
+} from '../../common/TopicTemplate/index.js';
 import FoundationsStage from './FoundationsStage.jsx';
 import FoundationsPlayground from './FoundationsPlayground.jsx';
 import { SCENES } from './scenes.js';
@@ -38,7 +40,14 @@ const FoundationsLesson = () => {
 	}, []);
 
 	const renderStage = useCallback(
-		activeScene => <FoundationsStage activeScene={activeScene} />,
+		// The second arg is the template's opt-in reveal gate: revealHeld is true
+		// while the race scene's predict check is still unanswered, so the stage
+		// holds its honest bare-axes frame instead of plotting the curves (and
+		// spoiling which class wins). Defaults keep it safe if a caller passes
+		// only the scene — the other 14 lessons ignore the 2nd arg.
+		(activeScene, { revealHeld = false } = {}) => (
+			<FoundationsStage activeScene={activeScene} holdReveal={revealHeld} />
+		),
 		[]
 	);
 

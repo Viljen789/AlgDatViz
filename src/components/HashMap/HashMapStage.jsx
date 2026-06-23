@@ -66,15 +66,25 @@ const buildBuckets = (keys, capacity) => {
  * All motion is CSS-driven so prefers-reduced-motion (handled in the stylesheet)
  * can calm it. The stage reads only `activeScene`.
  */
-const HashMapStage = ({ activeScene = 0 }) => {
+const HashMapStage = ({ activeScene = 0, holdReveal = false }) => {
 	const focus = useMemo(() => STAGE_HASHES.find(h => h.key === FOCUS_KEY), []);
 
 	const isResize = activeScene >= 4;
 	const capacity = isResize ? RESIZE_CAPACITY : STAGE_CAPACITY;
 
+	// The reveal gate only applies to scene 0's "predict the bucket" check: while
+	// HELD the destination must not be shown. So the key has NOT dropped yet — it
+	// hovers above the table, no bucket holds it, nothing is spotlighted, and the
+	// narration stays neutral. The honest pre-drop frame, parked until the student
+	// commits to a prediction.
+	const hashHeld = activeScene === 0 && holdReveal;
+
 	// Which keys are present at this scene. The story adds keys one beat at a
-	// time so the table builds up rather than appearing all at once.
+	// time so the table builds up rather than appearing all at once. While the
+	// scene-0 gate is held, NO key is placed yet — the table sits empty and the
+	// focus key floats above it, unplaced.
 	const visibleKeys = useMemo(() => {
+		if (hashHeld) return [];
 		if (activeScene <= 0) return [FOCUS_KEY];
 		if (activeScene === 1) {
 			// Focus key plus the colliding pair so the clash is visible.
@@ -82,7 +92,7 @@ const HashMapStage = ({ activeScene = 0 }) => {
 			return STAGE_KEYS.filter(k => set.has(k));
 		}
 		return STAGE_KEYS;
-	}, [activeScene]);
+	}, [activeScene, hashHeld]);
 
 	const buckets = useMemo(
 		() => buildBuckets(visibleKeys, capacity),
@@ -98,9 +108,10 @@ const HashMapStage = ({ activeScene = 0 }) => {
 	const collisionActive = activeScene === 1 || activeScene === 2;
 
 	// The bucket the focus / collision keys live in for the current capacity.
-	const spotlightBucket = isResize
-		? null
-		: computeIndex(focus.rawHash, STAGE_CAPACITY);
+	// While the scene-0 gate is held, the destination must stay hidden, so no
+	// bucket is spotlighted — revealing it would answer the prediction.
+	const spotlightBucket =
+		isResize || hashHeld ? null : computeIndex(focus.rawHash, STAGE_CAPACITY);
 
 	const reducedMotion = useReducedMotion();
 	const tableRef = useRef(null);
@@ -243,12 +254,20 @@ const HashMapStage = ({ activeScene = 0 }) => {
 			case 1:
 				return [
 					{ swatch: SW_PROBED, label: 'probed bucket', aria: 'accent' },
-					{ swatch: SW_COLLISION, label: 'collision (bordered)', aria: 'amber' },
+					{
+						swatch: SW_COLLISION,
+						label: 'collision (bordered)',
+						aria: 'amber',
+					},
 				];
 			// 2 chaining: the clash chains, so only the collision bucket stays lit.
 			case 2:
 				return [
-					{ swatch: SW_COLLISION, label: 'collision (bordered)', aria: 'amber' },
+					{
+						swatch: SW_COLLISION,
+						label: 'collision (bordered)',
+						aria: 'amber',
+					},
 				];
 			// 3 load / 4 resize: the gauge fill, accent until it overloads.
 			case 3:
@@ -266,7 +285,9 @@ const HashMapStage = ({ activeScene = 0 }) => {
 	const sceneNarration = (() => {
 		switch (activeScene) {
 			case 0:
-				return `Key ${FOCUS_KEY} hashes into bucket ${spotlightBucket} of ${capacity}.`;
+				return hashHeld
+					? `Key ${FOCUS_KEY} is hashed and waiting above a table of ${capacity} buckets; predict the bucket before it drops.`
+					: `Key ${FOCUS_KEY} hashes into bucket ${spotlightBucket} of ${capacity}.`;
 			case 1:
 				return `A second key collides into bucket ${COLLISION_BUCKET} — same index, different key.`;
 			case 2:
@@ -296,6 +317,18 @@ const HashMapStage = ({ activeScene = 0 }) => {
 				<div className={styles.notation} aria-hidden="true">
 					α = {entryCount}/{capacity} = {loadFactor.toFixed(2)} · m = {capacity}
 				</div>
+
+				{/* Held pre-drop frame: the hashed key hovers above the table, its
+				    destination deliberately unrevealed, while the student commits to a
+				    prediction. The arrow points at the table but at no bucket in
+				    particular — the answer stays hidden until the gate lifts. */}
+				{hashHeld && (
+					<div className={styles.hoverKey} aria-hidden="true">
+						<span className={styles.hoverCell}>{FOCUS_KEY}</span>
+						<span className={styles.hoverHint}>hashed — which bucket?</span>
+						<span className={styles.hoverArrow}>↓</span>
+					</div>
+				)}
 
 				{/* Stable key (NOT key={capacity}) so the table is reconciled, not
 			    remounted, across the resize — Flip needs the same DOM nodes on

@@ -18,8 +18,18 @@
 // so it can only ever be what iteration actually produces.
 
 import { unrollRecurrence, gPow2 } from './iterativeRecurrence.js';
+import { analyseRecurrence } from './masterMath.js';
 
 export const STORY_PARAMS = { a: 2, b: 2, d: 1, k: 0 };
+
+// The 'levels' scene's predict-before-reveal pins a fresh recurrence (a=8, b=2,
+// f(n)=n) and asks the student to COMMIT to a case before the stage draws the
+// silhouette. The key is DERIVED from analyseRecurrence — the very generator the
+// stage's verdict chip renders — so the prediction the lesson rehearses is byte-
+// for-byte the exam's master-theorem-classify item, and the key can never drift
+// from what the figure shows.
+const LEVELS_RECURRENCE = { a: 8, b: 2, d: 1, k: 0 };
+const LEVELS_CASE = analyseRecurrence(LEVELS_RECURRENCE).name; // 'Case 1'
 
 // The iteration scene's check is DERIVED, not authored: T(1)=1, T(n)=T(n-1)+2^(n-1)
 // unrolls to T(5) = 2^5 − 1 = 31. We read that off the same generator the stage's
@@ -101,24 +111,31 @@ export const SCENES = [
 		title: 'Whichever side grows faster wins.',
 		// Stage shape: the check below is a=8,b=2,f(n)=n, so pin that recurrence
 		// and let the silhouette go bottom-heavy — Case 1, leaves win.
-		recurrence: { a: 8, b: 2, d: 1, k: 0 },
+		recurrence: LEVELS_RECURRENCE,
 		body: 'If c > d the leaves dominate (Case 1) → Θ(n^c). If c < d the root-side combine work dominates (Case 3) → Θ(n^d). If they tie, every level does the same work and the log n levels stack up (Case 2) → Θ(n^d log n).',
 		check: {
-			kind: 'choice',
+			// Predict-before-reveal: a pinned scene draws its full silhouette + the
+			// "Case 1" verdict chip immediately, which would spoil the answer — so we
+			// gate it. While unanswered the stage holds a neutral, pre-draw frame; the
+			// bottom-heavy shape + verdict only paint once the student has committed.
+			// The answer is DERIVED from analyseRecurrence (LEVELS_CASE), so this beat
+			// is identical to the exam's master-theorem-classify item.
+			kind: 'predict',
+			revealGate: true,
 			prompt:
-				'a = 8, b = 2, f(n) = n. Then c = log₂(8) = 3 and d = 1. Which case?',
+				'Before the tree draws: a = 8, b = 2, f(n) = n, so c = log₂(8) = 3 and d = 1. Which case will the silhouette show?',
 			options: ['Case 1', 'Case 2', 'Case 3', 'none apply'],
-			answer: 'Case 1',
+			answer: LEVELS_CASE, // 'Case 1', derived from analyseRecurrence
 			misconceptions: {
 				'Case 2':
-					'You assumed a tie, but c = 3 and d = 1 are far apart. Case 2 needs c = d so every level does equal work; here the leaves grow as n³ while combine is only n.',
+					'You assumed a tie, but c = 3 and d = 1 are far apart. Case 2 needs c = d so every level does equal work; here the leaves grow as n³ while combine is only n — the tree comes out bottom-heavy, not even.',
 				'Case 3':
-					'You let the root combine win, but it is the smaller side. Case 3 needs c < d; here c = 3 exceeds d = 1, so the leaves dominate, not the combine work.',
+					'You let the root combine win, but it is the smaller side. Case 3 needs c < d; here c = 3 exceeds d = 1, so the leaves dominate, not the combine work — the silhouette piles up at the bottom, not the top.',
 				'none apply':
 					'You expected a gap the theorem cannot cover, but this is a clean polynomial split. c = 3 is polynomially larger than d = 1, so Case 1 applies squarely.',
 			},
 			explanation:
-				'c = 3 is greater than d = 1, so the leaves vastly outnumber the combine work and dominate the total: T(n) = Θ(n³). The leaf level alone carries the cost.',
+				'c = 3 is greater than d = 1, so the leaves vastly outnumber the combine work and dominate the total: T(n) = Θ(n³). That is why the silhouette goes bottom-heavy and the verdict reads Case 1 — the leaf level alone carries the cost.',
 		},
 	},
 	{

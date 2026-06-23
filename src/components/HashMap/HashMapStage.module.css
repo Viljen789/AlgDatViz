@@ -122,7 +122,8 @@
 	transform: translateX(-6px);
 	animation: cellEnter 320ms var(--ease-spring) forwards;
 	animation-delay: calc(var(--chain-pos) * 80ms);
-	transition: border-color var(--duration-step) var(--ease-step),
+	transition:
+		border-color var(--duration-step) var(--ease-step),
 		background-color var(--duration-step) var(--ease-step);
 }
 
@@ -144,6 +145,75 @@
 
 .cellCollide .cellKey {
 	color: var(--color-warning);
+}
+
+/* ---------- Held pre-drop key (scene-0 reveal gate) ----------
+   The hashed key hovers above the table while the student predicts its bucket.
+   It points DOWN at the table but at no specific slot, so the destination stays
+   hidden until the prediction is committed. */
+.hoverKey {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: var(--space-2xs);
+	margin: 0 auto;
+	opacity: 0;
+	transform: translateY(-6px);
+	animation: hoverKeyIn 360ms var(--ease-quiet) forwards;
+}
+
+@keyframes hoverKeyIn {
+	to {
+		opacity: 1;
+		transform: translateY(0);
+	}
+}
+
+.hoverCell {
+	display: inline-flex;
+	align-items: center;
+	padding: var(--space-2xs) var(--space-md);
+	background: color-mix(in srgb, var(--topic-accent) 14%, var(--surface-2));
+	border: 1px solid var(--topic-accent);
+	border-radius: var(--radius-sm);
+	font-family: var(--font-family-mono);
+	font-size: var(--font-size-label);
+	color: var(--color-text-primary);
+}
+
+.hoverHint {
+	font-family: var(--font-family-mono);
+	font-size: var(--font-size-caption);
+	letter-spacing: var(--tracking-wide);
+	color: var(--color-text-secondary);
+}
+
+.hoverArrow {
+	font-size: var(--font-size-body);
+	line-height: 1;
+	color: var(--topic-accent);
+	animation: hoverArrowBob 1.4s var(--ease-quiet) infinite;
+}
+
+@keyframes hoverArrowBob {
+	0%,
+	100% {
+		transform: translateY(0);
+	}
+	50% {
+		transform: translateY(3px);
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.hoverKey {
+		animation: none;
+		opacity: 1;
+		transform: none;
+	}
+	.hoverArrow {
+		animation: none;
+	}
 }
 
 /* ---------- Load-factor gauge (scenes 3+) ---------- */
@@ -206,7 +276,8 @@
 	width: var(--pct, 0%);
 	border-radius: var(--radius-pill);
 	background: var(--topic-accent);
-	transition: width var(--duration-merge) var(--ease-quiet),
+	transition:
+		width var(--duration-merge) var(--ease-quiet),
 		background-color var(--duration-step) var(--ease-step);
 }
 

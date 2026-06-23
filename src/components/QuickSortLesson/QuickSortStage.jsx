@@ -3,9 +3,28 @@ import { ChevronLeft, ChevronRight, Pause, Play } from 'lucide-react';
 import useReducedMotion from '../../hooks/useReducedMotion.js';
 import { getQuickSortFrames } from '../../utils/sorting/quickPartitionFrames.js';
 import { SceneNarration } from '../../common/PlaybackEngine';
+import StateLegend from '../../common/StateLegend/StateLegend';
 import { STAGE_VALUES, SELECT_INPUT, SELECT_I } from './scenes.js';
 import { quickselectTrace } from './quickselectTrace.js';
 import styles from './QuickSortStage.module.css';
+
+// Swatch colours mirror exactly what QuickSortStage.module.css paints, so the
+// key never claims a hue the bars don't use. The pivot rides --state-active but
+// is dashed-ringed in the CSS (barPivot), and the just-placed pivot is --state-done
+// ringed in the accent (barPivotHome) — both are shape-differentiated so they never
+// read by hue alone on a colour-blind canvas. The < pivot side is a faint accent
+// wash (barBelow), the comparing pair is --state-active (barCompare), a mid-swap bar
+// is --state-flight (barFlight), and any finalized index is --state-done (barLocked).
+const SW_PIVOT = 'var(--state-active)';
+const SW_COMPARE = 'var(--state-active)';
+const SW_FLIGHT = 'var(--state-flight)';
+const SW_BELOW = 'var(--topic-accent)';
+const SW_HOME = 'var(--state-done)';
+const SW_LOCKED = 'var(--state-done)';
+// Recursion scene: the live call's range is a topic-accent wash (barLeftSide); the
+// kept side of a quickselect partition is the secondary-ink wash (barRightSide).
+const SW_ACTIVE_RANGE = 'var(--topic-accent)';
+const SW_KEPT = 'var(--color-text-secondary)';
 
 // Stage geometry. A fixed slot grid keeps each value's column stable while the
 // partition shuffles bars, so the eye can track one value snapping home.
@@ -222,7 +241,9 @@ const QuickSortStage = ({ activeScene = 0, holdReveal = false }) => {
 
 	const stepRecurse = delta => {
 		setRecursePlaying(false);
-		setRecurseIdx(prev => Math.max(0, Math.min(prev + delta, RECURSE_LAST + 1)));
+		setRecurseIdx(prev =>
+			Math.max(0, Math.min(prev + delta, RECURSE_LAST + 1))
+		);
 	};
 	const toggleRecursePlay = () => {
 		// Pressing play while parked on the finished frame replays from the top.
@@ -268,6 +289,63 @@ const QuickSortStage = ({ activeScene = 0, holdReveal = false }) => {
 			return 'Already sorted: the last-element pivot is always the maximum, so every split is lopsided.';
 		return 'Each partition peels one element: sizes n, n−1, …, 1. The work stacks to Θ(n²).';
 	}, [isPartitionScene, isRecurse, isSelect, activeScene, frame, recurseStep]);
+
+	// Scene-aware key: only the states THIS scene actually paints, mirroring the
+	// merge/SSSP adopters. Hue is never the sole signal — the pivot tokens carry
+	// rings (dashed while in flight, solid accent once home), so a colour-blind
+	// reader tells them apart by shape too. Scenes with no live read/write state
+	// (the worst-case stick, scenes 3 & 4) get an empty list and render no legend.
+	const legend = (() => {
+		if (isPartitionScene) {
+			// Partition (0) and snap-home (1): the Lomuto roles. Scene 1 additionally
+			// lands the pivot home (barPivotHome), so it names the placed pivot too.
+			const items = [
+				{
+					swatch: SW_PIVOT,
+					label: 'pivot (dashed)',
+					aria: 'blue, dashed ring',
+				},
+				{ swatch: SW_COMPARE, label: 'comparing', aria: 'blue' },
+				{ swatch: SW_FLIGHT, label: 'swapping', aria: 'orange' },
+				{ swatch: SW_BELOW, label: '< pivot', aria: 'faint accent' },
+			];
+			if (activeScene === 1) {
+				items.push({
+					swatch: SW_HOME,
+					label: 'pivot placed (ringed)',
+					aria: 'green, accent ring',
+				});
+			}
+			return items;
+		}
+		if (isRecurse) {
+			// Recursion: the live call's range, pivots locking, and settled pivots.
+			return [
+				{ swatch: SW_ACTIVE_RANGE, label: 'active range', aria: 'accent' },
+				{
+					swatch: SW_HOME,
+					label: 'pivot placed (ringed)',
+					aria: 'green, accent ring',
+				},
+				{ swatch: SW_LOCKED, label: 'locked', aria: 'green' },
+			];
+		}
+		if (isSelect) {
+			// Quickselect: the placed pivot, the kept search side, the discarded side.
+			return [
+				{
+					swatch: SW_HOME,
+					label: 'pivot placed (ringed)',
+					aria: 'green, accent ring',
+				},
+				{ swatch: SW_KEPT, label: 'kept side', aria: 'grey' },
+				{ swatch: SW_LOCKED, label: 'discarded', aria: 'green' },
+			];
+		}
+		// Worst-case scenes (3, 4) render the stick illustration, which has its own
+		// labelled aria — no per-bar state to key, so no legend.
+		return [];
+	})();
 
 	const barClassFor = slot => {
 		const f = view.frame;
@@ -451,6 +529,16 @@ const QuickSortStage = ({ activeScene = 0, holdReveal = false }) => {
 			>
 				{isWorstCase ? renderStick() : renderBars()}
 
+				{/* Colour key for the live states this scene paints. Gated like the
+				    merge/SSSP adopters: only the scenes with per-bar read/write state
+				    pass items, so the worst-case stick (which has its own aria) shows
+				    no key for colours that aren't on screen. */}
+				{legend.length > 0 && (
+					<div className={styles.legendDock}>
+						<StateLegend items={legend} />
+					</div>
+				)}
+
 				<p className={styles.caption}>{caption}</p>
 
 				{/* Recursion transport: a depth read-out plus prev / play-pause / next so
@@ -493,7 +581,9 @@ const QuickSortStage = ({ activeScene = 0, holdReveal = false }) => {
 									className={`${styles.recurseBtn} ${styles.recursePlay}`}
 									onClick={toggleRecursePlay}
 									aria-pressed={recursePlaying}
-									aria-label={recursePlaying ? 'Pause recursion' : 'Play recursion'}
+									aria-label={
+										recursePlaying ? 'Pause recursion' : 'Play recursion'
+									}
 									title={recursePlaying ? 'Pause recursion' : 'Play recursion'}
 								>
 									{recursePlaying ? (

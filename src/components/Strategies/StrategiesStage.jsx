@@ -63,8 +63,15 @@ const INTERVALS = [
 ];
 const INTERVAL_MAX = 8;
 
-const CoinBoard = ({ sceneId }) => {
+const CoinBoard = ({ sceneId, holdReveal = false }) => {
 	const dp = useMemo(buildDpTable, []);
+
+	// Opt-in reveal gate (greedy-trap scene only): while the scene's predict check
+	// is unanswered, hold the honest pre-choice frame — the greedy lane shows the
+	// "10¢ to make…" placeholder instead of auto-revealing the [6,1,1,1,1] run and
+	// the "5 coins — stuck" verdict the student is about to predict. Every other
+	// scene ignores the flag, so the rest of the board is untouched.
+	const gateGreedy = holdReveal && sceneId === 'greedy-trap';
 
 	// Scene-driven reveal. The DP table is dormant until the scene that explains
 	// it, then settles fully; the summary keeps the answer visible.
@@ -72,9 +79,10 @@ const CoinBoard = ({ sceneId }) => {
 	const filledThrough = dpSettled ? TARGET : 0;
 
 	const showGreedy =
-		sceneId === 'two-shapes' ||
-		sceneId === 'greedy-trap' ||
-		sceneId === 'choose-what';
+		!gateGreedy &&
+		(sceneId === 'two-shapes' ||
+			sceneId === 'greedy-trap' ||
+			sceneId === 'choose-what');
 	const greedyTrapped = sceneId !== 'two-shapes';
 	const dpAnswer = dp[TARGET];
 
@@ -106,12 +114,14 @@ const CoinBoard = ({ sceneId }) => {
 				</div>
 				<p
 					className={`${styles.laneVerdict} ${
-						greedyTrapped ? styles.laneVerdictBad : ''
+						!gateGreedy && greedyTrapped ? styles.laneVerdictBad : ''
 					}`}
 				>
-					{greedyTrapped
-						? `${GREEDY_CHOICES.length} coins — stuck after taking 6¢ first`
-						: 'commits to the largest coin first'}
+					{gateGreedy
+						? 'takes 6¢ first — predict where it lands'
+						: greedyTrapped
+							? `${GREEDY_CHOICES.length} coins — stuck after taking 6¢ first`
+							: 'commits to the largest coin first'}
 				</p>
 			</div>
 
@@ -411,12 +421,18 @@ const buildLegend = sceneId => {
 	}
 };
 
-const StrategiesStage = ({ activeScene = 0 }) => {
+const StrategiesStage = ({ activeScene = 0, holdReveal = false }) => {
 	const sceneId = SCENES[activeScene]?.id ?? SCENES[0].id;
 	const board = SCENE_BOARDS[sceneId] ?? 'coin';
 	const meta = BOARD_META[board];
 	const legend = buildLegend(sceneId);
-	const narration = SCENE_NARRATION[sceneId] ?? meta.label;
+	// While the greedy-trap predict is held, the spoken line must not spoil the
+	// outcome either (the on-screen verdict is already held), so it mirrors the
+	// pre-choice prompt instead of announcing the 5-coin trap.
+	const gateGreedy = holdReveal && sceneId === 'greedy-trap';
+	const narration = gateGreedy
+		? 'Greedy takes 6¢ first. Predict how many coins it spends before the run plays out.'
+		: (SCENE_NARRATION[sceneId] ?? meta.label);
 
 	return (
 		<>
@@ -429,7 +445,9 @@ const StrategiesStage = ({ activeScene = 0 }) => {
 				role="img"
 				aria-label={meta.label}
 			>
-				{board === 'coin' && <CoinBoard sceneId={sceneId} />}
+				{board === 'coin' && (
+					<CoinBoard sceneId={sceneId} holdReveal={holdReveal} />
+				)}
 				{board === 'recursion' && <RecursionBoard />}
 				{board === 'interval' && <IntervalBoard />}
 				{board === 'decision' && <DecisionBoard />}

@@ -53,7 +53,7 @@ const buildTreeNodes = (a, depth) => {
 	return levels;
 };
 
-const MasterTheoremStage = ({ activeScene = 0 }) => {
+const MasterTheoremStage = ({ activeScene = 0, holdReveal = false }) => {
 	// Each scene may pin its own recurrence so the stage demonstrates that case's
 	// shape; scenes without one fall back to the running merge-sort example.
 	const params = SCENES[activeScene]?.recurrence ?? STORY_PARAMS;
@@ -149,11 +149,17 @@ const MasterTheoremStage = ({ activeScene = 0 }) => {
 	//   scene 4+        → bars + the dominant side called out + verdict chip
 	// Any scene that pins a recurrence is *about* its shape, so it always shows
 	// the full silhouette (full tree, bars, verdict) regardless of index.
+	// Predict-before-reveal: while the active scene's gated check is unanswered the
+	// template passes holdReveal=true. The case is read straight off the silhouette
+	// (bottom-heavy / even / top-heavy), the highlighted dominant level, and the
+	// verdict chip — so to keep the prediction honest we hold a NEUTRAL pre-draw
+	// frame: just the root node, no unfolded tree, no work bars, no verdict. The
+	// instant the student commits, holdReveal flips false and the shape paints.
 	const pinned = Boolean(SCENES[activeScene]?.recurrence);
-	const unfolded = activeScene >= 1 || pinned;
-	const emphasiseLeaves = activeScene === 2;
-	const showBars = activeScene >= 3 || pinned;
-	const showResult = activeScene >= 4 || pinned;
+	const unfolded = !holdReveal && (activeScene >= 1 || pinned);
+	const emphasiseLeaves = !holdReveal && activeScene === 2;
+	const showBars = !holdReveal && (activeScene >= 3 || pinned);
+	const showResult = !holdReveal && (activeScene >= 4 || pinned);
 
 	const visibleDepth = unfolded ? treeDepth : 0;
 
@@ -195,13 +201,18 @@ const MasterTheoremStage = ({ activeScene = 0 }) => {
 			: shape.dominant === 'root'
 				? 'the root carries the work'
 				: 'every level carries equal work';
-	const sceneNarration = showResult
-		? `T(n) = ${a}·T(n/${b}) + ${combineTerm}: ${dominantClause} — ${shape.name}, ${shape.result}.`
-		: emphasiseLeaves
-			? `The recursion tree for T(n) = ${a}·T(n/${b}) + ${combineTerm} has ${a} branches per node down to its leaves.`
-			: unfolded
-				? `The recursion tree for T(n) = ${a}·T(n/${b}) + ${combineTerm}, branching ${a} ways per level.`
-				: `Setting up T(n) = ${a}·T(n/${b}) + ${combineTerm}: ${a} subproblems of size n/${b} plus ${combineTerm} to combine.`;
+	// While the predict gate holds, the narration must NOT name the case either —
+	// it describes the neutral pre-draw frame and invites the prediction, so a
+	// screen-reader user commits on the same footing as a sighted one.
+	const sceneNarration = holdReveal
+		? `T(n) = ${a}·T(n/${b}) + ${combineTerm}: c = log_${b}(${a}) and d = ${formatNumber(d)}. Predict which case before the tree draws.`
+		: showResult
+			? `T(n) = ${a}·T(n/${b}) + ${combineTerm}: ${dominantClause} — ${shape.name}, ${shape.result}.`
+			: emphasiseLeaves
+				? `The recursion tree for T(n) = ${a}·T(n/${b}) + ${combineTerm} has ${a} branches per node down to its leaves.`
+				: unfolded
+					? `The recursion tree for T(n) = ${a}·T(n/${b}) + ${combineTerm}, branching ${a} ways per level.`
+					: `Setting up T(n) = ${a}·T(n/${b}) + ${combineTerm}: ${a} subproblems of size n/${b} plus ${combineTerm} to combine.`;
 
 	return (
 		<>
@@ -211,9 +222,13 @@ const MasterTheoremStage = ({ activeScene = 0 }) => {
 			<div
 				className={styles.wrap}
 				data-scene={activeScene}
-				data-profile={profile}
+				data-profile={holdReveal ? 'held' : profile}
 				role="img"
-				aria-label={`Recursion tree for T(n) = ${a}·T(n/${b}) + ${combineTerm}: a ${profile.replace('-', ' ')} shape where ${shape.dominant === 'leaves' ? 'the leaves carry the work' : shape.dominant === 'root' ? 'the root carries the work' : 'every level carries equal work'}`}
+				aria-label={
+					holdReveal
+						? `T(n) = ${a}·T(n/${b}) + ${combineTerm}, waiting on your prediction: the recursion tree's shape is hidden until you commit to a case.`
+						: `Recursion tree for T(n) = ${a}·T(n/${b}) + ${combineTerm}: a ${profile.replace('-', ' ')} shape where ${shape.dominant === 'leaves' ? 'the leaves carry the work' : shape.dominant === 'root' ? 'the root carries the work' : 'every level carries equal work'}`
+				}
 			>
 				<svg
 					viewBox={`0 0 ${VIEW_W} ${VIEW_H}`}

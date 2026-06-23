@@ -17,8 +17,14 @@ const CHEAT_SHEET = {
 		{
 			title: 'The recurrence',
 			items: [
-				{ term: 'T(n)', def: 'a·T(n/b) + f(n) — a calls of size n/b, plus f(n) combine work.' },
-				{ term: 'Compare', def: 'n^(log_b a) (leaf work) against f(n) (combine work).' },
+				{
+					term: 'T(n)',
+					def: 'a·T(n/b) + f(n) — a calls of size n/b, plus f(n) combine work.',
+				},
+				{
+					term: 'Compare',
+					def: 'n^(log_b a) (leaf work) against f(n) (combine work).',
+				},
 			],
 		},
 		{
@@ -26,7 +32,10 @@ const CHEAT_SHEET = {
 			items: [
 				{ term: 'Case 1 · c > d', def: 'Leaves dominate → Θ(n^(log_b a)).' },
 				{ term: 'Case 2 · c = d', def: 'Every level ties → Θ(n^d log n).' },
-				{ term: 'Case 3 · c < d', def: 'Root combine work dominates → Θ(n^d).' },
+				{
+					term: 'Case 3 · c < d',
+					def: 'Root combine work dominates → Θ(n^d).',
+				},
 			],
 		},
 		{
@@ -87,7 +96,14 @@ const MasterTheoremLesson = () => {
 	}, [markVisited]);
 
 	const renderStage = useCallback(
-		activeScene => <MasterTheoremStage activeScene={activeScene} />,
+		// Second arg is the template's opt-in reveal gate: revealHeld is true while
+		// the 'levels' scene's predict check is unanswered, so the stage holds its
+		// neutral pre-draw frame instead of painting the bottom-heavy silhouette +
+		// "Case 1" verdict (which would spoil the prediction). Defaults keep it safe
+		// if a caller passes only the scene.
+		(activeScene, { revealHeld = false } = {}) => (
+			<MasterTheoremStage activeScene={activeScene} holdReveal={revealHeld} />
+		),
 		[]
 	);
 
@@ -103,8 +119,7 @@ const MasterTheoremLesson = () => {
 	);
 
 	const eyebrow = useMemo(
-		() =>
-			`${topic?.number ?? '03'} · ${topic?.navLabel ?? 'Master theorem'}`,
+		() => `${topic?.number ?? '03'} · ${topic?.navLabel ?? 'Master theorem'}`,
 		[topic]
 	);
 

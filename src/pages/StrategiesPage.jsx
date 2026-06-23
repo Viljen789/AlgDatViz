@@ -54,7 +54,14 @@ const StrategiesPage = () => {
 	}, [markVisited]);
 
 	const renderStage = useCallback(
-		activeScene => <StrategiesStage activeScene={activeScene} />,
+		// The second arg is the template's opt-in reveal gate: revealHeld is true
+		// while the greedy-trap scene's predict check is still unanswered, so the
+		// stage holds its honest pre-choice frame (greedy lane shows "10¢ to make…")
+		// instead of auto-revealing the 5-coin trap. Default keeps it safe if a
+		// caller passes only the scene.
+		(activeScene, { revealHeld = false } = {}) => (
+			<StrategiesStage activeScene={activeScene} holdReveal={revealHeld} />
+		),
 		[]
 	);
 

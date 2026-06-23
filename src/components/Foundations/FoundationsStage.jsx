@@ -1,5 +1,6 @@
 import { useMemo } from 'react';
 import { SceneNarration } from '../../common/PlaybackEngine';
+import { GROWTH_RATES, RACE_NMAX } from './growthRates.js';
 import styles from './FoundationsStage.module.css';
 
 // FoundationsStage — one figure per complexity scene, switched by `activeScene`
@@ -9,20 +10,11 @@ import styles from './FoundationsStage.module.css';
 const VB = { w: 720, h: 560 };
 const PLOT = { x0: 70, x1: 540, y0: 84, y1: 432 };
 
-// Growth-rate functions for the race + the playground share this shape.
-const RACE = [
-	{ label: 'O(2ⁿ)', f: n => 2 ** n, color: 'var(--color-error)' },
-	{ label: 'O(n²)', f: n => n * n, color: 'var(--topic-hashing)' },
-	{ label: 'O(n log n)', f: n => n * Math.log2(n), color: 'var(--brand)' },
-	{ label: 'O(n)', f: n => n, color: 'var(--topic-sorting)' },
-	{
-		label: 'O(log n)',
-		f: n => Math.max(Math.log2(n), 0),
-		color: 'var(--topic-graphs)',
-	},
-	{ label: 'O(1)', f: () => 1, color: 'var(--color-text-muted)' },
-];
-const NMAX = 22;
+// The race + the predict check + the playground all read the SAME growth-rate
+// functions from growthRates.js, so the picture and the quiz can never disagree
+// about which class tops the chart. (The stage names colours `colorVar`.)
+const RACE = GROWTH_RATES.map(r => ({ ...r, color: r.colorVar }));
+const NMAX = RACE_NMAX;
 const CAP = NMAX * NMAX;
 const xAt = n => PLOT.x0 + (n / NMAX) * (PLOT.x1 - PLOT.x0);
 const yAt = v => PLOT.y1 - (Math.min(v, CAP) / CAP) * (PLOT.y1 - PLOT.y0);
@@ -69,11 +61,17 @@ const Axes = ({ xLabel = 'input size  n →', yLabel = 'operations' }) => (
 	</g>
 );
 
-const FoundationsStage = ({ activeScene = 0 }) => {
+const FoundationsStage = ({ activeScene = 0, holdReveal = false }) => {
 	const racePaths = useMemo(
 		() => RACE.map(r => ({ ...r, d: linePath(r.f) })),
 		[]
 	);
+
+	// The race scene (4) plots every class statically the instant it fades in, so
+	// it would otherwise spoil the predict-before-reveal. While the prediction is
+	// still open (holdReveal), hold an honest pre-reveal frame: bare axes, no
+	// curves, no winner — just the prompt to commit first.
+	const raceHeld = activeScene === 4 && holdReveal;
 
 	const sceneClass = i =>
 		`${styles.scene} ${activeScene === i ? styles.sceneOn : ''}`;
@@ -98,7 +96,9 @@ const FoundationsStage = ({ activeScene = 0 }) => {
 		'One loop is n steps; a nested loop is n × n = n² steps.',
 		'Drop constants and lower-order terms: 3n² + 5n + 2 becomes O(n²).',
 		'O is an upper bound, Ω a lower bound, Θ both — f(n) sits between them.',
-		'Same axes: as n grows the growth-rate classes separate violently.',
+		raceHeld
+			? 'Bare axes, no curves yet — predict which class grows fastest before the race is drawn.'
+			: 'Same axes: as n grows the growth-rate classes separate violently.',
 		'One algorithm, different inputs: best, worst, average — and amortized append stays O(1).',
 	][Math.min(activeScene, 5)];
 
@@ -335,45 +335,72 @@ const FoundationsStage = ({ activeScene = 0 }) => {
 					</g>
 
 					{/* 4 — the growth-rate race (marquee) */}
+					{/* While the prediction is open (raceHeld) the curves are held back:
+					    bare axes + a "predict first" placeholder, so the race can't spoil
+					    the answer. Once answered, the curves and legend are drawn. */}
 					<g className={sceneClass(4)}>
 						<Axes />
-						{racePaths.map(r => (
-							<path
-								key={r.label}
-								className={styles.curve}
-								style={{ stroke: r.color }}
-								d={r.d}
-							/>
-						))}
-						<g>
-							{racePaths.map((r, i) => (
-								<g
-									key={r.label}
-									transform={`translate(${PLOT.x1 + 22} ${PLOT.y0 + 6 + i * 30})`}
+						{raceHeld ? (
+							<>
+								<text
+									className={styles.kicker}
+									x={(PLOT.x0 + PLOT.x1) / 2}
+									y={PLOT.y0 + 96}
+									textAnchor="middle"
 								>
-									<line
-										className={styles.legendSwatch}
+									Commit to a prediction first.
+								</text>
+								<text
+									className={styles.caption}
+									x={(PLOT.x0 + PLOT.x1) / 2}
+									y={PLOT.y0 + 134}
+									textAnchor="middle"
+								>
+									Which class tops this chart at large n? Answer, then the race
+									is drawn.
+								</text>
+							</>
+						) : (
+							<>
+								{racePaths.map(r => (
+									<path
+										key={r.label}
+										className={styles.curve}
 										style={{ stroke: r.color }}
-										x1={0}
-										y1={0}
-										x2={20}
-										y2={0}
+										d={r.d}
 									/>
-									<text className={styles.legendLabel} x={28} y={4}>
-										{r.label}
-									</text>
+								))}
+								<g>
+									{racePaths.map((r, i) => (
+										<g
+											key={r.label}
+											transform={`translate(${PLOT.x1 + 22} ${PLOT.y0 + 6 + i * 30})`}
+										>
+											<line
+												className={styles.legendSwatch}
+												style={{ stroke: r.color }}
+												x1={0}
+												y1={0}
+												x2={20}
+												y2={0}
+											/>
+											<text className={styles.legendLabel} x={28} y={4}>
+												{r.label}
+											</text>
+										</g>
+									))}
 								</g>
-							))}
-						</g>
-						<text
-							className={styles.caption}
-							x={PLOT.x0}
-							y={VB.h - 28}
-							textAnchor="start"
-						>
-							Same axes. As n grows the classes separate violently — the class
-							is the story.
-						</text>
+								<text
+									className={styles.caption}
+									x={PLOT.x0}
+									y={VB.h - 28}
+									textAnchor="start"
+								>
+									Same axes. As n grows the classes separate violently — the
+									class is the story.
+								</text>
+							</>
+						)}
 					</g>
 
 					{/* 5 — best / worst / average + amortized */}

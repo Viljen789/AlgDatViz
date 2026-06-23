@@ -119,7 +119,14 @@ const NpCompletenessPage = () => {
 	}, []);
 
 	const renderStage = useCallback(
-		activeScene => <NpCompletenessStage activeScene={activeScene} />,
+		// The second arg is the template's opt-in reveal gate: revealHeld is true
+		// while the verify-it scene's predict check is still unanswered, so the
+		// stage holds its honest pre-scan frame (certificate shown, clauses not yet
+		// judged) instead of auto-painting the accept/reject verdict and spoiling
+		// the prediction. The default keeps it safe for every other scene.
+		(activeScene, { revealHeld = false } = {}) => (
+			<NpCompletenessStage activeScene={activeScene} holdReveal={revealHeld} />
+		),
 		[]
 	);
 

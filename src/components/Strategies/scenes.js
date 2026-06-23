@@ -14,6 +14,19 @@
 // Each scene ends with an inline comprehension check. Wrong answers are not
 // punished — the explanation reveals either way, so every attempt teaches.
 
+import { buildCoinChangeFrames } from './coinChangeFrames.js';
+
+// The greedy-trap predict answer is DERIVED, never hand-typed: run the SAME
+// coin-change generator the stage animates on the SAME instance ({1,5,6} for
+// 10¢) and read off how many coins greedy spends (6 + 1 + 1 + 1 + 1 = 5). DP
+// finds 2 (5 + 5). lessonPredict.test.js re-derives this so the scene's answer
+// can never drift from the generator.
+const GREEDY_TRAP_SUMMARY = buildCoinChangeFrames({
+	target: 10,
+	coins: [1, 5, 6],
+}).summary;
+export const GREEDY_TRAP_COINS = GREEDY_TRAP_SUMMARY.greedyFinal; // = 5
+
 export const SCENES = [
 	{
 		id: 'two-shapes',
@@ -27,7 +40,7 @@ export const SCENES = [
 			options: ['Greedy', 'Dynamic programming'],
 			answer: 'Dynamic programming',
 			misconceptions: {
-				'Greedy':
+				Greedy:
 					'Greedy keeps no record of past subproblems. It makes one local decision and moves on, so there is nothing to look up later; it is DP that stores every subproblem result in a table.',
 			},
 			explanation:
@@ -38,23 +51,28 @@ export const SCENES = [
 		id: 'greedy-trap',
 		eyebrow: 'When greedy lies',
 		title: 'The largest coin is not always the right coin.',
-		body: 'Make 10¢ from coins {1, 5, 6}. Greedy grabs 6 first because it is biggest — then it is stranded, paying four 1¢ coins for five total. The locally best first move poisoned everything downstream.',
-		// spotbug (line-mode): walk greedy's reasoning on {1,5,6}=10 and find the
-		// step whose claim is false. Grounded in the real coin-change result —
-		// DP=2 (5+5), greedy=5 (6+1+1+1+1); see coinChangeFrames.test.js.
+		body: 'Make 10¢ from coins {1, 5, 6}. Greedy follows one rule blindly: always grab the biggest coin that still fits. So its first move is 6¢, because 6 is the largest coin that fits in 10. Commit to a coin count before the stage plays the rest out — then watch where that first move strands it.',
+		// predict (choice-mode) + revealGate: BEFORE the CoinBoard plays greedy's
+		// run out (it auto-reveals the coins [6,1,1,1,1] and the "5 coins — stuck"
+		// verdict on this scene), the student commits to how many coins greedy
+		// spends. The answer is DERIVED from the real coin-change generator —
+		// buildCoinChangeFrames({target:10, coins:[1,5,6]}).summary.greedyFinal === 5
+		// (greedy: 6+1+1+1+1) versus DP's 2 (5+5). Re-derived in lessonPredict.test.js
+		// so the key can never drift from the generator the stage animates.
 		check: {
-			kind: 'spotbug',
+			kind: 'predict',
+			revealGate: true,
 			prompt:
-				'Here is greedy reasoning on coins {1, 5, 6} for 10¢. Which step makes a wrong claim?',
-			lines: [
-				'10¢: largest coin that fits is 6¢ — take it. (remaining 4¢)',
-				'4¢: largest coin that fits is 1¢ — take it. (remaining 3¢)',
-				'…take 1¢, 1¢, 1¢ → 6+1+1+1+1 = 5 coins.',
-				'5 coins is optimal — no shorter way exists.',
-			],
-			answer: 3,
+				'Greedy takes the biggest coin that fits first — 6¢ for 10¢. Following that one rule to the end, how many coins does greedy spend in total?',
+			options: [2, 4, 5, 6],
+			answer: GREEDY_TRAP_COINS,
+			misconceptions: {
+				2: 'Two coins (5 + 5) is the OPTIMAL answer — what DP finds, not greedy. Greedy never considers 5 + 5, because its first rule forces it to take the larger 6¢ coin, which rules the second 5 out.',
+				4: 'After taking 6¢, greedy has 4¢ left and no 5¢ or 6¢ fits, so it pays in 1¢ coins: 1+1+1+1. That is four 1¢ coins ON TOP of the first 6¢ — five coins in all, not four.',
+				6: 'Greedy spends 6¢, then four 1¢ coins — that is the value 6 of the first coin, not the COUNT of coins. Count the coins themselves: one 6¢ plus four 1¢ is five coins.',
+			},
 			explanation:
-				'Steps 1–3 describe exactly what greedy does (5 coins), so they are true reports. Step 4 is the false claim: 5 + 5 = 10 uses only TWO coins, so 5 is not optimal. That single counterexample proves greedy is unsafe for this coin set.',
+				'Greedy commits to 6¢ first, then can only fill the remaining 4¢ with four 1¢ coins: 6 + 1 + 1 + 1 + 1 = 5 coins, exactly what plays out on the stage. DP, by remembering every option, finds 5 + 5 = 2 coins. That gap (5 versus 2) is the price of the locally best first move — greedy is not safe for this coin set.',
 		},
 	},
 	{
@@ -134,7 +152,10 @@ export const SCENES = [
 			prompt:
 				'Pair each second ingredient with the strategy it unlocks (on top of optimal substructure).',
 			items: [
-				{ id: 'greedyChoice', label: 'Greedy-choice property (exchange argument)' },
+				{
+					id: 'greedyChoice',
+					label: 'Greedy-choice property (exchange argument)',
+				},
 				{ id: 'overlap', label: 'Overlapping subproblems' },
 			],
 			categories: [

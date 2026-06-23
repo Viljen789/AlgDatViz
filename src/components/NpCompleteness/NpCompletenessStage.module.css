@@ -121,7 +121,11 @@
 	width: 100%;
 	margin-top: var(--space-xl);
 	padding: var(--space-lg) var(--space-md) var(--space-md);
-	border-color: color-mix(in srgb, var(--topic-accent) 30%, var(--color-border));
+	border-color: color-mix(
+		in srgb,
+		var(--topic-accent) 30%,
+		var(--color-border)
+	);
 }
 
 .ringP {
@@ -254,6 +258,18 @@
 	background: var(--color-error-wash);
 }
 
+/* Reveal-gate hold: the clause is shown but not yet judged. Neutral, with an
+   accent-tinted help icon, so the board never leaks the accept/reject verdict
+   the student is predicting. */
+.clausePending {
+	border-color: color-mix(
+		in srgb,
+		var(--topic-accent) 35%,
+		var(--color-border)
+	);
+	background: var(--surface-input);
+}
+
 .clauseIcon {
 	display: inline-flex;
 	flex: none;
@@ -265,6 +281,10 @@
 
 .clauseUnsat .clauseIcon {
 	color: var(--color-error);
+}
+
+.clausePending .clauseIcon {
+	color: var(--topic-accent);
 }
 
 .clauseCode {
