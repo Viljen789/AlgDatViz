@@ -587,6 +587,24 @@ const LessonCheck = ({ check, state, gated, onAnswer, onChoiceAnswer }) => {
 		return check.misconceptions[String(picked)] ?? null;
 	}, [status, check.misconceptions, predictMode, state]);
 
+	// On a WRONG free-input answer, surface the canonical answer. Choice-style
+	// kinds already highlight the right option inline, and 'problem' reveals each
+	// part itself — so this only fires for the bare numeric/text widgets, whose
+	// reveal otherwise leaves the learner with only "Your answer: X" + prose. For
+	// numeric the answer is `check.answer`; for text it is `check.answer`, falling
+	// back to the first accepted synonym. Calm, in the topic accent — never red.
+	const revealAnswer = useMemo(() => {
+		if (status !== 'incorrect') return null;
+		if (check.kind === 'numeric') {
+			return check.answer == null ? null : String(check.answer);
+		}
+		if (check.kind === 'text') {
+			const value = check.answer ?? check.accept?.[0];
+			return value == null ? null : String(value);
+		}
+		return null;
+	}, [status, check.kind, check.answer, check.accept]);
+
 	return (
 		<aside
 			className={`${styles.check} ${isAnswered ? styles.checkAnswered : ''} ${
@@ -641,6 +659,12 @@ const LessonCheck = ({ check, state, gated, onAnswer, onChoiceAnswer }) => {
 								Why that was wrong
 							</span>
 							{misconception}
+						</p>
+					)}
+					{revealAnswer != null && (
+						<p className={styles.revealAnswer}>
+							<span className={styles.revealAnswerLabel}>Answer</span>
+							<span className={styles.revealAnswerValue}>{revealAnswer}</span>
 						</p>
 					)}
 					<p className={styles.explanation}>{check.explanation}</p>

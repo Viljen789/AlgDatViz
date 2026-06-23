@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowRight, Check, RotateCcw } from 'lucide-react';
 import LessonCheck from '../../common/TopicTemplate/LessonCheck.jsx';
@@ -95,6 +95,28 @@ const ReviewSession = ({ questions, onRestart, onGraded }) => {
 		requestAnimationFrame(() => liveRef.current?.focus());
 	}, [index, total]);
 
+	// Keyboard advance: once the current card is answered, Enter or ArrowRight
+	// moves to the next card — no mouse trip per card on the highest-frequency
+	// retrieval surface. Crucially this never fires while the learner is typing
+	// an answer: if focus is in a text/number input, a textarea, or a select, we
+	// bail so Enter still submits the answer (via the InputForm's own <form>)
+	// rather than skipping the question. Listener is scoped to this run and torn
+	// down on unmount / when answered-ness or goNext change.
+	useEffect(() => {
+		if (!isAnswered) return undefined;
+		const onKeyDown = e => {
+			if (e.key !== 'Enter' && e.key !== 'ArrowRight') return;
+			if (e.metaKey || e.ctrlKey || e.altKey) return;
+			const el = document.activeElement;
+			const tag = el?.tagName;
+			if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
+			e.preventDefault();
+			goNext();
+		};
+		window.addEventListener('keydown', onKeyDown);
+		return () => window.removeEventListener('keydown', onKeyDown);
+	}, [isAnswered, goNext]);
+
 	if (total === 0) {
 		return (
 			<div className={styles.empty} role="status">
@@ -155,7 +177,10 @@ const ReviewSession = ({ questions, onRestart, onGraded }) => {
 					<span>
 						<strong>{score}</strong> correct
 						{answeredCount > 0 && (
-							<span className={styles.scoreMeta}> · {answeredCount} answered</span>
+							<span className={styles.scoreMeta}>
+								{' '}
+								· {answeredCount} answered
+							</span>
 						)}
 					</span>
 				</div>
@@ -177,11 +202,7 @@ const ReviewSession = ({ questions, onRestart, onGraded }) => {
 				</div>
 
 				{/* The retrieval question heading — focus target for a11y. */}
-				<h2
-					className={styles.srHeading}
-					tabIndex={-1}
-					ref={liveRef}
-				>
+				<h2 className={styles.srHeading} tabIndex={-1} ref={liveRef}>
 					Question {index + 1} of {total}, from {current.topicName}
 				</h2>
 
@@ -195,26 +216,50 @@ const ReviewSession = ({ questions, onRestart, onGraded }) => {
 
 				<div className={styles.actions}>
 					{!isAnswered && (
-						<button
-							type="button"
-							className={styles.skipBtn}
-							onClick={goNext}
-						>
+						<button type="button" className={styles.skipBtn} onClick={goNext}>
 							{index + 1 >= total ? 'Skip & finish' : 'Skip'}
 						</button>
 					)}
 					{isAnswered && (
-						<button
-							type="button"
-							className={styles.nextBtn}
-							onClick={goNext}
-							autoFocus
-						>
-							<span>
-								{index + 1 >= total ? 'See results' : 'Next question'}
+						<>
+							<span
+								aria-hidden="true"
+								style={{
+									display: 'inline-flex',
+									alignItems: 'center',
+									gap: '6px',
+									marginRight: 'auto',
+									color: 'var(--color-text-muted)',
+									fontSize: 'var(--font-size-caption)',
+								}}
+							>
+								<kbd
+									style={{
+										padding: '2px 6px',
+										border: '1px solid var(--color-border)',
+										borderRadius: 'var(--radius-sm)',
+										fontSize: 'var(--font-size-caption)',
+										lineHeight: 1.4,
+										color: 'var(--color-text-secondary)',
+										background: 'var(--color-bg-sunken)',
+									}}
+								>
+									Enter
+								</kbd>
+								<span>to continue</span>
 							</span>
-							<ArrowRight size={15} strokeWidth={2.2} aria-hidden="true" />
-						</button>
+							<button
+								type="button"
+								className={styles.nextBtn}
+								onClick={goNext}
+								autoFocus
+							>
+								<span>
+									{index + 1 >= total ? 'See results' : 'Next question'}
+								</span>
+								<ArrowRight size={15} strokeWidth={2.2} aria-hidden="true" />
+							</button>
+						</>
 					)}
 				</div>
 			</div>
