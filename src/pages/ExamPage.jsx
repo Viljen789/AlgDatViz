@@ -3,9 +3,11 @@ import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import {
 	ArrowRight,
 	Check,
+	ChevronDown,
 	ChevronRight,
 	Clock,
 	LayoutGrid,
+	Link2,
 	RotateCcw,
 	Target,
 } from 'lucide-react';
@@ -138,11 +140,70 @@ const formatClock = seconds => {
 	return `${m}:${String(s % 60).padStart(2, '0')}`;
 };
 
+// ── One collapsible review row: re-renders a finished problem in its ANSWERED
+// state by handing the stored check state back to LessonCheck (which renders the
+// per-part right/wrong, explanations, and score from state — no re-grading). The
+// onAnswer no-op is a safety net; an answered LessonCheck never calls it.
+const noop = () => {};
+
+const ReviewRow = ({ set, state, defaultOpen }) => {
+	const [open, setOpen] = useState(defaultOpen);
+	const meta = topicMeta(set.topicId, set.topicName);
+	const tones = accentTokens(meta.accent);
+	const scorePct = pct(state?.score ?? 0);
+	const panelId = `review-panel-${set.id}`;
+
+	return (
+		<li
+			className={styles.reviewRow}
+			style={{ '--q-accent': tones.accent, '--q-accent-ink': tones.ink }}
+		>
+			<button
+				type="button"
+				className={styles.reviewToggle}
+				aria-expanded={open}
+				aria-controls={panelId}
+				onClick={() => setOpen(o => !o)}
+			>
+				<ChevronDown
+					size={15}
+					strokeWidth={2.2}
+					aria-hidden="true"
+					className={`${styles.reviewChevron}${
+						open ? ` ${styles.reviewChevronOpen}` : ''
+					}`}
+				/>
+				<span className={styles.reviewTopicTag}>
+					{meta.number && (
+						<span className={styles.reviewTopicNum}>{meta.number}</span>
+					)}
+					<span className={styles.reviewTopicName}>{meta.name}</span>
+				</span>
+				<span className={styles.reviewStem}>{set.problem.stem}</span>
+				<span
+					className={`${styles.reviewScore}${
+						scorePct < 100 ? ` ${styles.reviewScoreMiss}` : ''
+					}`}
+				>
+					{scorePct}%
+				</span>
+			</button>
+			{open && (
+				<div id={panelId} className={styles.reviewPanel}>
+					<LessonCheck check={set.problem} state={state} onAnswer={noop} />
+				</div>
+			)}
+		</li>
+	);
+};
+
 // ── The summary, scored BY TOPIC ──────────────────────────────────────────────
 const ExamSummary = ({
 	runSets,
 	scores,
+	states,
 	onRetake,
+	onRetryMissed,
 	onBackToSets,
 	onStudyTopic,
 	onRetakeTopic,
@@ -161,6 +222,22 @@ const ExamSummary = ({
 		const sum = valid.reduce((a, b) => a + b, 0);
 		return valid.length ? sum / valid.length : 0;
 	}, [scores]);
+
+	// The problems scored below full credit — the misses to review and to retry.
+	// `scores[i]` aligns with `runSets[i]` (same ordering the summary aggregates).
+	const missed = useMemo(
+		() => runSets.filter((_, i) => (scores[i] ?? 0) < 1),
+		[runSets, scores]
+	);
+
+	// Copy-link confirmation: flips to true for a beat after a successful copy.
+	const [copied, setCopied] = useState(false);
+	const copyLink = useCallback(() => {
+		navigator.clipboard?.writeText(window.location.href).then(() => {
+			setCopied(true);
+			setTimeout(() => setCopied(false), 2000);
+		}, noop);
+	}, []);
 
 	// The single weakest topic that fell below the shared study threshold, if any.
 	// When it exists it earns the primary action (the most productive next step
@@ -274,6 +351,25 @@ const ExamSummary = ({
 				</ul>
 			</div>
 
+			{/* Review your answers — the worked solutions, kept after the run instead
+			    of destroyed on Next. One collapsible row per problem; misses (scored
+			    below 100%) default open so review lands on them. Each expands into the
+			    same LessonCheck rendered in its answered state from the stored check
+			    state (per-part right/wrong + explanations + score; no re-grading). */}
+			<div className={styles.block}>
+				<h3 className={styles.blockTitle}>Review your answers</h3>
+				<ul className={styles.reviewList}>
+					{runSets.map((set, i) => (
+						<ReviewRow
+							key={set.id}
+							set={set}
+							state={states[set.id]}
+							defaultOpen={(scores[i] ?? 0) < 1}
+						/>
+					))}
+				</ul>
+			</div>
+
 			<div className={styles.summaryActions}>
 				{weakest ? (
 					<button
@@ -301,6 +397,19 @@ const ExamSummary = ({
 						<span>Retake this exam</span>
 					</button>
 				)}
+				{/* Retry only the misses, on a FRESH seed — the same shapes regenerated,
+				    so it's a cold retest of exactly what slipped, not a re-read. Hidden
+				    when the run was clean. */}
+				{missed.length > 0 && (
+					<button
+						type="button"
+						className={styles.retakeBtn}
+						onClick={() => onRetryMissed(missed)}
+					>
+						<RotateCcw size={14} strokeWidth={2.2} aria-hidden="true" />
+						<span>Retry the {missed.length} you missed</span>
+					</button>
+				)}
 				<button
 					type="button"
 					className={styles.ghostBtn}
@@ -308,6 +417,21 @@ const ExamSummary = ({
 				>
 					<LayoutGrid size={13} strokeWidth={2} aria-hidden="true" />
 					<span>Back to exam sets</span>
+				</button>
+				{/* Copy link to this paper — the sitting seed already lives in the URL, so
+				    this just surfaces it. Reproducible / shareable; calm confirmation. */}
+				<button
+					type="button"
+					className={styles.ghostBtn}
+					onClick={copyLink}
+					aria-live="polite"
+				>
+					{copied ? (
+						<Check size={13} strokeWidth={2.4} aria-hidden="true" />
+					) : (
+						<Link2 size={13} strokeWidth={2} aria-hidden="true" />
+					)}
+					<span>{copied ? 'Copied' : 'Copy link to this paper'}</span>
 				</button>
 				<Link to="/review" className={styles.ghostLink}>
 					Switch to spaced review
@@ -321,6 +445,7 @@ const ExamSummary = ({
 const ExamSession = ({
 	runSets,
 	onRetake,
+	onRetryMissed,
 	onBackToSets,
 	onStudyTopic,
 	onRetakeTopic,
@@ -455,7 +580,9 @@ const ExamSession = ({
 			<ExamSummary
 				runSets={runSets}
 				scores={scores}
+				states={states}
 				onRetake={onRetake}
+				onRetryMissed={onRetryMissed}
 				onBackToSets={onBackToSets}
 				onStudyTopic={onStudyTopic}
 				onRetakeTopic={onRetakeTopic}
@@ -740,6 +867,21 @@ const ExamPage = () => {
 		setRunId(r => r + 1);
 	}, [applySeed]);
 
+	// Retry only the missed problems on a FRESH seed: regenerate the SAME shapes
+	// (same set ids), filtered to the misses, so it's a cold retest of exactly what
+	// slipped — never the identical problem to memorize. Reuses the retake/startWeak
+	// applySeed + byId-remap pattern verbatim, filtered to the missed ids.
+	const retryMissed = useCallback(
+		missed => {
+			if (missed.length === 0) return;
+			const s = applySeed(freshSeed());
+			const byId = new Map(buildExamSets(s).map(set => [set.id, set]));
+			setRunSets(missed.map(set => byId.get(set.id) ?? set));
+			setRunId(r => r + 1);
+		},
+		[applySeed]
+	);
+
 	// Open a topic's lesson from the summary (re-read), or run its exam set again
 	// (retrieval). startTopic already remounts the session via runId.
 	const studyTopic = useCallback(
@@ -955,6 +1097,7 @@ const ExamPage = () => {
 						key={runId}
 						runSets={runSets}
 						onRetake={retake}
+						onRetryMissed={retryMissed}
 						onBackToSets={exit}
 						onStudyTopic={studyTopic}
 						onRetakeTopic={startTopic}

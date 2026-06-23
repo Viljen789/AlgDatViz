@@ -977,6 +977,121 @@
 	box-shadow: var(--shadow-focus);
 }
 
+/* ---------- Review your answers (collapsible worked solutions) ---------- */
+
+.reviewList {
+	list-style: none;
+	margin: 0;
+	padding: 0;
+	display: flex;
+	flex-direction: column;
+	gap: var(--space-sm);
+}
+
+.reviewRow {
+	--q-accent: var(--color-accent-blue);
+	border: 1px solid var(--color-border);
+	border-radius: var(--radius-lg);
+	background: var(--surface-1);
+	overflow: hidden;
+}
+
+.reviewToggle {
+	display: flex;
+	align-items: center;
+	gap: var(--space-md);
+	width: 100%;
+	padding: var(--space-md) var(--space-lg);
+	background: transparent;
+	border: none;
+	text-align: left;
+	cursor: pointer;
+	color: var(--color-text-primary);
+	transition: background-color var(--transition);
+}
+
+.reviewToggle:hover {
+	background: var(--surface-hover);
+}
+
+.reviewToggle:focus-visible {
+	outline: none;
+	box-shadow: var(--shadow-focus);
+}
+
+.reviewChevron {
+	flex-shrink: 0;
+	color: var(--color-text-muted);
+	transition: transform var(--transition);
+}
+
+.reviewChevronOpen {
+	transform: rotate(180deg);
+}
+
+/* The topic tag: a quiet accent chip, like the session's .topicTag but compact. */
+.reviewTopicTag {
+	display: inline-flex;
+	align-items: baseline;
+	gap: 6px;
+	flex-shrink: 0;
+	padding: 3px var(--space-sm);
+	border-radius: var(--radius-pill);
+	background: color-mix(in srgb, var(--q-accent) 12%, transparent);
+	border: 1px solid color-mix(in srgb, var(--q-accent) 28%, transparent);
+}
+
+.reviewTopicNum {
+	font-family: var(--font-family-mono);
+	font-size: var(--font-size-caption);
+	font-weight: var(--font-weight-bold);
+	color: var(--q-accent-ink);
+}
+
+.reviewTopicName {
+	font-size: var(--font-size-caption);
+	font-weight: var(--font-weight-medium);
+	color: var(--color-text-primary);
+	white-space: nowrap;
+}
+
+.reviewStem {
+	flex: 1;
+	min-width: 0;
+	font-size: var(--font-size-label);
+	line-height: var(--line-height-snug);
+	color: var(--color-text-secondary);
+	/* Single-line clamp so the row stays scannable. */
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.reviewScore {
+	flex-shrink: 0;
+	font-family: var(--font-family-mono);
+	font-size: var(--font-size-caption);
+	font-weight: var(--font-weight-bold);
+	color: var(--color-text-muted);
+}
+
+/* A miss reads in the calm accent, never error-red — a flag for attention, not
+   a scold (matches the non-punitive learning tone). */
+.reviewScoreMiss {
+	color: var(--q-accent-ink);
+}
+
+.reviewPanel {
+	padding: 0 var(--space-lg) var(--space-lg);
+	border-top: 1px solid var(--color-border-subtle);
+}
+
+/* The re-rendered LessonCheck already carries its own card chrome; lift its top
+   margin so it sits flush under the row header. */
+.reviewPanel > * {
+	margin-top: var(--space-md);
+}
+
 .summaryActions {
 	display: flex;
 	align-items: center;
@@ -1076,6 +1191,10 @@
 	.studyLink:hover svg {
 		transform: none;
 	}
+
+	.reviewChevron {
+		transition: none;
+	}
 }
 
 /* ---------- Responsive ---------- */
@@ -1086,6 +1205,13 @@
 	}
 
 	.topicBar {
+		display: none;
+	}
+
+	/* The collapsed stem is redundant on narrow rows (the topic tag identifies the
+	   problem, and expanding shows the full stem); drop it so the tag + score stay
+	   readable instead of squeezing to an ellipsis. */
+	.reviewStem {
 		display: none;
 	}
 }
