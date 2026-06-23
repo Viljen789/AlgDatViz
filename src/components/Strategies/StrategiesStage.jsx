@@ -3,7 +3,15 @@ import {
 	buildRecursionTree,
 	recursionTreeToLevels,
 } from './climbingStairsRecursion.js';
-import { SCENES } from './scenes.js';
+import {
+	SCENES,
+	STABLE_MEN,
+	STABLE_WOMEN,
+	STABLE_PROPOSED,
+	STABLE_MEN_NAMES,
+	STABLE_WOMEN_NAMES,
+	STABLE_BLOCKING_PAIR,
+} from './scenes.js';
 import StateLegend from '../../common/StateLegend/StateLegend';
 import { SceneNarration } from '../../common/PlaybackEngine';
 import styles from './StrategiesStage.module.css';
@@ -328,6 +336,91 @@ const DecisionBoard = () => (
 	</div>
 );
 
+// The stable-matching board (Gale-Shapley closing scene). Two preference columns
+// — men on the left, women on the right, each with their ranked list — plus the
+// PROPOSED matching as connector rows. While the predict is held the board shows
+// only the proposal; once answered it marks the one blocking pair (Bram wants
+// Wren, Wren wants Bram, neither is matched to the other) in the special hue, the
+// same "this pairing is poisoned" semantics the stranded greedy coin carries. We
+// reuse the existing lane / laneHead / laneVerdict primitives so it stays in house
+// style — a static diagram, not a bespoke animation. Data is imported from
+// scenes.js, the same source the predict answer is derived from.
+const STABLE_MAN_IDS = ['m1', 'm2', 'm3'];
+
+// rank label like "Wren · Xena · Yuki" for one person's preference list.
+const prefNames = (ids, names) => ids.map(id => names[id]).join(' · ');
+
+const StableBoard = ({ holdReveal = false }) => {
+	const blocking = STABLE_BLOCKING_PAIR; // { man:'m2', woman:'w1' }
+	return (
+		<div className={styles.stableBoard}>
+			<div className={styles.laneHead}>
+				<span className={`${styles.laneTag} ${styles.laneTagSafe}`}>
+					Stable matching — Gale-Shapley
+				</span>
+				<span className={styles.laneSub}>
+					a pair blocks only if BOTH prefer each other
+				</span>
+			</div>
+
+			<ul className={styles.stableRows} aria-label="Proposed matching">
+				{STABLE_MAN_IDS.map(manId => {
+					const womanId = STABLE_PROPOSED[manId];
+					const isBlockMan = !holdReveal && manId === blocking.man;
+					return (
+						<li
+							key={manId}
+							className={`${styles.stableRow} ${
+								isBlockMan ? styles.stableRowBlock : ''
+							}`}
+						>
+							<span className={styles.stablePerson}>
+								<span className={styles.stableName}>
+									{STABLE_MEN_NAMES[manId]}
+								</span>
+								<span className={styles.stablePrefs}>
+									wants {prefNames(STABLE_MEN[manId], STABLE_WOMEN_NAMES)}
+								</span>
+							</span>
+							<span className={styles.stableLink} aria-hidden="true">
+								⇄
+							</span>
+							<span
+								className={`${styles.stablePerson} ${styles.stablePersonR}`}
+							>
+								<span className={styles.stableName}>
+									{STABLE_WOMEN_NAMES[womanId]}
+								</span>
+								<span className={styles.stablePrefs}>
+									wants {prefNames(STABLE_WOMEN[womanId], STABLE_MEN_NAMES)}
+								</span>
+							</span>
+						</li>
+					);
+				})}
+			</ul>
+
+			{!holdReveal && (
+				<p className={styles.stableBlockNote} aria-hidden="true">
+					{STABLE_MEN_NAMES[blocking.man]} ⇄{' '}
+					{STABLE_WOMEN_NAMES[blocking.woman]} block: each ranks the other
+					first, above their current partner.
+				</p>
+			)}
+
+			<p
+				className={`${styles.laneVerdict} ${
+					holdReveal ? '' : styles.laneVerdictBad
+				}`}
+			>
+				{holdReveal
+					? 'predict: is this stable — and if not, who elopes?'
+					: 'unstable — one blocking pair; Gale-Shapley would pair Wren with Bram'}
+			</p>
+		</div>
+	);
+};
+
 // Map each scene id to the board it drives + the accessible label + the corner
 // notation. Keying by id keeps the stage stable when scenes are added/reordered.
 const SCENE_BOARDS = {
@@ -338,6 +431,7 @@ const SCENE_BOARDS = {
 	'greedy-safe': 'interval',
 	'two-properties': 'decision',
 	'choose-what': 'coin',
+	'stable-matching': 'stable',
 };
 
 const BOARD_META = {
@@ -358,6 +452,11 @@ const BOARD_META = {
 	decision: {
 		label: 'The greedy-vs-DP decision rule built from optimal substructure',
 		notation: 'optimal substructure + ?',
+	},
+	stable: {
+		label:
+			'Stable matching — two preference columns and a proposed matching, with the blocking pair marked',
+		notation: 'Gale-Shapley · 3 × 3 · stable?',
 	},
 };
 
@@ -380,6 +479,8 @@ const SCENE_NARRATION = {
 		'Both tools need optimal substructure; greedy-choice leads to greedy, overlapping subproblems lead to DP.',
 	'choose-what':
 		'The fork: greedy strands at 5 coins, DP answers 2 — choose by which property holds.',
+	'stable-matching':
+		'Gale-Shapley is greedy and safe: Bram and Wren block this proposed matching because each ranks the other first, so the algorithm pairs them — no blocking pair remains.',
 };
 
 // Scene-aware colour key: only the states the active board paints right now.
@@ -416,6 +517,10 @@ const buildLegend = sceneId => {
 				{ swatch: SW_SAFE, label: 'leads to greedy', aria: 'green' },
 				{ swatch: SW_DP, label: 'leads to DP', aria: 'accent' },
 			];
+		case 'stable-matching':
+			return [
+				{ swatch: SW_WASTE, label: 'blocking pair', aria: 'special hue' },
+			];
 		default:
 			return [];
 	}
@@ -426,13 +531,16 @@ const StrategiesStage = ({ activeScene = 0, holdReveal = false }) => {
 	const board = SCENE_BOARDS[sceneId] ?? 'coin';
 	const meta = BOARD_META[board];
 	const legend = buildLegend(sceneId);
-	// While the greedy-trap predict is held, the spoken line must not spoil the
-	// outcome either (the on-screen verdict is already held), so it mirrors the
-	// pre-choice prompt instead of announcing the 5-coin trap.
-	const gateGreedy = holdReveal && sceneId === 'greedy-trap';
-	const narration = gateGreedy
-		? 'Greedy takes 6¢ first. Predict how many coins it spends before the run plays out.'
-		: (SCENE_NARRATION[sceneId] ?? meta.label);
+	// While a predict is held, the spoken line must not spoil the outcome either
+	// (the on-screen verdict is already held), so it mirrors the pre-choice prompt
+	// instead of announcing the answer. Each gated scene has its own held line.
+	const heldNarration =
+		holdReveal && sceneId === 'greedy-trap'
+			? 'Greedy takes 6¢ first. Predict how many coins it spends before the run plays out.'
+			: holdReveal && sceneId === 'stable-matching'
+				? 'A matching is proposed for three pairs. Predict whether it is stable, and if not which pair would elope, before the blocking edge is shown.'
+				: null;
+	const narration = heldNarration ?? SCENE_NARRATION[sceneId] ?? meta.label;
 
 	return (
 		<>
@@ -451,6 +559,7 @@ const StrategiesStage = ({ activeScene = 0, holdReveal = false }) => {
 				{board === 'recursion' && <RecursionBoard />}
 				{board === 'interval' && <IntervalBoard />}
 				{board === 'decision' && <DecisionBoard />}
+				{board === 'stable' && <StableBoard holdReveal={holdReveal} />}
 
 				<StateLegend items={legend} />
 

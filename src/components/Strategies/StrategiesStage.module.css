@@ -500,6 +500,100 @@
 	}
 }
 
+/* ---------- Stable matching board (Gale-Shapley) ---------- */
+
+.stableBoard {
+	display: flex;
+	flex-direction: column;
+	gap: var(--space-md);
+	width: 100%;
+	max-width: min(100%, 600px);
+	margin-inline: auto;
+}
+
+.stableRows {
+	list-style: none;
+	margin: 0;
+	padding: 0;
+	display: flex;
+	flex-direction: column;
+	gap: var(--space-sm);
+}
+
+.stableRow {
+	display: grid;
+	grid-template-columns: 1fr auto 1fr;
+	align-items: center;
+	gap: var(--space-sm);
+	padding: var(--space-sm) var(--space-md);
+	border-radius: var(--radius-md);
+	border: 1px solid var(--color-border);
+	background: var(--surface-input);
+}
+
+/* The one blocking pair — the same "this pairing is poisoned" teaching state the
+   stranded greedy coin carries, so it rides --state-special, never error-red. The
+   caption + verdict carry the meaning redundantly for colorblind readers. */
+.stableRowBlock {
+	border-color: color-mix(in srgb, var(--state-special) 50%, transparent);
+	background: color-mix(in srgb, var(--state-special) 12%, transparent);
+}
+
+.stablePerson {
+	display: flex;
+	flex-direction: column;
+	gap: 2px;
+	min-width: 0;
+}
+
+.stablePersonR {
+	text-align: right;
+	align-items: flex-end;
+}
+
+.stableName {
+	font-family: var(--font-family-mono);
+	font-size: var(--font-size-label);
+	font-weight: var(--font-weight-bold);
+	color: var(--color-text-primary);
+}
+
+.stablePrefs {
+	font-family: var(--font-family-mono);
+	font-size: var(--font-size-caption);
+	color: var(--color-text-muted);
+	letter-spacing: var(--tracking-wide);
+}
+
+.stableLink {
+	font-family: var(--font-family-mono);
+	font-size: var(--font-size-body);
+	color: var(--color-text-dim);
+}
+
+.stableRowBlock .stableLink {
+	color: var(--state-special);
+	font-weight: var(--font-weight-bold);
+}
+
+.stableBlockNote {
+	margin: 0;
+	font-size: var(--font-size-caption);
+	line-height: var(--line-height-snug);
+	color: var(--state-special);
+}
+
+@media (max-width: 720px) {
+	.stableRow {
+		grid-template-columns: 1fr auto 1fr;
+		gap: var(--space-xs);
+		padding: var(--space-xs) var(--space-sm);
+	}
+	.stablePrefs {
+		font-size: 9px;
+	}
+}
+
 @media (prefers-reduced-motion: reduce) {
 	.coin,
 	.dpCellFilled,

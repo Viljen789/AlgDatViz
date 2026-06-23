@@ -15,6 +15,7 @@
 // punished — the explanation reveals either way, so every attempt teaches.
 
 import { buildCoinChangeFrames } from './coinChangeFrames.js';
+import { blockingPairs } from '../../lib/galeShapley.js';
 
 // The greedy-trap predict answer is DERIVED, never hand-typed: run the SAME
 // coin-change generator the stage animates on the SAME instance ({1,5,6} for
@@ -26,6 +27,60 @@ const GREEDY_TRAP_SUMMARY = buildCoinChangeFrames({
 	coins: [1, 5, 6],
 }).summary;
 export const GREEDY_TRAP_COINS = GREEDY_TRAP_SUMMARY.greedyFinal; // = 5
+
+// ── Stable matching (Gale-Shapley) — the closing scene's instance ─────────────
+// The exam bank tests stable matching but no scene taught it, a study→exam dead
+// end. This fixed 3×3 instance + a PROPOSED (not GS-produced) matching gives the
+// student one calm "is this stable? if not, who blocks it?" beat. Everything the
+// scene shows — the prefs, the matching lines, the predict answer — lives here so
+// the stage renders the SAME data the answer is derived from, and so
+// stableMatching.test.js can re-derive the key from galeShapley.js. We label the
+// people with first names purely for readability; the prefs are id-keyed.
+export const STABLE_MEN = {
+	m1: ['w1', 'w2', 'w3'],
+	m2: ['w1', 'w3', 'w2'],
+	m3: ['w2', 'w3', 'w1'],
+};
+export const STABLE_WOMEN = {
+	w1: ['m2', 'm1', 'm3'],
+	w2: ['m1', 'm3', 'm2'],
+	w3: ['m3', 'm2', 'm1'],
+};
+// A deliberately UNSTABLE proposed matching (NOT what Gale-Shapley returns). It
+// pairs each man with a partner, but exactly one pair blocks it. The student
+// commits to which pair (or "stable") before the stage reveals the blocking edge.
+export const STABLE_PROPOSED = { m1: 'w1', m2: 'w3', m3: 'w2' };
+
+// Human-readable labels so the option strings read like "Bram ⇄ Wren", not ids.
+export const STABLE_MEN_NAMES = { m1: 'Adi', m2: 'Bram', m3: 'Cyrus' };
+export const STABLE_WOMEN_NAMES = { w1: 'Wren', w2: 'Xena', w3: 'Yuki' };
+
+export const stablePairLabel = (manId, womanId) =>
+	`${STABLE_MEN_NAMES[manId]} ⇄ ${STABLE_WOMEN_NAMES[womanId]}`;
+
+// DERIVED, never hand-typed: re-run the real stability checker on the EXACT
+// instance + proposed matching the stage paints. It returns the single blocking
+// pair { man: 'm2', woman: 'w1' }; the scene's answer is its readable label, and
+// stableMatching.test.js asserts this equals blockingPairs(...) so it can't drift.
+const STABLE_BLOCKING = blockingPairs(
+	STABLE_PROPOSED,
+	STABLE_MEN,
+	STABLE_WOMEN
+);
+export const STABLE_BLOCKING_PAIR = STABLE_BLOCKING[0]; // { man:'m2', woman:'w1' }
+export const STABLE_ANSWER = stablePairLabel(
+	STABLE_BLOCKING_PAIR.man,
+	STABLE_BLOCKING_PAIR.woman
+); // = 'Bram ⇄ Wren'
+
+// The three offered pairings + "It's already stable", in a fixed reading order so
+// the option list is stable across runs. The correct one is STABLE_ANSWER.
+export const STABLE_OPTIONS = [
+	stablePairLabel('m1', 'w2'), // Adi ⇄ Xena — one-sided lure (Xena wants Adi; Adi does not)
+	stablePairLabel('m2', 'w1'), // Bram ⇄ Wren — the real blocking pair
+	stablePairLabel('m3', 'w3'), // Cyrus ⇄ Yuki — Cyrus already has his top choice
+	"It's already stable",
+];
 
 export const SCENES = [
 	{
@@ -197,6 +252,37 @@ export const SCENES = [
 			},
 			explanation:
 				'Interval scheduling has the greedy-choice property (exchange-argument proof), so greedy is safe. Coins {1, 5, 6} fails greedy at 10¢ (greedy 5 vs DP 2) and its dp[i − c] subproblems overlap, so it needs DP. Climbing stairs is pure overlapping subproblems — ways(k) recurs across the tree — with no single local "best move" to be greedy about, so DP is the tool.',
+		},
+	},
+	{
+		id: 'stable-matching',
+		eyebrow: 'A greedy that IS safe',
+		title: 'Stable matching: a greedy proposal rule with no blocking pair.',
+		body: 'Gale-Shapley is greedy too — every man proposes down his list, every woman keeps her best suitor so far and trades up. It is provably safe because it returns a STABLE matching: no two people both prefer each other over their assigned partners. Below is a matching someone proposed for these three pairs. A pair (m, w) BLOCKS it only when BOTH prefer each other to their current partner. Commit to your verdict before the stage reveals the edge.',
+		// predict (choice-mode) + revealGate: BEFORE the StableBoard draws the
+		// blocking edge, the student commits to whether the shown matching is stable
+		// and, if not, WHICH pair blocks it. The answer is DERIVED from the real
+		// stability checker — blockingPairs(STABLE_PROPOSED, STABLE_MEN, STABLE_WOMEN)
+		// returns exactly { man:'m2', woman:'w1' } (Bram ⇄ Wren), labelled in
+		// STABLE_ANSWER. Re-derived in stableMatching.test.js so the key can never
+		// drift from galeShapley.js, exactly like the greedy-trap coin count above.
+		check: {
+			kind: 'predict',
+			revealGate: true,
+			prompt:
+				'Is this proposed matching stable? If not, which pair would break it by eloping?',
+			options: STABLE_OPTIONS,
+			answer: STABLE_ANSWER,
+			misconceptions: {
+				[stablePairLabel('m1', 'w2')]:
+					'Xena does prefer Adi to her partner Cyrus — but Adi is already with Wren, his TOP choice, so he would never leave for Xena. A blocking pair needs BOTH to prefer each other; one-sided longing is not enough.',
+				[stablePairLabel('m3', 'w3')]:
+					'Cyrus is already matched to Xena, his FIRST choice, so he prefers no one to her — he cannot be half of a blocking pair here. Check the man wants to switch too, not just the woman.',
+				"It's already stable":
+					'Look again at Bram: he is matched to Yuki but ranks Wren first, and Wren ranks Bram first over her partner Adi. They both prefer each other, so they would elope — that blocking pair makes the matching unstable.',
+			},
+			explanation:
+				'Bram ⇄ Wren blocks: Bram is matched to Yuki but prefers Wren (his #1), and Wren is matched to Adi but prefers Bram (her #1) — both would rather elope, so the matching is unstable. Adi⇄Xena and Cyrus⇄Yuki are only one-sided attractions (one wants to switch, the partner does not), which never block. Run Gale-Shapley instead and Wren ends up with Bram: the result has no blocking pair at all. That guaranteed absence is why this greedy proposal rule is provably safe — the greedy-choice property of the matching world.',
 		},
 	},
 ];
