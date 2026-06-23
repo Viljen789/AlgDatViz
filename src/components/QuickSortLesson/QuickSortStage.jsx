@@ -163,36 +163,79 @@ const QuickSortStage = ({ activeScene = 0, holdReveal = false }) => {
 	const isSelect = activeScene === 5;
 
 	const [frameIdx, setFrameIdx] = useState(0);
+	// A play flag for the partition sweep, mirroring recursePlaying: the inline
+	// transport's Pause/Play toggles it so a student can freeze the hardest beat
+	// (the Lomuto compare/swap) at the current frame without leaving the scene.
+	const [partitionPlaying, setPartitionPlaying] = useState(true);
 
+	const PARTITION_LAST = PARTITION_FRAMES.length - 1;
+
+	// Reset the sweep when the scene or its gating inputs change. Settling rules
+	// match the recursion scene: reduced motion parks on the finished partition,
+	// and a pending prediction (partitionHeld) parks on the honest frame 0 with
+	// play off so the controls + autoplay stay suppressed until the student answers.
 	useEffect(() => {
 		if (!isPartitionScene) {
 			setFrameIdx(0);
-			return undefined;
+			setPartitionPlaying(true);
+			return;
 		}
-		const last = PARTITION_FRAMES.length - 1;
 		if (partitionHeld) {
 			// Prediction pending: park on frame 0 (the honest pre-partition state:
-			// pivot marked, nothing swapped yet) and do not start the sweep. The
-			// instant the student answers, holdReveal flips false and this effect
-			// re-runs to play the real partition from the top.
+			// pivot marked, nothing swapped yet). The instant the student answers,
+			// holdReveal flips false and this effect re-runs to play from the top.
 			setFrameIdx(0);
-			return undefined;
+			setPartitionPlaying(true);
+			return;
 		}
 		if (reducedMotion) {
 			// Settle on the finished partition — the pivot already home.
-			setFrameIdx(last);
-			return undefined;
+			setFrameIdx(PARTITION_LAST);
+			setPartitionPlaying(false);
+			return;
 		}
 		setFrameIdx(0);
-		let idx = 0;
+		setPartitionPlaying(true);
+	}, [isPartitionScene, reducedMotion, partitionHeld, PARTITION_LAST]);
+
+	// The auto-advance interval, gated on partitionPlaying so Pause freezes it. It
+	// is suppressed entirely while the prediction is held so the held frame never
+	// animates and spoils the reveal — exactly the original behaviour, now also
+	// stoppable by hand.
+	const partitionTickRef = useRef(frameIdx);
+	useEffect(() => {
+		if (
+			!isPartitionScene ||
+			reducedMotion ||
+			partitionHeld ||
+			!partitionPlaying
+		) {
+			return undefined;
+		}
+		// Resume the raw counter from wherever the visible frame currently sits.
+		partitionTickRef.current = frameIdx;
 		const id = window.setInterval(() => {
-			idx += 1;
+			let idx = partitionTickRef.current + 1;
 			// Hold the finished partition for two ticks, then replay for late scrollers.
 			if (idx >= PARTITION_FRAMES.length + 2) idx = 0;
-			setFrameIdx(Math.min(idx, last));
+			partitionTickRef.current = idx;
+			setFrameIdx(Math.min(idx, PARTITION_LAST));
 		}, 950);
 		return () => window.clearInterval(id);
-	}, [isPartitionScene, reducedMotion, partitionHeld]);
+		// frameIdx is the resume seed only; re-running on every tick would reset the
+		// counter, so it is intentionally not in the dep list.
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [isPartitionScene, reducedMotion, partitionHeld, partitionPlaying]);
+
+	const stepPartition = delta => {
+		setPartitionPlaying(false);
+		setFrameIdx(prev => Math.max(0, Math.min(prev + delta, PARTITION_LAST)));
+	};
+	const togglePartitionPlay = () => {
+		// Pressing play while parked on the finished frame replays from the top.
+		if (!partitionPlaying && frameIdx >= PARTITION_LAST) setFrameIdx(0);
+		setPartitionPlaying(prev => !prev);
+	};
 
 	const frame = PARTITION_FRAMES[frameIdx] || PARTITION_FRAMES[0];
 
@@ -610,6 +653,69 @@ const QuickSortStage = ({ activeScene = 0, holdReveal = false }) => {
 								disabled={recurseIdx > RECURSE_LAST}
 								aria-label="Next recursion step"
 								title="Next recursion step"
+							>
+								<ChevronRight size={15} strokeWidth={1.8} aria-hidden="true" />
+							</button>
+						</div>
+					</div>
+				)}
+
+				{/* Partition transport: prev / play-pause / next so a student can freeze
+				    the Lomuto sweep at the current compare/swap — the hardest beat in the
+				    curriculum. Suppressed entirely while the scene-0 prediction is held
+				    (partitionHeld) so the controls never appear before the reveal, and
+				    Pause/Play is hidden under reduced motion exactly like the recursion
+				    scene (those users step by hand; auto-play stays off by design). */}
+				{isPartitionScene && !partitionHeld && (
+					<div className={styles.recurseTransport}>
+						<div className={styles.recurseControls}>
+							<button
+								type="button"
+								className={styles.recurseBtn}
+								onClick={() => stepPartition(-1)}
+								disabled={frameIdx <= 0}
+								aria-label="Previous partition step"
+								title="Previous partition step"
+							>
+								<ChevronLeft size={15} strokeWidth={1.8} aria-hidden="true" />
+							</button>
+							{!reducedMotion && (
+								<button
+									type="button"
+									className={`${styles.recurseBtn} ${styles.recursePlay}`}
+									onClick={togglePartitionPlay}
+									aria-pressed={partitionPlaying}
+									aria-label={
+										partitionPlaying ? 'Pause partition' : 'Play partition'
+									}
+									title={
+										partitionPlaying ? 'Pause partition' : 'Play partition'
+									}
+								>
+									{partitionPlaying ? (
+										<Pause
+											size={15}
+											strokeWidth={1.8}
+											fill="currentColor"
+											aria-hidden="true"
+										/>
+									) : (
+										<Play
+											size={15}
+											strokeWidth={1.8}
+											fill="currentColor"
+											aria-hidden="true"
+										/>
+									)}
+								</button>
+							)}
+							<button
+								type="button"
+								className={styles.recurseBtn}
+								onClick={() => stepPartition(1)}
+								disabled={frameIdx >= PARTITION_LAST}
+								aria-label="Next partition step"
+								title="Next partition step"
 							>
 								<ChevronRight size={15} strokeWidth={1.8} aria-hidden="true" />
 							</button>
