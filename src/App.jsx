@@ -159,7 +159,7 @@ const AppLayout = () => {
 
 function App() {
 	return (
-		<BrowserRouter>
+		<BrowserRouter basename={import.meta.env.BASE_URL}>
 			{/* Honor the OS reduced-motion setting for every framer-motion
 			    animation (route transitions included) in one place. */}
 			<MotionConfig reducedMotion="user">

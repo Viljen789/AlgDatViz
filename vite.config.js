@@ -1,8 +1,12 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
+import process from 'node:process';
 
 // https://vite.dev/config/
 export default defineConfig({
+	// GitHub Pages serves this project from `/AlgDatViz/`; local development and
+	// other hosts keep the normal root base unless the deploy workflow overrides it.
+	base: process.env.VITE_BASE || '/',
 	plugins: [react()],
 	build: {
 		rollupOptions: {
