@@ -4,12 +4,12 @@
 	cursor: pointer;
 	border-radius: 50%;
 	transition:
-		opacity 0.2s,
-		color 0.2s,
-		background-color 0.2s;
-	font-size: 1.5rem;
+		opacity var(--transition),
+		color var(--transition),
+		background-color var(--transition);
+	font-size: var(--font-size-heading-md);
 	line-height: 1;
-	padding: 0 0.25rem;
+	padding: 0 var(--space-xs);
 }
 
 .addButton {
@@ -17,28 +17,29 @@
 	display: flex;
 	align-items: center;
 	justify-content: center;
-	padding: 0.75rem;
+	padding: var(--space-md);
 	background-color: transparent;
 	color: var(--color-text-secondary);
-	border-radius: var(--border-radius-md);
+	border-radius: var(--radius-md);
 }
 
 .addButton:hover {
 	color: var(--color-primary);
-	background-color: var(--color-light-grey);
+	background-color: var(--surface-hover);
 }
 
 .plusIcon {
-	font-size: 1.5rem;
+	font-size: var(--font-size-heading-md);
 	line-height: 1;
 }
 
 .deleteButton {
-	color: var(--color-border);
+	color: var(--color-text-dim);
 	opacity: 0;
 }
 
-.deleteButton:hover {
+.deleteButton:hover,
+.deleteButton:focus-visible {
 	color: var(--color-error);
 	opacity: 1;
 }

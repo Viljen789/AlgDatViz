@@ -6,8 +6,10 @@
 .scrolly {
 	max-width: 1280px;
 	margin: 0 auto;
-	padding: 0 clamp(var(--space-xl), 6vw, var(--space-4xl))
-		clamp(var(--space-2xl), 6vw, var(--space-4xl));
+	/* A slim bottom pad — the last scene carries its own padding, and the
+	   playground section below brings its own top pad; anything more opens a
+	   dead scroll zone between the scrolly and the playground. */
+	padding: 0 clamp(var(--space-xl), 6vw, var(--space-4xl)) var(--space-lg);
 	display: grid;
 	/* The visualization is the product. Give the stage hero proportion (~62%)
 	   and let the prose column recede beside it. */
@@ -23,16 +25,91 @@
 
 .stageSticky {
 	position: sticky;
-	top: 76px;
+	top: var(--topic-header-h);
 	display: flex;
 	flex-direction: column;
 	align-items: center;
 	justify-content: flex-start;
 	gap: var(--space-md);
 	height: min(86vh, 760px);
+	height: min(86dvh, 760px);
 	/* Promote the pinned stage to its own compositor layer so scrolling the prose
 	   beside it doesn't repaint the visualization each frame. */
 	will-change: transform;
+}
+
+/* Persistent orientation belongs with the canvas. On desktop it anchors the
+   visualization to the prose; on mobile it appears before the figure, so a
+   learner never meets an unlabeled diagram and a row of anonymous dots. */
+.stageContext {
+	width: 100%;
+	min-width: 0;
+	display: grid;
+	grid-template-columns: auto minmax(0, 1fr) auto;
+	align-items: center;
+	gap: var(--space-sm);
+	padding: 0 var(--space-xs) var(--space-sm);
+	border-bottom: 1px solid var(--color-border-subtle);
+	font-family: var(--font-family-mono);
+	font-size: var(--font-size-caption);
+}
+
+.stageContextIndex {
+	color: var(--topic-accent-ink);
+	font-weight: var(--font-weight-semibold);
+	letter-spacing: var(--tracking-wide);
+}
+
+.stageContextTitle {
+	min-width: 0;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+	color: var(--color-text-secondary);
+	letter-spacing: var(--tracking-caps);
+	text-transform: uppercase;
+}
+
+.stageContextStatus {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	color: var(--color-text-muted);
+	white-space: nowrap;
+}
+
+.stageContextStatus::before {
+	content: '';
+	width: 7px;
+	height: 7px;
+	border: 1px solid currentColor;
+	border-radius: var(--radius-pill);
+	box-sizing: border-box;
+}
+
+.stageContextStatus_correct {
+	color: var(--color-success);
+}
+
+.stageContextStatus_correct::before {
+	border-radius: 2px;
+	background: currentColor;
+}
+
+.stageContextStatus_incorrect {
+	color: var(--color-warning);
+}
+
+.stageContextStatus_incorrect::before {
+	border-width: 2px;
+}
+
+.stageContextStatus_retrying {
+	color: var(--topic-accent-ink);
+}
+
+.stageContextStatus_retrying::before {
+	background: currentColor;
 }
 
 .stageFigure {
@@ -52,6 +129,7 @@
 .scene {
 	position: relative;
 	min-height: 80vh;
+	min-height: 80dvh;
 	padding: clamp(var(--space-2xl), 8vh, var(--space-4xl)) 0;
 	display: flex;
 	flex-direction: column;
@@ -70,6 +148,7 @@
 	transition:
 		opacity var(--duration-step) var(--ease-quiet),
 		transform var(--duration-step) var(--ease-quiet);
+	scroll-margin-top: calc(var(--topic-header-h) + var(--space-md));
 }
 
 .sceneActive {
@@ -81,6 +160,12 @@
 .scene:first-child {
 	justify-content: flex-start;
 	padding-top: var(--space-md);
+}
+
+/* The last scene hands off to the playground without a blank half-screen; its
+   min-height still guarantees the scroll pacing. */
+.scene:last-child {
+	padding-bottom: var(--space-xl);
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -121,7 +206,7 @@
 	margin: 0;
 	font-family: var(--font-family-mono);
 	font-size: var(--font-size-caption);
-	font-weight: var(--font-weight-bold);
+	font-weight: var(--font-weight-semibold);
 	letter-spacing: var(--tracking-caps);
 	text-transform: uppercase;
 	color: var(--color-text-muted);
@@ -167,7 +252,7 @@
 
 	.stageColumn {
 		position: sticky;
-		top: 72px;
+		top: var(--topic-header-h);
 		z-index: 1;
 		background: var(--color-bg-app);
 		padding-bottom: var(--space-sm);
@@ -183,6 +268,19 @@
 	.stageFigure {
 		height: 46vh;
 		max-height: 360px;
+	}
+
+	.stageContext {
+		padding-top: var(--space-xs);
+	}
+
+	.stageContextStatus {
+		font-size: 0;
+	}
+
+	.stageContextStatus::before {
+		width: 9px;
+		height: 9px;
 	}
 
 	.scene {

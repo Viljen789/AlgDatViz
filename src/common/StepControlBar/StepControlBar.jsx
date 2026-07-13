@@ -86,7 +86,7 @@ const StepControlBar = ({
 				aria-label="First step"
 				title="First step"
 			>
-				<ChevronFirst size={16} strokeWidth={1.6} />
+				<ChevronFirst size={16} strokeWidth={2} />
 			</button>
 			<button
 				type="button"
@@ -96,7 +96,7 @@ const StepControlBar = ({
 				aria-label="Step back"
 				title="Step back ( ← )"
 			>
-				<ChevronLeft size={16} strokeWidth={1.6} />
+				<ChevronLeft size={16} strokeWidth={2} />
 			</button>
 			<button
 				type="button"
@@ -107,9 +107,9 @@ const StepControlBar = ({
 				title={isPlaying ? 'Pause (space)' : 'Play (space)'}
 			>
 				{isPlaying ? (
-					<Pause size={18} strokeWidth={1.6} fill="currentColor" />
+					<Pause size={18} strokeWidth={2} fill="currentColor" />
 				) : (
-					<Play size={18} strokeWidth={1.6} fill="currentColor" />
+					<Play size={18} strokeWidth={2} fill="currentColor" />
 				)}
 			</button>
 			<button
@@ -120,7 +120,7 @@ const StepControlBar = ({
 				aria-label="Step forward"
 				title="Step forward ( → )"
 			>
-				<ChevronRight size={16} strokeWidth={1.6} />
+				<ChevronRight size={16} strokeWidth={2} />
 			</button>
 			<button
 				type="button"
@@ -130,7 +130,7 @@ const StepControlBar = ({
 				aria-label="Last step"
 				title="Last step"
 			>
-				<ChevronLast size={16} strokeWidth={1.6} />
+				<ChevronLast size={16} strokeWidth={2} />
 			</button>
 
 			<div className={styles.divider} aria-hidden="true" />
@@ -145,13 +145,16 @@ const StepControlBar = ({
 					disabled={!canStep}
 					onChange={e => onSeek?.(Number(e.target.value))}
 					aria-label="Scrub to step"
+					style={{
+						'--range-fill': `${max > 0 ? (value / max) * 100 : 0}%`,
+					}}
 				/>
 			</div>
 
 			<div className={styles.divider} aria-hidden="true" />
 
 			<div className={styles.meta}>
-				step {value} / {max}
+				step {value + 1} / {max + 1}
 			</div>
 
 			{onSpeedChange && (

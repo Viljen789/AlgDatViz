@@ -154,6 +154,7 @@ export const SCENES = [
 		body: `Kruskal merges scattered components from a global sorted list; Prim grows one connected tree from a start vertex. They consider edges in different orders and from different starts — yet on this graph (all weights distinct) they finish with the exact same ${MST_EDGE_COUNT}-edge tree of weight ${MST_WEIGHT}. The cut property is the shared reason: both only ever add safe light edges.`,
 		check: {
 			kind: 'numeric',
+			reviewSafe: false,
 			prompt: `Run Kruskal, or Prim from A, or Prim from F on this graph. What total weight does the minimum spanning tree have?`,
 			answer: MST_WEIGHT,
 			placeholder: 'total weight',

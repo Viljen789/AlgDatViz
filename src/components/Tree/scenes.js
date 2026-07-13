@@ -109,6 +109,7 @@ export const SCENES = [
 		body: `To add ${INSERT_KEY}, run the same search. It walks down until it reaches a missing child pointer — and that empty slot is exactly where the new node belongs. No reshuffling: the search path itself finds the spot that keeps the invariant intact.`,
 		check: {
 			kind: 'choice',
+			reviewSafe: false,
 			prompt: `Inserting ${INSERT_KEY}: the search ends at an empty pointer below which node?`,
 			options: [23, 31, 12, 42],
 			answer: 31,

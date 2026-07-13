@@ -29,6 +29,8 @@ import styles from './SceneControlBar.module.css';
  *   active       index of the active scene (0-based), owned by the parent.
  *   isPlaying    whether auto-advance is running.
  *   scenes       Array<{ id, title }> — for the scrubber's accessible labels.
+ *   sceneStatuses Array<'pending'|'retrying'|'incorrect'|'correct'|'none'> —
+ *                gives each scene marker a redundant shape + label state.
  *   blockedReason optional string — when set, Play is disabled and the reason is
  *                announced (e.g. an unanswered check on the current scene).
  *   scopeRef     ref to the container keyboard control is scoped to (so keys only
@@ -43,6 +45,7 @@ const SceneControlBar = ({
 	active,
 	isPlaying,
 	scenes = [],
+	sceneStatuses = [],
 	blockedReason = null,
 	scopeRef = null,
 	reducedMotion = false,
@@ -88,9 +91,7 @@ const SceneControlBar = ({
 
 		const isActiveSurface = () => {
 			if (scope.contains(document.activeElement)) return true;
-			return (
-				typeof scope.matches === 'function' && scope.matches(':hover')
-			);
+			return typeof scope.matches === 'function' && scope.matches(':hover');
 		};
 
 		const onKey = e => {
@@ -149,7 +150,11 @@ const SceneControlBar = ({
 			role="group"
 			aria-label="Scene playback"
 		>
-			<div className={styles.controls} role="toolbar" aria-label="Scene controls">
+			<div
+				className={styles.controls}
+				role="toolbar"
+				aria-label="Scene controls"
+			>
 				<button
 					type="button"
 					className={styles.btn}
@@ -166,7 +171,11 @@ const SceneControlBar = ({
 					onClick={onPrev}
 					disabled={atStart}
 					aria-label="Previous scene"
-					title="Previous scene ( ← )"
+					title={
+						active > 0 && scenes[active - 1]?.title
+							? `Previous: ${scenes[active - 1].title} (←)`
+							: 'Previous scene (←)'
+					}
 				>
 					<ChevronLeft size={16} strokeWidth={1.8} aria-hidden="true" />
 				</button>
@@ -180,9 +189,19 @@ const SceneControlBar = ({
 					title={playTitle}
 				>
 					{isPlaying ? (
-						<Pause size={17} strokeWidth={1.8} fill="currentColor" aria-hidden="true" />
+						<Pause
+							size={17}
+							strokeWidth={1.8}
+							fill="currentColor"
+							aria-hidden="true"
+						/>
 					) : (
-						<Play size={17} strokeWidth={1.8} fill="currentColor" aria-hidden="true" />
+						<Play
+							size={17}
+							strokeWidth={1.8}
+							fill="currentColor"
+							aria-hidden="true"
+						/>
 					)}
 				</button>
 				<button
@@ -191,7 +210,11 @@ const SceneControlBar = ({
 					onClick={onNext}
 					disabled={atEnd}
 					aria-label="Next scene"
-					title="Next scene ( → )"
+					title={
+						active < total - 1 && scenes[active + 1]?.title
+							? `Next: ${scenes[active + 1].title} (→)`
+							: 'Next scene (→)'
+					}
 				>
 					<ChevronRight size={16} strokeWidth={1.8} aria-hidden="true" />
 				</button>
@@ -207,25 +230,35 @@ const SceneControlBar = ({
 				</button>
 			</div>
 
-			{/* Scrubber: one dot per scene, clickable + keyboardable jump targets. */}
-			<div
-				className={styles.scrubber}
-				role="tablist"
-				aria-label="Jump to scene"
-			>
+			{/* Scrubber: one dot per scene, clickable + keyboardable jump targets.
+			    A plain group of buttons — not tablist/tab, since the dots control no
+			    tab panels; aria-current marks the active scene. */}
+			<div className={styles.scrubber} role="group" aria-label="Jump to scene">
 				{Array.from({ length: total }, (_, idx) => {
 					const isActive = idx === active;
-					const label = scenes[idx]?.title
+					const status = sceneStatuses[idx] || 'none';
+					const statusLabel =
+						status === 'correct'
+							? 'checked'
+							: status === 'incorrect'
+								? 'needs correction'
+								: status === 'retrying'
+									? 'trying again'
+									: status === 'pending'
+										? 'check ahead'
+										: 'no check';
+					const sceneLabel = scenes[idx]?.title
 						? `Scene ${idx + 1} of ${total}: ${scenes[idx].title}`
 						: `Scene ${idx + 1} of ${total}`;
+					const label = `${sceneLabel}, ${statusLabel}`;
 					return (
 						<button
 							key={scenes[idx]?.id ?? idx}
 							type="button"
-							role="tab"
-							aria-selected={isActive}
 							aria-current={isActive ? 'true' : undefined}
-							className={`${styles.dot} ${isActive ? styles.dotActive : ''}`}
+							className={`${styles.dot} ${isActive ? styles.dotActive : ''} ${
+								styles[`dot_${status}`] || ''
+							}`}
 							onClick={() => onJump?.(idx)}
 							title={label}
 							aria-label={label}

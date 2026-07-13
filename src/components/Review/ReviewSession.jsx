@@ -222,30 +222,8 @@ const ReviewSession = ({ questions, onRestart, onGraded }) => {
 					)}
 					{isAnswered && (
 						<>
-							<span
-								aria-hidden="true"
-								style={{
-									display: 'inline-flex',
-									alignItems: 'center',
-									gap: '6px',
-									marginRight: 'auto',
-									color: 'var(--color-text-muted)',
-									fontSize: 'var(--font-size-caption)',
-								}}
-							>
-								<kbd
-									style={{
-										padding: '2px 6px',
-										border: '1px solid var(--color-border)',
-										borderRadius: 'var(--radius-sm)',
-										fontSize: 'var(--font-size-caption)',
-										lineHeight: 1.4,
-										color: 'var(--color-text-secondary)',
-										background: 'var(--color-bg-sunken)',
-									}}
-								>
-									Enter
-								</kbd>
+							<span aria-hidden="true" className={styles.kbdHint}>
+								<kbd className={styles.kbd}>Enter</kbd>
 								<span>to continue</span>
 							</span>
 							<button

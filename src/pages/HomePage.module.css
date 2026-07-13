@@ -56,134 +56,14 @@
 @media (min-width: 960px) {
 	.hero {
 		display: grid;
-		grid-template-columns: minmax(0, 52ch) minmax(360px, 1fr);
+		grid-template-columns: minmax(20rem, 0.9fr) minmax(19rem, 1.1fr);
 		align-items: center;
-		gap: clamp(36px, 4.5vw, 72px);
+		gap: clamp(28px, 3.5vw, 52px);
 	}
-}
 
-/* The instrument lives inside a <figure> so a hairline-ruled legend can name the
-   live structure as it forms. Below 960px the whole figure (instrument + caption)
-   is hidden — title legibility wins — and the reading column carries the thesis
-   in words instead (see .heroThesisStrip). */
-.heroFigure {
-	display: none;
-	margin: 0;
-}
-
-.heroRecompose {
-	display: block;
-	width: 100%;
-	aspect-ratio: 800 / 520;
-}
-
-@media (min-width: 960px) {
-	.heroFigure {
-		display: flex;
-		flex-direction: column;
-		gap: var(--space-sm);
-		width: 100%;
-		max-width: 520px;
-		/* Sit immediately beside the reading column rather than floating against
-		   the far edge of the 1fr track — the old `center` flung it right and left a
-		   dead gap between headline and instrument. `start` tucks it in; the calm
-		   whitespace then falls to the right of the framed plate, which reads as
-		   deliberate margin rather than an accident. */
-		justify-self: start;
-		align-self: center;
+	.heroTitle {
+		font-size: clamp(2.75rem, 4.2vw, 4rem);
 	}
-}
-
-/* A quiet "plate" framing the live instrument so it reads as a deliberate figure
-   even at rest (in dark mode the atoms are faint until the loop animates). A
-   hairline border + a soft top-down surface vignette, tuned per theme by the
-   tokens. overflow:hidden clips the concept wash to the rounded corners. */
-.heroPlate {
-	position: relative;
-	border-radius: var(--radius-xl);
-	border: 1px solid var(--color-border-subtle);
-	background: radial-gradient(
-		135% 120% at 50% 0%,
-		color-mix(in srgb, var(--surface-1) 70%, transparent),
-		transparent 72%
-	);
-	padding: clamp(10px, 1.8vw, 22px);
-	overflow: hidden;
-}
-
-/* On paper the fade-to-transparent vignette is near-invisible (surface-1 ≈ the
-   cream canvas). Instead make the plate a clean raised panel: a solid paper-white
-   ground gently deepening toward the canvas at the foot, framed by the border +
-   shadow. The white ground also lifts the ink atoms' contrast at rest. */
-:global([data-theme='light']) .heroPlate {
-	background: linear-gradient(
-		180deg,
-		var(--surface-1),
-		color-mix(in srgb, var(--surface-1) 84%, var(--color-bg-app))
-	);
-	box-shadow: var(--shadow-2);
-}
-
-/* ---- The live figure legend: "Fig. 1 — <structure>" + its one defining fact ---- */
-.heroFigcaption {
-	display: flex;
-	flex-direction: column;
-	gap: 2px;
-	padding-top: var(--space-sm);
-	border-top: 1px solid var(--color-border-subtle);
-}
-
-.heroFigureRow {
-	display: flex;
-	align-items: baseline;
-	justify-content: space-between;
-	gap: var(--space-md);
-}
-
-.heroFigureMark {
-	font-family: var(--font-family-mono);
-	font-size: var(--font-size-caption);
-	letter-spacing: var(--tracking-caps);
-	text-transform: uppercase;
-	/* The single spot of concept-hue colour — reads the same --wash-h the canvas
-	   wash is driven by, so the mark and the active structure always agree. It is
-	   decorative (the figure is aria-hidden); the headline carries the meaning. */
-	color: hsl(var(--wash-h, 226) 48% 52%);
-}
-
-.heroFigureName {
-	min-width: 6ch;
-	font-family: var(--font-family-display);
-	font-style: italic;
-	font-size: var(--font-size-body);
-	color: var(--color-text-primary);
-	text-align: end;
-}
-
-/* The one defining fact — the "oh, that's why" line. Quiet mono, never claiming
-   a value-ordering invariant the index-packed geometry doesn't satisfy. */
-.heroFigureNote {
-	font-family: var(--font-family-mono);
-	font-size: var(--font-size-caption);
-	color: var(--color-text-dim);
-	text-align: end;
-}
-
-/* The deeper DSA hint: a second, fainter line that handleHeroState eases in a
-   beat after each structure settles. Starts hidden; its opacity is GSAP-driven,
-   so it rests invisible with no JS rather than flashing the seeded tree tip. */
-.heroFigureTip {
-	font-family: var(--font-family-mono);
-	font-size: var(--font-size-caption);
-	color: var(--color-text-dim);
-	text-align: end;
-	opacity: 0;
-}
-
-/* A brief opacity dip as the legend swaps at each morph boundary. */
-.isFlipping .heroFigureName,
-.isFlipping .heroFigureNote {
-	animation: figNameFlip 220ms ease;
 }
 
 @keyframes figNameFlip {
@@ -198,47 +78,6 @@
 	}
 }
 
-@media (prefers-reduced-motion: reduce) {
-	.isFlipping .heroFigureName {
-		animation: none;
-	}
-}
-
-/* Spaced-repetition entry point — wears the amber "review" accent. */
-.heroReview {
-	display: inline-flex;
-	align-items: center;
-	gap: var(--space-sm);
-	align-self: flex-start;
-	margin-top: var(--space-2xs);
-	padding: var(--space-sm) var(--space-md);
-	border-radius: var(--radius-pill);
-	background: var(--review-brand-wash);
-	border: 1px solid color-mix(in srgb, var(--review-brand) 36%, transparent);
-	color: var(--review-brand-ink);
-	font-family: var(--font-family-sans);
-	font-size: var(--font-size-label);
-	font-weight: var(--font-weight-medium);
-	text-decoration: none;
-	transition:
-		background-color var(--transition),
-		border-color var(--transition);
-}
-
-.heroReview:hover {
-	background: color-mix(in srgb, var(--review-brand) 18%, transparent);
-	border-color: color-mix(in srgb, var(--review-brand) 50%, transparent);
-}
-
-.heroReview:focus-visible {
-	outline: none;
-	box-shadow: var(--shadow-focus);
-}
-
-.heroReview strong {
-	font-weight: var(--font-weight-bold);
-}
-
 /* ---------- "Today" ritual shell ---------- */
 
 .today {
@@ -246,6 +85,10 @@
 	flex-direction: column;
 	gap: var(--space-md);
 	align-items: flex-start;
+	width: 100%;
+	padding: var(--space-lg) 0;
+	border-top: 1px solid var(--color-border-subtle);
+	border-bottom: 1px solid var(--color-border-subtle);
 }
 
 .todayTop {
@@ -404,6 +247,13 @@
 	stroke-linejoin: round;
 }
 
+.ringValue {
+	font-family: var(--font-family-mono);
+	font-size: 10px;
+	font-weight: var(--font-weight-bold);
+	color: var(--color-text-primary);
+}
+
 .goalText {
 	display: flex;
 	flex-direction: column;
@@ -426,6 +276,7 @@
 .progressLink {
 	display: inline-flex;
 	align-items: center;
+	min-height: 44px;
 	gap: 4px;
 	margin-left: auto;
 	font-size: var(--font-size-label);
@@ -514,34 +365,6 @@
 	color: var(--color-text-secondary);
 }
 
-/* The conservation thesis in words — shown ONLY below 960px, where the live
-   instrument is hidden, so phone/tablet crammers still get the payload. */
-.heroThesisStrip {
-	margin: 0;
-	font-family: var(--font-family-mono);
-	font-size: var(--font-size-caption);
-	line-height: 1.7;
-	color: var(--color-text-dim);
-}
-
-.heroThesisForms {
-	color: var(--color-text-muted);
-}
-
-@media (min-width: 960px) {
-	.heroThesisStrip {
-		display: none;
-	}
-}
-
-.heroActions {
-	display: flex;
-	flex-wrap: wrap;
-	gap: var(--space-sm);
-	align-items: center;
-	margin-top: var(--space-2xs);
-}
-
 .primaryCta {
 	display: inline-flex;
 	align-items: center;
@@ -577,87 +400,11 @@
 	transform: translateY(0);
 }
 
-.ghostCta {
-	display: inline-flex;
-	align-items: center;
-	gap: var(--space-xs);
-	padding: var(--space-sm) var(--space-md);
-	background: transparent;
-	border: 1px solid var(--color-border);
-	border-radius: var(--radius-md);
-	color: var(--color-text-secondary);
-	font-family: var(--font-family-sans);
-	font-size: var(--font-size-label);
-	font-weight: var(--font-weight-medium);
-	cursor: pointer;
-	transition:
-		color var(--transition),
-		background var(--transition),
-		border-color var(--transition);
-}
-
-.ghostCta:hover {
-	background: var(--color-bg-hover);
-	color: var(--color-text-primary);
-	border-color: var(--color-border-strong);
-	opacity: 1;
-}
-
-.ghostCta:focus-visible {
-	outline: none;
-	border-color: var(--color-accent-blue);
-	box-shadow: var(--shadow-focus);
-}
-
-.heroProgress {
-	margin-top: var(--space-2xs);
-	display: flex;
-	flex-direction: column;
-	gap: var(--space-sm);
-	max-width: 340px;
-}
-
-.heroProgressTrack {
-	position: relative;
-	width: 100%;
-	height: 6px;
-	border-radius: var(--radius-pill);
-	background: var(--color-bg-sunken);
-	overflow: hidden;
-}
-
-.heroProgressFill {
-	display: block;
-	height: 100%;
-	border-radius: var(--radius-pill);
-	background: linear-gradient(
-		90deg,
-		var(--color-accent-blue),
-		var(--color-accent-green)
-	);
-	transition: width var(--duration-merge) var(--ease-quiet);
-}
-
-@media (prefers-reduced-motion: reduce) {
-	.heroProgressFill {
-		transition: none;
-	}
-}
-
-.heroMeta {
-	margin: 0;
-	font-family: var(--font-family-mono);
-	font-size: var(--font-size-caption);
-	font-variant-numeric: tabular-nums;
-	color: var(--color-text-muted);
-	letter-spacing: var(--tracking-wide);
-}
-
 /* ---------- Path section ---------- */
 
 .pathSection {
 	padding: clamp(40px, 6vw, 96px) clamp(28px, 6vw, 96px) clamp(64px, 8vw, 128px);
-	max-width: 1280px;
+	max-width: var(--page-max);
 	margin: 0 auto;
 }
 
@@ -665,7 +412,7 @@
 	display: flex;
 	flex-direction: column;
 	gap: 12px;
-	margin-bottom: clamp(48px, 6vw, 80px);
+	margin-bottom: clamp(32px, 4vw, 52px);
 	max-width: 60ch;
 }
 
@@ -688,80 +435,6 @@
 	letter-spacing: var(--tracking-display);
 	color: var(--color-text-primary);
 	text-wrap: balance;
-}
-
-.pathSub {
-	margin: 0;
-	font-size: var(--font-size-body);
-	line-height: var(--line-height-body);
-	color: var(--color-text-secondary);
-	max-width: 52ch;
-}
-
-/* ---------- Phase overview map ----------
-   The course at a glance: one quiet chip per macro-phase, in teaching order, each
-   a jump-link to its chapter on the spine. Lets a newcomer read the shape of the
-   whole course (five acts) and navigate it without scrolling the full list. */
-.phaseNav {
-	margin-top: clamp(20px, 2.6vw, 32px);
-	display: flex;
-	flex-wrap: wrap;
-	gap: var(--space-sm);
-}
-
-.phaseNavItem {
-	display: inline-flex;
-	align-items: baseline;
-	gap: var(--space-sm);
-	padding: var(--space-sm) var(--space-md);
-	border: 1px solid var(--color-border-subtle);
-	border-radius: var(--radius-md);
-	background: var(--surface-1);
-	color: var(--color-text-secondary);
-	font-family: inherit;
-	cursor: pointer;
-	text-align: left;
-	transition:
-		border-color var(--transition),
-		background-color var(--transition),
-		transform var(--duration-step) var(--ease-quiet);
-}
-
-.phaseNavItem:hover {
-	border-color: var(--color-border-strong);
-	background: var(--surface-2);
-	transform: translateY(-1px);
-}
-
-.phaseNavItem:focus-visible {
-	outline: none;
-	box-shadow: var(--shadow-focus);
-}
-
-.phaseNavNum {
-	font-family: var(--font-family-mono);
-	font-size: var(--font-size-caption);
-	font-variant-numeric: tabular-nums;
-	letter-spacing: var(--tracking-wide);
-	color: var(--color-text-dim);
-}
-
-.phaseNavName {
-	font-size: var(--font-size-label);
-	font-weight: var(--font-weight-medium);
-	color: var(--color-text-primary);
-}
-
-.phaseNavCount {
-	font-family: var(--font-family-mono);
-	font-size: var(--font-size-caption);
-	font-variant-numeric: tabular-nums;
-	color: var(--color-text-muted);
-}
-
-/* A phase whose every topic is finished gets a subtle done treatment. */
-.phaseNavItem[data-done='true'] .phaseNavName {
-	color: var(--color-text-muted);
 }
 
 /* ---------- Personal progress roadmap ----------
@@ -835,7 +508,7 @@
 	inset: 0 auto 0 0;
 	border-radius: 3px;
 	background: var(--brand);
-	transition: width 0.55s var(--ease-quiet);
+	transition: width var(--duration-merge) var(--ease-quiet);
 }
 .segBtn:hover .segName {
 	color: var(--color-text-primary);
@@ -1315,7 +988,7 @@
 	font-family: inherit;
 	text-align: left;
 	min-width: 0;
-	transition: opacity 150ms var(--ease-quiet);
+	transition: opacity var(--duration-instant) var(--ease-quiet);
 }
 
 .nodeBody:hover {

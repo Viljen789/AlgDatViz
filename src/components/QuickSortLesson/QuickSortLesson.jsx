@@ -26,7 +26,7 @@ const initialCheckStates = () =>
  * balanced 2T(n/2) + n that the Master Theorem resolves to Theta(n log n).
  */
 const QuickSortLesson = () => {
-	const { markVisited, markCompleted } = useProgress();
+	const { markVisited } = useProgress();
 	const [checkStates, setCheckStates] = useState(initialCheckStates);
 
 	const topic = TOPIC_BY_ID[TOPIC_ID];
@@ -51,10 +51,6 @@ const QuickSortLesson = () => {
 		}));
 	}, []);
 
-	const handlePlaygroundInteract = useCallback(() => {
-		markCompleted(TOPIC_ID);
-	}, [markCompleted]);
-
 	const handleVisit = useCallback(() => {
 		markVisited(TOPIC_ID);
 	}, [markVisited]);
@@ -72,8 +68,8 @@ const QuickSortLesson = () => {
 	);
 
 	const renderPlayground = useCallback(
-		() => <QuickSortPlayground onUserInteract={handlePlaygroundInteract} />,
-		[handlePlaygroundInteract]
+		() => <QuickSortPlayground />,
+		[]
 	);
 
 	const eyebrow = useMemo(

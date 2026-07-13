@@ -170,14 +170,14 @@
 
 .cellIndex {
 	font-family: var(--font-family-mono);
-	font-size: 11px;
+	font-size: var(--font-size-caption);
 	color: var(--color-text-muted);
 	letter-spacing: 0.04em;
 }
 
 .cellValue {
 	font-family: var(--font-family-mono);
-	font-size: 22px;
+	font-size: var(--font-size-heading-md);
 	font-weight: 700;
 	color: var(--color-text-secondary);
 	letter-spacing: -0.01em;
@@ -242,7 +242,7 @@
 .caption {
 	margin: 0;
 	font-family: var(--font-family-sans);
-	font-size: 13px;
+	font-size: var(--font-size-label);
 	color: var(--color-text-secondary);
 	line-height: 1.55;
 	max-width: 60ch;

@@ -3,10 +3,10 @@ import { Link } from 'react-router-dom';
 import {
 	ArrowDown,
 	ArrowRight,
-	Brain,
 	ChevronDown,
 	ChevronRight,
-	Target,
+	ListChecks,
+	NotebookPen,
 	X,
 } from 'lucide-react';
 import { CURRICULUM } from '../../data/curriculum.js';
@@ -170,6 +170,8 @@ const SceneNavigator = ({ scenes, activeScene, hasPlayground, onJump }) => {
  *   checkStates    optional controlled map { [sceneId]: state } for checks.
  *   onAnswer       optional (sceneId, payload) => void — generic check submit
  *                  for every kind. The host grades + updates checkStates.
+ *   onRetry        optional (sceneId) => void — clears host-owned state for
+ *                  stage-graded checks. Ordinary checks retry locally.
  *   onChoiceAnswer optional (sceneId, value) => void — backward-compatible alias
  *                  of onAnswer (kept so existing topics keep working).
  *
@@ -198,6 +200,7 @@ const TopicTemplate = ({
 	renderStage,
 	checkStates,
 	onAnswer,
+	onRetry,
 	onChoiceAnswer,
 	cheatSheet,
 	showSceneNav,
@@ -495,6 +498,7 @@ const TopicTemplate = ({
 					renderStage={renderStage}
 					checkStates={checkStates}
 					onAnswer={handleAnswer}
+					onRetry={onRetry}
 					onActiveScene={handleActiveScene}
 					initialScene={resumeSceneRef.current}
 				/>
@@ -548,7 +552,7 @@ const TopicTemplate = ({
 						{canDrill
 							? 'Re-deriving each idea from memory is what fixes it. Run a short retrieval drill on this topic, then come back to it in a day or two.'
 							: hasCards
-								? "Nice, this topic's cards are scheduled. Spaced review will surface them again when they are due. For now, test yourself on exam-shaped problems."
+								? 'This topic’s cards are scheduled — spaced review will bring them back when they’re due. For now, test yourself on exam-shaped problems.'
 								: 'Answering the checks as you read builds a retrieval drill for this topic. Re-deriving from memory is what makes it stick.'}
 					</p>
 				</div>
@@ -587,7 +591,7 @@ const TopicTemplate = ({
 								aria-expanded={false}
 								onClick={startDrill}
 							>
-								<Brain size={16} strokeWidth={2.2} aria-hidden="true" />
+								<NotebookPen size={16} strokeWidth={2.2} aria-hidden="true" />
 								<span>
 									Recall this topic
 									{drillStats.queue.length > 0
@@ -602,7 +606,7 @@ const TopicTemplate = ({
 							to={`/exam?topic=${topicId}`}
 							className={styles.lockInSecondary}
 						>
-							<Target size={15} strokeWidth={2.2} aria-hidden="true" />
+							<ListChecks size={15} strokeWidth={2.2} aria-hidden="true" />
 							<span>Practice exam questions</span>
 							<ArrowRight size={14} strokeWidth={2} aria-hidden="true" />
 						</Link>

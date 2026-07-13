@@ -38,7 +38,6 @@
 
 .neighborsInput::placeholder {
 	color: var(--color-text-muted);
-	font-style: italic;
 }
 
 .inputInvalid {
@@ -62,7 +61,9 @@
 		color 0.2s;
 }
 
-.row:hover .deleteButton {
+.row:hover .deleteButton,
+.row:focus-within .deleteButton,
+.deleteButton:focus-visible {
 	opacity: 1;
 }
 

@@ -111,6 +111,36 @@ export const GRAPH_PRESETS = {
 			],
 		},
 	},
+	stronglyConnected: {
+		label: 'Strongly connected',
+		isDirected: true,
+		isWeighted: false,
+		startNodeId: 'A',
+		algorithmId: 'scc',
+		graph: {
+			// Three SCCs whose condensation is a chain: {A,B,C} → {D,E} → {F,G}.
+			nodes: [
+				{ id: 'A', label: 'A', x: -300, y: -40 },
+				{ id: 'B', label: 'B', x: -210, y: -160 },
+				{ id: 'C', label: 'C', x: -190, y: 90 },
+				{ id: 'D', label: 'D', x: -10, y: -120 },
+				{ id: 'E', label: 'E', x: 30, y: 90 },
+				{ id: 'F', label: 'F', x: 230, y: -110 },
+				{ id: 'G', label: 'G', x: 280, y: 70 },
+			],
+			edges: [
+				{ from: 'A', to: 'B', weight: 1 },
+				{ from: 'B', to: 'C', weight: 1 },
+				{ from: 'C', to: 'A', weight: 1 },
+				{ from: 'C', to: 'D', weight: 1 },
+				{ from: 'D', to: 'E', weight: 1 },
+				{ from: 'E', to: 'D', weight: 1 },
+				{ from: 'E', to: 'F', weight: 1 },
+				{ from: 'F', to: 'G', weight: 1 },
+				{ from: 'G', to: 'F', weight: 1 },
+			],
+		},
+	},
 	flowNetwork: {
 		label: 'Flow network',
 		isDirected: true,

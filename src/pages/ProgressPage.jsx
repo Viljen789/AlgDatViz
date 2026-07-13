@@ -1,5 +1,6 @@
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { Metric, MetricGroup } from '@viljen789/study-ui';
 import {
 	ArrowRight,
 	ChevronRight,
@@ -32,7 +33,7 @@ import styles from './ProgressPage.module.css';
 // /review new-card cap so a topic's first drill isn't a wall of new questions.
 const TOPIC_NEW_CAP = 8;
 
-const HEAT_WEEKS = 13;
+const HEAT_WEEKS = 26;
 const pct = s => Math.round(s * 100);
 
 // A revision-plan day's short label: "Today" for the first day, "+1"/"+2"… after.
@@ -325,18 +326,27 @@ const ProgressPage = () => {
 	// the "Start here" tag, and the empty heatmap caption.
 	const hasNoActivity = daysStudied === 0 && overall.completed === 0;
 
+	// Two-step destructive reset (no window.confirm): the first click arms the
+	// button — its label flips to a confirm phrasing in the error tone — and a
+	// second click within ~4s executes. The timer disarms it back to safe.
+	const [resetArmed, setResetArmed] = useState(false);
+	const resetTimerRef = useRef(null);
+	useEffect(() => () => clearTimeout(resetTimerRef.current), []);
+
 	const handleReset = useCallback(() => {
-		if (
-			window.confirm(
-				'Reset all progress, the review schedule, and your study history? This cannot be undone.'
-			)
-		) {
-			resetProgress();
-			resetSrs();
-			resetActivity();
-			clearExamLog();
+		if (!resetArmed) {
+			setResetArmed(true);
+			clearTimeout(resetTimerRef.current);
+			resetTimerRef.current = setTimeout(() => setResetArmed(false), 4000);
+			return;
 		}
-	}, [resetProgress, resetSrs, resetActivity]);
+		clearTimeout(resetTimerRef.current);
+		setResetArmed(false);
+		resetProgress();
+		resetSrs();
+		resetActivity();
+		clearExamLog();
+	}, [resetArmed, resetProgress, resetSrs, resetActivity]);
 
 	return (
 		<div className={styles.page}>
@@ -360,58 +370,12 @@ const ProgressPage = () => {
 					revision plan that tightens as the exam nears.
 				</p>
 
-				<dl className={styles.stats}>
-					<div className={styles.stat}>
-						<dt className={styles.statLabel}>Streak</dt>
-						<dd className={styles.statValue}>
-							<Flame size={18} strokeWidth={2.2} aria-hidden="true" />
-							{currentStreak}
-						</dd>
-						<p className={styles.statSub}>longest {longestStreak}</p>
-					</div>
-					<div className={styles.stat}>
-						<dt className={styles.statLabel}>Days studied</dt>
-						<dd className={styles.statValue}>{daysStudied}</dd>
-					</div>
-					<div className={styles.stat}>
-						<dt className={styles.statLabel}>Topics complete</dt>
-						<dd className={styles.statValue}>
-							{overall.completed}
-							<span className={styles.statOf}>/{overall.total}</span>
-						</dd>
-						<p className={styles.statSub}>curriculum topics</p>
-					</div>
-					<div className={styles.stat}>
-						<dt className={styles.statLabel}>First-try</dt>
-						{firstTryStats.attempted > 0 ? (
-							<>
-								<dd className={styles.statValue}>
-									{Math.round(firstTryStats.rate * 100)}
-									<span className={styles.statOf}>%</span>
-								</dd>
-								<p className={styles.statSub}>
-									{firstTryStats.firstTry}/{firstTryStats.attempted} checks
-									first try
-								</p>
-							</>
-						) : (
-							<>
-								<dd className={styles.statValueMuted}>—</dd>
-								<p className={styles.statSub}>answer a check to begin</p>
-							</>
-						)}
-					</div>
-					<div className={`${styles.stat} ${styles.statExam}`}>
-						<dt className={styles.statLabel}>Exam</dt>
-						{daysUntilExam != null && daysUntilExam >= 0 ? (
-							<dd className={styles.statValue}>
-								{daysUntilExam}
-								<span className={styles.statOf}>days</span>
-							</dd>
-						) : (
-							<dd className={styles.statValueMuted}>not set</dd>
-						)}
-						<label className={styles.examInput}>
+				<MetricGroup className={styles.stats} aria-label="Progress summary">
+					<Metric label="Streak" value={<span className={styles.metricIconValue}><Flame size={18} strokeWidth={2.2} aria-hidden="true" />{currentStreak}</span>} detail={`Longest ${longestStreak} days`} />
+					<Metric label="Days studied" value={daysStudied} detail="Activity on distinct days" />
+					<Metric label="Topics complete" value={overall.completed} suffix={`of ${overall.total}`} detail="Curriculum topics" />
+					<Metric label="First try" value={firstTryStats.attempted > 0 ? Math.round(firstTryStats.rate * 100) : "—"} suffix={firstTryStats.attempted > 0 ? "%" : undefined} detail={firstTryStats.attempted > 0 ? `${firstTryStats.firstTry}/${firstTryStats.attempted} checks first try` : "Answer a check to begin"} />
+					<Metric tone="review" label="Exam" value={daysUntilExam != null && daysUntilExam >= 0 ? daysUntilExam : "Not set"} suffix={daysUntilExam != null && daysUntilExam >= 0 ? "days" : undefined} detail={<><label className={styles.examInput}>
 							<span className={styles.srOnly}>Exam date</span>
 							<input
 								type="date"
@@ -419,14 +383,8 @@ const ProgressPage = () => {
 								min={today}
 								onChange={e => setExamDate(e.target.value)}
 							/>
-						</label>
-						{daysUntilExam == null && (
-							<p className={styles.statSub}>
-								Set a date for a day-by-day plan.
-							</p>
-						)}
-					</div>
-				</dl>
+						</label>{daysUntilExam == null && <span className={styles.examHint}>Set a date for a day-by-day plan.</span>}</>} />
+				</MetricGroup>
 			</section>
 
 			<section className={styles.block} aria-labelledby="heatmap-title">
@@ -450,10 +408,10 @@ const ProgressPage = () => {
 						    for screen-reader users who navigate into it. */}
 						<span className={styles.srOnly}>
 							{daysStudied === 0
-								? 'No study days logged in the last 13 weeks.'
+								? `No study days logged in the last ${HEAT_WEEKS} weeks.`
 								: `${daysStudied} day${
 										daysStudied === 1 ? '' : 's'
-									} studied in the last 13 weeks. Each cell is one day.`}
+									} studied in the last ${HEAT_WEEKS} weeks. Each cell is one day.`}
 						</span>
 						{weeks.map((col, w) => (
 							<div key={w} className={styles.heatCol}>
@@ -462,6 +420,15 @@ const ProgressPage = () => {
 									// data-level the CSS turns into an inset ring (for count > 0).
 									// So a colour-blind reader still distinguishes the busier days.
 									const level = cell.future ? 0 : heatLevel(cell.count);
+									// A human-readable day, never the raw ISO key: "Mon 16 Jun ·
+									// 4 answered", or "no study" for an empty day.
+									const dayLabel = cell.future
+										? undefined
+										: `${formatPlanDate(cell.k)} · ${
+												cell.count > 0
+													? `${cell.count} answered`
+													: 'no study'
+											}`;
 									return (
 										<span
 											key={cell.k}
@@ -470,16 +437,8 @@ const ProgressPage = () => {
 											data-future={cell.future ? '' : undefined}
 											role={cell.future ? undefined : 'img'}
 											aria-hidden={cell.future ? 'true' : undefined}
-											aria-label={
-												cell.future
-													? undefined
-													: `${cell.k}: ${cell.count} answered`
-											}
-											title={
-												cell.future
-													? undefined
-													: `${cell.k}: ${cell.count} answered`
-											}
+											aria-label={dayLabel}
+											title={dayLabel}
 											style={{
 												background: cell.future
 													? 'transparent'
@@ -747,9 +706,19 @@ const ProgressPage = () => {
 			</section>
 
 			<footer className={styles.footer}>
-				<button type="button" className={styles.resetBtn} onClick={handleReset}>
+				<button
+					type="button"
+					className={`${styles.resetBtn}${
+						resetArmed ? ` ${styles.resetBtnArmed}` : ''
+					}`}
+					onClick={handleReset}
+				>
 					<RotateCcw size={14} strokeWidth={2} aria-hidden="true" />
-					<span>Reset all progress</span>
+					<span>
+						{resetArmed
+							? 'Click again to erase everything'
+							: 'Reset all progress'}
+					</span>
 				</button>
 			</footer>
 		</div>

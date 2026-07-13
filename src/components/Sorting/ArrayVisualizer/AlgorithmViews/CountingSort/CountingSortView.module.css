@@ -13,7 +13,7 @@
 	gap: 16px;
 	padding: 10px 12px;
 	border: 1px solid color-mix(in srgb, var(--glass-tint) 7%, transparent);
-	border-radius: 16px;
+	border-radius: var(--radius-lg);
 	background: color-mix(in srgb, var(--glass-tint) 3.5%, transparent);
 	box-shadow: inset 0 1px 0
 		color-mix(in srgb, var(--glass-tint) 6%, transparent);
@@ -21,10 +21,10 @@
 
 .phaseLabel {
 	color: var(--color-accent-green-ink);
-	font-size: 10px;
-	font-weight: 800;
+	font-size: var(--font-size-caption);
+	font-weight: var(--font-weight-semibold);
 	text-transform: uppercase;
-	letter-spacing: 0.14em;
+	letter-spacing: var(--tracking-caps);
 	white-space: nowrap;
 }
 
@@ -50,15 +50,15 @@
 	min-height: 58px;
 	padding: 8px 10px;
 	border: 1px solid color-mix(in srgb, var(--glass-tint) 7%, transparent);
-	border-radius: 14px;
+	border-radius: var(--radius-lg);
 	background: color-mix(in srgb, var(--glass-tint) 3%, transparent);
 }
 
 .costStrip span {
 	color: var(--color-text-muted);
-	font-size: 10px;
-	font-weight: 800;
-	letter-spacing: 0.14em;
+	font-size: var(--font-size-caption);
+	font-weight: var(--font-weight-semibold);
+	letter-spacing: var(--tracking-caps);
 	text-transform: uppercase;
 }
 
@@ -66,7 +66,7 @@
 	color: var(--color-text-primary);
 	font-family: var(--font-family-mono);
 	font-size: 16px;
-	font-weight: 750;
+	font-weight: var(--font-weight-bold);
 }
 
 .costStrip p {
@@ -75,7 +75,7 @@
 	margin: 0;
 	padding: 10px 12px;
 	border: 1px solid color-mix(in srgb, var(--state-active) 18%, transparent);
-	border-radius: 14px;
+	border-radius: var(--radius-lg);
 	background: color-mix(in srgb, var(--state-active) 7%, transparent);
 	color: var(--color-text-secondary);
 	font-size: 12px;
@@ -83,8 +83,8 @@
 }
 
 .costWarn {
-	border-color: rgba(248, 167, 79, 0.34) !important;
-	background: rgba(248, 167, 79, 0.08) !important;
+	border-color: color-mix(in srgb, var(--state-flight) 34%, transparent) !important;
+	background: color-mix(in srgb, var(--state-flight) 8%, transparent) !important;
 }
 
 .costWarn strong {
@@ -102,10 +102,10 @@
 .sectionTitle {
 	margin: 0;
 	color: var(--color-text-muted);
-	font-size: 10px;
-	font-weight: 800;
+	font-size: var(--font-size-caption);
+	font-weight: var(--font-weight-semibold);
 	text-transform: uppercase;
-	letter-spacing: 0.14em;
+	letter-spacing: var(--tracking-caps);
 }
 
 .arrayContainer {
@@ -123,13 +123,13 @@
 	align-items: center;
 	justify-content: center;
 	border: 1px solid color-mix(in srgb, var(--glass-tint) 7.5%, transparent);
-	border-radius: 11px;
+	border-radius: var(--radius-md);
 	background: color-mix(in srgb, var(--glass-tint) 3.5%, transparent);
 	color: var(--color-text-primary);
 	text-align: center;
 	font-family: var(--font-family-mono);
 	font-size: 12px;
-	font-weight: 650;
+	font-weight: var(--font-weight-bold);
 	transition:
 		transform var(--duration-step) var(--ease-quiet),
 		background var(--duration-step) var(--ease-quiet),
@@ -144,13 +144,13 @@
 }
 
 .sorted {
-	border-color: rgba(56, 201, 160, 0.58);
-	background: rgba(56, 201, 160, 0.13);
+	border-color: color-mix(in srgb, var(--state-done) 58%, transparent);
+	background: color-mix(in srgb, var(--state-done) 13%, transparent);
 }
 
 .placing {
-	border-color: rgba(248, 167, 79, 0.6);
-	background: rgba(248, 167, 79, 0.16);
+	border-color: color-mix(in srgb, var(--state-flight) 60%, transparent);
+	background: color-mix(in srgb, var(--state-flight) 16%, transparent);
 	transform: translateY(-2px);
 }
 
@@ -178,7 +178,7 @@
 	min-width: max-content;
 	padding: 12px;
 	border: 1px solid color-mix(in srgb, var(--glass-tint) 7%, transparent);
-	border-radius: 16px;
+	border-radius: var(--radius-lg);
 	background:
 		linear-gradient(
 			180deg,
@@ -210,7 +210,7 @@
 	color: var(--color-text-primary);
 	font-family: var(--font-family-mono);
 	font-size: 10px;
-	font-weight: 800;
+	font-weight: var(--font-weight-bold);
 	transition:
 		height var(--duration-step) var(--ease-quiet),
 		background var(--duration-step) var(--ease-quiet),
@@ -219,8 +219,8 @@
 }
 
 .activeSlot .bar {
-	background: rgba(248, 167, 79, 0.24);
-	border-color: rgba(248, 167, 79, 0.54);
+	background: color-mix(in srgb, var(--state-flight) 24%, transparent);
+	border-color: color-mix(in srgb, var(--state-flight) 54%, transparent);
 	transform: translateY(-2px);
 }
 

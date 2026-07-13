@@ -1,7 +1,7 @@
 .switchLabel {
 	display: flex;
 	align-items: center;
-	gap: var(--spacing-md);
+	gap: var(--space-md);
 	cursor: pointer;
 	user-select: none;
 	font-family: var(--font-family-sans);
@@ -28,10 +28,10 @@
 }
 
 .switchTrack {
-	width: 44px;
-	height: 24px;
-	background-color: var(--color-border);
-	border: 1px solid var(--color-border-strong);
+	width: var(--switch-width);
+	height: var(--switch-height);
+	background-color: var(--surface-input);
+	border: 1px solid var(--color-border);
 	border-radius: var(--radius-pill);
 	transition:
 		background-color var(--duration-step) var(--ease-step),
@@ -43,9 +43,9 @@
 	position: absolute;
 	top: 2px;
 	left: 2px;
-	width: 18px;
-	height: 18px;
-	background-color: var(--color-text-primary);
+	width: calc(var(--switch-height) - 6px);
+	height: calc(var(--switch-height) - 6px);
+	background-color: var(--color-text-secondary);
 	border-radius: 50%;
 	box-shadow: var(--shadow-2);
 	transition:
@@ -59,13 +59,19 @@
 }
 
 .hiddenCheckbox:checked + .switchTrack .switchThumb {
-	transform: translateX(20px);
+	transform: translateX(calc(var(--switch-width) - var(--switch-height)));
 	background-color: var(--color-text-on-accent);
 }
 
 .switchLabel:not(.disabled):hover .switchTrack {
 	border-color: var(--color-border-strong);
-	background-color: var(--surface-hover);
+}
+
+.switchLabel:not(.disabled):hover
+	.hiddenCheckbox:not(:checked)
+	+ .switchTrack
+	.switchThumb {
+	background-color: var(--color-text-primary);
 }
 
 .switchLabel:not(.disabled):hover .hiddenCheckbox:checked + .switchTrack {
@@ -74,7 +80,7 @@
 }
 
 .hiddenCheckbox:active:not(:disabled) + .switchTrack .switchThumb {
-	width: 22px;
+	width: calc(var(--switch-height) - 2px);
 }
 
 .hiddenCheckbox:focus-visible + .switchTrack {

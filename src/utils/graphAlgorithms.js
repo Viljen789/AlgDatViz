@@ -140,7 +140,7 @@ export const GRAPH_ALGORITHMS = {
 	},
 	dijkstra: {
 		label: 'Dijkstra',
-		fullName: "Dijkstra's shortest path",
+		fullName: 'Dijkstra’s shortest paths',
 		structure: 'Priority queue',
 		accent: '#f8a74f',
 		bestFor: 'Shortest paths with non-negative weights',
@@ -206,7 +206,7 @@ export const GRAPH_ALGORITHMS = {
 	},
 	kruskal: {
 		label: 'Kruskal',
-		fullName: "Kruskal's minimum spanning tree",
+		fullName: 'Kruskal’s minimum spanning tree',
 		structure: 'Sorted edges + union find',
 		accent: '#38c9a0',
 		bestFor: 'Building the cheapest network over all nodes',
@@ -272,7 +272,7 @@ export const GRAPH_ALGORITHMS = {
 	},
 	prim: {
 		label: 'Prim',
-		fullName: "Prim's minimum spanning tree",
+		fullName: 'Prim’s minimum spanning tree',
 		structure: 'Growing cut',
 		accent: '#38c9a0',
 		bestFor: 'Growing an MST from one starting node',
@@ -338,7 +338,7 @@ export const GRAPH_ALGORITHMS = {
 	},
 	topo: {
 		label: 'Topological',
-		fullName: "Kahn's topological sort",
+		fullName: 'Kahn’s topological sort',
 		structure: 'Indegree queue',
 		accent: '#f86060',
 		bestFor: 'Ordering dependencies in a directed acyclic graph',
@@ -455,6 +455,79 @@ export const GRAPH_ALGORITHMS = {
 			'return total flow leaving the source',
 		],
 	},
+	scc: {
+		label: 'SCC',
+		fullName: 'Strongly connected components (Kosaraju)',
+		structure: 'Finish stack',
+		accent: '#38c9a0',
+		bestFor: 'Finding mutually reachable groups in a directed graph',
+		category: 'Connectivity',
+		intuition:
+			'Two nodes are in the same strongly connected component when each can reach the other. Kosaraju exposes these groups with two depth-first passes: one to order nodes by finish time, a second on the reversed graph that gets trapped inside one component at a time.',
+		strategy: [
+			'Run DFS over the whole graph; when a node finishes, push it on a stack.',
+			'Transpose the graph — reverse every edge.',
+			'Pop nodes newest-finish first; DFS from each unvisited one in the transpose.',
+			'Each second-pass DFS tree is exactly one strongly connected component.',
+		],
+		complexity: {
+			time: { average: 'O(V + E)', worst: 'O(V + E)' },
+			space: { worst: 'O(V + E)' },
+			variables: [
+				{ symbol: 'V', label: 'vertices' },
+				{ symbol: 'E', label: 'edges' },
+			],
+			why: [
+				'Each DFS pass touches every vertex and edge once.',
+				'Transposing the graph is a single linear scan of the edges.',
+				'The finish stack and adjacency lists hold V + E entries.',
+			],
+		},
+		tradeoffs: {
+			useWhen: [
+				'You need the mutually-reachable groups of a directed graph.',
+				'You want the condensation (each SCC as one node) — always a DAG.',
+			],
+			watchOut: [
+				'Only meaningful on a directed graph; undirected components use plain DFS.',
+				'The finish-time order from pass 1 is what makes pass 2 correct — do not skip it.',
+			],
+		},
+		legend: [
+			{ label: 'Current node', color: 'var(--color-accent-orange)' },
+			{ label: 'Finished / assigned', color: 'var(--color-accent-green)' },
+			{ label: 'Component color', color: 'var(--color-accent-blue)' },
+		],
+		compareCards: [
+			{
+				label: 'SCC vs DFS',
+				title: 'Two passes, not one',
+				text: 'A single DFS finds connectivity in undirected graphs; directed mutual reachability needs the finish-order trick.',
+			},
+			{
+				label: 'SCC vs topological sort',
+				title: 'Cycles allowed',
+				text: 'Topological sort assumes a DAG; SCC first collapses every cycle into one super-node, then the condensation can be ordered.',
+			},
+		],
+		conceptChecks: [
+			{
+				question: 'Why does the second DFS use the reversed graph?',
+				answer:
+					'In the transpose, edges that left a component now enter it, so a DFS started at the latest-finishing node cannot escape its own SCC.',
+			},
+		],
+		lines: [
+			'DFS-1: explore G, recording finish order',
+			'  visit u; recurse into unvisited out-neighbors',
+			'  on finish, push u onto the stack',
+			'transpose G — reverse every edge',
+			'DFS-2: pop nodes newest-finish first',
+			'  start a new component at the popped node',
+			'  collect everything reachable in Gᵀ',
+			'  that set is one strongly connected component',
+		],
+	},
 };
 
 const sortNodeIds = ids => [...ids].sort((a, b) => a.localeCompare(b));
@@ -544,6 +617,9 @@ const makeStep = step => ({
 	flowMap: null,
 	flowValue: null,
 	bottleneck: null,
+	// componentMap: nodeId → 0-based component index. Only SCC sets it; the canvas
+	// colours assigned nodes by their component when present.
+	componentMap: null,
 	insight: '',
 	...step,
 });
@@ -1216,7 +1292,7 @@ const topoSteps = (graph, options) => {
 			steps.push(
 				makeStep({
 					title: `Remove ${current} -> ${neighbor.to}`,
-					description: `Removing this dependency lowers ${neighbor.to}'s indegree to ${indegree[neighbor.to]}.`,
+					description: `Removing this dependency lowers ${neighbor.to}’s indegree to ${indegree[neighbor.to]}.`,
 					line: 4,
 					activeNodes: [current, neighbor.to],
 					visitedNodes: [...order],
@@ -1256,6 +1332,188 @@ const topoSteps = (graph, options) => {
 			structure: remaining.length ? remaining : [...order],
 			insight:
 				'Topological sort exists only for directed acyclic graphs, often called DAGs.',
+		})
+	);
+
+	return steps;
+};
+
+// Directed forward / transpose adjacency as plain id-arrays, sorted for a stable
+// deterministic traversal. SCC is only meaningful on a directed graph, so both
+// always treat edges as directed.
+const buildDirectedOutAdjacency = graph => {
+	const adjacency = new Map(graph.nodes.map(node => [node.id, []]));
+	getUniqueEdges(graph, true).forEach(edge => {
+		adjacency.get(edge.from)?.push(edge.to);
+	});
+	adjacency.forEach(list => list.sort((a, b) => a.localeCompare(b)));
+	return adjacency;
+};
+
+const buildTransposeAdjacency = graph => {
+	const adjacency = new Map(graph.nodes.map(node => [node.id, []]));
+	getUniqueEdges(graph, true).forEach(edge => {
+		adjacency.get(edge.to)?.push(edge.from);
+	});
+	adjacency.forEach(list => list.sort((a, b) => a.localeCompare(b)));
+	return adjacency;
+};
+
+// Kosaraju's algorithm. Pass 1 DFS records a finish order; pass 2 DFS on the
+// transpose, taken newest-finish first, peels off one SCC per tree.
+const sccSteps = (graph, options) => {
+	void options;
+	const out = buildDirectedOutAdjacency(graph);
+	const transpose = buildTransposeAdjacency(graph);
+	const nodeIds = sortNodeIds(graph.nodes.map(node => node.id));
+
+	const steps = [
+		makeStep({
+			title: 'Two passes of DFS',
+			description:
+				'Kosaraju finds strongly connected components — groups where every node can reach every other — with two depth-first passes over a directed graph.',
+			line: 0,
+			componentMap: {},
+			structureLabel: 'Finish stack',
+			structure: [],
+			insight:
+				'Pass 1 orders nodes by finish time; pass 2 on the reversed graph isolates each component.',
+		}),
+	];
+
+	// ── Pass 1: DFS over G, pushing nodes onto the finish stack as they finish ──
+	const visited1 = new Set();
+	const finishOrder = [];
+
+	const dfs1 = (u, path) => {
+		visited1.add(u);
+		steps.push(
+			makeStep({
+				title: `Pass 1 · visit ${u}`,
+				description: `Explore ${u} and dive into its unvisited out-neighbors.`,
+				line: 1,
+				activeNodes: [u],
+				visitedNodes: asArray(visited1),
+				stackNodes: [...path, u],
+				componentMap: {},
+				structureLabel: 'Finish stack',
+				structure: [...finishOrder],
+				insight: 'A node finishes only after all its descendants do.',
+			})
+		);
+		for (const v of out.get(u) || []) {
+			if (!visited1.has(v)) dfs1(v, [...path, u]);
+		}
+		finishOrder.push(u);
+		steps.push(
+			makeStep({
+				title: `Pass 1 · finish ${u}`,
+				description: `${u} has no more unexplored out-edges — push it onto the finish stack.`,
+				line: 2,
+				activeNodes: [u],
+				visitedNodes: asArray(visited1),
+				componentMap: {},
+				structureLabel: 'Finish stack',
+				structure: [...finishOrder],
+				insight: 'The last node to finish sits on top of the stack.',
+			})
+		);
+	};
+
+	for (const id of nodeIds) {
+		if (!visited1.has(id)) dfs1(id, []);
+	}
+
+	// ── Transpose ──
+	steps.push(
+		makeStep({
+			title: 'Transpose the graph',
+			description:
+				'Reverse every edge. The components are unchanged, but edges that left a component now enter it — so a DFS cannot escape its own SCC.',
+			line: 3,
+			visitedNodes: nodeIds,
+			componentMap: {},
+			structureLabel: 'Finish stack',
+			structure: [...finishOrder],
+			insight: 'Gᵀ has exactly the same strongly connected components as G.',
+		})
+	);
+
+	// ── Pass 2: pop newest-finish first, DFS on the transpose ──
+	const order = [...finishOrder].reverse();
+	const visited2 = new Set();
+	const componentMap = {};
+	const components = [];
+	let comp = 0;
+
+	const remaining = () => order.filter(id => !visited2.has(id));
+
+	for (const root of order) {
+		if (visited2.has(root)) continue;
+		steps.push(
+			makeStep({
+				title: `Pop ${root} → new component`,
+				description: `${root} finished latest among the unassigned nodes. Start strongly connected component ${comp + 1} here.`,
+				line: 5,
+				activeNodes: [root],
+				settledNodes: asArray(visited2),
+				componentMap: { ...componentMap },
+				structureLabel: 'Finish stack',
+				structure: remaining(),
+				insight: 'Newest-finish-first is what makes each pass-2 tree a full SCC.',
+			})
+		);
+
+		const members = [];
+		const dfs2 = u => {
+			visited2.add(u);
+			componentMap[u] = comp;
+			members.push(u);
+			steps.push(
+				makeStep({
+					title: `${u} ∈ SCC ${comp + 1}`,
+					description: `${u} is reachable from the root within Gᵀ, so it joins component ${comp + 1}.`,
+					line: 6,
+					activeNodes: [u],
+					settledNodes: asArray(visited2),
+					componentMap: { ...componentMap },
+					structureLabel: 'Finish stack',
+					structure: remaining(),
+					insight: 'Every node the transpose-DFS reaches is mutually reachable with the root.',
+				})
+			);
+			for (const v of transpose.get(u) || []) {
+				if (!visited2.has(v)) dfs2(v);
+			}
+		};
+		dfs2(root);
+		components.push([...members]);
+		comp += 1;
+
+		steps.push(
+			makeStep({
+				title: `SCC ${comp} = {${members.join(', ')}}`,
+				description: `Component ${comp} is closed: {${members.join(', ')}} are all mutually reachable.`,
+				line: 7,
+				settledNodes: asArray(visited2),
+				componentMap: { ...componentMap },
+				structureLabel: 'Finish stack',
+				structure: remaining(),
+				insight: 'No edge in Gᵀ leaves this set to an unvisited node, so the component is complete.',
+			})
+		);
+	}
+
+	steps.push(
+		makeStep({
+			title: `${comp} strongly connected component${comp === 1 ? '' : 's'}`,
+			description: `Every node belongs to exactly one component. Collapsing each SCC to a single point yields the condensation — which is always a DAG.`,
+			line: 7,
+			settledNodes: nodeIds,
+			componentMap: { ...componentMap },
+			structureLabel: 'Components',
+			structure: components.map((m, i) => `${i + 1}:{${m.join(',')}}`),
+			insight: 'The condensation of any directed graph is acyclic.',
 		})
 	);
 
@@ -1589,6 +1847,8 @@ export const createGraphAlgorithmSteps = (
 			return primSteps(graph, options);
 		case 'topo':
 			return topoSteps(graph, options);
+		case 'scc':
+			return sccSteps(graph, options);
 		case 'maxflow':
 			return maxFlowSteps(graph, options);
 		default:

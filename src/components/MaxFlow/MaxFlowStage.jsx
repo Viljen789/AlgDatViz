@@ -1,184 +1,12 @@
 import { useMemo } from 'react';
-import { buildResidual, edmondsKarpTrace, edgeKey } from './maxFlowTrace.js';
-import { CLRS_NETWORK, MATCHING_NETWORK } from './maxFlowMeta.js';
+import { buildResidual, edgeKey } from './maxFlowTrace.js';
+import { SCENES, selectViewForScene } from './scenes.js';
 import { buildEdges, projectNodes, VIEW_H, VIEW_W } from './graphLayout.js';
 import StateLegend from '../../common/StateLegend/StateLegend.jsx';
 import { SceneNarration } from '../../common/PlaybackEngine';
 import styles from './MaxFlowStage.module.css';
 
-// Canonical run on the classic network, measured once and shared by the scenes.
-const EK = edmondsKarpTrace(CLRS_NETWORK);
-const FINAL_FLOW = EK.flow;
-const MIN_CUT = EK.minCut;
-const CLRS_EDGES = CLRS_NETWORK.edges.map(e => ({ ...e }));
-
-// A mid-run flow snapshot: 12 units pushed along s→v1→v3→t, used to illustrate
-// the residual network and an augmenting path before the final state.
-const MID_FLOW = { 's->v1': 12, 'v1->v3': 12, 'v3->t': 12 };
-
 const NODE_R = 6;
-
-const pathEdgeSet = path => {
-	const s = new Set();
-	if (!path) return s;
-	path.forEach(re => {
-		// On the stage we highlight the ORIGINAL edge a residual edge belongs to.
-		s.add(re.edgeKey);
-		// Also mark the residual orientation so back edges can be styled.
-		s.add(`${re.from}->${re.to}`);
-	});
-	return s;
-};
-
-// Per-scene emphasis on the CLRS network. Each returns which network to show,
-// the flow snapshot, optional residual overlay, an augmenting path, the min-cut
-// partition, and a caption.
-const SCENE_VIEW = activeScene => {
-	switch (activeScene) {
-		// 0 flow network — just capacities, zero flow.
-		case 0:
-			return {
-				network: CLRS_NETWORK,
-				flow: {},
-				caption: 'Capacities on every edge · source s · sink t',
-			};
-		// 1 residual network — show spare (forward) + cancel (back) capacities.
-		case 1:
-			return {
-				network: CLRS_NETWORK,
-				flow: MID_FLOW,
-				showResidual: true,
-				caption:
-					'After pushing 12 on s→v1→v3→t: forward residual = c − f, back residual = f',
-			};
-		// 2 augmenting path — a residual s→t path with its bottleneck.
-		case 2: {
-			const path = [
-				{
-					from: 's',
-					to: 'v2',
-					kind: 'forward',
-					edgeKey: 's->v2',
-					residual: 13,
-				},
-				{
-					from: 'v2',
-					to: 'v4',
-					kind: 'forward',
-					edgeKey: 'v2->v4',
-					residual: 14,
-				},
-				{ from: 'v4', to: 't', kind: 'forward', edgeKey: 'v4->t', residual: 4 },
-			];
-			return {
-				network: CLRS_NETWORK,
-				flow: MID_FLOW,
-				showResidual: true,
-				path,
-				pathSet: pathEdgeSet(path),
-				bottleneck: 4,
-				caption: 'Augmenting path s → v2 → v4 → t · bottleneck = 4',
-			};
-		}
-		// 3 Ford-Fulkerson — the augment-until-stuck loop reaching the max flow.
-		case 3:
-			return {
-				network: CLRS_NETWORK,
-				flow: FINAL_FLOW,
-				showFlow: true,
-				caption: `Augment until no path remains · max flow = ${EK.value}`,
-			};
-		// 4 Edmonds-Karp — same final flow, framed as shortest-path augmentation.
-		case 4:
-			return {
-				network: CLRS_NETWORK,
-				flow: FINAL_FLOW,
-				showFlow: true,
-				caption: 'Same loop, shortest augmenting path each time (BFS)',
-			};
-		// 5 max-flow / min-cut — reveal the cut partition.
-		case 5:
-			return {
-				network: CLRS_NETWORK,
-				flow: FINAL_FLOW,
-				showFlow: true,
-				minCut: MIN_CUT,
-				caption: `Min cut S = {${MIN_CUT.S.join(', ')}} · capacity ${MIN_CUT.capacity} = max flow`,
-			};
-		// 6 integrality — final integer flow on every edge.
-		case 6:
-			return {
-				network: CLRS_NETWORK,
-				flow: FINAL_FLOW,
-				showFlow: true,
-				caption: 'Integer capacities → every edge flow is a whole number',
-			};
-		// 7 bipartite matching — the unit-capacity matching network.
-		case 7:
-		default: {
-			const match = edmondsKarpTrace(MATCHING_NETWORK);
-			return {
-				network: MATCHING_NETWORK,
-				flow: match.flow,
-				showFlow: true,
-				caption: `Unit capacities · max flow ${match.value} = maximum matching size`,
-			};
-		}
-	}
-};
-
-// Per-scene legend: only the meanings actually drawn in that scene, named in
-// words for the spoken key. Swatch colours mirror the on-canvas edge/node
-// styling above (resting edge, topic-accent for flow, warning for the cut) so
-// the picture and the key never disagree.
-const ACCENT = 'var(--topic-accent)';
-const WARNING = 'var(--color-warning)';
-const RESTING = 'var(--color-border-strong)';
-
-const SCENE_LEGEND = activeScene => {
-	switch (activeScene) {
-		// 0 flow network — bare capacities, nothing flowing yet.
-		case 0:
-			return [
-				{ label: 'number = capacity c', swatch: RESTING, aria: 'grey edge' },
-			];
-		// 1 residual network — the label is the spare forward capacity; the back
-		//   residual (f, cancellable) lives on the same edge.
-		case 1:
-			return [
-				{
-					label: 'forward residual = c − f',
-					swatch: RESTING,
-					aria: 'grey edge',
-				},
-				{ label: 'back residual = f', swatch: RESTING, aria: 'cancellable' },
-			];
-		// 2 augmenting path — the chosen residual s→t path is the only highlight.
-		case 2:
-			return [
-				{ label: 'augmenting path', swatch: ACCENT, aria: 'green dashed' },
-				{ label: 'residual = c − f', swatch: RESTING, aria: 'grey edge' },
-			];
-		// 3-4, 6 flow on the network — flowing vs. saturated edges.
-		case 3:
-		case 4:
-		case 6:
-			return [
-				{ label: 'label = f / c', swatch: ACCENT, aria: 'green' },
-				{ label: 'saturated (f = c)', swatch: ACCENT, aria: 'bold green' },
-			];
-		// 5 min cut — the source side and the saturated cut edges.
-		case 5:
-			return [
-				{ label: 'source side S', swatch: ACCENT, aria: 'green' },
-				{ label: 'cut edge', swatch: WARNING, aria: 'amber' },
-			];
-		// 7 bipartite matching — unit-capacity matched edges.
-		case 7:
-		default:
-			return [{ label: 'matched edge', swatch: ACCENT, aria: 'green' }];
-	}
-};
 
 /**
  * MaxFlowStage — the synchronized flow-network view for the max-flow scrolly.
@@ -190,7 +18,13 @@ const SCENE_LEGEND = activeScene => {
  * by the pure generators so the picture always matches the prose.
  */
 const MaxFlowStage = ({ activeScene = 0 }) => {
-	const view = useMemo(() => SCENE_VIEW(activeScene), [activeScene]);
+	// Scene → sticky view by stable id (never a numeric index): the selector lives
+	// in scenes.js so an inserted/reordered scene can't desync the network view or
+	// its legend (both are carried on the id-keyed view).
+	const view = useMemo(
+		() => selectViewForScene(SCENES[activeScene]?.id),
+		[activeScene]
+	);
 	const network = view.network;
 
 	const projected = useMemo(() => projectNodes(network.nodes), [network]);
@@ -225,7 +59,7 @@ const MaxFlowStage = ({ activeScene = 0 }) => {
 	}, [minCut]);
 
 	const flowOf = e => view.flow[edgeKey(e.from, e.to)] || 0;
-	const legend = useMemo(() => SCENE_LEGEND(activeScene), [activeScene]);
+	const legend = view.legend;
 
 	return (
 		<>

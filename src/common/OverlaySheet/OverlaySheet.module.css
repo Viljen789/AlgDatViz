@@ -4,9 +4,9 @@
 	background: color-mix(in srgb, var(--scrim-ink) 72%, transparent);
 	backdrop-filter: blur(4px);
 	-webkit-backdrop-filter: blur(4px);
-	z-index: 100;
+	z-index: var(--z-overlay);
 	display: flex;
-	padding: 24px;
+	padding: var(--space-xl);
 }
 
 .sheet {
@@ -25,6 +25,7 @@
 	margin: auto;
 	width: min(720px, 100%);
 	max-height: 80vh;
+	max-height: 80dvh;
 	border-radius: var(--border-radius-xl);
 }
 
@@ -35,6 +36,7 @@
 	margin-bottom: 0;
 	width: min(820px, 100%);
 	max-height: 78vh;
+	max-height: 78dvh;
 	border-radius: var(--border-radius-xl) var(--border-radius-xl) 0 0;
 	border-bottom: none;
 }
@@ -43,8 +45,8 @@
 	display: flex;
 	align-items: flex-start;
 	justify-content: space-between;
-	padding: 22px 22px 14px;
-	gap: var(--spacing-md);
+	padding: var(--space-lg) var(--space-lg) var(--space-md);
+	gap: var(--space-md);
 	flex-shrink: 0;
 }
 
@@ -57,11 +59,11 @@
 
 .title {
 	margin: 0;
-	font-size: 20px;
-	font-weight: 700;
+	font-size: var(--font-size-heading-md);
+	font-weight: var(--font-weight-display);
 	color: var(--color-text-primary);
-	letter-spacing: -0.02em;
-	line-height: 1.2;
+	letter-spacing: var(--tracking-heading);
+	line-height: var(--line-height-heading);
 }
 
 .subtitle {
@@ -99,7 +101,7 @@
 }
 
 .body {
-	padding: 6px 22px 22px;
+	padding: var(--space-xs) var(--space-lg) var(--space-lg);
 	overflow-y: auto;
 	flex: 1;
 	min-height: 0;

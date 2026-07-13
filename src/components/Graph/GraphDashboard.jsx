@@ -62,6 +62,11 @@ const GRAPH_LEGENDS = {
 		{ label: 'in queue', swatch: ACTIVE, aria: 'blue' },
 		{ label: 'ordered', swatch: DONE, aria: 'green' },
 	],
+	scc: [
+		{ label: 'current', swatch: FLIGHT, aria: 'orange' },
+		{ label: 'assigned', swatch: DONE, aria: 'green' },
+		{ label: 'component colour', swatch: '#5b9cf8', aria: 'per-component hue' },
+	],
 	maxflow: [
 		{ label: 'source / sink', swatch: FLIGHT, aria: 'orange' },
 		{ label: 'augmenting path', swatch: FLIGHT, aria: 'dashed orange' },
@@ -176,6 +181,11 @@ const GraphDashboard = ({ onUserInteract }) => {
 	const handleAlgorithmChange = useCallback(
 		nextAlgorithmId => {
 			setAlgorithmId(nextAlgorithmId);
+			// SCC is only meaningful on a directed graph — switch directed on so the
+			// reversed-edge pass makes sense.
+			if (nextAlgorithmId === 'scc') {
+				setIsDirected(true);
+			}
 			if (nextAlgorithmId === 'maxflow') {
 				const source = startNodeId || graph.nodes[0]?.id || '';
 				const sink =

@@ -1,19 +1,21 @@
 // reviewBank — the cross-topic question bank for the cumulative mixed-review.
 //
 // This is the deferred capstone of the revision layer (PEDAGOGY_PLAN §6): a
-// single pure registry that collects EVERY self-graded retrieval check authored
-// across ALL topics, so a student can practice spaced retrieval from the whole
-// course in one shuffled session instead of one topic at a time.
+// single pure registry that collects every standalone, self-graded retrieval
+// check authored across all topics, so a student can practice spaced retrieval
+// from the whole course in one shuffled session instead of one topic at a time.
 //
 // DESIGN
 //   • Read-only. Each topic's `SCENES` is imported as-is; this module never
 //     mutates a scene or its `check`. It only re-keys the existing checks into a
 //     flat, topic-tagged list.
 //   • Self-graded kinds only. A bank question must be gradeable by the pure
-//     `checkAnswer` core with no topic-specific stage. So we include the
+//     `checkAnswer` core with no topic-specific stage or missing visual context.
+//     Checks may set `reviewSafe: false` when their prompt depends on the lesson
+//     canvas. So we include the
 //     self-graded kinds (choice, numeric, text, order, classify, predict,
-//     spotbug) and EXCLUDE `pair` — which needs a live topic visualization to
-//     resolve (host-graded).
+//     stepProbe, spotbug) and EXCLUDE `pair` — which needs a live topic
+//     visualization to resolve (host-graded).
 //   • Stable ids. Each entry id is `${topicId}:${sceneId}` so a question maps
 //     back to exactly one scene; the same id is what useProgress already records
 //     (topicId + sceneId), keeping a future "review counts as retrieval" wiring
@@ -22,15 +24,17 @@
 // The module is intentionally UI-free and deterministic so the bank + the
 // shuffler/sampler can be unit-tested (reviewBank.test.js).
 
-import { TOPIC_BY_ID } from '../../data/curriculum.js';
+import { CURRICULUM, TOPIC_BY_ID } from '../../data/curriculum.js';
 import { DEFAULT_NEW_CAP, planSession } from './srsSchedule.js';
 
 // Each topic's scrolly scenes, imported read-only. The map key is the topic id
 // from curriculum.js so every entry resolves a real curriculum node (name,
-// number, route, accent). The Graph topic has no scrolly scenes and is excluded
-// by construction (it simply has no entry here).
+// number, route, accent). TOPIC_SCENES below derives its order from CURRICULUM,
+// so adding or reordering a lesson cannot silently make review drift from the
+// course path.
 import { SCENES as foundationsScenes } from '../Foundations/scenes.js';
 import { SCENES as sortingScenes } from '../MergeSortLesson/scenes.js';
+import { SCENES as quicksortScenes } from '../QuickSortLesson/scenes.js';
 import { SCENES as stacksScenes } from '../StacksQueues/scenes.js';
 import { SCENES as masterScenes } from '../MasterTheorem/scenes.js';
 import { SCENES as linsortScenes } from '../LinearTimeSorting/scenes.js';
@@ -43,24 +47,34 @@ import { SCENES as ssspScenes } from '../ShortestPaths/scenes.js';
 import { SCENES as apspScenes } from '../AllPairsShortestPaths/scenes.js';
 import { SCENES as maxflowScenes } from '../MaxFlow/scenes.js';
 import { SCENES as npcScenes } from '../NpCompleteness/scenes.js';
+import { SCENES as graphScenes } from '../Graph/GraphLesson/graphScenes.js';
 
-// topicId (curriculum.js) → that topic's SCENES, in teaching order.
-const TOPIC_SCENES = [
-	['foundations', foundationsScenes],
-	['sorting', sortingScenes],
-	['stacks-queues', stacksScenes],
-	['master-theorem', masterScenes],
-	['linear-time-sorting', linsortScenes],
-	['hashing', hashingScenes],
-	['trees', treesScenes],
-	['heaps', heapsScenes],
-	['strategies', strategiesScenes],
-	['mst', mstScenes],
-	['shortest-paths', ssspScenes],
-	['apsp', apspScenes],
-	['max-flow', maxflowScenes],
-	['np-completeness', npcScenes],
-];
+// topicId → scenes is an identity map only. Teaching order comes exclusively
+// from CURRICULUM below, eliminating the second hand-maintained topic order that
+// previously omitted Graphs and Quicksort.
+const SCENES_BY_TOPIC = {
+	foundations: foundationsScenes,
+	'stacks-queues': stacksScenes,
+	'master-theorem': masterScenes,
+	sorting: sortingScenes,
+	quicksort: quicksortScenes,
+	'linear-time-sorting': linsortScenes,
+	hashing: hashingScenes,
+	trees: treesScenes,
+	heaps: heapsScenes,
+	graphs: graphScenes,
+	strategies: strategiesScenes,
+	mst: mstScenes,
+	'shortest-paths': ssspScenes,
+	apsp: apspScenes,
+	'max-flow': maxflowScenes,
+	'np-completeness': npcScenes,
+};
+
+const TOPIC_SCENES = CURRICULUM.map(topic => [
+	topic.id,
+	SCENES_BY_TOPIC[topic.id],
+]).filter(([, scenes]) => Array.isArray(scenes));
 
 // The check kinds the pure checkAnswer core can grade with no topic stage. Every
 // other kind (currently only `pair`) is host-graded and excluded from the bank.
@@ -71,6 +85,7 @@ export const SELF_GRADED_KINDS = new Set([
 	'order',
 	'classify',
 	'predict',
+	'stepProbe',
 	'spotbug',
 ]);
 
@@ -80,6 +95,14 @@ export const SELF_GRADED_KINDS = new Set([
  */
 export const isSelfGraded = check =>
 	Boolean(check) && SELF_GRADED_KINDS.has(check.kind);
+
+/**
+ * isReviewSafe — true when a check can be graded and understood without its
+ * owning lesson stage. `reviewSafe: false` is an explicit authoring escape hatch
+ * for prompts that point at a graph, table, matching, or other absent visual.
+ */
+export const isReviewSafe = check =>
+	isSelfGraded(check) && check.reviewSafe !== false;
 
 /**
  * accentTokens — derive the AA-safe partner tokens for a topic accent.
@@ -105,8 +128,8 @@ export const accentTokens = accent => {
 };
 
 /**
- * buildReviewBank — collect every self-graded check across all topics into a
- * flat, topic-tagged list (teaching order). Pure: derived only from the imported
+ * buildReviewBank — collect every standalone self-graded check across all topics
+ * into a flat, topic-tagged list (teaching order). Pure: derived only from the imported
  * SCENES + curriculum, never mutates them.
  *
  * @returns {Array<{
@@ -127,7 +150,7 @@ export const buildReviewBank = () => {
 		const topic = TOPIC_BY_ID[topicId];
 		if (!topic || !Array.isArray(scenes)) continue;
 		for (const scene of scenes) {
-			if (!scene?.id || !isSelfGraded(scene.check)) continue;
+			if (!scene?.id || !isReviewSafe(scene.check)) continue;
 			bank.push({
 				id: `${topicId}:${scene.id}`,
 				topicId,

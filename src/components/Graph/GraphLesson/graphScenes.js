@@ -207,6 +207,7 @@ export const SCENES = [
 		body: 'Six nodes, six edges. No order, no root, no rows — only what connects to what. Almost every relationship in computing is a graph hiding in plain sight.',
 		check: {
 			kind: 'choice',
+			reviewSafe: false,
 			prompt: 'How many neighbours does node A have in this graph?',
 			options: [1, 2, 3, 6],
 			answer: 2,
@@ -254,6 +255,7 @@ export const SCENES = [
 		body: 'Start at A and mark it. The frontier is the set of nodes waiting their turn. Which one you take next is the only real choice — and that single decision is the whole difference between BFS and DFS.',
 		check: {
 			kind: 'choice',
+			reviewSafe: false,
 			prompt:
 				'A traversal has started at A and marked it. What does the frontier hold next?',
 			options: ['A', 'B and C', 'D and E', 'Every node'],
@@ -276,6 +278,7 @@ export const SCENES = [
 		body: 'A queue hands back the node that has waited longest. Everything at distance 1 is dequeued before anything at distance 2, so BFS fans outward one ring at a time. That layer order is exactly why BFS finds shortest unweighted paths.',
 		check: {
 			kind: 'choice',
+			reviewSafe: false,
 			prompt:
 				'BFS from A has visited A, then B, then C. With a queue (alphabetical neighbours), which node does it visit next?',
 			options: ['D', 'E', 'F', 'A'],
@@ -321,6 +324,7 @@ export const SCENES = [
 		body: 'You have seen the queue spread A outward in layers. Reconstruct it yourself: arrange the six nodes into the exact sequence BFS visits them, starting from A with neighbours taken alphabetically.',
 		check: {
 			kind: 'order',
+			reviewSafe: false,
 			prompt:
 				'Drag the nodes into the order BFS visits them, starting at A (alphabetical neighbours).',
 			// `items` is the shuffled pool the learner reorders; `answer` is the
@@ -338,6 +342,7 @@ export const SCENES = [
 		body: 'A stack hands back the node added most recently. DFS commits to one branch until it dead-ends, then backtracks to the last fork. It does not measure distance — it reveals reachability, components, and cycles.',
 		check: {
 			kind: 'choice',
+			reviewSafe: false,
 			prompt:
 				'Swap the queue for a stack. Starting at A → B, which node does DFS dive to before it ever touches C?',
 			options: ['C', 'D', 'E', 'It visits C next'],
@@ -394,6 +399,7 @@ export const SCENES = [
 		body: 'Switch to a DIRECTED graph. A topological order is a single line of the vertices where, for every edge u → v, u sits before v — no arrow ever points backward. Two ways to build one: repeatedly remove a node with in-degree 0 (no unmet prerequisite — that is Kahn’s algorithm), or list the vertices by DECREASING DFS finish time. Only a DAG has one: a single cycle makes it impossible, because each node on the cycle waits on another ahead of it. This ordering is the backbone of DAG shortest paths and of every dependency resolver — build systems, course prerequisites, spreadsheet recalculation.',
 		check: {
 			kind: 'choice',
+			reviewSafe: false,
 			// Derived against topoSort: the answer is whichever vertex is the unique
 			// in-degree-0 source, so it is read off the algorithm, not hand-typed.
 			// (The DAG is built with exactly one source, so this has one answer that
@@ -417,6 +423,7 @@ export const SCENES = [
 		body: `Kahn's has already emitted ${TOPO_SOURCE} (it was the only in-degree-0 node) and deleted ${TOPO_SOURCE}'s out-edges. Removing those edges drops some downstream in-degrees to 0, opening the next batch of free vertices. Before the figure numbers them, commit: which vertex does Kahn's emit NEXT? Remember the tie-break — when several are free at once, it takes the SMALLEST id.`,
 		check: {
 			kind: 'predict',
+			reviewSafe: false,
 			// Hold the stage's numbering until the learner commits, so the picture
 			// can't spoil the answer (the Stage reads holdReveal for scene 9).
 			revealGate: true,

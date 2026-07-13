@@ -8,6 +8,7 @@ import {
 	accentTokens,
 	buildReviewBank,
 	buildTopicQueue,
+	isReviewSafe,
 	isSelfGraded,
 	sampleSession,
 	shuffleWithSeed,
@@ -15,7 +16,7 @@ import {
 } from './reviewBank.js';
 import { DAY_MS } from './srsSchedule.js';
 import { checkAnswer } from '../../common/TopicTemplate/checkAnswer.js';
-import { TOPIC_BY_ID } from '../../data/curriculum.js';
+import { BUILT_TOPICS, TOPIC_BY_ID } from '../../data/curriculum.js';
 
 // ── The bank itself ──────────────────────────────────────────────────────────
 
@@ -25,6 +26,80 @@ test('bank is non-empty and spans multiple topics', () => {
 		REVIEW_TOPIC_IDS.length >= 5,
 		`bank should cover many topics (got ${REVIEW_TOPIC_IDS.length})`
 	);
+});
+
+test('bank covers every built topic in curriculum teaching order', () => {
+	const expected = BUILT_TOPICS.map(topic => topic.id);
+	assert.deepEqual(
+		REVIEW_TOPIC_IDS,
+		expected,
+		'review topic order and coverage derive from the curriculum'
+	);
+	for (const topicId of expected) {
+		assert.ok(
+			REVIEW_BANK.some(entry => entry.topicId === topicId),
+			`${topicId} contributes at least one review question`
+		);
+	}
+});
+
+test('Graphs and Quicksort contribute their lesson checks', () => {
+	assert.ok(
+		REVIEW_BANK.some(entry => entry.id === 'graphs:bfs-probe'),
+		'the Graphs frozen-frontier probe is reviewable'
+	);
+	assert.ok(
+		REVIEW_BANK.some(entry => entry.id === 'quicksort:partition'),
+		'the Quicksort partition prediction is reviewable'
+	);
+});
+
+test('review excludes checks that depend on an absent lesson visualization', () => {
+	const stageDependent = [
+		'graphs:nodes-edges',
+		'graphs:bfs',
+		'graphs:topo-sort',
+		'trees:insert',
+		'strategies:huffman',
+		'mst:same-tree',
+		'shortest-paths:dijkstra',
+		'np-completeness:verify-it',
+	];
+	for (const id of stageDependent) {
+		assert.equal(
+			REVIEW_BANK.some(entry => entry.id === id),
+			false,
+			`${id} does not appear without its required visual context`
+		);
+	}
+	assert.equal(
+		isReviewSafe({ kind: 'choice', reviewSafe: false }),
+		false,
+		'an explicitly stage-dependent check is not review-safe'
+	);
+	assert.deepEqual(
+		REVIEW_BANK.filter(entry => entry.topicId === 'graphs').map(
+			entry => entry.sceneId
+		),
+		['representations', 'bfs-probe', 'one-frontier'],
+		'Graphs keeps only cards that carry their own context'
+	);
+});
+
+test('generator-derived step probes are standalone self-graded review cards', () => {
+	assert.ok(
+		SELF_GRADED_KINDS.has('stepProbe'),
+		'stepProbe is a supported self-graded kind'
+	);
+	const probes = REVIEW_BANK.filter(entry => entry.check.kind === 'stepProbe');
+	assert.ok(probes.length >= 2, 'Graphs and SSSP both contribute a step probe');
+	for (const entry of probes) {
+		assert.equal(
+			checkAnswer(entry.check, entry.check.answer).correct,
+			true,
+			`${entry.id} grades its generator-derived next decision`
+		);
+	}
 });
 
 test('every entry has a gradeable, self-graded check and a real topic tag', () => {

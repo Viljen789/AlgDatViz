@@ -1,11 +1,13 @@
 import { useMemo } from 'react';
 import { SceneNarration } from '../../common/PlaybackEngine';
 import { GROWTH_RATES, RACE_NMAX } from './growthRates.js';
+import { BISECT, bisectProbes } from './scenes.js';
 import styles from './FoundationsStage.module.css';
 
 // FoundationsStage — one figure per complexity scene, switched by `activeScene`
 // with eased cross-fades. Scene order matches scenes.js:
-//   0 cost · 1 counting · 2 drop · 3 notation · 4 race · 5 cases
+//   0 cost · 1 counting · 2 drop · 3 notation · 4 race · 5 bisect ·
+//   6 invariant · 7 cases
 
 const VB = { w: 720, h: 560 };
 const PLOT = { x0: 70, x1: 540, y0: 84, y1: 432 };
@@ -82,7 +84,49 @@ const FoundationsStage = ({ activeScene = 0, holdReveal = false }) => {
 	for (let r = 0; r < GN; r += 1)
 		for (let c = 0; c < GN; c += 1) grid.push({ r, c });
 
-	// ── 5 cases: dynamic-array append costs (spikes at powers of two) ──
+	// ── 5 bisect: the sorted array from scenes.js, first probe drawn, live
+	// window bracketed. Probe 1 and the [lo, hi) it leaves are DERIVED from the
+	// same bisectProbes trace that keys the scene's check, so the figure shows
+	// exactly the state the question starts from — and never the second probe,
+	// which would spoil the answer.
+	const bN = BISECT.values.length; // 14
+	const probe1 = bisectProbes(BISECT.values, BISECT.target)[0]; // 7
+	const probe1TooSmall = BISECT.values[probe1] < BISECT.target;
+	const lo1 = probe1TooSmall ? probe1 + 1 : 0; // 8
+	const hi1 = probe1TooSmall ? bN : probe1; // 14
+	const BX = 55; // left edge of cell row
+	const BP = 44; // cell pitch
+	const BW = 38; // cell width/height
+	const BY = 156; // cell row top
+
+	// ── 6 invariant: initialization / maintenance / termination as three
+	// shrinking [lo, hi) bars, derived from the same trace as the bisect board.
+	const foundAt = bisectProbes(BISECT.values, BISECT.target).at(-1); // 8
+	const INV_ROWS = [
+		{
+			label: 'initialization',
+			lo: 0,
+			hi: bN,
+			note: `[0, ${bN}) — if ${BISECT.target} is anywhere, it is in here`,
+		},
+		{
+			label: 'maintenance',
+			lo: lo1,
+			hi: hi1,
+			note: `a[${probe1}] = ${BISECT.values[probe1]} < ${BISECT.target} discards [0, ${lo1}) — the claim survives the pass`,
+		},
+		{
+			label: 'termination',
+			lo: foundAt,
+			hi: foundAt + 1,
+			note: `a[${foundAt}] = ${BISECT.target} — the invariant hands back “found at ${foundAt}”`,
+		},
+	];
+	const IVX = 250; // invariant bar left edge
+	const IVW = 396; // invariant bar full width ([0, n))
+	const ivxAt = i => IVX + (i / bN) * IVW;
+
+	// ── 7 cases: dynamic-array append costs (spikes at powers of two) ──
 	const APPENDS = 16;
 	const appendCost = i => {
 		const k = i + 1; // 1-based append index
@@ -99,8 +143,10 @@ const FoundationsStage = ({ activeScene = 0, holdReveal = false }) => {
 		raceHeld
 			? 'Bare axes, no curves yet — predict which class grows fastest before the race is drawn.'
 			: 'Same axes: as n grows the growth-rate classes separate violently.',
+		'A sorted array probed in the middle: each comparison discards half the window, so search costs O(log n).',
+		'Three bars shrink the [lo, hi) window: initialization covers the whole array, maintenance keeps the target inside, termination reads off the answer.',
 		'One algorithm, different inputs: best, worst, average — and amortized append stays O(1).',
-	][Math.min(activeScene, 5)];
+	][Math.min(activeScene, 7)];
 
 	return (
 		<>
@@ -403,8 +449,171 @@ const FoundationsStage = ({ activeScene = 0, holdReveal = false }) => {
 						)}
 					</g>
 
-					{/* 5 — best / worst / average + amortized */}
+					{/* 5 — binary search: probe the middle, halve the window */}
 					<g className={sceneClass(5)}>
+						<text
+							className={styles.kicker}
+							x={VB.w / 2}
+							y={84}
+							textAnchor="middle"
+						>
+							binary search for {BISECT.target} — half-open window [lo, hi)
+						</text>
+						<text
+							className={styles.probeLabel}
+							x={BX + probe1 * BP + BW / 2}
+							y={136}
+							textAnchor="middle"
+						>
+							probe 1 → a[{probe1}] = {BISECT.values[probe1]} &lt;{' '}
+							{BISECT.target}
+						</text>
+						<line
+							className={styles.probeTick}
+							x1={BX + probe1 * BP + BW / 2}
+							y1={142}
+							x2={BX + probe1 * BP + BW / 2}
+							y2={BY - 4}
+						/>
+						{BISECT.values.map((v, i) => {
+							const dead = i < lo1 || i >= hi1;
+							return (
+								<g key={i}>
+									<rect
+										className={
+											dead ? `${styles.cell} ${styles.bisectDead}` : styles.cell
+										}
+										x={BX + i * BP}
+										y={BY}
+										width={BW}
+										height={BW}
+										rx={6}
+									/>
+									<text
+										className={
+											dead
+												? `${styles.bisectValue} ${styles.bisectValueDead}`
+												: styles.bisectValue
+										}
+										x={BX + i * BP + BW / 2}
+										y={BY + 24}
+										textAnchor="middle"
+									>
+										{v}
+									</text>
+									<text
+										className={styles.bisectIndex}
+										x={BX + i * BP + BW / 2}
+										y={BY + 60}
+										textAnchor="middle"
+									>
+										{i}
+									</text>
+								</g>
+							);
+						})}
+						{/* live-window bracket: [lo, hi) after the first probe */}
+						<path
+							className={styles.rangeLine}
+							d={`M${BX + lo1 * BP} 234 V240 H${BX + (hi1 - 1) * BP + BW} V234`}
+						/>
+						<text
+							className={styles.rangeLabel}
+							x={BX + lo1 * BP}
+							y={262}
+							textAnchor="start"
+						>
+							lo = {lo1}
+						</text>
+						<text
+							className={styles.rangeLabel}
+							x={BX + (hi1 - 1) * BP + BW}
+							y={262}
+							textAnchor="end"
+						>
+							hi = {hi1}
+						</text>
+						<text
+							className={styles.caption}
+							x={VB.w / 2}
+							y={308}
+							textAnchor="middle"
+						>
+							Each probe halves the window: 14 → 6 → 3 → 1 — at most ⌊log₂ n⌋ +
+							1 probes.
+						</text>
+						<text
+							className={styles.caption}
+							x={VB.w / 2}
+							y={334}
+							textAnchor="middle"
+						>
+							That halving is the O(log n) curve from the race.
+						</text>
+					</g>
+
+					{/* 6 — loop invariant: initialization / maintenance / termination */}
+					<g className={sceneClass(6)}>
+						<text
+							className={styles.kicker}
+							x={VB.w / 2}
+							y={100}
+							textAnchor="middle"
+						>
+							invariant — “if the target is present, it lies in [lo, hi)”
+						</text>
+						{INV_ROWS.map((row, i) => {
+							const rowY = 150 + i * 96;
+							return (
+								<g key={row.label}>
+									<text
+										className={styles.invLabel}
+										x={70}
+										y={rowY + 17}
+										textAnchor="start"
+									>
+										{row.label}
+									</text>
+									<rect
+										className={styles.invDead}
+										x={IVX}
+										y={rowY}
+										width={IVW}
+										height={26}
+										rx={5}
+									/>
+									<rect
+										className={styles.invLive}
+										x={ivxAt(row.lo)}
+										y={rowY}
+										width={((row.hi - row.lo) / bN) * IVW}
+										height={26}
+										rx={5}
+									/>
+									<text
+										className={styles.invNote}
+										x={IVX}
+										y={rowY + 46}
+										textAnchor="start"
+									>
+										{row.note}
+									</text>
+								</g>
+							);
+						})}
+						<text
+							className={styles.caption}
+							x={VB.w / 2}
+							y={448}
+							textAnchor="middle"
+						>
+							Base case, inductive step, payoff — a proof by induction that the
+							loop is correct.
+						</text>
+					</g>
+
+					{/* 7 — best / worst / average + amortized */}
+					<g className={sceneClass(7)}>
 						<text className={styles.kicker} x={70} y={92} textAnchor="start">
 							same algorithm, different inputs — linear search
 						</text>

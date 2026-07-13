@@ -2,8 +2,8 @@
 	display: flex;
 	align-items: flex-end;
 	justify-content: space-between;
-	gap: var(--spacing-xl);
-	padding: var(--spacing-xl) var(--spacing-xl) var(--spacing-md);
+	gap: var(--space-xl);
+	padding: var(--space-xl) var(--space-xl) var(--space-md);
 	flex-wrap: wrap;
 }
 
@@ -25,11 +25,11 @@
 	margin: 0;
 	cursor: pointer;
 	color: var(--color-text-primary);
-	letter-spacing: -0.025em;
-	font-family: var(--font-family-sans);
-	font-weight: 700;
+	letter-spacing: var(--tracking-display);
+	font-family: var(--font-family-display);
+	font-weight: var(--font-weight-display);
 	font-size: var(--font-size-display);
-	line-height: 1.05;
+	line-height: var(--line-height-display);
 	text-align: left;
 }
 
@@ -274,8 +274,8 @@
 
 @media (max-width: 720px) {
 	.hero {
-		padding: var(--spacing-lg) var(--spacing-lg) var(--spacing-md);
-		gap: var(--spacing-md);
+		padding: var(--space-lg) var(--space-lg) var(--space-md);
+		gap: var(--space-md);
 	}
 
 	.right {

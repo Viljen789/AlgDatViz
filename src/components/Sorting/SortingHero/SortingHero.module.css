@@ -2,8 +2,8 @@
 	display: flex;
 	align-items: flex-end;
 	justify-content: space-between;
-	gap: var(--spacing-xl);
-	padding: var(--spacing-xl) var(--spacing-xl) var(--spacing-md);
+	gap: var(--space-xl);
+	padding: var(--space-xl) var(--space-xl) var(--space-md);
 	flex-wrap: wrap;
 }
 
@@ -26,6 +26,9 @@
 }
 
 .crumbLink {
+	display: inline-flex;
+	align-items: center;
+	min-height: 44px;
 	color: var(--color-text-secondary);
 	text-decoration: none;
 	border-radius: var(--radius-sm);
@@ -55,11 +58,11 @@
 	margin: 0;
 	cursor: pointer;
 	color: var(--color-text-primary);
-	letter-spacing: -0.025em;
-	font-family: var(--font-family-sans);
-	font-weight: 700;
+	letter-spacing: var(--tracking-display);
+	font-family: var(--font-family-display);
+	font-weight: var(--font-weight-display);
 	font-size: var(--font-size-display);
-	line-height: 1.05;
+	line-height: var(--line-height-display);
 	text-align: left;
 	transition: color var(--duration-instant) var(--ease-quiet);
 }
@@ -125,6 +128,7 @@
 
 .complexity {
 	color: var(--color-text-primary);
+	white-space: nowrap;
 }
 
 .notationDot {
@@ -146,7 +150,12 @@
 	font-family: var(--font-family-mono);
 	font-size: 13px;
 	letter-spacing: 0.02em;
-	transition: all var(--duration-instant) var(--ease-quiet);
+	transition:
+		color var(--duration-instant) var(--ease-quiet),
+		border-color var(--duration-instant) var(--ease-quiet),
+		opacity var(--duration-instant) var(--ease-quiet);
+	white-space: nowrap;
+	flex-shrink: 0;
 }
 
 .sizeBtn:hover:not(:disabled),
@@ -197,7 +206,10 @@
 	text-align: left;
 	cursor: pointer;
 	border-radius: var(--border-radius-sm);
-	transition: all var(--duration-instant) var(--ease-quiet);
+	transition:
+		background-color var(--duration-instant) var(--ease-quiet),
+		color var(--duration-instant) var(--ease-quiet),
+		opacity var(--duration-instant) var(--ease-quiet);
 }
 
 .sizeItem:hover {
@@ -241,7 +253,10 @@
 	text-align: left;
 	cursor: pointer;
 	border-radius: var(--border-radius-sm);
-	transition: all var(--duration-instant) var(--ease-quiet);
+	transition:
+		background-color var(--duration-instant) var(--ease-quiet),
+		color var(--duration-instant) var(--ease-quiet),
+		opacity var(--duration-instant) var(--ease-quiet);
 }
 
 .profileItem span {
@@ -266,6 +281,7 @@
 
 .status {
 	color: var(--state-active);
+	white-space: nowrap;
 }
 
 .actions {
@@ -288,7 +304,11 @@
 	font-weight: 500;
 	border-radius: var(--border-radius-md);
 	cursor: pointer;
-	transition: all var(--duration-instant) var(--ease-quiet);
+	transition:
+		background-color var(--duration-instant) var(--ease-quiet),
+		color var(--duration-instant) var(--ease-quiet),
+		border-color var(--duration-instant) var(--ease-quiet),
+		opacity var(--duration-instant) var(--ease-quiet);
 }
 
 .ghostBtn:hover:not(:disabled) {
@@ -310,12 +330,35 @@
 
 @media (max-width: 720px) {
 	.hero {
-		padding: var(--spacing-lg) var(--spacing-lg) var(--spacing-md);
-		gap: var(--spacing-md);
+		padding: var(--space-lg) var(--space-md) var(--space-md);
+		gap: var(--space-md);
+	}
+
+	.left {
+		flex-basis: 100%;
 	}
 
 	.right {
 		align-items: flex-start;
 		width: 100%;
+	}
+
+	.notation {
+		width: 100%;
+		flex-wrap: wrap;
+		row-gap: 4px;
+	}
+
+	.notationDot {
+		display: none;
+	}
+
+	.actions {
+		width: 100%;
+		flex-wrap: wrap;
+	}
+
+	.ghostBtn {
+		min-height: 44px;
 	}
 }

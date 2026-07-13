@@ -10,7 +10,7 @@
 	display: flex;
 	align-items: center;
 	justify-content: center;
-	padding: var(--spacing-md);
+	padding: var(--space-md);
 	min-height: 0;
 }
 
@@ -19,7 +19,7 @@
 	display: flex;
 	justify-content: center;
 	align-items: center;
-	padding: var(--spacing-sm) 0;
+	padding: var(--space-sm) 0;
 	border-top: 1px solid var(--color-border);
 	background-color: var(--color-bg-hover);
 }

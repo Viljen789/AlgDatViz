@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import useReducedMotion from '../../hooks/useReducedMotion.js';
 import LessonCheck from './LessonCheck.jsx';
 import SceneControlBar from './SceneControlBar.jsx';
@@ -19,12 +19,14 @@ import styles from './TopicScrolly.module.css';
  *   renderStage    (activeScene:number, opts?:{ revealHeld:boolean }) => node —
  *                  the sticky stage. The second arg is opt-in: `revealHeld` is
  *                  true only while the active scene's check carries
- *                  `revealGate: true` and is still unanswered, so a stage can
- *                  hold its honest pre-reveal frame. Stages that take only
+ *                  `revealGate: true` and its solution is still hidden, so a
+ *                  stage can hold its honest pre-reveal frame. Stages that take only
  *                  (activeScene) ignore it, so every other topic is unaffected.
  *   checkStates    optional map { [sceneId]: state } for the inline checks.
  *   onAnswer       optional (sceneId, payload) => void — generic check submit
  *                  for every check kind (choice/numeric/text/order/classify/…).
+ *   onRetry        optional (sceneId) => void — clears host-owned state for
+ *                  stage-graded checks. Ordinary checks retry locally.
  *   onChoiceAnswer optional (sceneId, value) => void — backward-compatible alias
  *                  of onAnswer (kept so existing topics keep working).
  *   onActiveScene  optional (index:number) => void notifier.
@@ -37,6 +39,7 @@ const TopicScrolly = ({
 	renderStage,
 	checkStates,
 	onAnswer,
+	onRetry,
 	onChoiceAnswer,
 	onActiveScene,
 	initialScene = 0,
@@ -49,9 +52,97 @@ const TopicScrolly = ({
 	const startScene = Math.max(0, Math.min(initialScene, scenes.length - 1));
 	const [activeScene, setActiveScene] = useState(startScene);
 	const [isPlaying, setIsPlaying] = useState(false);
+	// Reveal-gated stages stay frozen through the first miss so the correction
+	// remains a real attempt. They release only after a correct response, an
+	// explicit worked-answer request, or the automatic reveal after a second miss.
+	const [revealedScenes, setRevealedScenes] = useState(() => new Set());
+	// A wrong answer can be corrected in place. While a scene is retrying we hide
+	// its host-owned result from the check UI, but preserve that
+	// first attempt in useProgress/SRS. The next submit overwrites the lesson-local
+	// result while firstTry remains immutable in persistence.
+	const [retryingScenes, setRetryingScenes] = useState(() => new Set());
 	const sceneRefs = useRef([]);
 	const rootRef = useRef(null);
 	const total = scenes.length;
+
+	const handleLessonAnswer = useCallback(
+		(sceneId, payload) => {
+			setRetryingScenes(prev => {
+				if (!prev.has(sceneId)) return prev;
+				const next = new Set(prev);
+				next.delete(sceneId);
+				return next;
+			});
+			handleAnswer?.(sceneId, payload);
+		},
+		[handleAnswer]
+	);
+
+	const handleRetry = useCallback(
+		sceneId => {
+			setIsPlaying(false);
+			const sceneIndex = scenes.findIndex(scene => scene.id === sceneId);
+			setRetryingScenes(prev => {
+				const next = new Set(prev);
+				next.add(sceneId);
+				return next;
+			});
+			onRetry?.(sceneId);
+			// Removing the feedback block shortens the prose card. Recenter after the
+			// layout settles so IntersectionObserver cannot promote the next article
+			// while the learner is correcting the current one.
+			if (sceneIndex >= 0) {
+				setActiveScene(sceneIndex);
+				onActiveScene?.(sceneIndex);
+				requestAnimationFrame(() => {
+					sceneRefs.current[sceneIndex]?.scrollIntoView({
+						behavior: reducedMotion ? 'auto' : 'smooth',
+						block: 'center',
+					});
+				});
+			}
+		},
+		[onRetry, onActiveScene, reducedMotion, scenes]
+	);
+
+	const handleReveal = useCallback(sceneId => {
+		setRevealedScenes(prev => {
+			if (prev.has(sceneId)) return prev;
+			const next = new Set(prev);
+			next.add(sceneId);
+			return next;
+		});
+	}, []);
+
+	// Pair checks are answered directly on the stage, so they do not travel
+	// through handleLessonAnswer. Once the host reports a fresh pair result,
+	// leave retry mode and show that result normally.
+	useEffect(() => {
+		const resolvedPairs = scenes
+			.filter(
+				scene =>
+					scene.check?.kind === 'pair' &&
+					retryingScenes.has(scene.id) &&
+					checkStates?.[scene.id]?.status
+			)
+			.map(scene => scene.id);
+		if (resolvedPairs.length === 0) return;
+		setRetryingScenes(prev => {
+			const next = new Set(prev);
+			resolvedPairs.forEach(id => next.delete(id));
+			return next;
+		});
+	}, [checkStates, retryingScenes, scenes]);
+
+	const sceneStatuses = useMemo(
+		() =>
+			scenes.map(scene => {
+				if (!scene.check) return 'none';
+				if (retryingScenes.has(scene.id)) return 'retrying';
+				return checkStates?.[scene.id]?.status || 'pending';
+			}),
+		[scenes, checkStates, retryingScenes]
+	);
 
 	useEffect(() => {
 		const root = rootRef.current;
@@ -149,11 +240,10 @@ const TopicScrolly = ({
 			if (!fromAuto) setIsPlaying(false); // any manual interaction pauses
 			setActiveScene(clamped);
 			onActiveScene?.(clamped);
-			// Stepping one beat (Prev/Next) updates the active scene + stage but
-			// holds the page still, so a panicked reader can rewind WITHOUT the
-			// page scrolling out from under them. Jump targets (dots, First/Last)
-			// keep scroll:true and recenter. Default true preserves prior behavior
-			// for every existing caller across all topics.
+			// The stage and its explanation are one teaching beat. Every transport
+			// action therefore recenters the matching prose instead of letting the
+			// sticky canvas drift onto scene N+1 while scene N's reasoning remains
+			// visible beside it.
 			if (scroll) {
 				sceneRefs.current[clamped]?.scrollIntoView({
 					behavior: reducedMotion ? 'auto' : 'smooth',
@@ -167,18 +257,25 @@ const TopicScrolly = ({
 	// Retrieval before progress: auto-advance won't pass a scene whose check is
 	// still unanswered.
 	const currentScene = scenes[activeScene];
-	const currentAnswered = Boolean(checkStates?.[currentScene?.id]?.status);
+	const currentStatus = sceneStatuses[activeScene] || 'none';
+	const currentAnswered = currentStatus === 'correct';
 	const blockedReason =
 		currentScene?.check && !currentAnswered
-			? 'answer the check to continue'
+			? currentStatus === 'incorrect' || currentStatus === 'retrying'
+				? 'correction pending. Auto-play paused.'
+				: 'check pending. Auto-play paused.'
 			: null;
 
 	// Opt-in reveal gate (FIX 1): a scene whose check carries `revealGate: true`
-	// asks the stage to HOLD its honest pre-reveal frame until the check is
-	// answered, so the visualization can't spoil a predict-before-reveal beat.
+	// asks the stage to HOLD its honest pre-reveal frame until the learner answers
+	// correctly or requests the worked solution, so the visualization cannot spoil
+	// a predict-before-reveal beat or the first correction attempt.
 	// Pure extra signal — false for every non-gated scene, so every other topic's
 	// stage is untouched.
-	const revealHeld = Boolean(currentScene?.check?.revealGate) && !currentAnswered;
+	const revealHeld =
+		Boolean(currentScene?.check?.revealGate) &&
+		!currentAnswered &&
+		!revealedScenes.has(currentScene?.id);
 
 	const handleTogglePlay = useCallback(() => {
 		if (isPlaying) {
@@ -211,6 +308,34 @@ const TopicScrolly = ({
 		>
 			<div className={styles.stageColumn}>
 				<div className={styles.stageSticky}>
+					<div
+						className={styles.stageContext}
+						aria-live="polite"
+						aria-atomic="true"
+					>
+						<span className={styles.stageContextIndex}>
+							{String(activeScene + 1).padStart(2, '0')} /{' '}
+							{String(total).padStart(2, '0')}
+						</span>
+						<span className={styles.stageContextTitle}>
+							{currentScene?.eyebrow || currentScene?.title}
+						</span>
+						{currentScene?.check && (
+							<span
+								className={`${styles.stageContextStatus} ${
+									styles[`stageContextStatus_${currentStatus}`] || ''
+								}`}
+							>
+								{currentStatus === 'correct'
+									? 'Checked'
+									: currentStatus === 'incorrect'
+										? 'Needs correction'
+										: currentStatus === 'retrying'
+											? 'Trying again'
+											: 'Check ahead'}
+							</span>
+						)}
+					</div>
 					{/* Second arg is opt-in: stages that take only (activeScene)
 					    ignore it, so every other topic is unaffected. */}
 					<div className={styles.stageFigure}>
@@ -222,11 +347,12 @@ const TopicScrolly = ({
 							active={activeScene}
 							isPlaying={isPlaying}
 							scenes={scenes}
+							sceneStatuses={sceneStatuses}
 							blockedReason={blockedReason}
 							scopeRef={rootRef}
 							reducedMotion={reducedMotion}
-							onPrev={() => goToScene(activeScene - 1, { scroll: false })}
-							onNext={() => goToScene(activeScene + 1, { scroll: false })}
+							onPrev={() => goToScene(activeScene - 1)}
+							onNext={() => goToScene(activeScene + 1)}
 							onFirst={() => goToScene(0)}
 							onLast={() => goToScene(total - 1)}
 							onJump={idx => goToScene(idx)}
@@ -237,40 +363,58 @@ const TopicScrolly = ({
 			</div>
 
 			<div className={styles.proseColumn}>
-				{scenes.map((scene, idx) => (
-					<article
-						key={scene.id}
-						id={`scene-${scene.id}`}
-						ref={node => {
-							sceneRefs.current[idx] = node;
-						}}
-						data-scene={idx}
-						className={`${styles.scene} ${
-							activeScene === idx ? styles.sceneActive : ''
-						}`}
-					>
-						<span className={styles.sceneIndex}>
-							{String(idx + 1).padStart(2, '0')}
-						</span>
-						{scene.eyebrow && (
-							<p className={styles.sceneEyebrow}>{scene.eyebrow}</p>
-						)}
-						<h2 className={styles.sceneTitle}>{scene.title}</h2>
-						<p className={styles.sceneBody}>{scene.body}</p>
-						{scene.check && (
-							<LessonCheck
-								check={scene.check}
-								state={checkStates?.[scene.id]}
-								// The active scene's unanswered check is what holds
-								// progress back; surface that affordance on the card
-								// itself, where the student is reading, rather than
-								// only in the control bar's muted caption.
-								gated={activeScene === idx && Boolean(blockedReason)}
-								onAnswer={payload => handleAnswer?.(scene.id, payload)}
-							/>
-						)}
-					</article>
-				))}
+				{scenes.map((scene, idx) => {
+					const effectiveState = retryingScenes.has(scene.id)
+						? undefined
+						: checkStates?.[scene.id];
+					const nextScene = scenes[idx + 1];
+					return (
+						<article
+							key={scene.id}
+							id={`scene-${scene.id}`}
+							ref={node => {
+								sceneRefs.current[idx] = node;
+							}}
+							data-scene={idx}
+							className={`${styles.scene} ${
+								activeScene === idx ? styles.sceneActive : ''
+							}`}
+						>
+							<span className={styles.sceneIndex}>
+								{String(idx + 1).padStart(2, '0')}
+							</span>
+							{scene.eyebrow && (
+								<p className={styles.sceneEyebrow}>{scene.eyebrow}</p>
+							)}
+							<h2 className={styles.sceneTitle}>{scene.title}</h2>
+							<p className={styles.sceneBody}>{scene.body}</p>
+							{scene.check && (
+								<LessonCheck
+									check={scene.check}
+									state={effectiveState}
+									// The active scene's unanswered check is what holds
+									// progress back; surface that affordance on the card
+									// itself, where the student is reading, rather than
+									// only in the control bar's muted caption.
+									gated={activeScene === idx && Boolean(blockedReason)}
+									onAnswer={payload => handleLessonAnswer(scene.id, payload)}
+									onRetry={() => handleRetry(scene.id)}
+									onReveal={
+										scene.check.revealGate
+											? () => handleReveal(scene.id)
+											: undefined
+									}
+									onContinue={nextScene ? () => goToScene(idx + 1) : undefined}
+									continueLabel={
+										nextScene
+											? `Continue to ${nextScene.eyebrow || nextScene.title}`
+											: undefined
+									}
+								/>
+							)}
+						</article>
+					);
+				})}
 			</div>
 		</section>
 	);

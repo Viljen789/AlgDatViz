@@ -487,7 +487,9 @@ const SortingDashboard = ({
 
 			<div className={styles.body}>
 				<section
-					className={styles.canvasShell}
+					className={`${styles.canvasShell} ${
+						useSpecial ? styles.canvasShellSpecial : ''
+					}`}
 					aria-label="Visualization canvas"
 				>
 					<div className={styles.canvas}>
@@ -536,10 +538,7 @@ const SortingDashboard = ({
 							<div className={styles.frameNarration} aria-live="polite">
 								{frameNarration}
 							</div>
-							<StateLegend
-								className={styles.stateLegend}
-								items={legendItems}
-							/>
+							<StateLegend className={styles.stateLegend} items={legendItems} />
 						</div>
 					</div>
 				</section>
@@ -633,7 +632,10 @@ const SortingDashboard = ({
 						</div>
 					</section>
 
-					<section className={styles.compareShell} aria-label="Algorithm comparison">
+					<section
+						className={styles.compareShell}
+						aria-label="Algorithm comparison"
+					>
 						<div className={styles.compareCore}>
 							<div className={styles.compareHeader}>
 								<div>
@@ -676,7 +678,10 @@ const SortingDashboard = ({
 												<span className={styles.compareOps}>
 													{row.totalOperations} ops
 												</span>
-												<span className={styles.compareMeter} aria-hidden="true">
+												<span
+													className={styles.compareMeter}
+													aria-hidden="true"
+												>
 													<i />
 												</span>
 											</div>

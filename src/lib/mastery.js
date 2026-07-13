@@ -46,7 +46,7 @@ const entryScore = (entry, checks, cards) => {
  * The exam ratio (from /exam, see lib/examLog.js) is a strong, recent, exam-shaped
  * signal: "could I do this cold today?". When a topic has BOTH check/card data and
  * an exam ratio we blend them evenly (0.5/0.5) so neither masks the other; with an
- * exam ratio ONLY (a topic with no review bank, e.g. graphs) the score IS the exam
+ * exam ratio ONLY (for any future topic with no review bank) the score IS the exam
  * ratio — that's what makes an exam-only topic representable at all. `fromExam`
  * flags that the exam signal contributed, so the dashboard can say so.
  *

@@ -182,7 +182,6 @@
 
 .lineComment .code {
 	color: var(--color-text-muted);
-	font-style: italic;
 }
 
 /* ---- Live state readout ---- */

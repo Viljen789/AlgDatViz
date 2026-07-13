@@ -1,0 +1,253 @@
+.canvas {
+	display: flex;
+	flex-direction: column;
+	gap: var(--space-lg);
+	width: 100%;
+	max-width: 100%;
+	margin: 0 auto;
+	padding: var(--space-md) var(--space-xs) 0;
+}
+
+/* ─── Rod ─────────────────────────────────────────────── */
+
+.rodWrap {
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+}
+
+.rodTag {
+	font-family: var(--font-family-sans);
+	font-size: var(--font-size-caption);
+	font-weight: var(--font-weight-semibold);
+	letter-spacing: var(--tracking-caps);
+	text-transform: uppercase;
+	color: var(--color-text-muted);
+}
+
+.rod {
+	display: flex;
+	gap: 3px;
+	align-items: stretch;
+	min-height: 56px;
+	flex-wrap: wrap;
+}
+
+.rodEmpty {
+	font-family: var(--font-family-mono);
+	font-size: var(--font-size-label);
+	color: var(--color-text-muted);
+	align-self: center;
+}
+
+.unit {
+	position: relative;
+	flex: 1 1 36px;
+	max-width: 64px;
+	min-width: 28px;
+	height: 56px;
+	border-radius: var(--border-radius-sm);
+	border: 1px solid var(--color-border);
+	background: var(--color-bg-input);
+	transition:
+		background var(--duration-step) var(--ease-step),
+		border-color var(--duration-step) var(--ease-step);
+}
+
+/* Pieces of the final decomposition ride the topic accent; alternating groups
+   shift tone so the cut boundaries read clearly. */
+.unit-piece {
+	background: color-mix(in srgb, var(--topic-accent) 14%, transparent);
+	border-color: color-mix(in srgb, var(--topic-accent) 45%, transparent);
+}
+
+.unit-piece.unitAlt {
+	background: color-mix(in srgb, var(--topic-accent) 26%, transparent);
+}
+
+/* The winning leading piece during the run. */
+.unit-lead {
+	background: color-mix(in srgb, var(--state-done) 16%, transparent);
+	border-color: var(--state-done);
+}
+
+/* The remainder dp[j − i] recalled during the run. */
+.unit-rest {
+	background: color-mix(in srgb, var(--state-flight) 10%, transparent);
+	border-color: color-mix(in srgb, var(--state-flight) 35%, transparent);
+}
+
+.unitHead {
+	border-left-width: 2px;
+}
+
+.unitLabel {
+	position: absolute;
+	top: 50%;
+	left: 6px;
+	transform: translateY(-50%);
+	font-family: var(--font-family-mono);
+	font-size: var(--font-size-caption);
+	font-weight: 700;
+	color: var(--color-text-primary);
+	white-space: nowrap;
+	pointer-events: none;
+}
+
+/* ─── Recurrence strip ───────────────────────────────── */
+
+.equationStrip {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: baseline;
+	justify-content: center;
+	gap: 6px 8px;
+	font-family: var(--font-family-mono);
+	font-size: 17px;
+	color: var(--color-text-primary);
+	min-height: 30px;
+	padding: 0 var(--space-md);
+	text-wrap: balance;
+}
+
+.equationTemplate {
+	color: var(--color-text-secondary);
+}
+
+.equationLead {
+	color: var(--state-active);
+	font-weight: 700;
+}
+
+.equationOp {
+	color: var(--color-text-muted);
+}
+
+.equationFn {
+	color: var(--color-text-secondary);
+}
+
+.equationConst {
+	color: var(--color-text-secondary);
+	font-weight: 600;
+}
+
+.equationTerm {
+	color: var(--state-flight);
+	font-weight: 600;
+}
+
+.equationResult {
+	color: var(--state-done);
+	font-weight: 700;
+	font-size: 19px;
+}
+
+/* ─── dp table ───────────────────────────────────────── */
+
+.tableScroll {
+	width: 100%;
+	overflow-x: auto;
+	padding-bottom: 4px;
+}
+
+.cellRow {
+	list-style: none;
+	display: flex;
+	gap: 8px;
+	margin: 0 auto;
+	padding: 0;
+	width: max-content;
+}
+
+.cell {
+	width: 56px;
+	height: 76px;
+	border-radius: var(--border-radius-md);
+	border: 1px solid var(--color-border);
+	background: var(--color-bg-input);
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	gap: 4px;
+	transition:
+		border-color var(--duration-step) var(--ease-step),
+		background var(--duration-step) var(--ease-step),
+		box-shadow var(--duration-step) var(--ease-step);
+}
+
+.cellIndex {
+	font-family: var(--font-family-mono);
+	font-size: 10px;
+	color: var(--color-text-muted);
+	letter-spacing: 0.04em;
+}
+
+.cellValue {
+	font-family: var(--font-family-mono);
+	font-size: 20px;
+	font-weight: 700;
+	color: var(--color-text-secondary);
+}
+
+.cell-done {
+	border-color: color-mix(in srgb, var(--state-done) 35%, transparent);
+	background: color-mix(in srgb, var(--state-done) 6%, transparent);
+}
+
+.cell-done .cellValue {
+	color: var(--state-done);
+}
+
+.cell-winning {
+	border-color: var(--state-flight);
+	background: color-mix(in srgb, var(--state-flight) 12%, transparent);
+	box-shadow: 0 0 0 1px color-mix(in srgb, var(--state-flight) 20%, transparent);
+}
+
+.cell-winning .cellValue {
+	color: var(--state-flight);
+}
+
+.cell-active {
+	border-color: var(--state-active);
+	background: color-mix(in srgb, var(--state-active) 12%, transparent);
+	box-shadow:
+		0 0 0 1px color-mix(in srgb, var(--state-active) 25%, transparent),
+		0 0 24px -4px color-mix(in srgb, var(--state-active) 40%, transparent);
+	animation: cellPulse 1.6s var(--ease-quiet) infinite;
+}
+
+.cell-active .cellValue {
+	color: var(--state-active);
+}
+
+@keyframes cellPulse {
+	0%,
+	100% {
+		box-shadow:
+			0 0 0 1px color-mix(in srgb, var(--state-active) 25%, transparent),
+			0 0 24px -4px color-mix(in srgb, var(--state-active) 40%, transparent);
+	}
+	50% {
+		box-shadow:
+			0 0 0 1px color-mix(in srgb, var(--state-active) 45%, transparent),
+			0 0 32px -2px color-mix(in srgb, var(--state-active) 65%, transparent);
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.cell-active {
+		animation: none;
+	}
+}
+
+@media (max-width: 720px) {
+	.canvas {
+		gap: 16px;
+	}
+	.equationStrip {
+		font-size: 14px;
+	}
+}

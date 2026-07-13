@@ -5,7 +5,7 @@
    spacing and type — the same paper-and-ink language as the rest of the page. */
 .finder {
 	padding: clamp(32px, 5vw, 64px) clamp(28px, 6vw, 96px);
-	max-width: 1280px;
+	max-width: var(--page-max);
 	margin: 0 auto;
 	border-top: 1px solid var(--color-border-subtle);
 	border-bottom: 1px solid var(--color-border-subtle);
@@ -114,41 +114,35 @@
 	margin: clamp(20px, 2.6vw, 32px) 0 0;
 	padding: 0;
 	list-style: none;
-	display: grid;
-	grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-	gap: var(--space-md);
+	border-top: 1px solid var(--color-border-subtle);
+	border-bottom: 1px solid var(--color-border-subtle);
 }
 
 .cell {
-	display: flex;
 	min-width: 0;
 }
 
+.cell + .cell {
+	border-top: 1px solid var(--color-border-subtle);
+}
+
 .chip {
-	display: flex;
-	flex-direction: column;
-	gap: var(--space-xs);
-	flex: 1;
+	display: grid;
+	grid-template-columns: 3rem minmax(0, 1fr) auto;
+	align-items: center;
+	gap: var(--space-md);
 	min-width: 0;
-	padding: var(--space-md);
+	padding: var(--space-md) var(--space-xs);
 	text-decoration: none;
-	border: 1px solid var(--color-border-subtle);
-	/* A low-alpha hue wash keeps the number/name as the primary signal; the chip
-	   never relies on hue alone (the number + name carry the meaning). */
-	border-radius: var(--radius-md);
-	background:
-		linear-gradient(var(--chip-wash), var(--chip-wash)),
-		var(--surface-1);
+	border: 0;
+	background: transparent;
 	color: var(--color-text-primary);
 	transition:
-		border-color var(--transition),
-		transform var(--duration-step) var(--ease-quiet),
 		background-color var(--transition);
 }
 
 .chip:hover {
-	border-color: var(--color-border-strong);
-	transform: translateY(-1px);
+	background: var(--surface-hover);
 }
 
 .chip:focus-visible {
@@ -158,10 +152,7 @@
 }
 
 .chipTop {
-	display: flex;
-	align-items: center;
-	justify-content: space-between;
-	gap: var(--space-sm);
+	display: contents;
 }
 
 .chipNum {
@@ -175,7 +166,7 @@
 /* A small hue dot as a secondary cue (the number + name stay primary, so the
    chip is readable with hue removed). */
 .chipDot {
-	display: block;
+	display: none;
 	width: 8px;
 	height: 8px;
 	border-radius: var(--radius-pill);
@@ -184,11 +175,19 @@
 }
 
 .chipName {
-	font-family: var(--font-family-display);
-	font-size: var(--font-size-label);
+	font-family: var(--font-family-sans);
+	font-size: var(--font-size-body);
 	font-weight: var(--font-weight-medium);
 	line-height: var(--line-height-snug);
 	color: var(--color-text-primary);
+}
+
+.idle {
+	max-width: 52ch;
+	margin: var(--space-lg) 0 0;
+	color: var(--color-text-muted);
+	font-size: var(--font-size-label);
+	line-height: var(--line-height-body);
 }
 
 .chipMeta {
@@ -199,7 +198,6 @@
 }
 
 @media (max-width: 640px) {
-	.grid {
-		grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-	}
+	.chip { grid-template-columns: 2rem minmax(0, 1fr); }
+	.chipMeta { grid-column: 2; }
 }

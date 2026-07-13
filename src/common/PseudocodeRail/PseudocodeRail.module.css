@@ -18,17 +18,17 @@
 }
 
 .label {
-	font-size: 9px;
-	letter-spacing: 0.16em;
+	font-size: var(--font-size-caption);
+	letter-spacing: var(--tracking-caps);
 	color: var(--color-text-muted);
-	font-weight: 700;
+	font-weight: var(--font-weight-semibold);
 }
 
 .count {
 	font-family: var(--font-family-mono);
-	font-size: 10.5px;
+	font-size: var(--font-size-caption);
 	color: var(--color-text-dim);
-	letter-spacing: 0.02em;
+	letter-spacing: var(--tracking-wide);
 }
 
 .scroll {
@@ -90,9 +90,9 @@
 	text-align: right;
 	padding-right: 10px;
 	font-family: var(--font-family-mono);
-	font-size: 10px;
+	font-size: var(--font-size-caption);
 	color: var(--color-text-dim);
-	letter-spacing: 0.02em;
+	letter-spacing: var(--tracking-wide);
 	user-select: none;
 }
 
@@ -107,5 +107,4 @@
 
 .lineComment .code {
 	color: var(--color-text-muted);
-	font-style: italic;
 }

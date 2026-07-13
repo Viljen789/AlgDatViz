@@ -256,7 +256,6 @@
 
 .compareNote {
 	color: var(--color-text-muted);
-	font-style: italic;
 }
 
 .compareRow {

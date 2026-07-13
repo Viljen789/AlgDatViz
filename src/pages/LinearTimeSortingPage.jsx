@@ -74,7 +74,7 @@ const CHEAT_SHEET = {
  * pseudocode + live state. Route /linear-time-sorting, default export.
  */
 const LinearTimeSortingPage = () => {
-	const { markVisited, markCompleted } = useProgress();
+	const { markVisited } = useProgress();
 	const [checkStates, setCheckStates] = useState(initialCheckStates);
 
 	const topic = TOPIC_BY_ID[TOPIC_ID];
@@ -100,13 +100,9 @@ const LinearTimeSortingPage = () => {
 		[]
 	);
 
-	const handlePlaygroundInteract = useCallback(() => {
-		markCompleted(TOPIC_ID);
-	}, [markCompleted]);
-
 	const renderPlayground = useCallback(
-		() => <LinearTimeSortingPlayground onUserInteract={handlePlaygroundInteract} />,
-		[handlePlaygroundInteract]
+		() => <LinearTimeSortingPlayground />,
+		[]
 	);
 
 	const handleVisit = useCallback(() => {

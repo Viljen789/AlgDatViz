@@ -2486,7 +2486,6 @@ const strategies2 = seed => {
 // caseId 3 (so f genuinely dominates, with the module's own 0.04 tolerance — no
 // borderline c≈d draws). Returns the params plus the readable fnText.
 const drawCase3 = stream => {
-	const fnTextOf = d => (d === 0 ? '1' : d === 1 ? 'n' : `n^${d}`);
 	return rejectionSample(
 		stream,
 		s => {
@@ -3006,8 +3005,6 @@ const strategies3 = seed => {
 		.map(a => a.id)
 		.filter(id => id !== first)
 		.slice(0, 3);
-	const lastChosen = acts.find(a => a.id === sel[sel.length - 1]);
-	const secondChosen = sel.length > 1 ? acts.find(a => a.id === sel[1]) : null;
 	return {
 		kind: 'problem',
 		__input: { activities: acts },

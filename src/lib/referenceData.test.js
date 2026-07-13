@@ -12,6 +12,13 @@ import { ALGORITHM_INFO } from '../utils/sorting/algorithmInfo.js';
 import { ALGORITHM_ORDER } from '../utils/sorting/algorithmMeta.js';
 import { PROGRESS_TOPICS } from '../data/curriculum.js';
 import { SSSP_ALGORITHMS } from '../components/ShortestPaths/ssspMeta.js';
+import {
+	STRATEGY_ALGORITHMS,
+	STRATEGY_ALGORITHM_ORDER,
+} from '../components/Strategies/strategiesMeta.js';
+import { APSP_MODES } from '../components/AllPairsShortestPaths/apspMeta.js';
+import { MAXFLOW_ALGORITHMS } from '../components/MaxFlow/maxFlowMeta.js';
+import { EXAMPLES as MASTER_EXAMPLES } from '../components/MasterTheorem/masterMath.js';
 
 // ── sortComparison ──────────────────────────────────────────────────────────
 test('sortComparison covers every sort in ALGORITHM_ORDER, in order', () => {
@@ -47,10 +54,18 @@ test('sortComparison reflects known facts (merge stable not in-place; quick in-p
 });
 
 // ── decisionCards ───────────────────────────────────────────────────────────
-test('decisionCards covers the three exam decisions', () => {
+test('decisionCards covers the seven exam decisions, in teaching order', () => {
 	assert.deepEqual(
 		decisionCards.map(c => c.id),
-		['sssp', 'mst', 'traversal']
+		['search', 'traversal', 'strategy', 'mst', 'sssp', 'apsp', 'maxflow']
+	);
+	// Teaching order: each card's topic appears no earlier in the curriculum
+	// than the previous card's — the same order the complexity sheet walks.
+	const order = PROGRESS_TOPICS.map(t => t.id);
+	const positions = decisionCards.map(c => order.indexOf(c.topicId));
+	assert.deepEqual(
+		positions,
+		[...positions].sort((a, b) => a - b)
 	);
 });
 
@@ -95,6 +110,79 @@ test('the SSSP card derives its picks from the meta booleans (drift-guarded)', (
 	assert.ok(!SSSP_ALGORITHMS.dijkstra.handlesNegatives);
 });
 
+test('the strategy card derives both rosters from the Strategies category tags', () => {
+	const card = decisionCards.find(c => c.id === 'strategy');
+	const greedyOpt = card.options.find(o => o.pick === 'Greedy');
+	const dpOpt = card.options.find(o => o.pick === 'Dynamic programming');
+	// Every problem the Strategies meta tags 'Greedy' or 'DP' must appear — name
+	// AND complexity — under exactly that strategy, so a re-classified lesson
+	// moves it here (or this fails loudly) rather than the card silently lying.
+	for (const id of STRATEGY_ALGORITHM_ORDER) {
+		const algo = STRATEGY_ALGORITHMS[id];
+		if (algo.category === 'Greedy') {
+			assert.ok(greedyOpt.because.includes(algo.name), `greedy: ${algo.name}`);
+			assert.ok(greedyOpt.because.includes(algo.complexity));
+			assert.ok(!dpOpt.because.includes(algo.name));
+		} else if (algo.category === 'DP') {
+			assert.ok(dpOpt.because.includes(algo.name), `dp: ${algo.name}`);
+			assert.ok(dpOpt.because.includes(algo.complexity));
+			assert.ok(!greedyOpt.because.includes(algo.name));
+		}
+	}
+	// Coin change ('DP vs Greedy', the boundary lesson) lands in neither roster;
+	// the card's note carries it instead.
+	assert.ok(!greedyOpt.because.includes(STRATEGY_ALGORITHMS.coinChange.name));
+	assert.ok(!dpOpt.because.includes(STRATEGY_ALGORITHMS.coinChange.name));
+	assert.ok(card.note.includes(STRATEGY_ALGORITHMS.coinChange.name));
+});
+
+test('the APSP card derives Floyd-Warshall and the Dijkstra alternative from their metas', () => {
+	const apsp = decisionCards.find(c => c.id === 'apsp');
+	const fwOpt = apsp.options.find(
+		o => o.pick === APSP_MODES.floydWarshall.name
+	);
+	assert.ok(fwOpt, 'an option must pick Floyd-Warshall by its meta name');
+	assert.ok(fwOpt.because.includes(APSP_MODES.floydWarshall.complexity));
+	const dijkstraOpt = apsp.options.find(o =>
+		o.pick.includes(SSSP_ALGORITHMS.dijkstra.name)
+	);
+	assert.ok(dijkstraOpt, 'an option must pick Dijkstra-from-every-vertex');
+	assert.ok(dijkstraOpt.because.includes(SSSP_ALGORITHMS.dijkstra.complexity));
+	// The one-line matrix contrast carries both classical bounds.
+	assert.ok(apsp.note.includes('Slow-APSP'));
+	assert.ok(apsp.note.includes('Θ(V⁴)'));
+	assert.ok(apsp.note.includes('Θ(V³ log V)'));
+});
+
+test('the max-flow card derives both algorithms from the max-flow meta', () => {
+	const card = decisionCards.find(c => c.id === 'maxflow');
+	const ff = card.options.find(
+		o => o.pick === MAXFLOW_ALGORITHMS.fordFulkerson.name
+	);
+	const ek = card.options.find(
+		o => o.pick === MAXFLOW_ALGORITHMS.edmondsKarp.name
+	);
+	assert.ok(ff, 'an option must pick Ford-Fulkerson by its meta name');
+	assert.ok(ek, 'an option must pick Edmonds-Karp by its meta name');
+	assert.ok(ff.because.includes(MAXFLOW_ALGORITHMS.fordFulkerson.complexity));
+	assert.ok(ek.because.includes(MAXFLOW_ALGORITHMS.edmondsKarp.complexity));
+	// The deciding facts: FF's bound scales with |f*|, EK's rests on BFS.
+	assert.ok(ff.because.includes('|f*|'));
+	assert.match(ek.because, /BFS/);
+});
+
+test('the search card anchors binary search to the master-theorem example', () => {
+	const card = decisionCards.find(c => c.id === 'search');
+	const bin = card.options.find(o => o.pick === 'Binary search');
+	assert.ok(bin, 'an option must pick binary search');
+	// The pick label is read off masterMath's worked examples, so a renamed
+	// lesson example fails here instead of orphaning the card.
+	assert.ok(MASTER_EXAMPLES.some(e => e.label === bin.pick));
+	assert.match(bin.when, /sorted/i);
+	assert.ok(bin.because.includes('O(log n)'));
+	assert.match(bin.because, /halves/);
+});
+
 // ── complexitySheet ─────────────────────────────────────────────────────────
 test('complexitySheet covers all progress topics, in teaching order', () => {
 	assert.equal(complexitySheet.length, PROGRESS_TOPICS.length);
@@ -132,6 +220,36 @@ test('greedyRule keeps MST safe and 0/1 knapsack unsafe', () => {
 	assert.ok(greedyRule.unsafe.some(i => i.id === 'knapsack'));
 });
 
+// DRIFT GUARD: the Strategies-backed items must carry the label and the
+// headline complexity straight from STRATEGY_ALGORITHMS, so a renamed problem
+// or a revised bound in the lesson meta changes the cheat sheet with it.
+test('greedyRule covers the Strategies problems with their meta complexities', () => {
+	const items = new Map(
+		[...greedyRule.safe, ...greedyRule.unsafe].map(i => [i.id, i])
+	);
+	const expectations = [
+		['interval', STRATEGY_ALGORITHMS.intervalScheduling, 'safe'],
+		['huffman', STRATEGY_ALGORITHMS.huffman, 'safe'],
+		['fractional', STRATEGY_ALGORITHMS.fractionalKnapsack, 'safe'],
+		['knapsack', STRATEGY_ALGORITHMS.knapsack01, 'unsafe'],
+		['lcs', STRATEGY_ALGORITHMS.lcs, 'unsafe'],
+		['rod', STRATEGY_ALGORITHMS.rodCutting, 'unsafe'],
+	];
+	for (const [id, meta, side] of expectations) {
+		const item = items.get(id);
+		assert.ok(item, `missing greedyRule item: ${id}`);
+		assert.ok(
+			greedyRule[side].includes(item),
+			`${id} belongs on the ${side} side`
+		);
+		assert.equal(item.label, meta.name);
+		assert.ok(
+			item.why.includes(meta.complexity),
+			`${id} why must carry ${meta.complexity}`
+		);
+	}
+});
+
 // ── glossary ────────────────────────────────────────────────────────────────
 // COVERAGE GUARDRAIL: the bilingual exam glossary must keep a term pair for every
 // curriculum topic. A new topic in curriculum.js with no Norwegian vocabulary
@@ -166,6 +284,38 @@ test('every glossary term has non-empty English + Norwegian strings', () => {
 			assert.ok(term.note.trim().length > 0);
 		}
 	}
+});
+
+// The pensum vocabulary the Strategies + SCC lessons lean on must stay in the
+// glossary, paired with the Norwegian term the exam actually prints.
+test('glossary carries the strategies and SCC pensum term pairs', () => {
+	const noFor = en => glossaryTerms.find(t => t.en === en)?.no;
+	assert.equal(noFor('prefix code'), 'prefikskode');
+	assert.equal(noFor('greedy-choice property'), 'grådighetsegenskapen');
+	assert.equal(noFor('optimal substructure'), 'optimal delstruktur');
+	assert.equal(
+		noFor('strongly connected component'),
+		'sterkt sammenhengende komponent'
+	);
+	assert.equal(noFor('memoization'), 'memoisering');
+});
+
+// Likewise for the DFS-edge, DP, max-flow and NP vocabulary the later topics
+// lean on — each paired with the Norwegian term the exam actually prints.
+test('glossary carries the DFS-edge, max-flow and NP pensum term pairs', () => {
+	const noFor = en => glossaryTerms.find(t => t.en === en)?.no;
+	assert.equal(noFor('back edge'), 'bakoverkant');
+	assert.equal(noFor('subproblem graph'), 'delinstansgraf');
+	assert.equal(noFor('bottleneck (of an augmenting path)'), 'flaskehals');
+	assert.equal(noFor('antiparallel edges'), 'antiparallelle kanter');
+	assert.equal(noFor('linear programming'), 'lineær programmering');
+	assert.equal(noFor('co-NP'), 'co-NP');
+	assert.equal(noFor('pseudopolynomial time'), 'pseudopolynomisk tid');
+	// The exam-relevant facts ride along as notes.
+	const noteFor = en => glossaryTerms.find(t => t.en === en)?.note ?? '';
+	assert.match(noteFor('back edge'), /cycle/);
+	assert.match(noteFor('antiparallel edges'), /intermediate vertex/);
+	assert.match(noteFor('linear programming'), /shortest paths and max flow/);
 });
 
 test('glossarySections group the flat terms, in teaching order, none empty', () => {

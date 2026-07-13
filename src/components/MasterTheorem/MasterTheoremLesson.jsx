@@ -62,7 +62,7 @@ const initialCheckStates = () =>
  * page structure (hero, scrolly, playground frame, breadcrumbs, up-next).
  */
 const MasterTheoremLesson = () => {
-	const { markVisited, markCompleted } = useProgress();
+	const { markVisited } = useProgress();
 	const [checkStates, setCheckStates] = useState(initialCheckStates);
 	// Merge sort is the running example throughout the lesson, so the playground
 	// opens on it for continuity.
@@ -87,10 +87,6 @@ const MasterTheoremLesson = () => {
 		}));
 	}, []);
 
-	const handlePlaygroundInteract = useCallback(() => {
-		markCompleted(TOPIC_ID);
-	}, [markCompleted]);
-
 	const handleVisit = useCallback(() => {
 		markVisited(TOPIC_ID);
 	}, [markVisited]);
@@ -112,10 +108,9 @@ const MasterTheoremLesson = () => {
 			<MasterTheoremPlayground
 				params={params}
 				onParamsChange={setParams}
-				onUserInteract={handlePlaygroundInteract}
 			/>
 		),
-		[params, handlePlaygroundInteract]
+		[params]
 	);
 
 	const eyebrow = useMemo(

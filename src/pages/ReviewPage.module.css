@@ -29,7 +29,7 @@
 	display: inline-flex;
 	align-items: center;
 	gap: 7px;
-	max-width: 1280px;
+	max-width: var(--page-max);
 	margin: 0 auto;
 	font-family: var(--font-family-mono);
 	font-size: var(--font-size-caption);
@@ -37,6 +37,9 @@
 }
 
 .crumbLink {
+	display: inline-flex;
+	align-items: center;
+	min-height: 44px;
 	color: var(--color-text-secondary);
 	text-decoration: none;
 	border-radius: var(--radius-sm);
@@ -59,7 +62,7 @@
 /* ---------- Hero ---------- */
 
 .hero {
-	max-width: 1280px;
+	max-width: var(--page-max);
 	margin: 0 auto;
 	padding: clamp(var(--space-2xl), 6vw, var(--space-4xl))
 		clamp(var(--space-xl), 6vw, var(--space-4xl))
@@ -101,17 +104,18 @@
 }
 
 .lede em {
-	font-style: italic;
+	font-style: normal;
+	font-weight: var(--font-weight-semibold);
 	color: var(--color-text-primary);
 }
 
 /* ---------- Stat row ---------- */
 
 .stats {
-	display: flex;
-	flex-wrap: wrap;
-	gap: var(--space-sm);
-	margin: var(--space-xs) 0 0;
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+	gap: var(--space-md);
+	margin: var(--space-sm) 0 0;
 }
 
 .stat {
@@ -140,6 +144,7 @@
 	font-family: var(--font-family-display);
 	font-size: var(--font-size-heading-lg);
 	font-weight: var(--font-weight-display);
+	font-variant-numeric: lining-nums tabular-nums;
 	line-height: 1;
 	color: var(--color-text-primary);
 }
@@ -278,11 +283,30 @@
 
 /* ---------- Session wrapper ---------- */
 
+/* Compact in-session header: the full hero steps aside while a run is live,
+   leaving the crumb bar plus this one slim line. */
+.sessionHead {
+	max-width: 820px;
+	margin: 0 auto;
+	padding: clamp(var(--space-xl), 4vw, var(--space-2xl))
+		clamp(var(--space-lg), 6vw, var(--space-4xl)) var(--space-lg);
+}
+
 .sessionWrap {
 	max-width: 820px;
 	margin: 0 auto;
 	padding: 0 clamp(var(--space-lg), 6vw, var(--space-4xl))
 		clamp(var(--space-3xl), 8vw, var(--space-4xl));
+}
+
+/* The desk card: anchors the running session on the canvas instead of letting
+   the column float bare. */
+.sessionCard {
+	background: var(--surface-1);
+	border: 1px solid var(--color-border);
+	border-radius: var(--radius-xl);
+	box-shadow: var(--shadow-2);
+	padding: clamp(var(--space-xl), 4vw, var(--space-2xl));
 }
 
 /* ---------- Responsive ---------- */

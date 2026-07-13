@@ -232,7 +232,8 @@ const TreePlayground = ({ onUserInteract }) => {
 		[onUserInteract, root, loadSteps]
 	);
 
-	// Wrap step controls so any interaction marks the topic complete.
+	// Forward step-control interaction to an optional host observer. Completion is
+	// intentionally owned by the lesson's correct-check evidence, not this signal.
 	const wrap = useCallback(
 		fn =>
 			(...args) => {

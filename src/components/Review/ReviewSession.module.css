@@ -177,7 +177,7 @@
 	align-items: center;
 	gap: var(--space-sm);
 	padding: var(--space-sm) var(--space-xl);
-	background: var(--color-accent-blue);
+	background: var(--review-brand);
 	color: var(--color-text-on-accent);
 	border: none;
 	border-radius: var(--radius-pill);
@@ -199,6 +199,26 @@
 .nextBtn:focus-visible {
 	outline: none;
 	box-shadow: var(--shadow-focus);
+}
+
+/* The keyboard-advance hint beside the next button, shown once answered. */
+.kbdHint {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	margin-right: auto;
+	color: var(--color-text-muted);
+	font-size: var(--font-size-caption);
+}
+
+.kbd {
+	padding: 2px 6px;
+	border: 1px solid var(--color-border);
+	border-radius: var(--radius-sm);
+	font-size: var(--font-size-caption);
+	line-height: 1.4;
+	color: var(--color-text-secondary);
+	background: var(--color-bg-sunken);
 }
 
 .skipBtn {

@@ -22,6 +22,7 @@
 //   name        full display name
 //   navLabel    compact label for the sidebar
 //   pullQuote   one-line "why this matters"
+//   keywords    searchable algorithm/concept names (topic finder haystack)
 //   complexity  headline asymptotic note
 //   tokenId     short token id → `--topic-<tokenId>`
 //   accent      `var(--topic-<tokenId>)` — the topic's signature hue
@@ -47,12 +48,17 @@ export const CURRICULUM = [
 		number: '01',
 		phase: 'Foundations',
 		name: 'Arrays & complexity',
-		// Matches the breadcrumb/path/CTA name (the old 'Foundations' label both
-		// contradicted that name and duplicated this topic's phase header).
-		navLabel: 'Arrays & complexity',
+		// Shortened for the sidebar the same way 'All-pairs SP' and 'Max flow'
+		// are — the full name won't fit the row once the Next chip and status
+		// dot claim their space. (The old 'Foundations' label both contradicted
+		// the breadcrumb/path/CTA name and duplicated this topic's phase header.)
+		navLabel: 'Arrays & big-O',
 		pullQuote:
 			'Where every algorithm lives. The cost of one operation, multiplied.',
 		complexity: 'O(1) … O(2ⁿ)',
+		// Searchable algorithm/concept names for the topic finder.
+		keywords:
+			'big-O, omega, theta, asymptotic analysis, growth rates, amortized cost, binary search, arrays',
 		tokenId: 'foundations',
 		accent: topicAccent('foundations'),
 		icon: 'Layers',
@@ -72,6 +78,9 @@ export const CURRICULUM = [
 		navLabel: 'Stacks / queues',
 		pullQuote: 'The two simplest disciplines for "what to do next."',
 		complexity: 'O(1)',
+		// Searchable algorithm/concept names for the topic finder.
+		keywords:
+			'stack, queue, LIFO, FIFO, push, pop, enqueue, dequeue',
 		tokenId: 'stacks',
 		accent: topicAccent('stacks'),
 		icon: 'List',
@@ -88,6 +97,9 @@ export const CURRICULUM = [
 		pullQuote:
 			'Why a problem solved by solving smaller versions of itself ever terminates.',
 		complexity: 'T(n) = aT(n/b) + f(n)',
+		// Searchable algorithm/concept names for the topic finder.
+		keywords:
+			'recurrences, divide and conquer, recursion tree, aT(n/b) + f(n)',
 		tokenId: 'master',
 		accent: topicAccent('master'),
 		icon: 'Sigma',
@@ -103,6 +115,9 @@ export const CURRICULUM = [
 		navLabel: 'Sorting',
 		pullQuote: 'Five algorithms, one task. The differences are the lesson.',
 		complexity: 'O(n log n)',
+		// Searchable algorithm/concept names for the topic finder.
+		keywords:
+			'merge sort, insertion sort, bubble sort, stability, in-place, comparison sorting',
 		tokenId: 'sorting',
 		accent: topicAccent('sorting'),
 		icon: 'BarChart3',
@@ -122,6 +137,9 @@ export const CURRICULUM = [
 		pullQuote:
 			'Partition around a pivot, then recurse. The split is the whole trick.',
 		complexity: 'O(n log n) avg',
+		// Searchable algorithm/concept names for the topic finder.
+		keywords:
+			'partition, pivot, quickselect, randomized, average case',
 		tokenId: 'quicksort',
 		accent: topicAccent('quicksort'),
 		icon: 'SplitSquareHorizontal',
@@ -141,6 +159,9 @@ export const CURRICULUM = [
 		pullQuote:
 			'Beat n log n by not comparing at all — when the keys cooperate.',
 		complexity: 'O(n + k)',
+		// Searchable algorithm/concept names for the topic finder.
+		keywords:
+			'counting sort, radix sort, bucket sort, non-comparison sorting',
 		tokenId: 'linsort',
 		accent: topicAccent('linsort'),
 		icon: 'ArrowDownNarrowWide',
@@ -156,6 +177,9 @@ export const CURRICULUM = [
 		navLabel: 'Hash maps',
 		pullQuote: 'Constant-time lookup, when collisions cooperate.',
 		complexity: 'O(1) avg',
+		// Searchable algorithm/concept names for the topic finder.
+		keywords:
+			'hash tables, collisions, chaining, open addressing, load factor, resizing',
 		tokenId: 'hashing',
 		accent: topicAccent('hashing'),
 		icon: 'Hash',
@@ -172,6 +196,9 @@ export const CURRICULUM = [
 		pullQuote:
 			'Hierarchical order. The shape of every search you will ever write.',
 		complexity: 'O(log n)',
+		// Searchable algorithm/concept names for the topic finder.
+		keywords:
+			'binary search tree, BST, inorder, preorder, postorder, successor, insert, delete',
 		tokenId: 'trees',
 		accent: topicAccent('trees'),
 		icon: 'GitBranch',
@@ -188,6 +215,9 @@ export const CURRICULUM = [
 		pullQuote:
 			'A tree flattened into an array. Always hand back the best element next.',
 		complexity: 'O(log n)',
+		// Searchable algorithm/concept names for the topic finder.
+		keywords:
+			'heap, priority queue, heapify, build-heap, heapsort, extract-min',
 		tokenId: 'heaps',
 		accent: topicAccent('heaps'),
 		icon: 'Triangle',
@@ -204,6 +234,9 @@ export const CURRICULUM = [
 		pullQuote:
 			'Nodes and edges. Half of computer science is reachable from here.',
 		complexity: 'O(V + E)',
+		// Searchable algorithm/concept names for the topic finder.
+		keywords:
+			'BFS, DFS, breadth-first, depth-first, topological sort, strongly connected components, Kosaraju, adjacency matrix, adjacency list',
 		tokenId: 'graphs',
 		accent: topicAccent('graphs'),
 		icon: 'Network',
@@ -220,6 +253,9 @@ export const CURRICULUM = [
 		pullQuote:
 			'Greedy, divide and conquer, dynamic programming. When to choose what.',
 		complexity: '—',
+		// Searchable algorithm/concept names for the topic finder.
+		keywords:
+			'greedy, dynamic programming, DP, Huffman coding, 0/1 knapsack, fractional knapsack, longest common subsequence, LCS, rod cutting, coin change, interval scheduling, activity selection, stable matching, memoization',
 		tokenId: 'strategies',
 		accent: topicAccent('strategies'),
 		icon: 'Brain',
@@ -236,6 +272,9 @@ export const CURRICULUM = [
 		pullQuote:
 			'Connect everything for the least total weight. Greedy, and provably right.',
 		complexity: 'O(E log V)',
+		// Searchable algorithm/concept names for the topic finder.
+		keywords:
+			'Kruskal, Prim, union-find, disjoint sets, cut property, safe edges',
 		tokenId: 'mst',
 		accent: topicAccent('mst'),
 		icon: 'Share2',
@@ -252,6 +291,9 @@ export const CURRICULUM = [
 		pullQuote:
 			'One source, every destination — relax edges until nothing improves.',
 		complexity: 'O((V + E) log V)',
+		// Searchable algorithm/concept names for the topic finder.
+		keywords:
+			'Dijkstra, Bellman-Ford, DAG shortest path, relaxation, negative edges, SSSP',
 		tokenId: 'sssp',
 		accent: topicAccent('sssp'),
 		icon: 'Route',
@@ -268,6 +310,9 @@ export const CURRICULUM = [
 		pullQuote:
 			'Every shortest route at once, through dynamic programming on intermediates.',
 		complexity: 'O(V³)',
+		// Searchable algorithm/concept names for the topic finder.
+		keywords:
+			'Floyd-Warshall, slow and faster APSP, transitive closure, distance matrix',
 		tokenId: 'apsp',
 		accent: topicAccent('apsp'),
 		icon: 'Grid3x3',
@@ -284,6 +329,9 @@ export const CURRICULUM = [
 		pullQuote:
 			'How much can a network carry? Push, find residuals, and cut the bottleneck.',
 		complexity: 'O(V·E²)',
+		// Searchable algorithm/concept names for the topic finder.
+		keywords:
+			'Ford-Fulkerson, Edmonds-Karp, min cut, residual network, augmenting paths, bipartite matching',
 		tokenId: 'maxflow',
 		accent: topicAccent('maxflow'),
 		icon: 'Workflow',
@@ -300,6 +348,9 @@ export const CURRICULUM = [
 		pullQuote:
 			'The line between "hard to solve" and "easy to check" — and reductions across it.',
 		complexity: 'P vs NP',
+		// Searchable algorithm/concept names for the topic finder.
+		keywords:
+			'P vs NP, NP-hard, reductions, SAT, 3-SAT, clique, vertex cover, Hamiltonian cycle, subset sum',
 		tokenId: 'npc',
 		accent: topicAccent('npc'),
 		icon: 'Puzzle',

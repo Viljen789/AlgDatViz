@@ -8,7 +8,7 @@
 	flex-direction: column;
 	gap: var(--space-sm);
 	width: 100%;
-	max-width: 440px;
+	max-width: 480px;
 	padding: var(--space-sm) var(--space-md);
 	background: var(--surface-2);
 	border: 1px solid var(--color-border);
@@ -27,8 +27,8 @@
 	display: inline-flex;
 	align-items: center;
 	justify-content: center;
-	width: 32px;
-	height: 32px;
+	width: 40px;
+	height: 40px;
 	padding: 0;
 	border: 1px solid transparent;
 	border-radius: var(--radius-md);
@@ -77,15 +77,15 @@
 	flex-wrap: wrap;
 	align-items: center;
 	justify-content: center;
-	gap: var(--space-xs);
+	gap: var(--space-2xs);
 }
 
 .dot {
 	display: inline-flex;
 	align-items: center;
 	justify-content: center;
-	width: 18px;
-	height: 18px;
+	width: 28px;
+	height: 28px;
 	padding: 0;
 	border: none;
 	background: transparent;
@@ -101,6 +101,8 @@
 .dotMark {
 	width: 7px;
 	height: 7px;
+	box-sizing: border-box;
+	border: 1px solid transparent;
 	border-radius: var(--radius-pill);
 	background: var(--color-text-dim);
 	transition:
@@ -115,6 +117,38 @@
 .dotActive .dotMark {
 	background: var(--topic-accent);
 	transform: scale(1.4);
+}
+
+/* Check state is encoded by shape as well as color. Pending is a dot, a
+   corrected scene is a square, and a miss is a hollow ring. */
+.dot_correct .dotMark {
+	border-radius: 2px;
+	background: var(--color-success);
+}
+
+.dot_incorrect .dotMark {
+	width: 9px;
+	height: 9px;
+	background: transparent;
+	border: 2px solid var(--color-warning);
+}
+
+.dot_retrying .dotMark {
+	border-radius: 2px;
+	background: var(--topic-accent);
+	transform: rotate(45deg);
+}
+
+.dotActive.dot_retrying .dotMark {
+	transform: rotate(45deg) scale(1.4);
+}
+
+.dotActive.dot_correct .dotMark {
+	background: var(--color-success);
+}
+
+.dotActive.dot_incorrect .dotMark {
+	background: transparent;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -143,5 +177,10 @@
 @media (max-width: 960px) {
 	.bar {
 		max-width: none;
+	}
+
+	.btn {
+		width: 44px;
+		height: 44px;
 	}
 }

@@ -163,7 +163,7 @@ export const SCENES = [
 		id: 'dag-sp',
 		eyebrow: 'Order #2 — one clean pass',
 		title: 'DAG-SP: relax in topological order, once.',
-		body: `If the graph is a DAG, you can do far better than |V|−1 passes. Topologically sort the vertices, then process them in that order, relaxing each vertex's out-edges. Because every predecessor comes before its successors in the order, dist[u] is already final the moment you relax out of u — one pass suffices. Cost: O(V + E), and negative edges are perfectly fine (only cycles are forbidden, and a DAG has none).`,
+		body: `If the graph is a DAG, you can do far better than |V|−1 passes. Topologically sort the vertices, then process them in that order, relaxing each vertex's out-edges. Because every predecessor comes before its successors in the order, dist[u] is already final the moment you relax out of u — one pass suffices. Cost: O(V + E), and negative edges are perfectly fine (only cycles are forbidden, and a DAG has none). And notice what this is: dynamic programming. Relaxing in topological order solves subproblems in dependency order — dist[v] depends only on the dist of its predecessors, the same bottom-up structure as any DP table — and memoized recursion over the same graph gives the top-down variant.`,
 		check: {
 			kind: 'choice',
 			prompt:
@@ -171,6 +171,7 @@ export const SCENES = [
 			options: [
 				'Every predecessor is processed before its successors, so dist[u] is final when you relax out of u',
 				'Topological sort sorts the vertices by distance',
+				'A table of subproblems can be filled in any order, so any pass would do',
 				'DAGs have no edges',
 				'It only works for non-negative weights',
 			],
@@ -179,13 +180,15 @@ export const SCENES = [
 			misconceptions: {
 				'Topological sort sorts the vertices by distance':
 					'Topological order ranks vertices by edge dependency, not by tentative distance. The order is fixed before any relaxation runs, so it cannot reflect distances it has not computed yet. Sorting by distance is Dijkstra, a different idea.',
+				'A table of subproblems can be filled in any order, so any pass would do':
+					'Backwards: the table is exactly what forces the order. dist[v] reads the dist of v’s predecessors, so every cell it depends on must be final before v is processed — fill out of dependency order and one pass leaves stale values behind. Topological order IS that dependency order, which is the whole reason a single pass works.',
 				'DAGs have no edges':
 					'A DAG has plenty of edges; it just has no directed cycles. The single pass works because of the acyclic order of those edges, not because they are absent.',
 				'It only works for non-negative weights':
 					'This borrows Dijkstra’s restriction by mistake. DAG-SP tolerates negative edges freely, because a DAG has no cycle for a negative weight to loop around. The acyclic structure, not the sign of the weights, is what makes one pass enough.',
 			},
 			explanation:
-				'In topological order, by the time you process u, every path into u has already been relaxed, so dist[u] is correct. Relaxing u’s out-edges then extends correct prefixes by one edge — no vertex ever needs revisiting. Negative weights don’t break this; only a cycle would (and a DAG has none).',
+				'In topological order, by the time you process u, every path into u has already been relaxed, so dist[u] is correct. Relaxing u’s out-edges then extends correct prefixes by one edge — no vertex ever needs revisiting. Negative weights don’t break this; only a cycle would (and a DAG has none). That dependency-ordered fill is dynamic programming by another name.',
 		},
 	},
 	{
@@ -195,6 +198,7 @@ export const SCENES = [
 		body: `When all weights are non-negative, a greedy order wins: keep the vertices in a priority queue by tentative distance, repeatedly EXTRACT-MIN the closest unsettled vertex, and relax its out-edges. The closest unsettled distance can never later get smaller (no non-negative edge can shrink it), so each vertex is settled exactly once. The cost depends on which priority queue you pick. The familiar O((V + E) log V) assumes a BINARY HEAP, where each of the V extractions and E decrease-keys costs O(log V). On the shared graph it settles everything in ${DIJ.relaxations} relaxations.`,
 		check: {
 			kind: 'predict',
+			reviewSafe: false,
 			prompt: `Dijkstra settles vertices in increasing distance order. On the shared graph the source S is settled first (dist 0). Which vertex is settled SECOND?`,
 			options: ['C', 'A', 'B', 'D'],
 			answer: 'C',

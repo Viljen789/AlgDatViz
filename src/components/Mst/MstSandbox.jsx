@@ -29,7 +29,8 @@ const findSharedBox = root => {
 
 // Wraps the MST sandbox with a Single / Compare toggle: run one algorithm with
 // full pseudocode + live state, or watch Kruskal and Prim race side-by-side on
-// the same graph. Both forward onUserInteract so the topic still completes.
+// the same graph. Both forward onUserInteract for optional host analytics; lesson
+// completion remains tied to correct checks in the canonical template.
 const MstSandbox = ({ onUserInteract }) => {
 	const reducedMotion = useReducedMotion();
 	const [mode, setMode] = useState('single');

@@ -14,6 +14,13 @@ import { ALGORITHM_ORDER } from '../utils/sorting/algorithmMeta.js';
 import { SSSP_ALGORITHMS } from '../components/ShortestPaths/ssspMeta.js';
 import { MST_ALGORITHMS } from '../components/Mst/mstMeta.js';
 import { GRAPH_ALGORITHM_META } from '../utils/graphAlgorithmMeta.js';
+import {
+	STRATEGY_ALGORITHMS,
+	STRATEGY_ALGORITHM_ORDER,
+} from '../components/Strategies/strategiesMeta.js';
+import { APSP_MODES } from '../components/AllPairsShortestPaths/apspMeta.js';
+import { MAXFLOW_ALGORITHMS } from '../components/MaxFlow/maxFlowMeta.js';
+import { EXAMPLES as MASTER_EXAMPLES } from '../components/MasterTheorem/masterMath.js';
 import { PROGRESS_TOPICS } from '../data/curriculum.js';
 
 // ── Sort comparison ───────────────────────────────────────────────────────────
@@ -127,7 +134,130 @@ const traversalChoice = (() => {
 	};
 })();
 
-export const decisionCards = [ssspChoice, mstChoice, traversalChoice];
+// Greedy vs DP: not two algorithms but two strategies, so the "pick" is the
+// strategy and the roster of problems under each is DERIVED from the Strategies
+// meta's category tags (name + complexity read straight off STRATEGY_ALGORITHMS).
+// A problem re-classified in its lesson moves columns here automatically. Coin
+// change is tagged 'DP vs Greedy' — the boundary lesson — so it lands in neither
+// roster on purpose; the note carries it instead.
+const strategyChoice = (() => {
+	const roster = category =>
+		STRATEGY_ALGORITHM_ORDER.map(id => STRATEGY_ALGORITHMS[id])
+			.filter(algo => algo.category === category)
+			.map(algo => `${algo.name} ${algo.complexity}`)
+			.join(' · ');
+	return {
+		id: 'strategy',
+		topicId: 'strategies',
+		title: 'Greedy or dynamic programming',
+		question: 'Optimal substructure either way. Commit greedily, or fill a table?',
+		options: [
+			{
+				when: 'An exchange argument proves the local choice safe',
+				pick: 'Greedy',
+				because: `Sort once, commit in one pass, never revisit. ${roster('Greedy')}.`,
+			},
+			{
+				when: 'Subproblems overlap and no local choice is provably safe',
+				pick: 'Dynamic programming',
+				because: `Solve every subproblem once, store it, build the optimum bottom-up. ${roster('DP')}.`,
+			},
+		],
+		note: `${STRATEGY_ALGORITHMS.coinChange.name} straddles the line: greedy happens to work for canonical coin systems and fails for arbitrary ones.`,
+	};
+})();
+
+// Searching: the earliest decision the course teaches — sorted input turns a
+// scan into a halving. The pick label is read off the master-theorem lesson's
+// worked examples (MASTER_EXAMPLES), so a renamed or dropped example there
+// fails the reference tests instead of silently orphaning this card.
+const searchChoice = (() => {
+	const binarySearch = MASTER_EXAMPLES.find(e => e.label === 'Binary search');
+	return {
+		id: 'search',
+		topicId: 'foundations',
+		title: 'Searching an array',
+		question: 'Find one key. Can you rule out half at a time?',
+		options: [
+			{
+				when: 'The input is sorted',
+				pick: binarySearch.label,
+				because: `O(log n). Probe the middle and discard the half that cannot hold the key — the live range halves every step (T(n) = T(n/${binarySearch.b}) + Θ(1), master theorem case 2).`,
+			},
+			{
+				when: 'No usable order',
+				pick: 'Linear scan',
+				because: 'O(n). With nothing sorted there is nothing to rule out, so every element may need a look. Sorting first only pays off across many searches.',
+			},
+		],
+	};
+})();
+
+// APSP: one Θ(V³) matrix fill, or V single-source runs? Density and edge signs
+// decide it, and both picks read name + complexity off the same metas their
+// lessons render (APSP_MODES, SSSP_ALGORITHMS). The note carries the pensum's
+// matrix-multiplication cousins as a one-line contrast.
+const apspChoice = (() => {
+	const fw = APSP_MODES.floydWarshall;
+	const dijkstra = SSSP_ALGORITHMS.dijkstra;
+	return {
+		id: 'apsp',
+		topicId: 'apsp',
+		title: 'All-pairs shortest paths',
+		question: 'Every distance for every pair. One matrix, or V single-source runs?',
+		options: [
+			{
+				when: 'Dense graph, or negative edges present',
+				pick: fw.name,
+				because: `${fw.complexity}. Three loops over intermediate vertices fill the V×V matrix. Negative edges are fine as long as no negative cycle exists — one shows up as a negative diagonal entry.`,
+			},
+			{
+				when: 'Sparse graph, all weights non-negative',
+				pick: `${dijkstra.name} from every vertex`,
+				because: `V runs of ${dijkstra.complexity} is about O(V·E log V), which beats Θ(V³) when E is far below V².`,
+			},
+		],
+		note: 'The matrix route is the slow cousin: Slow-APSP extends paths one edge per min-plus product for Θ(V⁴); Faster-APSP squares the matrix instead for Θ(V³ log V) — both behind Floyd-Warshall’s flat Θ(V³).',
+	};
+})();
+
+// Max flow: both algorithms augment until no residual path remains; the ONLY
+// difference is the path rule, so the card contrasts exactly that. Names and
+// complexities read off MAXFLOW_ALGORITHMS (the meta the lesson renders).
+const maxFlowChoice = (() => {
+	const ff = MAXFLOW_ALGORITHMS.fordFulkerson;
+	const ek = MAXFLOW_ALGORITHMS.edmondsKarp;
+	return {
+		id: 'maxflow',
+		topicId: 'max-flow',
+		title: 'Maximum flow',
+		question: 'Augment until no path remains. Any path, or always the shortest?',
+		options: [
+			{
+				when: 'Capacities are small integers',
+				pick: ff.name,
+				because: `${ff.complexity}. Any residual path will do; each augmentation adds at least 1, so the bound scales with the answer |f*|. Huge capacities make that bound huge, and irrational ones can stop it terminating at all.`,
+			},
+			{
+				when: 'You want a bound independent of capacities',
+				pick: ek.name,
+				because: `${ek.complexity}. Always augment along a fewest-edges path (BFS): that caps the number of augmentations at O(V·E) no matter the capacity values.`,
+			},
+		],
+	};
+})();
+
+// Cards render in teaching order — sorted by their topic's position in the
+// curriculum, the same order the complexity sheet and the glossary walk.
+export const decisionCards = [
+	searchChoice,
+	traversalChoice,
+	strategyChoice,
+	mstChoice,
+	ssspChoice,
+	apspChoice,
+	maxFlowChoice,
+];
 
 // ── Complexity sheet ───────────────────────────────────────────────────────────
 // The whole curriculum as a one-screen formula list: the headline complexity for
@@ -143,11 +273,15 @@ export const complexitySheet = PROGRESS_TOPICS.map(topic => ({
 }));
 
 // ── Greedy rule ────────────────────────────────────────────────────────────────
-// Curated, but tight and anchored to facts the lessons already teach: greedy is
-// provably optimal when a matroid-style exchange argument holds (MST cut
-// property) or an exchange argument on intervals holds (earliest-finish-time
-// scheduling). It is NOT safe for arbitrary coin systems or 0/1 knapsack, where
-// a local best can foreclose the global optimum and you need dynamic programming.
+// Curated prose, but the Strategies labels and every complexity are read off
+// STRATEGY_ALGORITHMS (the same meta the lessons render), so a renamed problem
+// or a revised bound updates here too. Greedy is provably optimal when an
+// exchange argument holds: the MST cut property, earliest-finish interval
+// scheduling, merging the two rarest symbols (Huffman), ratio-first on a
+// divisible knapsack. It is NOT safe where indivisibility or interacting
+// choices break the exchange — arbitrary coin change, 0/1 knapsack, LCS, rod
+// cutting — and there dynamic programming tabulates the overlapping
+// subproblems instead.
 export const greedyRule = {
 	title: 'Greedy: when a local choice is provably global',
 	lede: 'Greedy commits to the best-looking option now and never reconsiders. That is only correct when an exchange argument proves the greedy choice is in some optimal solution.',
@@ -161,8 +295,20 @@ export const greedyRule = {
 		{
 			id: 'interval',
 			topicId: 'strategies',
-			label: 'Interval scheduling',
-			why: 'Always taking the compatible interval that finishes earliest leaves the most room, an exchange argument proves it optimal.',
+			label: STRATEGY_ALGORITHMS.intervalScheduling.name,
+			why: `Always taking the compatible interval that finishes earliest leaves the most room, an exchange argument proves it optimal. ${STRATEGY_ALGORITHMS.intervalScheduling.complexity} to sort by finish time.`,
+		},
+		{
+			id: 'huffman',
+			topicId: 'strategies',
+			label: STRATEGY_ALGORITHMS.huffman.name,
+			why: `Merging the two rarest symbols is always safe: an exchange argument swaps them into the deepest leaves of any optimal tree without raising the cost. ${STRATEGY_ALGORITHMS.huffman.complexity} with a min-heap.`,
+		},
+		{
+			id: 'fractional',
+			topicId: 'strategies',
+			label: STRATEGY_ALGORITHMS.fractionalKnapsack.name,
+			why: `Items are divisible, so densest-first never strands capacity — split the last item and the bag fills exactly. ${STRATEGY_ALGORITHMS.fractionalKnapsack.complexity} to sort by value per weight.`,
 		},
 	],
 	unsafe: [
@@ -175,8 +321,20 @@ export const greedyRule = {
 		{
 			id: 'knapsack',
 			topicId: 'strategies',
-			label: '0/1 knapsack',
-			why: 'Best ratio first can block a better whole-item combination. The 0/1 case needs dynamic programming.',
+			label: STRATEGY_ALGORITHMS.knapsack01.name,
+			why: `Best ratio first can block a better whole-item combination — indivisibility breaks the exchange argument. DP over items × capacities solves it in ${STRATEGY_ALGORITHMS.knapsack01.complexity}.`,
+		},
+		{
+			id: 'lcs',
+			topicId: 'strategies',
+			label: STRATEGY_ALGORITHMS.lcs.name,
+			why: `No local rule survives: the best answer for two prefixes depends on shorter prefixes, and those subproblems overlap heavily. DP fills the table in ${STRATEGY_ALGORITHMS.lcs.complexity}.`,
+		},
+		{
+			id: 'rod',
+			topicId: 'strategies',
+			label: STRATEGY_ALGORITHMS.rodCutting.name,
+			why: `The most valuable first cut depends on the optimum for every remaining length, and those remainders recur. DP tabulates each once in ${STRATEGY_ALGORITHMS.rodCutting.complexity}.`,
 		},
 	],
 };
@@ -302,7 +460,19 @@ export const glossaryTerms = [
 		no: 'bredde-først-søk',
 	},
 	{ topicId: 'graphs', en: 'depth-first search', no: 'dybde-først-søk' },
+	{
+		topicId: 'graphs',
+		en: 'back edge',
+		no: 'bakoverkant',
+		note: 'DFS classifies edges as tree, back, forward, or cross. The exam fact: a back edge — to an ancestor still on the DFS path — exists exactly when the graph has a cycle.',
+	},
 	{ topicId: 'graphs', en: 'topological sort', no: 'topologisk sortering' },
+	{
+		topicId: 'graphs',
+		en: 'strongly connected component',
+		no: 'sterkt sammenhengende komponent',
+		note: 'Often abbreviated SCC in both languages.',
+	},
 	// 10 · Strategies
 	{
 		topicId: 'strategies',
@@ -311,13 +481,36 @@ export const glossaryTerms = [
 	},
 	{
 		topicId: 'strategies',
+		en: 'greedy-choice property',
+		no: 'grådighetsegenskapen',
+	},
+	{
+		topicId: 'strategies',
 		en: 'dynamic programming',
 		no: 'dynamisk programmering',
 	},
 	{
 		topicId: 'strategies',
+		en: 'memoization',
+		no: 'memoisering',
+		note: 'From "memo", not "memorize" — cache each subproblem result.',
+	},
+	{
+		topicId: 'strategies',
 		en: 'optimal substructure',
 		no: 'optimal delstruktur',
+	},
+	{
+		topicId: 'strategies',
+		en: 'prefix code',
+		no: 'prefikskode',
+		note: 'What Huffman builds: no codeword is a prefix of another.',
+	},
+	{
+		topicId: 'strategies',
+		en: 'subproblem graph',
+		no: 'delinstansgraf',
+		note: 'The DAG of which subproblem needs which — DP evaluates it dependencies-first, in reverse topological order.',
 	},
 	// 11 · Minimum spanning trees
 	{ topicId: 'mst', en: 'spanning tree', no: 'spenntre' },
@@ -347,6 +540,24 @@ export const glossaryTerms = [
 	{ topicId: 'max-flow', en: 'residual network', no: 'residualnettverk' },
 	{ topicId: 'max-flow', en: 'minimum cut', no: 'minimalt snitt' },
 	{ topicId: 'max-flow', en: 'augmenting path', no: 'forøkende sti' },
+	{
+		topicId: 'max-flow',
+		en: 'bottleneck (of an augmenting path)',
+		no: 'flaskehals',
+		note: 'The smallest residual capacity along the path — the amount one augmentation pushes.',
+	},
+	{
+		topicId: 'max-flow',
+		en: 'antiparallel edges',
+		no: 'antiparallelle kanter',
+		note: 'A flow network cannot keep both u→v and v→u; split one of the pair with an intermediate vertex before running max flow.',
+	},
+	{
+		topicId: 'max-flow',
+		en: 'linear programming',
+		no: 'lineær programmering',
+		note: 'Recognition only on the pensum: shortest paths and max flow can both be stated as linear programs.',
+	},
 	// 15 · NP-completeness
 	{
 		topicId: 'np-completeness',
@@ -355,6 +566,18 @@ export const glossaryTerms = [
 	},
 	{ topicId: 'np-completeness', en: 'NP-hard', no: 'NP-hard' },
 	{ topicId: 'np-completeness', en: 'reduction', no: 'reduksjon' },
+	{
+		topicId: 'np-completeness',
+		en: 'co-NP',
+		no: 'co-NP',
+		note: 'Written the same in both languages: the problems whose "no" answers carry an efficiently checkable certificate — the mirror of NP, which certifies "yes".',
+	},
+	{
+		topicId: 'np-completeness',
+		en: 'pseudopolynomial time',
+		no: 'pseudopolynomisk tid',
+		note: 'Polynomial in the numeric value in the input, not in its length in bits — 0/1 knapsack’s O(n·W) is the pensum example.',
+	},
 ];
 
 // Group the flat term list BY curriculum topic, walking PROGRESS_TOPICS so the

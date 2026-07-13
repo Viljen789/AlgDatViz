@@ -21,7 +21,7 @@ const initialCheckStates = () =>
  * amortized cost. Recurrences live in the Master Theorem topic.
  */
 const FoundationsLesson = () => {
-	const { markVisited, markCompleted } = useProgress();
+	const { markVisited } = useProgress();
 	const [checkStates, setCheckStates] = useState(initialCheckStates);
 
 	const topic = TOPIC_BY_ID[TOPIC_ID];
@@ -51,13 +51,9 @@ const FoundationsLesson = () => {
 		[]
 	);
 
-	const handlePlaygroundInteract = useCallback(() => {
-		markCompleted(TOPIC_ID);
-	}, [markCompleted]);
-
 	const renderPlayground = useCallback(
-		() => <FoundationsPlayground onUserInteract={handlePlaygroundInteract} />,
-		[handlePlaygroundInteract]
+		() => <FoundationsPlayground />,
+		[]
 	);
 
 	const handleVisit = useCallback(() => {

@@ -1,11 +1,53 @@
-import { useMemo, useState } from 'react';
-import { ArrowDown, ArrowUp, Check, MousePointerClick } from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
+import {
+	ArrowDown,
+	ArrowRight,
+	ArrowUp,
+	Check,
+	Eye,
+	MousePointerClick,
+	RotateCcw,
+} from 'lucide-react';
 import StepProbeFrame from './StepProbeFrame.jsx';
 import styles from './LessonCheck.module.css';
 
 const STATUS_LABEL = {
 	correct: 'Correct',
 	incorrect: 'Not quite',
+};
+
+const CHECK_LABEL = {
+	choice: 'Check',
+	pair: 'Find',
+	numeric: 'Recall',
+	text: 'Recall',
+	order: 'Sequence',
+	classify: 'Apply',
+	predict: 'Predict',
+	stepProbe: 'Predict',
+	spotbug: 'Debug',
+	problem: 'Challenge',
+};
+
+const RETRY_HINT = {
+	choice:
+		'Return to the rule in the scene. Eliminate each option that breaks it, then choose again.',
+	predict:
+		'Replay the decision one step at a time. Commit only to what the algorithm can know at this moment.',
+	stepProbe:
+		'Read the frozen state again. Identify the data structure’s next item before looking at the labels.',
+	numeric:
+		'Rebuild the quantity from the given facts instead of adjusting your previous number.',
+	text: 'Name the rule in your own words, then match that rule to the blank.',
+	order:
+		'Find the event that must happen first, then place only the steps whose prerequisites are satisfied.',
+	classify:
+		'Define each category first, then test every item against that definition.',
+	spotbug:
+		'Trace what each line actually proves. Look for the first step whose conclusion does not follow.',
+	pair: 'Use the relationship stated in the prompt, then test the two selected positions against it.',
+	problem:
+		'Rework only the missed part from its inputs; keep the parts you already established.',
 };
 
 const PairProgress = ({ selectedCount, prompt }) => (
@@ -20,28 +62,47 @@ const PairProgress = ({ selectedCount, prompt }) => (
 );
 
 // ── Choice row (also reused by spotbug claim-mode and predict choice-mode) ──
-const ChoiceRow = ({ options, answer, selected, isAnswered, onPick }) => (
-	<div className={styles.choiceRow} role="group" aria-label="Answer choices">
-		{options.map(opt => {
-			const isPicked = isAnswered && selected === opt;
-			const isAnswer = isAnswered && opt === answer;
-			return (
-				<button
-					key={opt}
-					type="button"
-					className={`${styles.choice} ${isAnswer ? styles.choiceAnswer : ''} ${
-						isPicked && !isAnswer ? styles.choicePickedWrong : ''
-					}`}
-					onClick={() => !isAnswered && onPick(opt)}
-					disabled={isAnswered}
-					aria-pressed={isPicked}
-				>
-					{opt}
-				</button>
-			);
-		})}
-	</div>
-);
+// Short/code answers read as mono pills in a row; once any option runs to
+// sentence length the row stacks and switches to the body face, so prose
+// answers read as prose rather than code.
+const STACK_THRESHOLD = 24;
+
+const ChoiceRow = ({
+	options,
+	answer,
+	selected,
+	isAnswered,
+	showAnswer,
+	onPick,
+}) => {
+	const stacked = options.some(opt => String(opt).length > STACK_THRESHOLD);
+	return (
+		<div
+			className={`${styles.choiceRow} ${stacked ? styles.choiceRowStacked : ''}`}
+			role="group"
+			aria-label="Answer choices"
+		>
+			{options.map(opt => {
+				const isPicked = isAnswered && selected === opt;
+				const isAnswer = isAnswered && showAnswer && opt === answer;
+				return (
+					<button
+						key={opt}
+						type="button"
+						className={`${styles.choice} ${isAnswer ? styles.choiceAnswer : ''} ${
+							isPicked && !isAnswer ? styles.choicePickedWrong : ''
+						}`}
+						onClick={() => !isAnswered && onPick(opt)}
+						disabled={isAnswered}
+						aria-pressed={isPicked}
+					>
+						{opt}
+					</button>
+				);
+			})}
+		</div>
+	);
+};
 
 // ── Free input (numeric / text), with a Submit button. ──
 const InputForm = ({ kind, placeholder, isAnswered, value, onSubmit }) => {
@@ -86,7 +147,7 @@ const InputForm = ({ kind, placeholder, isAnswered, value, onSubmit }) => {
 };
 
 // ── Order: keyboard-accessible reordering (move up / move down). ──
-const OrderList = ({ items, isAnswered, answer, onSubmit }) => {
+const OrderList = ({ items, isAnswered, showAnswer, answer, onSubmit }) => {
 	const [order, setOrder] = useState(items);
 	const move = (idx, delta) => {
 		const target = idx + delta;
@@ -104,12 +165,13 @@ const OrderList = ({ items, isAnswered, answer, onSubmit }) => {
 				aria-label="Arrange into the correct order"
 			>
 				{order.map((item, idx) => {
-					const correctSlot = isAnswered && answer?.[idx] === item;
+					const correctSlot =
+						isAnswered && showAnswer && answer?.[idx] === item;
 					return (
 						<li
 							key={item}
 							className={`${styles.orderItem} ${
-								isAnswered
+								isAnswered && showAnswer
 									? correctSlot
 										? styles.orderItemRight
 										: styles.orderItemWrong
@@ -164,7 +226,9 @@ const ClassifyGrid = ({
 	items,
 	categories,
 	isAnswered,
+	showAnswer,
 	answer,
+	submittedAssignment,
 	perItem,
 	onSubmit,
 }) => {
@@ -174,12 +238,15 @@ const ClassifyGrid = ({
 		<div className={styles.classifyWrap}>
 			<ul className={styles.classifyList}>
 				{items.map(item => {
-					const itemRight = isAnswered && perItem?.[item.id];
+					const itemRight = isAnswered && showAnswer && perItem?.[item.id];
+					const shownCategory = showAnswer
+						? answer?.[item.id]
+						: submittedAssignment?.[item.id];
 					return (
 						<li
 							key={item.id}
 							className={`${styles.classifyItem} ${
-								isAnswered
+								isAnswered && showAnswer
 									? itemRight
 										? styles.classifyItemRight
 										: styles.classifyItemWrong
@@ -189,7 +256,7 @@ const ClassifyGrid = ({
 							<span className={styles.classifyLabel}>{item.label}</span>
 							{isAnswered ? (
 								<span className={styles.classifyResult}>
-									{categories.find(c => c.id === answer?.[item.id])?.label}
+									{categories.find(c => c.id === shownCategory)?.label}
 								</span>
 							) : (
 								<select
@@ -232,11 +299,18 @@ const ClassifyGrid = ({
 };
 
 // ── Spotbug line-mode: pick the buggy line from a code listing. ──
-const SpotbugLines = ({ lines, isAnswered, answer, selected, onPick }) => (
+const SpotbugLines = ({
+	lines,
+	isAnswered,
+	showAnswer,
+	answer,
+	selected,
+	onPick,
+}) => (
 	<ol className={styles.spotbugList} aria-label="Pick the incorrect line">
 		{lines.map((line, idx) => {
 			const isPicked = isAnswered && Number(selected) === idx;
-			const isBug = isAnswered && idx === answer;
+			const isBug = isAnswered && showAnswer && idx === answer;
 			return (
 				<li key={idx}>
 					<button
@@ -275,7 +349,7 @@ const resolvePredictMode = check => {
 // Renders exactly the same markup the inline branches used before. 'pair' is the
 // only kind LeafInput cannot host on its own (it needs the stage), so it shows a
 // calm note inside a problem; standalone 'pair' is still handled by LessonCheck.
-const LeafInput = ({ check, state, submit }) => {
+const LeafInput = ({ check, state, showAnswer = true, submit }) => {
 	const isAnswered = state?.status != null;
 	const predictMode =
 		check.kind === 'predict' || check.kind === 'stepProbe'
@@ -289,6 +363,7 @@ const LeafInput = ({ check, state, submit }) => {
 				answer={check.answer}
 				selected={state?.selected}
 				isAnswered={isAnswered}
+				showAnswer={showAnswer}
 				onPick={submit}
 			/>
 		);
@@ -311,6 +386,7 @@ const LeafInput = ({ check, state, submit }) => {
 			<OrderList
 				items={check.items}
 				isAnswered={isAnswered}
+				showAnswer={showAnswer}
 				answer={check.answer}
 				onSubmit={submit}
 			/>
@@ -323,7 +399,9 @@ const LeafInput = ({ check, state, submit }) => {
 				items={check.items}
 				categories={check.categories}
 				isAnswered={isAnswered}
+				showAnswer={showAnswer}
 				answer={check.answer}
+				submittedAssignment={state?.assignment}
 				perItem={state?.perItem}
 				onSubmit={submit}
 			/>
@@ -337,6 +415,7 @@ const LeafInput = ({ check, state, submit }) => {
 				answer={check.answer}
 				selected={state?.value}
 				isAnswered={isAnswered}
+				showAnswer={showAnswer}
 				onPick={submit}
 			/>
 		);
@@ -367,6 +446,7 @@ const LeafInput = ({ check, state, submit }) => {
 						answer={check.answer}
 						selected={state?.value}
 						isAnswered={isAnswered}
+						showAnswer={showAnswer}
 						onPick={submit}
 					/>
 				) : (
@@ -387,6 +467,7 @@ const LeafInput = ({ check, state, submit }) => {
 			<SpotbugLines
 				lines={check.lines}
 				isAnswered={isAnswered}
+				showAnswer={showAnswer}
 				answer={check.answer}
 				selected={state?.selected}
 				onPick={submit}
@@ -401,6 +482,7 @@ const LeafInput = ({ check, state, submit }) => {
 				answer={check.answer}
 				selected={state?.selected}
 				isAnswered={isAnswered}
+				showAnswer={showAnswer}
 				onPick={submit}
 			/>
 		);
@@ -425,7 +507,7 @@ const PART_LABELS = 'abcdefghijklmnopqrstuvwxyz';
 // checkAnswer('problem', payload) and feeds the result back through `state`
 // ({ status, score, perPart }). Per-part correct/incorrect and the overall score
 // reveal with the same calm styling as every other kind.
-const ProblemBlock = ({ check, state, submit }) => {
+const ProblemBlock = ({ check, state, showAnswer, submit }) => {
 	const parts = Array.isArray(check.parts) ? check.parts : [];
 	const isAnswered = state?.status != null;
 	const perPart = state?.perPart;
@@ -468,6 +550,7 @@ const ProblemBlock = ({ check, state, submit }) => {
 						assignment: answers[idx],
 						perItem: partResult?.perItem,
 					};
+					const partShowsAnswer = showAnswer || partStatus === 'correct';
 					return (
 						<li key={idx} className={styles.part}>
 							<div className={styles.partHead}>
@@ -493,9 +576,10 @@ const ProblemBlock = ({ check, state, submit }) => {
 							<LeafInput
 								check={part}
 								state={partState}
+								showAnswer={partShowsAnswer}
 								submit={value => setPartAnswer(idx, value)}
 							/>
-							{isAnswered && part.explanation && (
+							{isAnswered && partShowsAnswer && part.explanation && (
 								<p className={styles.partExplanation}>{part.explanation}</p>
 							)}
 						</li>
@@ -524,8 +608,9 @@ const ProblemBlock = ({ check, state, submit }) => {
 /**
  * LessonCheck — the reusable inline comprehension check for TopicTemplate.
  *
- * Wrong answers are never punished: the explanation reveals regardless of
- * correctness, so every attempt becomes a teaching moment.
+ * Wrong answers are never punished. In lessons, the first miss gives a targeted
+ * hint and an active retry before the worked answer is revealed. Assessment
+ * surfaces that do not provide onRetry keep their one-shot reveal behavior.
  *
  * Grading lives in the pure `checkAnswer(check, payload)` module; this component
  * only renders the interaction and calls `onAnswer(payload)` with the kind's
@@ -556,24 +641,68 @@ const ProblemBlock = ({ check, state, submit }) => {
  *   state            { status?: 'correct'|'incorrect', selected?, value?,
  *                      order?, assignment?, perItem? } controlled by the host.
  *   gated            true when this is the active check holding progress back.
- *                    Shows a calm "Answer to continue." affordance and an accent
- *                    ring while still unanswered; both clear once a status is set.
+ *                    Shows a calm auto-play affordance and an accent ring while
+ *                    still unanswered; both clear once a status is set.
  *   onAnswer         (payload) => void — generic submit for every kind.
+ *   onRetry          () => void — returns an incorrect lesson check to its input.
+ *   onReveal         () => void — tells a reveal-gated stage that its worked
+ *                      answer may now be shown.
+ *   onContinue       () => void — moves the lesson to the next synchronized scene.
+ *   continueLabel    visible label for onContinue.
  *   onChoiceAnswer   (value) => void — backward-compatible alias of onAnswer
  *                    (kept so existing topics keep working).
  */
-const LessonCheck = ({ check, state, gated, onAnswer, onChoiceAnswer }) => {
+const LessonCheck = ({
+	check,
+	state,
+	gated,
+	onAnswer,
+	onRetry,
+	onReveal,
+	onContinue,
+	continueLabel,
+	onChoiceAnswer,
+}) => {
 	const isAnswered = state?.status != null;
 	const status = state?.status;
+	const retryEnabled = typeof onRetry === 'function';
+	const [retryCount, setRetryCount] = useState(0);
+	const [solutionRequested, setSolutionRequested] = useState(false);
+	// A second miss reveals the worked answer automatically. The first miss only
+	// reveals it when the learner explicitly asks. Review/exam surfaces remain
+	// one-shot because they intentionally omit onRetry.
+	const solutionVisible = Boolean(
+		isAnswered &&
+		(status === 'correct' ||
+			!retryEnabled ||
+			solutionRequested ||
+			retryCount > 0)
+	);
+	useEffect(() => {
+		if (solutionVisible) onReveal?.();
+	}, [solutionVisible, onReveal]);
+	const showCorrectionPrompt =
+		retryEnabled && status === 'incorrect' && !solutionVisible;
 	// Only an unanswered, still-gating check shows the hint; answering clears it.
 	const showGateHint = gated && !isAnswered;
 	// onAnswer is the generic path; onChoiceAnswer remains as a back-compat alias.
 	const submit = onAnswer || onChoiceAnswer || (() => {});
 
 	const predictMode = useMemo(
-		() => (check.kind === 'predict' ? resolvePredictMode(check) : null),
+		() =>
+			check.kind === 'predict' || check.kind === 'stepProbe'
+				? resolvePredictMode(check)
+				: null,
 		[check]
 	);
+
+	const handleRetry = () => {
+		setRetryCount(count => count + 1);
+		setSolutionRequested(false);
+		onRetry?.();
+	};
+
+	const handleShowAnswer = () => setSolutionRequested(true);
 
 	// Per-distractor feedback: when a choice-style answer is wrong and the chosen
 	// option has a `misconceptions` entry, surface the line that engages THAT
@@ -613,7 +742,9 @@ const LessonCheck = ({ check, state, gated, onAnswer, onChoiceAnswer }) => {
 			aria-label="Check your understanding"
 		>
 			<div className={styles.head}>
-				<span className={styles.eyebrow}>Check</span>
+				<span className={styles.eyebrow}>
+					{CHECK_LABEL[check.kind] || 'Check'}
+				</span>
 				{isAnswered && (
 					<span
 						className={`${styles.status} ${
@@ -634,7 +765,9 @@ const LessonCheck = ({ check, state, gated, onAnswer, onChoiceAnswer }) => {
 				{check.kind === 'problem' ? check.stem : check.prompt}
 			</p>
 
-			{showGateHint && <p className={styles.gateHint}>Answer to continue.</p>}
+			{showGateHint && (
+				<p className={styles.gateHint}>Check before auto-play continues.</p>
+			)}
 
 			{check.kind === 'pair' && !isAnswered && (
 				<PairProgress
@@ -644,15 +777,56 @@ const LessonCheck = ({ check, state, gated, onAnswer, onChoiceAnswer }) => {
 			)}
 
 			{check.kind === 'problem' ? (
-				<ProblemBlock check={check} state={state} submit={submit} />
+				<ProblemBlock
+					check={check}
+					state={state}
+					showAnswer={solutionVisible}
+					submit={submit}
+				/>
 			) : (
 				check.kind !== 'pair' && (
-					<LeafInput check={check} state={state} submit={submit} />
+					<LeafInput
+						check={check}
+						state={state}
+						showAnswer={solutionVisible}
+						submit={submit}
+					/>
 				)
 			)}
 
-			{isAnswered && check.kind !== 'problem' && (
-				<div className={styles.reveal}>
+			{showCorrectionPrompt && (
+				<div className={styles.coaching} role="status" aria-live="polite">
+					<p className={styles.misconception}>
+						<span className={styles.misconceptionLabel}>
+							Hint for this attempt
+						</span>
+						{check.retryHint ||
+							RETRY_HINT[check.kind] ||
+							'Re-check the rule in this scene, then make the decision once more.'}
+					</p>
+					<div className={styles.feedbackActions}>
+						<button
+							type="button"
+							className={styles.retryButton}
+							onClick={handleRetry}
+						>
+							<RotateCcw size={14} strokeWidth={2.2} aria-hidden="true" />
+							<span>Try again</span>
+						</button>
+						<button
+							type="button"
+							className={styles.revealButton}
+							onClick={handleShowAnswer}
+						>
+							<Eye size={14} strokeWidth={2} aria-hidden="true" />
+							<span>Show worked answer</span>
+						</button>
+					</div>
+				</div>
+			)}
+
+			{solutionVisible && check.kind !== 'problem' && (
+				<div className={styles.reveal} role="status" aria-live="polite">
 					{misconception && (
 						<p className={styles.misconception}>
 							<span className={styles.misconceptionLabel}>
@@ -668,6 +842,31 @@ const LessonCheck = ({ check, state, gated, onAnswer, onChoiceAnswer }) => {
 						</p>
 					)}
 					<p className={styles.explanation}>{check.explanation}</p>
+				</div>
+			)}
+
+			{isAnswered && (status === 'correct' || solutionVisible) && (
+				<div className={styles.postActions}>
+					{status === 'incorrect' && retryEnabled && (
+						<button
+							type="button"
+							className={styles.retryButton}
+							onClick={handleRetry}
+						>
+							<RotateCcw size={14} strokeWidth={2.2} aria-hidden="true" />
+							<span>Try once more</span>
+						</button>
+					)}
+					{status === 'correct' && onContinue && (
+						<button
+							type="button"
+							className={styles.continueButton}
+							onClick={onContinue}
+						>
+							<span>{continueLabel || 'Continue'}</span>
+							<ArrowRight size={14} strokeWidth={2.2} aria-hidden="true" />
+						</button>
+					)}
 				</div>
 			)}
 		</aside>

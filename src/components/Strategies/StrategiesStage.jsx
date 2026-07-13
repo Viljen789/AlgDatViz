@@ -11,7 +11,29 @@ import {
 	STABLE_MEN_NAMES,
 	STABLE_WOMEN_NAMES,
 	STABLE_BLOCKING_PAIR,
+	ROD_PRICES,
+	ROD_N,
+	ROD_RUN,
+	ROD_REVENUE,
+	LCS_X,
+	LCS_Y,
+	LCS_RUN,
+	LCS_LENGTH,
+	KNAPSACK_CAPACITY,
+	KNAPSACK_ITEMS,
+	KNAPSACK01_RUN,
+	KNAPSACK01_BEST,
+	FRACTIONAL_RUN,
+	FRACTIONAL_TOTAL,
+	HUFFMAN_RUN,
+	HUFFMAN_BITS,
+	HUFFMAN_FIXED_BITS,
 } from './scenes.js';
+import RodCuttingCanvas from './RodCuttingCanvas/RodCuttingCanvas.jsx';
+import LcsCanvas from './LcsCanvas/LcsCanvas.jsx';
+import Knapsack01Canvas from './Knapsack01Canvas/Knapsack01Canvas.jsx';
+import FractionalKnapsackCanvas from './FractionalKnapsackCanvas/FractionalKnapsackCanvas.jsx';
+import HuffmanCanvas from './HuffmanCanvas/HuffmanCanvas.jsx';
 import StateLegend from '../../common/StateLegend/StateLegend';
 import { SceneNarration } from '../../common/PlaybackEngine';
 import styles from './StrategiesStage.module.css';
@@ -26,6 +48,11 @@ const SW_WASTE = 'var(--state-special)';
 const SW_DP = 'var(--topic-accent)';
 const SW_SAFE = 'var(--color-success)';
 const SW_SKIP = 'var(--color-text-muted)';
+// The rod-cutting canvas paints with the Quartet's trace states (the same hues
+// the playground uses): the active dp[j], the dp[j − i] cell being read, done.
+const SW_ACTIVE = 'var(--state-active)';
+const SW_FLIGHT = 'var(--state-flight)';
+const SW_DONE = 'var(--state-done)';
 
 // The synchronized concept stage. It reacts to the active scrolly scene (by id,
 // not a fragile integer index) and visualizes the greedy-vs-DP fork on three
@@ -35,6 +62,9 @@ const SW_SKIP = 'var(--color-text-muted)';
 //   • climbing stairs — the overlapping-subproblems vehicle: a naive recursion
 //     tree whose repeated subproblems collapse into a one-cell-per-state table;
 //   • interval scheduling — where the earliest-finish greedy choice is safe.
+// The five worked-example scenes (rod cutting, LCS, 0/1 + fractional knapsack,
+// Huffman) reuse the playground's own canvases, frozen on the frame each scene
+// teaches — held on the honest pre-answer frame while the check gates.
 // Everything is token-tinted; the topic hue arrives via --topic-accent.
 
 const COINS = [1, 5, 6];
@@ -421,6 +451,166 @@ const StableBoard = ({ holdReveal = false }) => {
 	);
 };
 
+// ── The five worked-example boards (rod cutting, LCS, 0/1 + fractional ───────
+// knapsack, Huffman). Each reuses the SAME canvas the playground animates,
+// frozen on the frame the scene teaches: while the scene's check gates, the
+// board holds the honest pre-answer frame (the value the student is predicting
+// is not yet written); once answered it settles on the final frame. All frames
+// come from the runs exported by scenes.js — the very runs the answers are
+// derived from — so the stage can never drift from the checks.
+
+// Rod cutting: held with dp[0..3] settled and dp[4] pending; revealed with the
+// optimal 2 + 2 cut and dp[4] = 10.
+const ROD_HELD = ROD_RUN.frames.find(f => f.activeJ === ROD_N - 1);
+const ROD_FINAL = ROD_RUN.frames[ROD_RUN.frames.length - 1];
+
+// LCS: held on the cell just before the corner (dp[5][2] active, corner still
+// unwritten); revealed with the traceback and the recovered "AC".
+const LCS_HELD = LCS_RUN.frames.find(
+	f => f.active && f.active.i === LCS_X.length && f.active.j === LCS_Y.length - 1
+);
+const LCS_FINAL = LCS_RUN.frames[LCS_RUN.frames.length - 1];
+
+// 0/1 knapsack: held with row Q settled through w = 3 and the corner pending;
+// revealed with the traceback and Q tagged as the take.
+const KNAPSACK_HELD = KNAPSACK01_RUN.frames.find(
+	f =>
+		f.active &&
+		f.active.i === KNAPSACK_ITEMS.length &&
+		f.active.w === KNAPSACK_CAPACITY - 1
+);
+const KNAPSACK_FINAL = KNAPSACK01_RUN.frames[KNAPSACK01_RUN.frames.length - 1];
+
+// Fractional: held right after P is taken whole (the canvas would otherwise
+// display the final total the student is asked to compute); revealed full.
+const FRACTIONAL_HELD = FRACTIONAL_RUN.frames.find(
+	f => f.activeIndex === 0 && f.items[0].status === 'taken'
+);
+const FRACTIONAL_FINAL =
+	FRACTIONAL_RUN.frames[FRACTIONAL_RUN.frames.length - 1];
+
+// Huffman: always the finished tree — the codeword table IS the question's
+// working material — so only the bit-total verdict is withheld while gated.
+const HUFFMAN_FINAL = HUFFMAN_RUN.frames[HUFFMAN_RUN.frames.length - 1];
+
+const RodBoard = ({ holdReveal = false }) => (
+	<div className={styles.canvasBoard}>
+		<div className={styles.laneHead}>
+			<span className={`${styles.laneTag} ${styles.laneTagDp}`}>
+				Rod cutting — DP
+			</span>
+			<span className={styles.laneSub}>
+				price[1..{ROD_N}] = {ROD_PRICES.join(', ')} · dp[j] = max(price[i] +
+				dp[j − i])
+			</span>
+		</div>
+		<RodCuttingCanvas frame={holdReveal ? ROD_HELD : ROD_FINAL} />
+		<p
+			className={`${styles.laneVerdict} ${
+				holdReveal ? '' : styles.laneVerdictGood
+			}`}
+		>
+			{holdReveal
+				? 'dp[0..3] settled — predict what the max writes into dp[4]'
+				: `${ROD_REVENUE} revenue — cut 2 + 2, one more than the whole rod's 9`}
+		</p>
+	</div>
+);
+
+const LcsBoard = ({ holdReveal = false }) => (
+	<div className={styles.canvasBoard}>
+		<div className={styles.laneHead}>
+			<span className={`${styles.laneTag} ${styles.laneTagDp}`}>
+				Longest common subsequence — DP
+			</span>
+			<span className={styles.laneSub}>
+				X = {LCS_X} · Y = {LCS_Y} · match → ↖ + 1, else max(↑, ←)
+			</span>
+		</div>
+		<LcsCanvas frame={holdReveal ? LCS_HELD : LCS_FINAL} />
+		<p
+			className={`${styles.laneVerdict} ${
+				holdReveal ? '' : styles.laneVerdictGood
+			}`}
+		>
+			{holdReveal
+				? 'the corner cell compares T with C — commit before it fills'
+				: `length ${LCS_LENGTH} — the traceback emits a letter on every diagonal match`}
+		</p>
+	</div>
+);
+
+const KnapsackBoard = ({ holdReveal = false }) => (
+	<div className={styles.canvasBoard}>
+		<div className={styles.laneHead}>
+			<span className={`${styles.laneTag} ${styles.laneTagDp}`}>
+				0/1 knapsack — DP
+			</span>
+			<span className={styles.laneSub}>
+				W = {KNAPSACK_CAPACITY} · P w1/v2 · Q w4/v7 · take whole or not at all
+			</span>
+		</div>
+		<Knapsack01Canvas frame={holdReveal ? KNAPSACK_HELD : KNAPSACK_FINAL} />
+		<p
+			className={`${styles.laneVerdict} ${
+				holdReveal ? '' : styles.laneVerdictGood
+			}`}
+		>
+			{holdReveal
+				? 'row Q has reached the full bag — predict the corner before it fills'
+				: `best value ${KNAPSACK01_BEST} — the table leaves dense little P behind`}
+		</p>
+	</div>
+);
+
+const FractionalBoard = ({ holdReveal = false }) => (
+	<div className={styles.canvasBoard}>
+		<div className={styles.laneHead}>
+			<span className={`${styles.laneTag} ${styles.laneTagSafe}`}>
+				Fractional knapsack — greedy, provably safe
+			</span>
+			<span className={styles.laneSub}>
+				the same bag, but items split · densest first
+			</span>
+		</div>
+		<FractionalKnapsackCanvas
+			frame={holdReveal ? FRACTIONAL_HELD : FRACTIONAL_FINAL}
+		/>
+		<p
+			className={`${styles.laneVerdict} ${
+				holdReveal ? '' : styles.laneVerdictGood
+			}`}
+		>
+			{holdReveal
+				? 'P is in whole, 3 capacity left — predict the final total value'
+				: `total ${FRACTIONAL_TOTAL} — 3/4 of Q closes the bag; splitting beats both 0/1 answers`}
+		</p>
+	</div>
+);
+
+const HuffmanBoard = ({ holdReveal = false }) => (
+	<div className={styles.canvasBoard}>
+		<div className={styles.laneHead}>
+			<span className={`${styles.laneTag} ${styles.laneTagSafe}`}>
+				Huffman coding — greedy, provably safe
+			</span>
+			<span className={styles.laneSub}>
+				ABRACADABRA · A5 B2 R2 C1 D1 · merge the two rarest
+			</span>
+		</div>
+		<HuffmanCanvas frame={HUFFMAN_FINAL} />
+		<p
+			className={`${styles.laneVerdict} ${
+				holdReveal ? '' : styles.laneVerdictGood
+			}`}
+		>
+			{holdReveal
+				? 'codes read — weigh each codeword by how often its letter occurs'
+				: `${HUFFMAN_BITS} bits vs ${HUFFMAN_FIXED_BITS} fixed-width — rare letters sink deep, A stays shallow`}
+		</p>
+	</div>
+);
+
 // Map each scene id to the board it drives + the accessible label + the corner
 // notation. Keying by id keeps the stage stable when scenes are added/reordered.
 const SCENE_BOARDS = {
@@ -428,7 +618,12 @@ const SCENE_BOARDS = {
 	'greedy-trap': 'coin',
 	'dp-remembers': 'coin',
 	'overlapping-subproblems': 'recursion',
+	'rod-cutting': 'rod',
+	lcs: 'lcs',
+	'knapsack-01': 'knapsack01',
 	'greedy-safe': 'interval',
+	'fractional-knapsack': 'fractional',
+	huffman: 'huffman',
 	'two-properties': 'decision',
 	'choose-what': 'coin',
 	'stable-matching': 'stable',
@@ -458,6 +653,31 @@ const BOARD_META = {
 			'Stable matching — two preference columns and a proposed matching, with the blocking pair marked',
 		notation: 'Gale-Shapley · 3 × 3 · stable?',
 	},
+	rod: {
+		label:
+			'Rod cutting — the one-dimensional dp table trying every leading piece for a length-4 rod',
+		notation: 'O(n²) · dp[j] = max(price[i] + dp[j − i])',
+	},
+	lcs: {
+		label:
+			'Longest common subsequence — the two-dimensional dp grid for AGCAT and GAC',
+		notation: 'O(m·n) · AGCAT / GAC',
+	},
+	knapsack01: {
+		label:
+			'0/1 knapsack — the item-by-capacity dp grid weighing take against skip',
+		notation: 'O(n·W) · W = 4',
+	},
+	fractional: {
+		label:
+			'Fractional knapsack — items ranked by density filling the capacity bar, the last one split',
+		notation: 'O(n log n) · greedy · W = 4',
+	},
+	huffman: {
+		label:
+			'Huffman coding — the finished merge tree and its codeword table for ABRACADABRA',
+		notation: 'O(n log n) · greedy · prefix-free',
+	},
 };
 
 // Per-scene narration for screen readers — the honest WHY of the active board,
@@ -473,8 +693,17 @@ const SCENE_NARRATION = {
 		'Dynamic programming remembers every option and finds 5 + 5 — just 2 coins.',
 	'overlapping-subproblems':
 		'Naive recursion recomputes the same subproblems; memoizing solves each once, O(n).',
+	'rod-cutting':
+		'Rod cutting: dp[4] takes the best of every leading piece — 10 by cutting 2 + 2, one more than selling the rod whole.',
+	lcs: 'Longest common subsequence of AGCAT and GAC: no match at the corner cell, so it carries the better of up and left — length 2, and the traceback reads AC.',
+	'knapsack-01':
+		'0/1 knapsack: at the full bag the table takes Q whole for 7 and leaves the denser P behind — density greedy would bank only 2.',
 	'greedy-safe':
 		'Interval scheduling: always taking the earliest finish is provably optimal, 3 activities.',
+	'fractional-knapsack':
+		'Fractional knapsack: P whole, then three quarters of Q closes the bag — total 7.25, the provably optimal split.',
+	huffman:
+		'Huffman coding: merging the two rarest letters builds an optimal prefix code — ABRACADABRA takes 23 bits against 33 fixed-width.',
 	'two-properties':
 		'Both tools need optimal substructure; greedy-choice leads to greedy, overlapping subproblems lead to DP.',
 	'choose-what':
@@ -483,10 +712,32 @@ const SCENE_NARRATION = {
 		'Gale-Shapley is greedy and safe: Bram and Wren block this proposed matching because each ranks the other first, so the algorithm pairs them — no blocking pair remains.',
 };
 
+// While a scene's gated check is unanswered, the spoken line must not spoil the
+// outcome either (the on-screen verdict is already held), so it mirrors the
+// pre-choice prompt instead of announcing the answer. Keyed by scene id; only
+// gated scenes appear here.
+const HELD_NARRATION = {
+	'greedy-trap':
+		'Greedy takes 6¢ first. Predict how many coins it spends before the run plays out.',
+	'stable-matching':
+		'A matching is proposed for three pairs. Predict whether it is stable, and if not which pair would elope, before the blocking edge is shown.',
+	'rod-cutting':
+		'The dp table has settled through dp[3]. Predict the revenue the max writes into dp[4] before the cell fills.',
+	lcs: 'The fill has reached the corner cell, where T meets C with no match. Predict the value of dp[5][3] before it is written.',
+	'knapsack-01':
+		'Row Q has reached the full bag. Predict the optimal value in the corner cell before the table writes it.',
+	'fractional-knapsack':
+		'Greedy has taken P whole and 3 capacity remains. Predict the total value before the split of Q is revealed.',
+	huffman:
+		'The codeword table is read off the finished tree. Weigh each codeword by how often its letter occurs before the bit total is revealed.',
+};
+
 // Scene-aware colour key: only the states the active board paints right now.
 // The coin board shifts meaning across its scenes, so it is keyed by id, not by
 // board: greedy "take" before the trap, the stranded waste once it is sprung,
-// the DP table once it settles. Boards that are purely structural carry no key.
+// the DP table once it settles. Boards that are purely structural carry no key —
+// and neither do the canvas boards whose canvas already draws its own inline key
+// (LCS, 0/1 and fractional knapsack), so the meaning is never stated twice.
 const buildLegend = sceneId => {
 	switch (sceneId) {
 		case 'two-shapes':
@@ -507,6 +758,12 @@ const buildLegend = sceneId => {
 			];
 		case 'overlapping-subproblems':
 			return [{ swatch: SW_DP, label: 'repeated subproblem', aria: 'accent' }];
+		case 'rod-cutting':
+			return [
+				{ swatch: SW_ACTIVE, label: 'dp[j] being decided', aria: 'blue' },
+				{ swatch: SW_FLIGHT, label: 'dp[j − i] being read', aria: 'orange' },
+				{ swatch: SW_DONE, label: 'settled cell', aria: 'green' },
+			];
 		case 'greedy-safe':
 			return [
 				{ swatch: SW_SAFE, label: 'chosen (earliest finish)', aria: 'green' },
@@ -531,15 +788,9 @@ const StrategiesStage = ({ activeScene = 0, holdReveal = false }) => {
 	const board = SCENE_BOARDS[sceneId] ?? 'coin';
 	const meta = BOARD_META[board];
 	const legend = buildLegend(sceneId);
-	// While a predict is held, the spoken line must not spoil the outcome either
-	// (the on-screen verdict is already held), so it mirrors the pre-choice prompt
-	// instead of announcing the answer. Each gated scene has its own held line.
-	const heldNarration =
-		holdReveal && sceneId === 'greedy-trap'
-			? 'Greedy takes 6¢ first. Predict how many coins it spends before the run plays out.'
-			: holdReveal && sceneId === 'stable-matching'
-				? 'A matching is proposed for three pairs. Predict whether it is stable, and if not which pair would elope, before the blocking edge is shown.'
-				: null;
+	// While a gated check is held, speak the pre-choice line for that scene (see
+	// HELD_NARRATION) instead of announcing the answer.
+	const heldNarration = holdReveal ? (HELD_NARRATION[sceneId] ?? null) : null;
 	const narration = heldNarration ?? SCENE_NARRATION[sceneId] ?? meta.label;
 
 	return (
@@ -560,6 +811,13 @@ const StrategiesStage = ({ activeScene = 0, holdReveal = false }) => {
 				{board === 'interval' && <IntervalBoard />}
 				{board === 'decision' && <DecisionBoard />}
 				{board === 'stable' && <StableBoard holdReveal={holdReveal} />}
+				{board === 'rod' && <RodBoard holdReveal={holdReveal} />}
+				{board === 'lcs' && <LcsBoard holdReveal={holdReveal} />}
+				{board === 'knapsack01' && <KnapsackBoard holdReveal={holdReveal} />}
+				{board === 'fractional' && (
+					<FractionalBoard holdReveal={holdReveal} />
+				)}
+				{board === 'huffman' && <HuffmanBoard holdReveal={holdReveal} />}
 
 				<StateLegend items={legend} />
 

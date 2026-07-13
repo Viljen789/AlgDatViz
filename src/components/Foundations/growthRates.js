@@ -15,15 +15,19 @@ export const RACE_NMAX = 22;
 
 export const GROWTH_RATES = [
 	{ label: 'O(2ⁿ)', f: n => 2 ** n, colorVar: 'var(--color-error)' },
-	{ label: 'O(n²)', f: n => n * n, colorVar: 'var(--topic-hashing)' },
-	{ label: 'O(n log n)', f: n => n * Math.log2(n), colorVar: 'var(--brand)' },
-	{ label: 'O(n)', f: n => n, colorVar: 'var(--topic-sorting)' },
+	{ label: 'O(n²)', f: n => n * n, colorVar: 'var(--color-accent-orange)' },
+	{
+		label: 'O(n log n)',
+		f: n => n * Math.log2(n),
+		colorVar: 'var(--color-accent-purple)',
+	},
+	{ label: 'O(n)', f: n => n, colorVar: 'var(--color-accent-yellow)' },
 	{
 		label: 'O(log n)',
 		f: n => Math.max(Math.log2(n), 0),
-		colorVar: 'var(--topic-graphs)',
+		colorVar: 'var(--color-accent-green)',
 	},
-	{ label: 'O(1)', f: () => 1, colorVar: 'var(--color-text-muted)' },
+	{ label: 'O(1)', f: () => 1, colorVar: 'var(--color-success)' },
 ];
 
 /**

@@ -1,0 +1,66 @@
+/* Bridge AlgDatViz's topic-aware system into the shared primitive roles. */
+:root {
+	--sui-bg-app: 36 12% 9%;
+	--sui-bg-sunken: 36 12% 7%;
+	--sui-bg-sidebar: 36 12% 11%;
+	--sui-surface-1: 36 11% 12%;
+	--sui-surface-2: 36 11% 14%;
+	--sui-surface-3: 36 11% 16%;
+	--sui-surface-input: 36 11% 13%;
+	--sui-surface-hover: 36 11% 15%;
+	--sui-border: 36 8% 22%;
+	--sui-border-strong: 36 8% 34%;
+	--sui-border-subtle: 36 8% 18%;
+	--sui-text-primary: 38 24% 92%;
+	--sui-text-secondary: 36 14% 74%;
+	--sui-text-muted: 36 10% 60%;
+	--sui-text-dim: 36 10% 48%;
+	--sui-brand: var(--brand-h) var(--brand-s) var(--brand-l);
+	--sui-review: var(--review-h) var(--review-s) var(--review-l);
+	--sui-color-bg-app: var(--color-bg-app);
+	--sui-color-bg-sunken: var(--color-bg-sunken);
+	--sui-color-bg-sidebar: var(--color-bg-sidebar);
+	--sui-color-surface-1: var(--surface-1);
+	--sui-color-surface-2: var(--surface-2);
+	--sui-color-surface-3: var(--surface-3);
+	--sui-color-surface-input: var(--surface-input);
+	--sui-color-surface-hover: var(--surface-hover);
+	--sui-color-border: var(--color-border);
+	--sui-color-border-strong: var(--color-border-strong);
+	--sui-color-border-subtle: var(--color-border-subtle);
+	--sui-color-text-primary: var(--color-text-primary);
+	--sui-color-text-secondary: var(--color-text-secondary);
+	--sui-color-text-muted: var(--color-text-muted);
+	--sui-color-text-dim: var(--color-text-dim);
+	--sui-color-brand: var(--brand);
+	--sui-color-brand-ink: var(--brand-ink);
+	--sui-color-review: var(--review-brand);
+	--sui-color-review-ink: var(--review-brand-ink);
+	--sui-color-success: var(--color-success);
+	--sui-color-warning: var(--color-warning);
+	--sui-color-error: var(--color-error);
+	--sui-color-info: var(--color-info);
+	--sui-font-display: var(--font-family-display);
+	--sui-font-sans: var(--font-family-sans);
+	--sui-font-mono: var(--font-family-mono);
+	--sui-shadow-focus: var(--shadow-focus);
+	--sui-shadow-lamp: var(--shadow-canvas-lamp);
+}
+
+[data-theme='light'] {
+	--sui-bg-app: 40 30% 96%;
+	--sui-bg-sunken: 40 26% 92%;
+	--sui-bg-sidebar: 40 28% 98%;
+	--sui-surface-1: 40 40% 99%;
+	--sui-surface-2: 40 35% 99.5%;
+	--sui-surface-3: 40 40% 100%;
+	--sui-surface-input: 40 30% 98%;
+	--sui-surface-hover: 40 28% 93%;
+	--sui-border: 40 18% 82%;
+	--sui-border-strong: 38 16% 64%;
+	--sui-border-subtle: 40 20% 88%;
+	--sui-text-primary: 30 18% 14%;
+	--sui-text-secondary: 32 14% 30%;
+	--sui-text-muted: 34 13% 38%;
+	--sui-text-dim: 34 12% 50%;
+}

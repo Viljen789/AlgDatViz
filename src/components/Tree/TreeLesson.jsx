@@ -21,7 +21,7 @@ const initialCheckStates = () =>
  * visual token from theme.css.
  */
 const TreeLesson = () => {
-	const { markVisited, markCompleted } = useProgress();
+	const { markVisited } = useProgress();
 	const [checkStates, setCheckStates] = useState(initialCheckStates);
 
 	const topic = TOPIC_BY_ID[TOPIC_ID];
@@ -48,13 +48,9 @@ const TreeLesson = () => {
 		[]
 	);
 
-	const handlePlaygroundInteract = useCallback(() => {
-		markCompleted(TOPIC_ID);
-	}, [markCompleted]);
-
 	const renderPlayground = useCallback(
-		() => <TreePlayground onUserInteract={handlePlaygroundInteract} />,
-		[handlePlaygroundInteract]
+		() => <TreePlayground />,
+		[]
 	);
 
 	const handleVisit = useCallback(() => {

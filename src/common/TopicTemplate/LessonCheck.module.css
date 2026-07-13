@@ -38,7 +38,7 @@
 	margin: calc(var(--space-xs) * -1) 0 0;
 	font-family: var(--font-family-mono);
 	font-size: var(--font-size-caption);
-	font-weight: var(--font-weight-bold);
+	font-weight: var(--font-weight-semibold);
 	letter-spacing: var(--tracking-caps);
 	text-transform: uppercase;
 	color: var(--topic-accent-ink);
@@ -54,7 +54,7 @@
 .eyebrow {
 	font-family: var(--font-family-mono);
 	font-size: var(--font-size-caption);
-	font-weight: var(--font-weight-bold);
+	font-weight: var(--font-weight-semibold);
 	letter-spacing: var(--tracking-caps);
 	text-transform: uppercase;
 	color: var(--color-text-muted);
@@ -66,7 +66,7 @@
 	gap: 5px;
 	font-family: var(--font-family-mono);
 	font-size: var(--font-size-caption);
-	font-weight: var(--font-weight-bold);
+	font-weight: var(--font-weight-semibold);
 	letter-spacing: var(--tracking-caps);
 	text-transform: uppercase;
 }
@@ -91,6 +91,19 @@
 	flex-wrap: wrap;
 	gap: var(--space-sm);
 	margin-top: var(--space-xs);
+}
+
+/* Sentence-length options: stack the pills full-width and set them in the body
+   face — prose answers read as prose. Short/code answers keep the mono row. */
+.choiceRowStacked {
+	flex-direction: column;
+	align-items: stretch;
+}
+
+.choiceRowStacked .choice {
+	font-family: var(--font-family-sans);
+	font-size: var(--font-size-body);
+	text-align: left;
 }
 
 .choice {
@@ -168,6 +181,102 @@
 	animation: revealIn var(--duration-step) var(--ease-quiet) both;
 }
 
+/* First-miss coaching keeps the learner active. It deliberately withholds the
+   canonical explanation until a second miss or an explicit reveal. */
+.coaching {
+	margin-top: var(--space-xs);
+	padding-top: var(--space-md);
+	border-top: 1px solid var(--color-border);
+	animation: revealIn var(--duration-step) var(--ease-quiet) both;
+}
+
+.feedbackActions,
+.postActions {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: var(--space-sm);
+	margin-top: var(--space-md);
+}
+
+.postActions {
+	justify-content: flex-end;
+}
+
+.retryButton,
+.revealButton,
+.continueButton {
+	min-height: 40px;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 7px;
+	padding: 8px 13px;
+	border-radius: var(--radius-md);
+	font-family: var(--font-family-sans);
+	font-size: var(--font-size-label);
+	font-weight: var(--font-weight-semibold);
+	cursor: pointer;
+	transition:
+		color var(--transition),
+		background-color var(--transition),
+		border-color var(--transition),
+		transform var(--transition);
+}
+
+.retryButton,
+.revealButton {
+	background: transparent;
+	border: 1px solid var(--color-border);
+	color: var(--color-text-secondary);
+}
+
+.retryButton {
+	border-color: color-mix(
+		in srgb,
+		var(--color-warning) 45%,
+		var(--color-border)
+	);
+	color: var(--color-warning);
+}
+
+.retryButton:hover,
+.revealButton:hover {
+	background: var(--surface-hover);
+	border-color: var(--color-border-strong);
+	color: var(--color-text-primary);
+}
+
+.continueButton {
+	max-width: 100%;
+	background: var(--topic-accent);
+	border: 1px solid var(--topic-accent);
+	color: var(--topic-accent-contrast);
+}
+
+.continueButton span {
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.continueButton:hover {
+	filter: brightness(1.08);
+}
+
+.retryButton:active,
+.revealButton:active,
+.continueButton:active {
+	transform: translateY(1px);
+}
+
+.retryButton:focus-visible,
+.revealButton:focus-visible,
+.continueButton:focus-visible {
+	outline: none;
+	box-shadow: var(--shadow-focus);
+}
+
 @keyframes revealIn {
 	from {
 		opacity: 0;
@@ -180,8 +289,24 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-	.reveal {
+	.reveal,
+	.coaching {
 		animation-duration: var(--duration-instant);
+	}
+}
+
+@media (max-width: 540px) {
+	.feedbackActions,
+	.postActions {
+		align-items: stretch;
+		flex-direction: column;
+	}
+
+	.retryButton,
+	.revealButton,
+	.continueButton {
+		width: 100%;
+		min-height: 44px;
 	}
 }
 
@@ -209,7 +334,7 @@
 	margin-bottom: var(--space-2xs);
 	font-family: var(--font-family-mono);
 	font-size: var(--font-size-caption);
-	font-weight: var(--font-weight-bold);
+	font-weight: var(--font-weight-semibold);
 	letter-spacing: var(--tracking-caps);
 	text-transform: uppercase;
 	color: var(--topic-accent-ink);
@@ -229,7 +354,7 @@
 .revealAnswerLabel {
 	font-family: var(--font-family-mono);
 	font-size: var(--font-size-caption);
-	font-weight: var(--font-weight-bold);
+	font-weight: var(--font-weight-semibold);
 	letter-spacing: var(--tracking-caps);
 	text-transform: uppercase;
 	color: var(--topic-accent-ink);
@@ -627,7 +752,7 @@
 	gap: 4px;
 	font-family: var(--font-family-mono);
 	font-size: var(--font-size-caption);
-	font-weight: var(--font-weight-bold);
+	font-weight: var(--font-weight-semibold);
 	letter-spacing: var(--tracking-caps);
 	text-transform: uppercase;
 	flex-shrink: 0;
@@ -637,7 +762,6 @@
 	margin: 0;
 	font-size: var(--font-size-label);
 	color: var(--color-text-secondary);
-	font-style: italic;
 }
 
 .partExplanation {
@@ -687,7 +811,7 @@
 .probeCaption {
 	font-family: var(--font-family-mono);
 	font-size: var(--font-size-caption);
-	font-weight: var(--font-weight-bold);
+	font-weight: var(--font-weight-semibold);
 	letter-spacing: var(--tracking-caps);
 	text-transform: uppercase;
 	color: var(--color-text-muted);
@@ -750,6 +874,7 @@
 .probeVertexTag {
 	font-family: var(--font-family-mono);
 	font-size: var(--font-size-caption);
+	font-weight: var(--font-weight-semibold);
 	letter-spacing: var(--tracking-caps);
 	text-transform: uppercase;
 	color: var(--color-text-muted);
@@ -767,7 +892,7 @@
 .probeVisitedLabel {
 	font-family: var(--font-family-mono);
 	font-size: var(--font-size-caption);
-	font-weight: var(--font-weight-bold);
+	font-weight: var(--font-weight-semibold);
 	letter-spacing: var(--tracking-caps);
 	text-transform: uppercase;
 	color: var(--color-text-muted);
@@ -810,6 +935,7 @@
 .probeQueuePos {
 	font-family: var(--font-family-mono);
 	font-size: var(--font-size-caption);
+	font-weight: var(--font-weight-semibold);
 	letter-spacing: var(--tracking-caps);
 	text-transform: uppercase;
 	color: var(--color-text-muted);
@@ -820,7 +946,6 @@
 	font-family: var(--font-family-mono);
 	font-size: var(--font-size-label);
 	color: var(--color-text-secondary);
-	font-style: italic;
 }
 
 .probeVisited {

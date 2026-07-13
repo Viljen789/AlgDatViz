@@ -86,7 +86,7 @@ const CHEAT_SHEET = {
  * topicId "shortest-paths" so the orchestrator wires <Route path="/shortest-paths">.
  */
 const ShortestPathsPage = () => {
-	const { markVisited, markCompleted } = useProgress();
+	const { markVisited } = useProgress();
 	const [checkStates, setCheckStates] = useState(initialCheckStates);
 
 	const topic = TOPIC_BY_ID[TOPIC_ID];
@@ -111,13 +111,9 @@ const ShortestPathsPage = () => {
 		[]
 	);
 
-	const handlePlaygroundInteract = useCallback(() => {
-		markCompleted(TOPIC_ID);
-	}, [markCompleted]);
-
 	const renderPlayground = useCallback(
-		() => <ShortestPathsPlayground onUserInteract={handlePlaygroundInteract} />,
-		[handlePlaygroundInteract]
+		() => <ShortestPathsPlayground />,
+		[]
 	);
 
 	const handleVisit = useCallback(() => {

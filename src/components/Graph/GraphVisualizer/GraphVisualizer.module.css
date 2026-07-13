@@ -3,11 +3,14 @@
 	height: 100%;
 	min-height: 400px;
 	flex: 1;
+	/* The shared graph-paper recipe (globals .gridPaper), with a wider local
+	   pitch — the theme-tuned --grid-line keeps it legible in both themes. */
+	--grid-pitch: 36px;
 	background:
-		linear-gradient(var(--color-border-subtle) 1px, transparent 1px),
-		linear-gradient(90deg, var(--color-border-subtle) 1px, transparent 1px),
+		linear-gradient(var(--grid-line) 1px, transparent 1px),
+		linear-gradient(90deg, var(--grid-line) 1px, transparent 1px),
 		var(--color-bg-elevated);
-	background-size: 36px 36px;
+	background-size: var(--grid-pitch) var(--grid-pitch);
 	border-radius: var(--border-radius-lg);
 	border: 1px solid var(--color-border);
 	position: relative;
@@ -83,7 +86,7 @@
 	fill: var(--color-text-primary);
 	font-family: var(--font-family-mono);
 	font-size: 12px;
-	font-weight: 800;
+	font-weight: var(--font-weight-semibold);
 	pointer-events: none;
 }
 
@@ -103,7 +106,14 @@
 	transition:
 		fill var(--duration-step) var(--ease-quiet),
 		stroke var(--duration-step) var(--ease-quiet),
-		stroke-width var(--duration-step) var(--ease-quiet);
+		stroke-width var(--duration-step) var(--ease-quiet),
+		filter var(--duration-instant) var(--ease-quiet);
+}
+
+/* Subtle hover cue on clickable nodes — brightness only, so it never fights
+   the state classes or the inline SCC component colours. */
+.nodeGroup:hover .nodeCircle {
+	filter: drop-shadow(0 8px 18px var(--shadow-color)) brightness(1.12);
 }
 
 .nodeVisited {
@@ -138,7 +148,7 @@
 	fill: var(--color-text-primary);
 	font-family: var(--font-family-mono);
 	font-size: 15px;
-	font-weight: 900;
+	font-weight: var(--font-weight-semibold);
 	pointer-events: none;
 	user-select: none;
 }

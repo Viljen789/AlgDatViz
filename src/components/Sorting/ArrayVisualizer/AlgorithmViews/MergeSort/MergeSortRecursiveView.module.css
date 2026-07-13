@@ -3,7 +3,10 @@
 	height: 100%;
 	min-height: 0;
 	display: grid;
-	grid-template-rows: auto minmax(250px, 1fr) auto;
+	/* The embedded desktop canvas is height-constrained. Keep the recursion map as
+	   a stable overview rail and let the detailed trace pane scroll within the
+	   remaining space instead of painting across the rail. */
+	grid-template-rows: auto minmax(0, 1fr) 112px;
 	gap: 16px;
 	color: var(--color-text-primary);
 }
@@ -20,13 +23,13 @@
 	align-items: center;
 	min-height: 21px;
 	padding: 0 10px;
-	border: 1px solid rgba(56, 201, 160, 0.2);
+	border: 1px solid color-mix(in srgb, var(--state-done) 20%, transparent);
 	border-radius: 999px;
-	background: rgba(56, 201, 160, 0.09);
+	background: color-mix(in srgb, var(--state-done) 9%, transparent);
 	color: var(--color-accent-green-ink);
-	font-size: 10px;
-	font-weight: 800;
-	letter-spacing: 0.14em;
+	font-size: var(--font-size-caption);
+	font-weight: var(--font-weight-semibold);
+	letter-spacing: var(--tracking-caps);
 	text-transform: uppercase;
 }
 
@@ -47,16 +50,16 @@
 	gap: 4px;
 	padding: 9px 11px;
 	border: 1px solid color-mix(in srgb, var(--glass-tint) 7.5%, transparent);
-	border-radius: 16px;
+	border-radius: var(--radius-lg);
 	background: color-mix(in srgb, var(--glass-tint) 3.5%, transparent);
 }
 
 .rangeBadge span {
 	color: var(--color-text-muted);
-	font-size: 10px;
-	font-weight: 800;
+	font-size: var(--font-size-caption);
+	font-weight: var(--font-weight-semibold);
 	text-transform: uppercase;
-	letter-spacing: 0.14em;
+	letter-spacing: var(--tracking-caps);
 }
 
 .rangeBadge strong {
@@ -72,7 +75,7 @@
 	gap: 12px;
 	padding: 14px;
 	border: 1px solid color-mix(in srgb, var(--glass-tint) 7.5%, transparent);
-	border-radius: 24px;
+	border-radius: var(--radius-xl);
 	background:
 		linear-gradient(
 			180deg,
@@ -82,6 +85,9 @@
 		color-mix(in srgb, var(--glass-tint) 2.6%, transparent);
 	box-shadow: inset 0 1px 0
 		color-mix(in srgb, var(--glass-tint) 6%, transparent);
+	overflow: auto;
+	overscroll-behavior: contain;
+	scrollbar-gutter: stable;
 }
 
 .narration {
@@ -115,7 +121,7 @@
 	min-width: 0;
 	padding: 12px;
 	border: 1px solid color-mix(in srgb, var(--glass-tint) 7%, transparent);
-	border-radius: 18px;
+	border-radius: var(--radius-lg);
 	background: color-mix(in srgb, var(--color-bg-sunken) 58%, transparent);
 	transition:
 		border-color var(--duration-step) var(--ease-quiet),
@@ -140,9 +146,9 @@
 	justify-content: space-between;
 	gap: 10px;
 	color: var(--color-text-muted);
-	font-size: 10px;
-	font-weight: 800;
-	letter-spacing: 0.14em;
+	font-size: var(--font-size-caption);
+	font-weight: var(--font-weight-semibold);
+	letter-spacing: var(--tracking-caps);
 	text-transform: uppercase;
 }
 
@@ -191,10 +197,10 @@
 	border-radius: 999px;
 	background: color-mix(in srgb, var(--glass-tint) 3%, transparent);
 	color: var(--color-text-dim);
-	font-size: 10px;
-	font-weight: 800;
+	font-size: var(--font-size-caption);
+	font-weight: var(--font-weight-semibold);
 	text-transform: uppercase;
-	letter-spacing: 0.08em;
+	letter-spacing: var(--tracking-caps);
 	transition:
 		transform var(--duration-step) var(--ease-quiet),
 		color var(--duration-step) var(--ease-quiet),
@@ -204,8 +210,8 @@
 
 .flowColumn .flowActive {
 	color: var(--color-accent-orange);
-	border-color: rgba(248, 167, 79, 0.28);
-	background: rgba(248, 167, 79, 0.1);
+	border-color: color-mix(in srgb, var(--state-flight) 28%, transparent);
+	background: color-mix(in srgb, var(--state-flight) 10%, transparent);
 	transform: translateY(-1px);
 }
 
@@ -226,12 +232,12 @@
 	justify-content: center;
 	padding: 0 8px;
 	border: 1px solid color-mix(in srgb, var(--glass-tint) 7.5%, transparent);
-	border-radius: 11px;
+	border-radius: var(--radius-md);
 	background: color-mix(in srgb, var(--glass-tint) 4%, transparent);
 	color: var(--color-text-primary);
 	font-family: var(--font-family-mono);
 	font-size: 12px;
-	font-weight: 750;
+	font-weight: var(--font-weight-bold);
 	font-variant-numeric: tabular-nums;
 	position: relative;
 	transition:
@@ -248,8 +254,8 @@
 }
 
 .moving {
-	border-color: rgba(248, 167, 79, 0.58);
-	background: rgba(248, 167, 79, 0.16);
+	border-color: color-mix(in srgb, var(--state-flight) 58%, transparent);
+	background: color-mix(in srgb, var(--state-flight) 16%, transparent);
 	color: var(--color-text-primary);
 	transform: translateY(-2px) scale(1.04);
 }
@@ -269,17 +275,17 @@
 	justify-content: center;
 	border-radius: 50%;
 	background: color-mix(in srgb, var(--color-bg-sunken) 94%, transparent);
-	border: 1px solid rgba(248, 167, 79, 0.44);
+	border: 1px solid color-mix(in srgb, var(--state-flight) 44%, transparent);
 	color: var(--color-accent-orange);
 	font-family: var(--font-family-mono);
 	font-size: 9px;
-	font-weight: 900;
+	font-weight: var(--font-weight-bold);
 	line-height: 1;
 }
 
 .verified {
-	border-color: rgba(56, 201, 160, 0.55);
-	background: rgba(56, 201, 160, 0.14);
+	border-color: color-mix(in srgb, var(--state-done) 55%, transparent);
+	background: color-mix(in srgb, var(--state-done) 14%, transparent);
 }
 
 .recursionMap {
@@ -291,7 +297,7 @@
 	gap: 8px;
 	padding: 10px;
 	border: 1px solid color-mix(in srgb, var(--glass-tint) 6.5%, transparent);
-	border-radius: 20px;
+	border-radius: var(--radius-xl);
 	background: color-mix(in srgb, var(--glass-tint) 2.4%, transparent);
 }
 
@@ -326,7 +332,7 @@
 	gap: 2px;
 	padding: 6px 8px;
 	border: 1px solid color-mix(in srgb, var(--glass-tint) 5.5%, transparent);
-	border-radius: 12px;
+	border-radius: var(--radius-md);
 	background: color-mix(in srgb, var(--glass-tint) 2.6%, transparent);
 	transition:
 		transform var(--duration-step) var(--ease-quiet),
@@ -341,13 +347,13 @@
 }
 
 .segmentTarget {
-	border-color: rgba(248, 167, 79, 0.36);
-	background: rgba(248, 167, 79, 0.09);
+	border-color: color-mix(in srgb, var(--state-flight) 36%, transparent);
+	background: color-mix(in srgb, var(--state-flight) 9%, transparent);
 }
 
 .segmentComplete {
-	border-color: rgba(56, 201, 160, 0.3);
-	background: rgba(56, 201, 160, 0.075);
+	border-color: color-mix(in srgb, var(--state-done) 30%, transparent);
+	background: color-mix(in srgb, var(--state-done) 7.5%, transparent);
 }
 
 .segmentLeaf {
@@ -370,6 +376,11 @@
 @media (max-width: 760px) {
 	.container {
 		grid-template-rows: auto auto auto;
+	}
+
+	.workspace {
+		overflow: visible;
+		scrollbar-gutter: auto;
 	}
 
 	.header,

@@ -13,6 +13,11 @@ import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { DrawSVGPlugin } from 'gsap/DrawSVGPlugin';
 import { MotionPathPlugin } from 'gsap/MotionPathPlugin';
 import {
+	AnimatedNumber,
+	CompletionMark,
+	ProgressRing,
+} from '@viljen789/study-ui';
+import {
 	BUILT_TOPICS,
 	CURRICULUM,
 	FIRST_TOPIC,
@@ -546,30 +551,20 @@ const PREVIEW_BY_ID = {
 
 // A small daily-goal ring: today's answered count against the goal.
 const GoalRing = ({ value, goal, done }) => {
-	const R = 15;
-	const C = 2 * Math.PI * R;
-	const frac = Math.max(0, Math.min(1, goal > 0 ? value / goal : 0));
 	return (
-		<svg
-			className={styles.ring}
-			width="40"
-			height="40"
-			viewBox="0 0 40 40"
-			aria-hidden="true"
+		<ProgressRing
+			value={value}
+			max={goal}
+			size={40}
+			tone={done ? 'success' : 'brand'}
+			label={`${value} of ${goal} answered today`}
 		>
-			<circle className={styles.ringTrack} cx="20" cy="20" r={R} />
-			<circle
-				className={styles.ringFill}
-				cx="20"
-				cy="20"
-				r={R}
-				transform="rotate(-90 20 20)"
-				style={{ strokeDasharray: C, strokeDashoffset: C * (1 - frac) }}
-			/>
-			{done && (
-				<path className={styles.ringCheck} d="M14.5 20.5 l3.5 3.5 l7 -8" />
+			{done ? (
+				<CompletionMark complete size={22} label="Daily goal complete" />
+			) : (
+				<AnimatedNumber value={value} className={styles.ringValue} />
 			)}
-		</svg>
+		</ProgressRing>
 	);
 };
 
@@ -649,14 +644,6 @@ const HomePage = () => {
 		() => new Map(phases.map(p => [p.name, p])),
 		[phases]
 	);
-
-	// Jump-scroll the page's own scroller to a chapter. Programmatic smooth scroll
-	// is safe here (the spine's scrubbed comet just rides along) — unlike a global
-	// CSS scroll-behavior, which would desync the scrub.
-	const scrollToPhase = useCallback(name => {
-		const el = document.getElementById(phaseSlug(name));
-		if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-	}, []);
 
 	const heroState = useMemo(() => {
 		if (allComplete) {
@@ -1121,81 +1108,6 @@ const HomePage = () => {
 								? `${overall.completed} of ${overall.total} done — next up, ${nextTopic.name.toLowerCase()}.`
 								: `Your route through all ${overall.total} topics of TDT4120.`}
 					</h2>
-
-					{/* Personal progress roadmap: one segment per phase, sized by its topic
-					    count and filled by how much of it you've mastered, with a "you are
-					    here" on the active phase and the exam as the finish line. The
-					    segments double as jump links to each chapter on the spine. */}
-					<div className={styles.roadmap}>
-						<ol className={styles.roadmapTrack} aria-label="Progress by phase">
-							{phases.map(phase => {
-								const frac = phase.total ? phase.done / phase.total : 0;
-								const done = phase.done === phase.total;
-								const current = !allComplete && phase.name === nextTopic?.phase;
-								return (
-									<li
-										key={phase.name}
-										className={styles.seg}
-										style={{ flexGrow: phase.total }}
-										data-done={done || undefined}
-										data-current={current || undefined}
-									>
-										<button
-											type="button"
-											className={styles.segBtn}
-											onClick={() => scrollToPhase(phase.name)}
-											title={`${phase.name} — ${phase.done} of ${phase.total} done`}
-										>
-											<span className={styles.segHead}>
-												<span className={styles.segName}>{phase.name}</span>
-												<span className={styles.segCount}>
-													{phase.done}/{phase.total}
-												</span>
-											</span>
-											<span className={styles.segBar}>
-												<span
-													className={styles.segFill}
-													style={{ width: `${frac * 100}%` }}
-												/>
-											</span>
-											{current && (
-												<span className={styles.segHere}>you are here</span>
-											)}
-										</button>
-									</li>
-								);
-							})}
-							<li className={styles.segFinish}>
-								<GraduationCap size={15} strokeWidth={2} aria-hidden="true" />
-								<span>Exam</span>
-							</li>
-						</ol>
-					</div>
-
-					<p className={styles.pathMeta}>
-						<span className={styles.pathMetaStrong}>
-							{overall.completed}/{overall.total} mastered
-						</span>
-						{currentStreak > 0 && (
-							<span className={styles.pathMetaItem}>
-								<Flame size={12} strokeWidth={2.4} aria-hidden="true" />
-								{currentStreak}-day streak
-							</span>
-						)}
-						{daysUntilExam != null && daysUntilExam >= 0 && (
-							<span className={styles.pathMetaItem}>
-								Exam in {daysUntilExam} days
-								{overall.completed < overall.total &&
-									` · ${overall.total - overall.completed} to go`}
-							</span>
-						)}
-						{started && dueTotal > 0 && (
-							<Link to="/review" className={styles.pathMetaLink}>
-								<Clock size={12} strokeWidth={2.2} aria-hidden="true" />
-								{dueTotal} due to review
-							</Link>
-						)}
-					</p>
 				</header>
 
 				<div className={styles.spineWrap} data-spine>

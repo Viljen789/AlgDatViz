@@ -1,4 +1,5 @@
 import { createElement } from 'react';
+import { Surface as SharedSurface } from '@viljen789/study-ui';
 import styles from './Surface.module.css';
 
 /**
@@ -32,7 +33,15 @@ const Surface = ({
 		.filter(Boolean)
 		.join(' ');
 
-	return createElement(as, { className: classes, ...rest }, children);
+	return createElement(SharedSurface, {
+		as,
+		level,
+		elevation: inset ? 0 : resolvedElevation,
+		inset,
+		className: classes,
+		...rest,
+		children,
+	});
 };
 
 export default Surface;

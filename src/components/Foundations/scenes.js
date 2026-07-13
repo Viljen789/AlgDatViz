@@ -2,8 +2,10 @@
 //
 // Taught one idea at a time, before any data structure: what "cost" means →
 // counting the work in code → dropping constants → the O/Ω/Θ bounds → watching
-// the growth classes pull apart → best/worst/average and amortized cost.
-// Recurrences (aT(n/b)+f(n)) are deliberately left to the Master Theorem topic.
+// the growth classes pull apart → binary search as O(log n) made concrete →
+// the loop-invariant argument that certifies it → best/worst/average and
+// amortized cost. Recurrences (aT(n/b)+f(n)) are deliberately left to the
+// Master Theorem topic.
 //
 // The stage (FoundationsStage) reads `activeScene` to switch its figure. Each
 // scene carries an inline retrieval `check`; wrong answers still reveal the
@@ -15,6 +17,37 @@ import { fastestGrowingAt, RACE_NMAX } from './growthRates.js';
 // plots: the class whose curve sits highest at the right edge (n = RACE_NMAX).
 // lessonPredict.test.js re-derives this independently, so the key can't drift.
 const RACE_WINNER = fastestGrowingAt(RACE_NMAX);
+
+// The bisect scene's data. The stage draws exactly THIS array, and the check's
+// answer is DERIVED from an actual [lo, hi) trace of it (bisectProbes below),
+// so the figure and the key can never disagree. lessonPredict.test.js
+// re-derives the probe sequence with an independent implementation.
+export const BISECT = {
+	values: [2, 3, 5, 8, 9, 13, 15, 21, 23, 29, 34, 40, 47, 55],
+	target: 23,
+};
+
+// Trace binary search over a sorted array with the half-open convention the
+// scene teaches: window [lo, hi), probe mid = ⌊(lo + hi) / 2⌋, too-small ⇒
+// lo = mid + 1, too-big ⇒ hi = mid. Returns every probed index in order.
+export const bisectProbes = (values, target) => {
+	const probes = [];
+	let lo = 0;
+	let hi = values.length;
+	while (lo < hi) {
+		const mid = Math.floor((lo + hi) / 2);
+		probes.push(mid);
+		if (values[mid] === target) return probes;
+		if (values[mid] < target) lo = mid + 1;
+		else hi = mid;
+	}
+	return probes;
+};
+
+// For BISECT: probes [7, 11, 9, 8] — first probe a[7]=21 (too small, lo→8),
+// second probe ⌊(8+14)/2⌋ = 11. The check asks for that second probe.
+const BISECT_PROBES = bisectProbes(BISECT.values, BISECT.target);
+const SECOND_PROBE = BISECT_PROBES[1]; // 11
 
 export const SCENES = [
 	{
@@ -131,6 +164,47 @@ export const SCENES = [
 			},
 			explanation:
 				'2ⁿ doubles with every extra element, so it eventually overtakes every polynomial, no matter the exponent — it is off the chart by a few dozen items. That is why O(2ⁿ) is the top of the ladder: constant < logarithmic < linear < linearithmic < quadratic < exponential.',
+		},
+	},
+	{
+		id: 'bisect',
+		eyebrow: 'Binary search',
+		title: 'Halve the window until it pins the target.',
+		body: 'Binary search (bisect) is where O(log n) stops being abstract. Keep a half-open window [lo, hi) that must contain the target if it is anywhere; start with the whole array, [0, n). Probe the middle, mid = ⌊(lo + hi) / 2⌋: if a[mid] is too small, everything up to it is too small too, so lo becomes mid + 1; if too big, hi becomes mid. Either way the window halves, so a sorted array of n elements needs at most ⌊log₂ n⌋ + 1 probes — 14 elements take 4, a billion take 30.',
+		check: {
+			kind: 'choice',
+			prompt:
+				'The figure searches the 14-element array for 23. The first probe hits mid = ⌊(0 + 14) / 2⌋ = 7, and a[7] = 21 < 23. Which index does the second probe hit?',
+			options: ['3', '8', '10', '11'],
+			answer: String(SECOND_PROBE), // '11', derived from bisectProbes
+			misconceptions: {
+				3: 'You searched the wrong half. a[7] = 21 is smaller than 23, so nothing at or left of index 7 can be the target; the window shrinks to [8, 14), and the next probe lands in that right half, not at ⌊(0 + 7) / 2⌋ = 3.',
+				8: 'You probed the new lo instead of the new middle. The window is [8, 14), and binary search always splits it at ⌊(8 + 14) / 2⌋ = 11 — it cannot know the target happens to sit right at lo, and checking the boundary first would forfeit the halving.',
+				10: 'You averaged lo with the last live index instead of the exclusive bound. In the half-open convention hi = 14 points one past the window, so the probe is ⌊(8 + 14) / 2⌋ = 11, not ⌊(8 + 13) / 2⌋ = 10.',
+			},
+			explanation:
+				'a[7] = 21 is too small, so the target — if present — sits in [8, 14). The second probe splits that window at ⌊(8 + 14) / 2⌋ = 11, where a[11] = 40 overshoots, shrinking the window to [8, 11). Two more probes (9, then 8) land on the 23: four probes for 14 elements, exactly the ⌊log₂ n⌋ + 1 promise.',
+		},
+	},
+	{
+		id: 'invariant',
+		eyebrow: 'Loop invariants',
+		title: 'Why halving never loses the target.',
+		body: 'That window logic is a loop invariant — a claim that stays true through every pass: “if the target is in the array, it lies in [lo, hi).” Proving one takes three steps. Initialization: the claim holds before the loop ([0, n) covers the whole array). Maintenance: if it holds at the top of an iteration, one pass keeps it true — the discarded half is provably all too small or all too large, so nothing is lost. Termination: when the loop stops, the invariant hands you the answer — a[mid] is the target, or the window is empty and the target was never there. The same three-step argument certifies insertion sort, partition, and every loop after them.',
+		check: {
+			kind: 'choice',
+			prompt:
+				'Binary search discards the half that cannot hold the target, so “target in [lo, hi)” survives the pass. Which part of the invariant argument is that?',
+			options: ['initialization', 'maintenance', 'termination'],
+			answer: 'maintenance',
+			misconceptions: {
+				initialization:
+					'Initialization is the before-the-loop step: [0, n) trivially satisfies the claim because it covers the whole array. The per-pass shrinking happens inside the loop, and keeping the claim true through it is maintenance.',
+				termination:
+					'Termination is the payoff after the loop stops: the invariant plus the exit condition read off the answer. The step that keeps the claim alive from one pass to the next is maintenance.',
+			},
+			explanation:
+				'Maintenance is the inductive step: assume “target in [lo, hi)” holds at the top of a pass and show the pass preserves it — safe here because every discarded element is provably too small or too large. With initialization as the base case and termination cashing the claim in, the three parts form a proof by induction that the loop is correct.',
 		},
 	},
 	{

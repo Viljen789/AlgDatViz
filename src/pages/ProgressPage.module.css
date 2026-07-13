@@ -22,7 +22,7 @@
 	display: inline-flex;
 	align-items: center;
 	gap: 7px;
-	max-width: 1100px;
+	max-width: var(--page-max);
 	margin: 0 auto;
 	font-family: var(--font-family-mono);
 	font-size: var(--font-size-caption);
@@ -30,6 +30,9 @@
 }
 
 .crumbLink {
+	display: inline-flex;
+	align-items: center;
+	min-height: 44px;
 	color: var(--color-text-secondary);
 	text-decoration: none;
 	border-radius: var(--radius-sm);
@@ -50,7 +53,7 @@
 }
 
 .hero {
-	max-width: 1100px;
+	max-width: var(--page-max);
 	margin: 0 auto;
 	padding: clamp(var(--space-xl), 4vw, var(--space-3xl))
 		clamp(var(--space-lg), 6vw, var(--space-4xl)) var(--space-lg);
@@ -70,6 +73,7 @@
 
 .title {
 	margin: 0;
+	text-wrap: balance;
 	font-family: var(--font-family-display);
 	font-size: var(--font-size-display-lg);
 	font-weight: var(--font-weight-display);
@@ -80,10 +84,22 @@
 
 /* ---- Stats ---- */
 .stats {
-	display: grid;
-	grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-	gap: var(--space-md);
 	margin: var(--space-sm) 0 0;
+}
+
+.metricIconValue {
+	display: inline-flex;
+	align-items: center;
+	gap: var(--space-xs);
+}
+
+.metricIconValue svg {
+	color: var(--review-brand-ink);
+}
+
+.examHint {
+	display: block;
+	margin-top: var(--space-xs);
 }
 
 .stat {
@@ -114,6 +130,7 @@
 	font-family: var(--font-family-display);
 	font-size: var(--font-size-heading-lg);
 	font-weight: var(--font-weight-display);
+	font-variant-numeric: lining-nums tabular-nums;
 	line-height: 1;
 	color: var(--color-text-primary);
 }
@@ -147,15 +164,41 @@
 	background: var(--review-brand-wash);
 }
 
+/* The exam-date picker as a quiet control: a hairline field, not bare text, so
+   it reads as editable without shouting over the stat above it. */
 .examInput input {
+	box-sizing: border-box;
+	min-height: 44px;
 	margin-top: var(--space-2xs);
 	font-family: var(--font-family-mono);
 	font-size: var(--font-size-caption);
 	color: var(--color-text-secondary);
 	background: transparent;
-	border: none;
-	padding: 0;
+	border: 1px solid var(--color-border);
+	border-radius: var(--radius-sm);
+	padding: 2px var(--space-xs);
+	cursor: pointer;
 	color-scheme: light dark;
+	transition: border-color var(--transition), color var(--transition);
+}
+
+.examInput input:hover {
+	border-color: var(--color-border-strong);
+	color: var(--color-text-primary);
+}
+
+.examInput input:focus-visible {
+	outline: none;
+	box-shadow: var(--shadow-focus);
+}
+
+.examInput input::-webkit-calendar-picker-indicator {
+	opacity: 0.55;
+	cursor: pointer;
+}
+
+.examInput input:hover::-webkit-calendar-picker-indicator {
+	opacity: 0.85;
 }
 
 .srOnly {
@@ -167,10 +210,17 @@
 }
 
 /* ---- Blocks ---- */
+/* Section rhythm: generous vertical padding (matching the topic pages' breathing
+   room) plus a hairline above every block after the first. */
 .block {
-	max-width: 1100px;
+	max-width: var(--page-max);
 	margin: 0 auto;
-	padding: var(--space-lg) clamp(var(--space-lg), 6vw, var(--space-4xl));
+	padding: clamp(var(--space-xl), 4vw, var(--space-2xl))
+		clamp(var(--space-lg), 6vw, var(--space-4xl));
+}
+
+.block + .block {
+	border-top: 1px solid var(--color-border-subtle);
 }
 
 .blockTitle {
@@ -182,15 +232,18 @@
 }
 
 .blockLede {
-	margin: -8px 0 var(--space-md);
+	margin: 0 0 var(--space-md);
 	font-size: var(--font-size-label);
 	color: var(--color-text-muted);
 }
 
 /* ---- Heatmap ---- */
-/* Each week is a 13px column with a 3px gutter (16px pitch). The month strip and
-   the legend below reuse that geometry so labels sit over the right columns. */
+/* Each week is one cell-wide column with a 3px gutter; --heat-cell scales the
+   pitch with the viewport so 26 weeks fill the block instead of huddling left.
+   The month strip and the legend below reuse that geometry so labels sit over
+   the right columns. */
 .heatScroll {
+	--heat-cell: clamp(11px, 1vw, 16px);
 	overflow-x: auto;
 	padding-bottom: var(--space-xs);
 }
@@ -202,7 +255,7 @@
 }
 
 .heatMonth {
-	flex: 0 0 13px;
+	flex: 0 0 var(--heat-cell);
 	font-family: var(--font-family-mono);
 	font-size: var(--font-size-caption);
 	color: var(--color-text-muted);
@@ -226,8 +279,8 @@
    non-colour cue (ring presence + darkness), so a colour-blind reader still
    reads "busier" without relying on the brand-hue lightness alone. */
 .heatCell {
-	width: 13px;
-	height: 13px;
+	width: var(--heat-cell);
+	height: var(--heat-cell);
 	border-radius: 3px;
 	box-shadow: inset 0 0 0 1px var(--color-border-subtle);
 }
@@ -270,8 +323,8 @@
 /* Discrete 1px borders, weighted to match the grid's rings, so the four legend
    steps separate by outline as well as fill (not lightness alone). */
 .heatLegendSwatch {
-	width: 13px;
-	height: 13px;
+	width: clamp(11px, 1vw, 16px);
+	height: clamp(11px, 1vw, 16px);
 	border-radius: 3px;
 	box-shadow: inset 0 0 0 1px var(--color-border-subtle);
 }
@@ -817,7 +870,7 @@
 
 /* ---- Footer / reset ---- */
 .footer {
-	max-width: 1100px;
+	max-width: var(--page-max);
 	margin: 0 auto;
 	padding: var(--space-lg) clamp(var(--space-lg), 6vw, var(--space-4xl))
 		clamp(var(--space-3xl), 8vw, var(--space-4xl));
@@ -848,4 +901,13 @@
 .resetBtn:focus-visible {
 	outline: none;
 	box-shadow: var(--shadow-focus);
+}
+
+/* Armed state of the two-step reset: the label has flipped to the confirm
+   phrasing, so the button wears the error tone until the timer disarms it. */
+.resetBtnArmed,
+.resetBtnArmed:hover {
+	color: var(--color-error);
+	border-color: color-mix(in srgb, var(--color-error) 55%, transparent);
+	background: var(--color-error-wash);
 }

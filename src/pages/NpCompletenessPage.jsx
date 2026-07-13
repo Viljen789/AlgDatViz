@@ -98,7 +98,7 @@ const CHEAT_SHEET = {
  * <Route path="/np-completeness">. App.jsx is NOT edited here.
  */
 const NpCompletenessPage = () => {
-	const { markVisited, markCompleted } = useProgress();
+	const { markVisited } = useProgress();
 	const [checkStates, setCheckStates] = useState(initialCheckStates);
 
 	const topic = TOPIC_BY_ID[TOPIC_ID];
@@ -130,13 +130,9 @@ const NpCompletenessPage = () => {
 		[]
 	);
 
-	const handlePlaygroundInteract = useCallback(() => {
-		markCompleted(TOPIC_ID);
-	}, [markCompleted]);
-
 	const renderPlayground = useCallback(
-		() => <NpCompletenessExplorer onUserInteract={handlePlaygroundInteract} />,
-		[handlePlaygroundInteract]
+		() => <NpCompletenessExplorer />,
+		[]
 	);
 
 	const handleVisit = useCallback(() => {

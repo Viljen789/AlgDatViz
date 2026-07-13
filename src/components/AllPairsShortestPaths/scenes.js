@@ -219,3 +219,133 @@ export const SCENES = [
 		},
 	},
 ];
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Sticky-stage view selection (consumed by AllPairsShortestPathsStage).
+//
+// The stage paints one sticky visual per scene: which k-layer of the matrix to
+// show, which cell is being relaxed, the two cells it reads, the reconstructed
+// path, the diagonal, or the Slow-APSP layer. It is keyed by scene id (NOT a
+// numeric index), mirroring ShortestPaths' VIEW_FOR_SCENE and StrategiesStage's
+// SCENE_BOARDS: when scenes are inserted or reordered above, the right visual
+// still follows its scene instead of an off-by-N numeric case silently painting
+// the wrong matrix emphasis. Living here (a pure module) keeps the selection
+// unit-testable without importing the JSX stage.
+
+const LAYERS = FW.layers; // LAYERS[k] = D after allowing {1..k}; LAYERS[0] = direct
+const idxOf = id => IDS.indexOf(id);
+const cellKey = (i, j) => `${i},${j}`;
+
+// id → view builder. Every scene id above has an explicit entry; each builder
+// returns which matrix layer to render (an index into LAYERS, or — when
+// view.slow — into SLOW.layers), the cells to spotlight, and the caption. The
+// numbers themselves are read from the matrix by the stage, so the builders only
+// carry layer indices + id-resolved cell coordinates. Builders are lazy so this
+// map sits at module scope.
+const VIEW_FOR_SCENE = {
+	// all-pairs — the final matrix, every cell lit as "the answer".
+	'all-pairs': () => ({
+		layer: LAYERS.length - 1,
+		kLabel: 'final',
+		caption: `The full ${IDS.length}×${IDS.length} answer: d[i][j] for every ordered pair`,
+	}),
+	// intermediates — k = 0, the direct-edge matrix (no intermediates yet).
+	intermediates: () => ({
+		layer: 0,
+		kLabel: '0',
+		caption: 'k = 0 — direct edges only (∞ where no edge, 0 on the diagonal)',
+	}),
+	// recurrence — the final layer; spotlight d[1][3] + its two readers.
+	recurrence: () => {
+		const i = idxOf('1');
+		const j = idxOf('3');
+		const k = idxOf('4'); // the last intermediate that settles 1→3
+		return {
+			layer: LAYERS.length - 1,
+			kLabel: 'final',
+			write: [i, j],
+			readIK: [i, k],
+			readKJ: [k, j],
+			caption: 'd[1][3] = min(old, d[1][4] + d[4][3]) — one cell reads two',
+		};
+	},
+	// fill-across-k — after k = 2; spotlight d[1][4] (now 1→2→4).
+	'fill-across-k': () => {
+		const i = idxOf('1');
+		const j = idxOf('4');
+		const k = idxOf('2');
+		return {
+			layer: 2,
+			kLabel: '2',
+			write: [i, j],
+			readIK: [i, k],
+			readKJ: [k, j],
+			caption: 'After k = 2: d[1][4] = d[1][2] + d[2][4] = 4 (via 2)',
+		};
+	},
+	// predecessor — final matrix; light the reconstructed 1→3 path cells.
+	predecessor: () => {
+		const pathCells = new Set();
+		for (let p = 0; p < PATH_1_3.length - 1; p++) {
+			pathCells.add(cellKey(idxOf(PATH_1_3[p]), idxOf(PATH_1_3[p + 1])));
+		}
+		return {
+			layer: LAYERS.length - 1,
+			kLabel: 'final',
+			pathCells,
+			caption: `π reconstructs 1 → 3 as ${PATH_1_3.join(' → ')}`,
+		};
+	},
+	// transitive-closure — final matrix shown as reachability (boolean).
+	'transitive-closure': () => ({
+		layer: LAYERS.length - 1,
+		kLabel: 'final',
+		boolean: true,
+		caption: 'Same loop, OR/AND: T[i][j] = reachable? (✓ = yes)',
+	}),
+	// matrix-mult — final matrix as "the product".
+	'matrix-mult': () => ({
+		layer: LAYERS.length - 1,
+		kLabel: 'final',
+		caption: 'D = the (min, +) "product" — combining paths through every k',
+	}),
+	// when — final matrix; spotlight the diagonal (neg-cycle diagnostic).
+	when: () => {
+		const diag = new Set(IDS.map((_, i) => cellKey(i, i)));
+		return {
+			layer: LAYERS.length - 1,
+			kLabel: 'final',
+			diagCells: diag,
+			caption:
+				'Diagonal stays 0 here — a negative d[v][v] would flag a neg cycle',
+		};
+	},
+	// slow-apsp — the (min, +) matrix product. Source = SLOW.layers (indexed by
+	// edge count, NOT by FW's intermediate k). Show L^(2) (≤ 2-edge paths) and
+	// spotlight d[2][3]: ∞ at one edge, but 2→4→3 = 1 + (−5) = −4 at two.
+	'slow-apsp': () => {
+		const i = idxOf('2');
+		const j = idxOf('3');
+		const k = idxOf('4'); // the single intermediate that achieves the min
+		return {
+			slow: true,
+			layer: 1, // SLOW.layers[1] === L⁽²⁾
+			kLabel: 'L⁽²⁾',
+			write: [i, j],
+			readIK: [i, k], // L⁽¹⁾[2][4] = 1
+			readKJ: [k, j], // W[4][3] = −5
+			caption:
+				'L⁽²⁾ = L⁽¹⁾ ⊗ W: d[2][3] drops to −4 via 2→4→3 (no direct 2→3 edge)',
+		};
+	},
+};
+
+// Pure id → view selector. Every scene id has an explicit entry above; an unknown
+// id (only possible if a scene were added without a view) falls back to the
+// all-pairs view (the safe final matrix) rather than a numeric default meant for
+// a different scene. Exported (with the map) so stageSceneCoverage.test.js can
+// assert every scene id is mapped and no scene silently inherits a stale case.
+export const selectViewForScene = sceneId =>
+	(VIEW_FOR_SCENE[sceneId] ?? VIEW_FOR_SCENE['all-pairs'])();
+
+export { VIEW_FOR_SCENE };

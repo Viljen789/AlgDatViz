@@ -199,7 +199,7 @@ export const DISCIPLINES = {
 		id: 'min-dist',
 		structure: 'min-distance priority queue',
 		algorithm: 'Dijkstra',
-		fullName: "Dijkstra's shortest paths",
+		fullName: 'Dijkstra’s shortest paths',
 		extractRule: 'take the vertex with the smallest tentative distance',
 		keyLabel: 'dist',
 		buildsLabel: 'shortest-path tree',

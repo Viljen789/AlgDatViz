@@ -10,7 +10,7 @@
 	display: flex;
 	position: relative;
 	border-bottom: 1px solid var(--color-border);
-	padding: 0 var(--spacing-md);
+	padding: 0 var(--space-md);
 	flex-shrink: 0;
 }
 
@@ -44,7 +44,7 @@
 }
 
 .tabButton:active:not(:disabled) {
-	color: var(--color-primary);
+	color: var(--topic-accent, var(--color-primary));
 }
 
 .tabButton:disabled {
@@ -53,7 +53,7 @@
 }
 
 .tabButtonActive {
-	color: var(--color-primary);
+	color: var(--topic-accent, var(--color-primary));
 	font-weight: var(--font-weight-semibold);
 }
 
@@ -62,8 +62,7 @@
 	bottom: -1px;
 	height: 2px;
 	border-radius: var(--radius-pill);
-	background-color: var(--color-primary);
-	box-shadow: 0 0 8px var(--shadow-glow);
+	background-color: var(--topic-accent, var(--color-primary));
 	transition:
 		left var(--duration-step) var(--ease-step),
 		width var(--duration-step) var(--ease-step);
@@ -88,7 +87,7 @@
 	height: 100%;
 	box-sizing: border-box;
 	overflow-y: auto;
-	padding: var(--spacing-md);
+	padding: var(--space-md);
 }
 
 @media (prefers-reduced-motion: reduce) {

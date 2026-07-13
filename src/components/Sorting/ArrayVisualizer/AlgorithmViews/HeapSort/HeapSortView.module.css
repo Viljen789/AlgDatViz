@@ -13,7 +13,7 @@
 	gap: 14px;
 	padding: 10px 12px;
 	border: 1px solid color-mix(in srgb, var(--glass-tint) 7%, transparent);
-	border-radius: 16px;
+	border-radius: var(--radius-lg);
 	background: color-mix(in srgb, var(--glass-tint) 3.5%, transparent);
 	box-shadow: inset 0 1px 0
 		color-mix(in srgb, var(--glass-tint) 6%, transparent);
@@ -21,10 +21,10 @@
 
 .phaseLabel {
 	color: var(--color-accent-green-ink);
-	font-size: 10px;
-	font-weight: 800;
+	font-size: var(--font-size-caption);
+	font-weight: var(--font-weight-semibold);
 	text-transform: uppercase;
-	letter-spacing: 0.14em;
+	letter-spacing: var(--tracking-caps);
 	white-space: nowrap;
 }
 
@@ -54,10 +54,10 @@
 .sectionTitle {
 	margin: 0;
 	color: var(--color-text-muted);
-	font-size: 10px;
-	font-weight: 800;
+	font-size: var(--font-size-caption);
+	font-weight: var(--font-weight-semibold);
 	text-transform: uppercase;
-	letter-spacing: 0.14em;
+	letter-spacing: var(--tracking-caps);
 }
 
 .arrayContainer,
@@ -75,12 +75,12 @@
 	align-items: center;
 	justify-content: center;
 	border: 1px solid color-mix(in srgb, var(--glass-tint) 7.5%, transparent);
-	border-radius: 11px;
+	border-radius: var(--radius-md);
 	background: color-mix(in srgb, var(--glass-tint) 3.5%, transparent);
 	color: var(--color-text-primary);
 	font-family: var(--font-family-mono);
 	font-size: 12px;
-	font-weight: 750;
+	font-weight: var(--font-weight-bold);
 	position: relative;
 	transition:
 		transform var(--duration-step) var(--ease-quiet),
@@ -105,19 +105,19 @@
 }
 
 .swapping {
-	border-color: rgba(248, 167, 79, 0.6);
-	background: rgba(248, 167, 79, 0.16);
+	border-color: color-mix(in srgb, var(--state-flight) 60%, transparent);
+	background: color-mix(in srgb, var(--state-flight) 16%, transparent);
 	transform: translateY(-2px);
 }
 
 .sorted {
-	border-color: rgba(56, 201, 160, 0.58);
-	background: rgba(56, 201, 160, 0.13);
+	border-color: color-mix(in srgb, var(--state-done) 58%, transparent);
+	background: color-mix(in srgb, var(--state-done) 13%, transparent);
 }
 
 .maxElement {
-	border-color: rgba(201, 122, 248, 0.58);
-	background: rgba(201, 122, 248, 0.13);
+	border-color: color-mix(in srgb, var(--state-special) 58%, transparent);
+	background: color-mix(in srgb, var(--state-special) 13%, transparent);
 }
 
 .notInHeap {
@@ -138,23 +138,23 @@
 	gap: 3px;
 	justify-content: center;
 	border: 1px solid color-mix(in srgb, var(--glass-tint) 7%, transparent);
-	border-radius: 14px;
+	border-radius: var(--radius-lg);
 	background: color-mix(in srgb, var(--glass-tint) 3%, transparent);
 }
 
 .operationDetail strong {
 	color: var(--color-text-muted);
-	font-size: 10px;
-	font-weight: 800;
+	font-size: var(--font-size-caption);
+	font-weight: var(--font-weight-semibold);
 	text-transform: uppercase;
-	letter-spacing: 0.14em;
+	letter-spacing: var(--tracking-caps);
 }
 
 .operationDetail span {
 	color: var(--color-text-primary);
 	font-family: var(--font-family-mono);
 	font-size: 15px;
-	font-weight: 800;
+	font-weight: var(--font-weight-bold);
 }
 
 .operationDetail small {
@@ -171,7 +171,7 @@
 	gap: 20px;
 	padding: 14px;
 	border: 1px solid color-mix(in srgb, var(--glass-tint) 7%, transparent);
-	border-radius: 18px;
+	border-radius: var(--radius-lg);
 	background:
 		linear-gradient(
 			180deg,
@@ -180,16 +180,20 @@
 		),
 		color-mix(in srgb, var(--glass-tint) 2.4%, transparent);
 	overflow-x: auto;
+	overscroll-behavior-x: contain;
 }
 
 .treeLevel {
 	display: flex;
 	justify-content: center;
 	gap: clamp(12px, 4vw, 42px);
+	width: max-content;
+	min-width: 100%;
 	position: relative;
 }
 
 .treeNode {
+	flex: 0 0 42px;
 	width: 42px;
 	height: 42px;
 	display: flex;
@@ -211,7 +215,7 @@
 
 .nodeValue {
 	font-size: 13px;
-	font-weight: 800;
+	font-weight: var(--font-weight-bold);
 }
 
 .nodeIndex {
@@ -220,8 +224,8 @@
 }
 
 .rootNode {
-	border-color: rgba(201, 122, 248, 0.45);
-	background: rgba(201, 122, 248, 0.11);
+	border-color: color-mix(in srgb, var(--state-special) 45%, transparent);
+	background: color-mix(in srgb, var(--state-special) 11%, transparent);
 }
 
 .comparingNode {
@@ -231,13 +235,13 @@
 }
 
 .swappingNode {
-	border-color: rgba(248, 167, 79, 0.6);
-	background: rgba(248, 167, 79, 0.16);
+	border-color: color-mix(in srgb, var(--state-flight) 60%, transparent);
+	background: color-mix(in srgb, var(--state-flight) 16%, transparent);
 	transform: translateY(-2px);
 }
 
 .maxNode {
-	border-color: rgba(56, 201, 160, 0.5);
+	border-color: color-mix(in srgb, var(--state-done) 50%, transparent);
 }
 
 .leftConnection,
@@ -269,13 +273,13 @@
 	align-items: center;
 	justify-content: center;
 	padding: 0 8px;
-	border: 1px solid rgba(56, 201, 160, 0.28);
+	border: 1px solid color-mix(in srgb, var(--state-done) 28%, transparent);
 	border-radius: 999px;
-	background: rgba(56, 201, 160, 0.12);
+	background: color-mix(in srgb, var(--state-done) 12%, transparent);
 	color: var(--color-text-primary);
 	font-family: var(--font-family-mono);
 	font-size: 12px;
-	font-weight: 800;
+	font-weight: var(--font-weight-bold);
 }
 
 @media (max-width: 760px) {
@@ -288,10 +292,21 @@
 	}
 
 	.operationDetails {
-		grid-template-columns: 1fr;
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+	}
+
+	.operationDetail:first-child:nth-last-child(3) {
+		grid-column: 1 / -1;
 	}
 
 	.treeContainer {
 		justify-content: flex-start;
+	}
+
+	.arrayContainer,
+	.sortedContainer {
+		flex-wrap: nowrap;
+		overflow-x: auto;
+		padding-bottom: 4px;
 	}
 }

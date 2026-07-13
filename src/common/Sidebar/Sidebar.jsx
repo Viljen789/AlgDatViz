@@ -34,6 +34,7 @@ import useProgress from '../../hooks/useProgress.js';
 import ThemeToggle from '../ThemeToggle/ThemeToggle.jsx';
 import Eyebrow from '../Eyebrow/Eyebrow.jsx';
 import Badge from '../Badge/Badge.jsx';
+import BrandMark from '../BrandMark/BrandMark.jsx';
 import styles from './Sidebar.module.css';
 
 // Maps the `icon` name stored on each curriculum topic to a lucide component.
@@ -71,119 +72,88 @@ const Sidebar = () => {
 	return (
 		<nav className={styles.sidebar} aria-label="Primary">
 			<div className={styles.logo}>
-				<svg
-					width="22"
-					height="22"
-					viewBox="0 0 22 22"
-					fill="none"
-					aria-hidden="true"
-				>
-					<rect
-						x="1"
-						y="1"
-						width="8"
-						height="8"
-						rx="1.5"
-						fill="var(--topic-sorting)"
-						opacity="0.9"
-					/>
-					<rect
-						x="13"
-						y="1"
-						width="8"
-						height="8"
-						rx="1.5"
-						fill="var(--topic-graphs)"
-						opacity="0.9"
-					/>
-					<rect
-						x="1"
-						y="13"
-						width="8"
-						height="8"
-						rx="1.5"
-						fill="var(--topic-hashing)"
-						opacity="0.9"
-					/>
-					<rect
-						x="13"
-						y="13"
-						width="8"
-						height="8"
-						rx="1.5"
-						fill="var(--topic-trees)"
-						opacity="0.9"
-					/>
-				</svg>
+				<BrandMark size={24} className={styles.brandMark} />
 				<span className={styles.logoText}>AlgDatViz</span>
 			</div>
 
 			<ul className={styles.navList}>
-				<li>
+				<li className={styles.utilityItem}>
 					<NavLink
 						to="/"
 						end
 						className={({ isActive }) =>
 							`${styles.navLink} ${isActive ? styles.activeLink : ''}`
 						}
+						aria-label="Home"
 					>
 						<span className={styles.navBar} aria-hidden="true" />
+						{/* Empty number gutter so utility icons share the curriculum
+						    rows' icon column (those rows lead with a 2ch number). */}
+						<span className={styles.number} aria-hidden="true" />
 						<span className={styles.icon} aria-hidden="true">
 							<House size={16} strokeWidth={2.2} />
 						</span>
 						<span className={styles.label}>Home</span>
 					</NavLink>
 				</li>
-				<li>
+				<li className={styles.utilityItem}>
 					<NavLink
 						to="/review"
 						className={({ isActive }) =>
 							`${styles.navLink} ${isActive ? styles.activeLink : ''}`
 						}
+						aria-label="Review"
 					>
 						<span className={styles.navBar} aria-hidden="true" />
+						<span className={styles.number} aria-hidden="true" />
 						<span className={styles.icon} aria-hidden="true">
 							<GraduationCap size={16} strokeWidth={2.2} />
 						</span>
 						<span className={styles.label}>Review</span>
 					</NavLink>
 				</li>
-				<li>
+				<li className={styles.utilityItem}>
 					<NavLink
 						to="/exam"
 						className={({ isActive }) =>
 							`${styles.navLink} ${isActive ? styles.activeLink : ''}`
 						}
+						aria-label="Exam"
 					>
 						<span className={styles.navBar} aria-hidden="true" />
+						<span className={styles.number} aria-hidden="true" />
 						<span className={styles.icon} aria-hidden="true">
 							<FileCheck size={16} strokeWidth={2.2} />
 						</span>
 						<span className={styles.label}>Exam</span>
 					</NavLink>
 				</li>
-				<li>
+				<li className={styles.utilityItem}>
 					<NavLink
 						to="/reference"
 						className={({ isActive }) =>
 							`${styles.navLink} ${isActive ? styles.activeLink : ''}`
 						}
+						aria-label="Reference"
 					>
 						<span className={styles.navBar} aria-hidden="true" />
+						<span className={styles.number} aria-hidden="true" />
 						<span className={styles.icon} aria-hidden="true">
 							<BookOpen size={16} strokeWidth={2.2} />
 						</span>
 						<span className={styles.label}>Reference</span>
 					</NavLink>
 				</li>
-				<li>
+				<li className={styles.utilityItem}>
 					<NavLink
 						to="/progress"
 						className={({ isActive }) =>
 							`${styles.navLink} ${isActive ? styles.activeLink : ''}`
 						}
+						aria-label="Progress"
 					>
 						<span className={styles.navBar} aria-hidden="true" />
+						<span className={styles.number} aria-hidden="true" />
 						<span className={styles.icon} aria-hidden="true">
 							<Activity size={16} strokeWidth={2.2} />
 						</span>
@@ -282,9 +252,9 @@ const Sidebar = () => {
 									to={topic.to}
 									className={`${styles.navLink} ${
 										active ? styles.activeLink : ''
-									} ${completed ? styles.completed : ''} ${
-										visited ? styles.visited : ''
-									} ${isNext ? styles.next : ''}`}
+									} ${visited ? styles.visited : ''} ${
+										isNext ? styles.next : ''
+									}`}
 									aria-current={active ? 'page' : undefined}
 									style={{ '--accent': topic.accent }}
 									aria-label={rowLabel}

@@ -29,7 +29,7 @@
 	display: flex;
 	align-items: center;
 	gap: 7px;
-	max-width: 1100px;
+	max-width: var(--page-max);
 	margin: 0 auto;
 	font-family: var(--font-family-mono);
 	font-size: var(--font-size-caption);
@@ -37,6 +37,9 @@
 }
 
 .crumbLink {
+	display: inline-flex;
+	align-items: center;
+	min-height: 44px;
 	color: var(--color-text-secondary);
 	text-decoration: none;
 	border-radius: var(--radius-sm);
@@ -59,7 +62,7 @@
 /* ---------- Hero ---------- */
 
 .hero {
-	max-width: 1100px;
+	max-width: var(--page-max);
 	margin: 0 auto;
 	padding: clamp(var(--space-2xl), 6vw, var(--space-4xl))
 		clamp(var(--space-lg), 6vw, var(--space-4xl))
@@ -100,12 +103,57 @@
 	color: var(--color-text-secondary);
 }
 
+/* ---------- Section nav (anchor pills under the lede) ---------- */
+
+.sectionNav {
+	display: flex;
+	flex-wrap: wrap;
+	gap: var(--space-xs);
+	margin-top: var(--space-sm);
+}
+
+.sectionNavLink {
+	display: inline-flex;
+	align-items: center;
+	min-height: 44px;
+	padding: 4px var(--space-md);
+	border: 1px solid var(--color-border);
+	border-radius: var(--radius-pill);
+	background: var(--surface-1);
+	font-family: var(--font-family-sans);
+	font-size: var(--font-size-label);
+	color: var(--color-text-secondary);
+	text-decoration: none;
+	transition:
+		color var(--transition),
+		border-color var(--transition),
+		background-color var(--transition);
+}
+
+.sectionNavLink:hover {
+	color: var(--color-text-primary);
+	border-color: var(--color-border-strong);
+	background: var(--surface-hover);
+}
+
+.sectionNavLink:focus-visible {
+	outline: none;
+	box-shadow: var(--shadow-focus);
+}
+
 /* ---------- Blocks ---------- */
 
+/* Section rhythm: generous vertical padding (matching the topic pages' breathing
+   room) plus a hairline above every block after the first. */
 .block {
-	max-width: 1100px;
+	max-width: var(--page-max);
 	margin: 0 auto;
-	padding: var(--space-lg) clamp(var(--space-lg), 6vw, var(--space-4xl));
+	padding: clamp(var(--space-xl), 4vw, var(--space-2xl))
+		clamp(var(--space-lg), 6vw, var(--space-4xl));
+}
+
+.block + .block {
+	border-top: 1px solid var(--color-border-subtle);
 }
 
 .blockTitle {
@@ -114,6 +162,8 @@
 	font-size: var(--font-size-heading-md);
 	font-weight: var(--font-weight-semibold);
 	color: var(--color-text-primary);
+	/* Anchor targets clear the sticky crumb bar when jumped to from the pills. */
+	scroll-margin-top: var(--space-3xl);
 }
 
 .blockLede {
@@ -144,6 +194,7 @@
 	display: flex;
 	align-items: center;
 	justify-content: space-between;
+	min-height: 44px;
 	gap: var(--space-md);
 	padding: var(--space-sm) var(--space-md);
 	border: 1px solid var(--color-border);
@@ -256,6 +307,12 @@
 	font-size: var(--font-size-caption);
 	color: var(--color-text-secondary);
 	white-space: nowrap;
+}
+
+/* Quadratic-or-worse worst cases carry the warning tone — the cells worth a
+   second look the night before. */
+.cellCodeWarn {
+	color: var(--color-warning);
 }
 
 /* Yes/No flag: a glyph AND a word, so the answer is never carried by hue alone
@@ -631,7 +688,7 @@
 /* ---------- Footer ---------- */
 
 .foot {
-	max-width: 1100px;
+	max-width: var(--page-max);
 	margin: 0 auto;
 	padding: var(--space-lg) clamp(var(--space-lg), 6vw, var(--space-4xl))
 		clamp(var(--space-3xl), 8vw, var(--space-4xl));

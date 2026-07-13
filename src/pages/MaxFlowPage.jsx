@@ -98,7 +98,7 @@ const CHEAT_SHEET = {
  * export; topicId "max-flow" so the orchestrator wires <Route path="/max-flow">.
  */
 const MaxFlowPage = () => {
-	const { markVisited, markCompleted } = useProgress();
+	const { markVisited } = useProgress();
 	const [checkStates, setCheckStates] = useState(initialCheckStates);
 
 	const topic = TOPIC_BY_ID[TOPIC_ID];
@@ -123,13 +123,9 @@ const MaxFlowPage = () => {
 		[]
 	);
 
-	const handlePlaygroundInteract = useCallback(() => {
-		markCompleted(TOPIC_ID);
-	}, [markCompleted]);
-
 	const renderPlayground = useCallback(
-		() => <MaxFlowPlayground onUserInteract={handlePlaygroundInteract} />,
-		[handlePlaygroundInteract]
+		() => <MaxFlowPlayground />,
+		[]
 	);
 
 	const handleVisit = useCallback(() => {

@@ -12,9 +12,9 @@
 
 .h {
 	margin: 0;
-	font-size: 11px;
-	font-weight: 700;
-	letter-spacing: 0.16em;
+	font-size: var(--font-size-caption);
+	font-weight: var(--font-weight-semibold);
+	letter-spacing: var(--tracking-caps);
 	text-transform: uppercase;
 	color: var(--color-text-muted);
 }
@@ -61,15 +61,15 @@
 }
 
 .cLabel {
-	font-size: 9px;
-	letter-spacing: 0.18em;
+	font-size: var(--font-size-caption);
+	letter-spacing: var(--tracking-caps);
 	color: var(--color-text-muted);
-	font-weight: 700;
+	font-weight: var(--font-weight-semibold);
 }
 
 .cVal {
 	font-family: var(--font-family-mono);
 	font-size: 14px;
 	color: var(--color-text-primary);
-	letter-spacing: 0.02em;
+	letter-spacing: var(--tracking-wide);
 }

@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 30 30" fill="none">
+	<!-- Compact, self-contained version of the product BrandMark: four data
+	     shapes connected by one traversal path. -->
+	<style>
+		.trace { stroke: hsl(30 8% 30%); }
+		.sorting { fill: hsl(210 62% 38%); }
+		.graphs { fill: hsl(162 62% 34%); }
+		.hashing { fill: hsl(28 70% 42%); }
+		.trees { fill: hsl(286 55% 43%); }
+		.cutout { fill: hsl(40 30% 96%); }
+		@media (prefers-color-scheme: dark) {
+			.trace { stroke: hsl(35 10% 66%); }
+			.sorting { fill: hsl(210 72% 66%); }
+			.graphs { fill: hsl(162 62% 58%); }
+			.hashing { fill: hsl(28 78% 64%); }
+			.trees { fill: hsl(286 64% 68%); }
+			.cutout { fill: hsl(36 12% 9%); }
+		}
+	</style>
+	<path d="M4.5 22.5 9 7.5l6.5 12L25 6" class="trace" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" opacity=".6" />
+	<circle cx="4.5" cy="22.5" r="3.2" class="sorting" />
+	<rect x="5.8" y="4.3" width="6.4" height="6.4" rx="1.1" class="graphs" />
+	<path d="m15.5 15.6 3.8 6.6h-7.6l3.8-6.6Z" class="hashing" />
+	<circle cx="25" cy="6" r="3.2" class="trees" />
+	<circle cx="15.5" cy="19.5" r="1.15" class="cutout" />
+</svg>

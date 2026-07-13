@@ -6,8 +6,6 @@ import {
 	ChevronDown,
 	ChevronRight,
 	Clock,
-	LayoutGrid,
-	Link2,
 	RotateCcw,
 	Target,
 } from 'lucide-react';
@@ -44,6 +42,11 @@ import styles from './ExamPage.module.css';
  * bank cards and a boolean correct/incorrect), this is a thin focused runner that
  * threads each problem's partial-credit `score` through to the by-topic summary.
  */
+
+// Lowercase a topic name for mid-sentence use ("Study sorting"), but leave
+// acronym-led names (NP-completeness) untouched. Mirrors ReviewPage's helper.
+const lowerName = name =>
+	/^[A-Z][a-z]/.test(name) ? name[0].toLowerCase() + name.slice(1) : name;
 
 // Resolve a topic's display metadata (name, number, route, accent). Falls back to
 // the set's own topicName when a topic id is not in the curriculum model.
@@ -332,11 +335,11 @@ const ExamSummary = ({
 												strokeWidth={2.2}
 												aria-hidden="true"
 											/>
-											Retake {t.name}
+											Retake {lowerName(t.name)}
 										</button>
 										{/* Re-read: open the lesson for this topic. */}
 										<Link to={t.to} className={styles.studyLink}>
-											Study {t.name}
+											Study {lowerName(t.name)}
 											<ArrowRight
 												size={12}
 												strokeWidth={2.2}
@@ -370,6 +373,9 @@ const ExamSummary = ({
 				</ul>
 			</div>
 
+			{/* Primary row: the study/retake moves. Navigation and utilities live in
+			    the quiet meta row of middot-separated text links beneath. */}
+			<footer className={styles.summaryFoot}>
 			<div className={styles.summaryActions}>
 				{weakest ? (
 					<button
@@ -378,7 +384,7 @@ const ExamSummary = ({
 						onClick={() => onStudyTopic(weakest.topicId)}
 					>
 						<ArrowRight size={15} strokeWidth={2.2} aria-hidden="true" />
-						<span>Study {weakest.name}</span>
+						<span>Study {lowerName(weakest.name)}</span>
 					</button>
 				) : (
 					<button
@@ -410,33 +416,37 @@ const ExamSummary = ({
 						<span>Retry the {missed.length} you missed</span>
 					</button>
 				)}
+			</div>
+			<p className={styles.summaryMetaRow}>
 				<button
 					type="button"
-					className={styles.ghostBtn}
+					className={styles.metaLink}
 					onClick={onBackToSets}
 				>
-					<LayoutGrid size={13} strokeWidth={2} aria-hidden="true" />
-					<span>Back to exam sets</span>
+					Back to exam sets
 				</button>
-				{/* Copy link to this paper — the sitting seed already lives in the URL, so
-				    this just surfaces it. Reproducible / shareable; calm confirmation. */}
+				<span className={styles.metaDot} aria-hidden="true">
+					·
+				</span>
+				{/* Copy link to this paper — the sitting seed already lives in the URL,
+				    so this just surfaces it. Reproducible / shareable; calm
+				    confirmation. */}
 				<button
 					type="button"
-					className={styles.ghostBtn}
+					className={styles.metaLink}
 					onClick={copyLink}
 					aria-live="polite"
 				>
-					{copied ? (
-						<Check size={13} strokeWidth={2.4} aria-hidden="true" />
-					) : (
-						<Link2 size={13} strokeWidth={2} aria-hidden="true" />
-					)}
-					<span>{copied ? 'Copied' : 'Copy link to this paper'}</span>
+					{copied ? 'Copied' : 'Copy link to this paper'}
 				</button>
-				<Link to="/review" className={styles.ghostLink}>
+				<span className={styles.metaDot} aria-hidden="true">
+					·
+				</span>
+				<Link to="/review" className={styles.metaLink}>
 					Switch to spaced review
 				</Link>
-			</div>
+			</p>
+			</footer>
 		</section>
 	);
 };
@@ -506,28 +516,54 @@ const ExamSession = ({
 		requestAnimationFrame(() => headingRef.current?.focus());
 	}, [index, total]);
 
-	// Guarded exit. Ending mid-run silently destroys a near-complete attempt, so
-	// require a confirm once at least one problem is answered (matches the guarded
-	// reset on /progress). A finished run exits freely. Answered problems keep
-	// their score; the rest count as zero, which the summary states.
+	// Guarded exit, as a two-step button (no window.confirm). Ending mid-run
+	// silently destroys a near-complete attempt, so once at least one problem is
+	// answered the first click only ARMS the button — its label flips to the
+	// consequence in the error tone — and a second click within ~4s executes
+	// (matches the guarded reset on /progress). A finished or untouched run exits
+	// freely. Answered problems keep their score; the rest count as zero, which
+	// the summary states.
+	const [exitArmed, setExitArmed] = useState(false);
+	const exitTimerRef = useRef(null);
+	useEffect(() => () => clearTimeout(exitTimerRef.current), []);
+
 	const requestExit = useCallback(() => {
 		const answeredCount = Object.values(states).filter(
 			s => s?.status != null
 		).length;
-		if (
-			!finished &&
-			answeredCount > 0 &&
-			!window.confirm(
-				'End this exam now? Answered problems keep their score, the rest count as zero.'
-			)
-		) {
+		if (!finished && answeredCount > 0 && !exitArmed) {
+			setExitArmed(true);
+			clearTimeout(exitTimerRef.current);
+			exitTimerRef.current = setTimeout(() => setExitArmed(false), 4000);
 			return;
 		}
+		clearTimeout(exitTimerRef.current);
+		setExitArmed(false);
 		// Only flag "ended early" when problems genuinely remain unanswered, so the
 		// summary note is honest if the run was effectively complete.
 		if (answeredCount < total) setEndedEarly(true);
 		setFinished(true);
-	}, [states, finished, total]);
+	}, [states, finished, total, exitArmed]);
+
+	// Keyboard advance: once the current problem is answered, Enter or ArrowRight
+	// moves to the next one — no mouse trip per problem. Never fires while the
+	// learner is typing an answer: if focus is in a text/number input, a textarea,
+	// or a select, we bail so Enter still submits via the form. Mirrors
+	// ReviewSession's effect exactly.
+	useEffect(() => {
+		if (!isAnswered) return undefined;
+		const onKeyDown = e => {
+			if (e.key !== 'Enter' && e.key !== 'ArrowRight') return;
+			if (e.metaKey || e.ctrlKey || e.altKey) return;
+			const el = document.activeElement;
+			const tag = el?.tagName;
+			if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
+			e.preventDefault();
+			goNext();
+		};
+		window.addEventListener('keydown', onKeyDown);
+		return () => window.removeEventListener('keydown', onKeyDown);
+	}, [isAnswered, goNext]);
 
 	// Timed mode: a single interval that ticks the clock down once per second.
 	// It runs only while a timed run is in progress; reaching zero auto-ends the
@@ -650,8 +686,14 @@ const ExamSession = ({
 						</span>
 					)}
 				</div>
-				<button type="button" className={styles.exitLink} onClick={requestExit}>
-					End exam
+				<button
+					type="button"
+					className={`${styles.exitLink}${
+						exitArmed ? ` ${styles.exitLinkArmed}` : ''
+					}`}
+					onClick={requestExit}
+				>
+					{exitArmed ? 'Click again to end — unanswered score zero' : 'End exam'}
 				</button>
 			</div>
 
@@ -684,10 +726,18 @@ const ExamSession = ({
 
 				<div className={styles.actions}>
 					{isAnswered && (
-						<button type="button" className={styles.nextBtn} onClick={goNext}>
-							<span>{index + 1 >= total ? 'See results' : 'Next problem'}</span>
-							<ArrowRight size={15} strokeWidth={2.2} aria-hidden="true" />
-						</button>
+						<>
+							<span aria-hidden="true" className={styles.kbdHint}>
+								<kbd className={styles.kbd}>Enter</kbd>
+								<span>to continue</span>
+							</span>
+							<button type="button" className={styles.nextBtn} onClick={goNext}>
+								<span>
+									{index + 1 >= total ? 'See results' : 'Next problem'}
+								</span>
+								<ArrowRight size={15} strokeWidth={2.2} aria-hidden="true" />
+							</button>
+						</>
 					)}
 				</div>
 			</div>
@@ -905,6 +955,7 @@ const ExamPage = () => {
 				</nav>
 			</header>
 
+			{!started && (
 			<section className={styles.hero} aria-labelledby="exam-title">
 				<p className={styles.eyebrow}>Practice exam · Worked problems</p>
 				<h1 id="exam-title" className={styles.title}>
@@ -1013,6 +1064,7 @@ const ExamPage = () => {
 					</div>
 				)}
 			</section>
+			)}
 
 			{!started && (
 				<section className={styles.picker} aria-label="Exam sets by topic">
@@ -1092,18 +1144,25 @@ const ExamPage = () => {
 			)}
 
 			{started && (
-				<section className={styles.sessionWrap} aria-label="Exam session">
-					<ExamSession
-						key={runId}
-						runSets={runSets}
-						onRetake={retake}
-						onRetryMissed={retryMissed}
-						onBackToSets={exit}
-						onStudyTopic={studyTopic}
-						onRetakeTopic={startTopic}
-						timed={timed}
-					/>
-				</section>
+				<>
+					<header className={styles.sessionHead}>
+						<p className={styles.eyebrow}>Practice exam</p>
+					</header>
+					<section className={styles.sessionWrap} aria-label="Exam session">
+						<div className={styles.sessionCard}>
+							<ExamSession
+								key={runId}
+								runSets={runSets}
+								onRetake={retake}
+								onRetryMissed={retryMissed}
+								onBackToSets={exit}
+								onStudyTopic={studyTopic}
+								onRetakeTopic={startTopic}
+								timed={timed}
+							/>
+						</div>
+					</section>
+				</>
 			)}
 		</div>
 	);

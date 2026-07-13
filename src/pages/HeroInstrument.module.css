@@ -182,6 +182,7 @@
 .stopDot {
 	position: absolute;
 	top: 50%;
+	display: block;
 	width: 9px;
 	height: 9px;
 	padding: 0;
@@ -189,7 +190,7 @@
 	background: var(--color-bg-app);
 	border-radius: 50%;
 	transform: translate(-50%, -50%);
-	cursor: pointer;
+	pointer-events: none;
 }
 .stopDot[data-active='true'] {
 	border-color: var(--brand);
@@ -230,6 +231,24 @@
 .stopLabel[data-active='true'] {
 	color: var(--color-text-primary);
 	font-weight: 600;
+}
+
+/* Keep the desktop composition unchanged, while giving compact and touch-first
+   layouts full-size hit areas around the visually quiet track and labels. */
+@media (max-width: 959px), (any-pointer: coarse) {
+	.track {
+		height: 44px;
+	}
+	.stopLabels {
+		margin-top: 0;
+	}
+	.stopLabel {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		min-width: 44px;
+		min-height: 44px;
+	}
 }
 
 /* ---- caption (the live teaching readout) ---- */

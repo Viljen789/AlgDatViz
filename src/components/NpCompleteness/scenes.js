@@ -24,41 +24,47 @@ export const SCENES = [
 		id: 'the-line',
 		eyebrow: 'The big picture',
 		title: 'Two kinds of hard: hard to solve, easy to check.',
-		body: 'Some problems we can solve quickly — sort a list, find a shortest path — these live in P, solvable in time polynomial in the input. Others we only know how to solve by searching an exponential space, yet if someone hands us a candidate answer we can check it fast. That gap between solving and checking is the whole story of this topic.',
+		body: 'Some problems we can solve quickly — sort a list, find a shortest path — these live in P, solvable in time polynomial in the input. Others we only know how to solve by searching an exponential space, yet if someone hands us a candidate answer we can check it fast. That gap between solving and checking is the whole story of this topic. Two cautions about the line itself. Polynomial means polynomial in the input SIZE, in bits — so subset-sum’s O(nW) dynamic program does not qualify: the number W occupies only log W bits of input, which makes O(nW) pseudopolynomial, exponential in W’s bit-length. And the line is razor thin: shortest path is in P, but LONGEST simple path is NP-hard.',
 		check: {
 			kind: 'choice',
 			prompt: 'A problem is in P when…',
 			options: [
 				'a proposed answer can be checked in polynomial time',
 				'it can be solved in polynomial time',
+				'it can be solved in O(nW) time, like subset-sum’s dynamic program',
 				'it has no known polynomial algorithm',
 			],
 			answer: 'it can be solved in polynomial time',
 			misconceptions: {
 				'a proposed answer can be checked in polynomial time':
 					'That is the definition of NP, not P. P demands you can FIND the answer fast; checking a handed-to-you answer fast is the weaker NP promise. Conflating verifying with solving is the exact slip this topic exists to fix.',
+				'it can be solved in O(nW) time, like subset-sum’s dynamic program':
+					'O(nW) is pseudopolynomial, not polynomial: the input encodes W in only log W bits, so nW grows exponentially in the input SIZE. That is exactly why subset-sum stays NP-complete despite having this dynamic program.',
 				'it has no known polynomial algorithm':
 					'That describes a problem we suspect is NOT in P, the opposite of the definition. P is membership by a positive guarantee (a poly-time algorithm exists), not by the absence of one.',
 			},
 			explanation:
-				'P is the class of problems SOLVABLE in polynomial time. "Checkable in polynomial time" is the definition of NP — a related but weaker promise, which is exactly the distinction the next scene makes.',
+				'P is the class of problems SOLVABLE in polynomial time. "Checkable in polynomial time" is the definition of NP — a related but weaker promise, which is exactly the distinction the next scene makes. And polynomial is measured against the input size in BITS, which is why subset-sum’s O(nW) table — pseudopolynomial, since W takes log W bits to write — does not put it in P.',
 		},
 	},
 	{
 		id: 'np-is-verify',
 		eyebrow: 'NP = a checkable certificate',
 		title: 'NP: a yes-answer comes with a certificate you can verify fast.',
-		body: 'A problem is in NP if every YES-instance has a certificate — a short proposed solution — that a verifier can check in polynomial time. Is this Boolean formula satisfiable? Hand me a truth assignment and I confirm it in one pass. Finding the assignment may need exponential search; checking one is cheap. NP is the class where checking is easy even when finding is (apparently) hard.',
+		body: 'A problem is in NP if every YES-instance has a certificate — a short proposed solution — that a verifier can check in polynomial time. Is this Boolean formula satisfiable? Hand me a truth assignment and I confirm it in one pass. Finding the assignment may need exponential search; checking one is cheap. NP is the class where checking is easy even when finding is (apparently) hard. Note the polarity: NP certifies YES-answers only. The mirror class co-NP makes the same promise for NO-answers — every no-instance has a fast-checkable certificate. A satisfying assignment proves a formula satisfiable, but nobody knows a comparably short proof that one is NOT; whether NP = co-NP is open, just like P vs NP.',
 		check: {
 			kind: 'choice',
 			prompt: 'Which property puts a decision problem in NP?',
 			options: [
 				'Every yes-instance has a polynomial-time-verifiable certificate',
+				'Every no-instance has a polynomial-time-verifiable certificate',
 				'It can be solved by brute force',
 				'It is harder than every problem in P',
 			],
 			answer: 'Every yes-instance has a polynomial-time-verifiable certificate',
 			misconceptions: {
+				'Every no-instance has a polynomial-time-verifiable certificate':
+					'That is co-NP, NP’s mirror image — fast-checkable certificates for NO-answers instead of yes-answers. A satisfying assignment certifies that a formula IS satisfiable; no comparably short certificate of unsatisfiability is known, and whether NP = co-NP is open.',
 				'It can be solved by brute force':
 					'Nearly every problem yields to brute force given enough time, so that says nothing special. NP is about CHECKING a certificate in polynomial time, not about whether an exponential search eventually finds one.',
 				'It is harder than every problem in P':
@@ -85,6 +91,7 @@ export const SCENES = [
 		// the verifier REJECTS. lessonPredict.test.js re-derives answer from verify3SAT.
 		check: {
 			kind: 'predict',
+			reviewSafe: false,
 			revealGate: true,
 			prompt:
 				'Before the board scans it: does the verifier ACCEPT this certificate (φ is satisfied) or REJECT it?',
@@ -123,7 +130,7 @@ export const SCENES = [
 		id: 'the-roster',
 		eyebrow: 'The standard roster',
 		title: 'The famous NP-complete problems — and what is merely easy.',
-		body: 'SAT, 3-SAT, CLIQUE, VERTEX-COVER, INDEPENDENT-SET, HAMILTONIAN-CYCLE, TSP (decision), SUBSET-SUM — all NP-complete, all polynomially inter-reducible: a polynomial solver for any one would solve them all. Meanwhile shortest path, MST, and sorting sit comfortably in P. Telling the two groups apart is half the exam.',
+		body: 'Every NP-completeness proof needs a first domino, and it is CIRCUIT-SAT — is there an input that makes a Boolean circuit output true? The Cook–Levin theorem proves it NP-complete directly, with no earlier problem to lean on; SAT follows by reduction, and from there the chain fans out: 3-SAT, CLIQUE, VERTEX-COVER, INDEPENDENT-SET, HAMILTONIAN-CYCLE, TSP (decision), SUBSET-SUM — all NP-complete, all polynomially inter-reducible: a polynomial solver for any one would solve them all. Meanwhile shortest path, MST, and sorting sit comfortably in P. Telling the two groups apart is half the exam.',
 		// classify: sort each problem into P vs NP-complete. Grounded in the pensum.
 		check: {
 			kind: 'classify',
@@ -132,6 +139,7 @@ export const SCENES = [
 				{ id: 'sat', label: '3-SAT (satisfiability)' },
 				{ id: 'vc', label: 'Vertex cover' },
 				{ id: 'sp', label: 'Single-source shortest path' },
+				{ id: 'lsp', label: 'Longest simple path (decision)' },
 				{ id: 'mst', label: 'Minimum spanning tree' },
 			],
 			categories: [
@@ -142,17 +150,18 @@ export const SCENES = [
 				sat: 'npc',
 				vc: 'npc',
 				sp: 'p',
+				lsp: 'npc',
 				mst: 'p',
 			},
 			explanation:
-				'3-SAT and vertex cover are textbook NP-complete (and inter-reducible). Shortest path (Bellman-Ford / Dijkstra) and MST (Kruskal / Prim) have polynomial algorithms, so they are in P. Being able to place a problem on the right side of this line is the practical skill.',
+				'3-SAT and vertex cover are textbook NP-complete (and inter-reducible). Shortest path (Bellman-Ford / Dijkstra) and MST (Kruskal / Prim) have polynomial algorithms, so they are in P. Longest simple path is the trap: one word away from shortest path, yet NP-complete — a Hamiltonian path is hiding inside it. Being able to place a problem on the right side of this line is the practical skill.',
 		},
 	},
 	{
 		id: 'reduction-tool',
 		eyebrow: 'Reductions',
 		title: 'A ≤p B: turn instances of A into instances of B.',
-		body: 'A polynomial reduction A ≤p B is a poly-time map sending each instance of A to an instance of B with the same yes/no answer. It does two jobs depending on which way you point it. If you already have a fast solver for B, reducing A TO B gives you a fast solver for A — you use B. The direction is everything, and the next scene is where it usually goes wrong.',
+		body: 'A polynomial reduction A ≤p B is a poly-time map sending each instance of A to an instance of B with the same yes/no answer. This instance-to-instance form is a Karp (many-one) reduction — the kind this course uses throughout; the more general Cook (Turing) reduction may consult a solver for B many times as a subroutine. It does two jobs depending on which way you point it. If you already have a fast solver for B, reducing A TO B gives you a fast solver for A — you use B. The direction is everything, and the next scene is where it usually goes wrong.',
 		check: {
 			kind: 'choice',
 			prompt:

@@ -313,7 +313,7 @@
 		bottom: auto;
 		transform: none;
 		max-width: 100%;
-		font-size: 11px;
+		font-size: var(--font-size-caption);
 	}
 	/* Comfortable touch targets for the merge transport on small screens — at
 	   least 40x40px so a finger can step the frames reliably. */

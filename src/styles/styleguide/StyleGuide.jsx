@@ -11,20 +11,20 @@ import styles from './StyleGuide.module.css';
 
 const TOPICS = [
 	{ id: 'foundations', label: 'Foundations', token: '--topic-foundations' },
-	{ id: 'stacks-queues', label: 'Stacks & Queues', token: '--topic-stacks' },
-	{ id: 'master-theorem', label: 'Master Theorem', token: '--topic-master' },
+	{ id: 'stacks-queues', label: 'Stacks & queues', token: '--topic-stacks' },
+	{ id: 'master-theorem', label: 'Master theorem', token: '--topic-master' },
 	{ id: 'sorting', label: 'Sorting', token: '--topic-sorting' },
 	{ id: 'quicksort', label: 'Quicksort', token: '--topic-quicksort' },
-	{ id: 'linsort', label: 'Linear-time Sorting', token: '--topic-linsort' },
+	{ id: 'linsort', label: 'Linear-time sorting', token: '--topic-linsort' },
 	{ id: 'hashing', label: 'Hashing', token: '--topic-hashing' },
 	{ id: 'trees', label: 'Trees', token: '--topic-trees' },
 	{ id: 'heaps', label: 'Heaps & PQs', token: '--topic-heaps' },
 	{ id: 'graphs', label: 'Graphs', token: '--topic-graphs' },
 	{ id: 'strategies', label: 'Strategies', token: '--topic-strategies' },
-	{ id: 'mst', label: 'Minimum Spanning Trees', token: '--topic-mst' },
+	{ id: 'mst', label: 'Minimum spanning trees', token: '--topic-mst' },
 	{ id: 'sssp', label: 'Single-source SP', token: '--topic-sssp' },
 	{ id: 'apsp', label: 'All-pairs SP', token: '--topic-apsp' },
-	{ id: 'maxflow', label: 'Maximum Flow', token: '--topic-maxflow' },
+	{ id: 'maxflow', label: 'Maximum flow', token: '--topic-maxflow' },
 	{ id: 'npc', label: 'NP-completeness', token: '--topic-npc' },
 ];
 
@@ -119,8 +119,8 @@ const StyleGuide = () => {
 	return (
 		<div className={styles.page}>
 			<header className={styles.pageHead}>
-				<p className={styles.eyebrow}>AlgDatViz · Design System</p>
-				<h1 className={styles.pageTitle}>Style Reference</h1>
+				<p className={styles.eyebrow}>AlgDatViz · Design system</p>
+				<h1 className={styles.pageTitle}>Style reference</h1>
 				<p className={styles.pageLede}>
 					The living source of truth for type, color, surface, motion, and the
 					token-wired primitives. Everything here reads from{' '}
@@ -195,7 +195,7 @@ const StyleGuide = () => {
 
 			<Section
 				title="Type scale"
-				subtitle="Bricolage Grotesque (display) · Inter (body) · JetBrains Mono (code). Modular scale with matching line-height and tracking."
+				subtitle="Newsreader (display) · Inter (body) · JetBrains Mono (code). Modular scale with matching line-height and tracking."
 			>
 				<div className={styles.typeList}>
 					{TYPE_SCALE.map(t => (
@@ -211,7 +211,9 @@ const StyleGuide = () => {
 					))}
 				</div>
 				<div className={styles.fontFamilies}>
-					<p className={styles.famDisplay}>Bricolage Grotesque — Display</p>
+					<p className={styles.famDisplay}>
+						Newsreader — Display, with <em>true italics</em>
+					</p>
 					<p className={styles.famBody}>
 						Inter — Body copy for first-time students.
 					</p>

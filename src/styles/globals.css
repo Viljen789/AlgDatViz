@@ -11,6 +11,7 @@ body,
 	padding: 0;
 	width: 100%;
 	min-height: 100vh;
+	min-height: 100dvh;
 	background-color: var(--color-bg-app);
 	color: var(--color-text-primary);
 	font-family: var(--font-family-sans);
@@ -25,6 +26,11 @@ body,
 
 body {
 	overflow-x: hidden;
+}
+
+/* Text selection carries the brand wash — the token existed unused. */
+::selection {
+	background: var(--selection-color);
 }
 
 #root {
@@ -90,6 +96,15 @@ input[type='range']:focus-visible::-webkit-slider-thumb {
 }
 input[type='range']:focus-visible::-moz-range-thumb {
 	box-shadow: var(--shadow-focus);
+}
+/* Firefox parity: filled progress + the same hover growth as WebKit. */
+input[type='range']::-moz-range-progress {
+	height: 4px;
+	border-radius: var(--radius-pill);
+	background: var(--color-accent-blue);
+}
+input[type='range']:hover::-moz-range-thumb {
+	transform: scale(1.12);
 }
 
 /* Text inputs ------------------------------------------------------------ */
@@ -173,7 +188,7 @@ h4,
 h5,
 h6 {
 	margin-top: 0;
-	margin-bottom: var(--spacing-md);
+	margin-bottom: var(--space-md);
 	font-family: var(--font-family-display);
 	font-weight: var(--font-weight-bold);
 	color: var(--color-text-primary);
@@ -198,7 +213,7 @@ h4 {
 }
 
 p {
-	margin: 0 0 var(--spacing-md);
+	margin: 0 0 var(--space-md);
 	line-height: var(--line-height-body);
 	color: var(--color-text-secondary);
 }

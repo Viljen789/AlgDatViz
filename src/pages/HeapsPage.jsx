@@ -91,7 +91,7 @@ const CHEAT_SHEET = {
  * wires <Route path="/heaps">.
  */
 const HeapsPage = () => {
-	const { markVisited, markCompleted } = useProgress();
+	const { markVisited } = useProgress();
 	const [checkStates, setCheckStates] = useState(initialCheckStates);
 
 	const topic = TOPIC_BY_ID[TOPIC_ID];
@@ -110,6 +110,18 @@ const HeapsPage = () => {
 			[sceneId]: {
 				...result,
 				status: result.correct ? 'correct' : 'incorrect',
+			},
+		}));
+	}, []);
+
+	const handleRetry = useCallback(sceneId => {
+		const scene = SCENES.find(s => s.id === sceneId);
+		if (scene?.check?.kind !== 'pair') return;
+		setCheckStates(prev => ({
+			...prev,
+			[sceneId]: {
+				selected: [],
+				attempts: prev[sceneId]?.attempts || 1,
 			},
 		}));
 	}, []);
@@ -133,7 +145,10 @@ const HeapsPage = () => {
 				if (current.status) return prev; // already graded — locked.
 				const sel = current.selected || [];
 				if (sel.length === 0) {
-					return { ...prev, [pairScene.id]: { selected: [nodeIndex] } };
+					return {
+						...prev,
+						[pairScene.id]: { ...current, selected: [nodeIndex] },
+					};
 				}
 				if (sel.length === 1) {
 					if (sel[0] === nodeIndex) return prev; // same node — ignore.
@@ -143,6 +158,7 @@ const HeapsPage = () => {
 						...prev,
 						[pairScene.id]: {
 							selected: pair,
+							attempts: (current.attempts || 0) + 1,
 							status: isCorrect ? 'correct' : 'incorrect',
 						},
 					};
@@ -170,7 +186,9 @@ const HeapsPage = () => {
 				interactionMode: 'pair',
 				selectedNodes: cs.selected || [],
 				exampleNodes:
-					cs.status === 'incorrect' ? scene.check.exampleCorrectPair : [],
+					cs.status === 'incorrect' && cs.attempts >= 2
+						? scene.check.exampleCorrectPair
+						: [],
 				answerStatus: cs.status || null,
 			};
 		},
@@ -194,14 +212,7 @@ const HeapsPage = () => {
 		[stageInteractionFor, handleNodeClick]
 	);
 
-	const handlePlaygroundInteract = useCallback(() => {
-		markCompleted(TOPIC_ID);
-	}, [markCompleted]);
-
-	const renderPlayground = useCallback(
-		() => <HeapPlayground onUserInteract={handlePlaygroundInteract} />,
-		[handlePlaygroundInteract]
-	);
+	const renderPlayground = useCallback(() => <HeapPlayground />, []);
 
 	const handleVisit = useCallback(() => {
 		markVisited(TOPIC_ID);
@@ -223,6 +234,7 @@ const HeapsPage = () => {
 			renderStage={renderStage}
 			checkStates={checkStates}
 			onAnswer={handleAnswer}
+			onRetry={handleRetry}
 			cheatSheet={CHEAT_SHEET}
 			playgroundEyebrow="Sandbox"
 			playgroundTitle="Now your turn. Insert, extract, build."

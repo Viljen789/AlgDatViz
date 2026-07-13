@@ -3,8 +3,8 @@
 // The /exam page derives multi-part problems per topic and self-grades them into
 // a ratio in [0,1]. That outcome is a distinct, exam-shaped signal from the SRS
 // checks: it answers "could I do this *cold*, under exam conditions, today?" and
-// it's the only signal an exam-only topic (e.g. graphs, which has no review bank)
-// ever produces. This store keeps the latest + best ratio and an attempt count
+// it remains the only signal for any future exam-only topic with no review-bank
+// entry. This store keeps the latest + best ratio and an attempt count
 // per topic so the mastery dashboard can fold it in and show decay.
 //
 // Mirrors activityLog.js exactly: a versioned localStorage key, a safe/validating

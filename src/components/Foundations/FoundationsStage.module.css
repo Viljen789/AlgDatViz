@@ -210,16 +210,89 @@
 	fill: var(--color-text-secondary);
 }
 
-/* ---- 5 cases ---- */
+/* ---- 5 bisect ---- */
+/* Cells reuse .cell; the discarded half dims to border tones so the live
+   [lo, hi) window carries the accent. */
+.bisectDead {
+	fill: color-mix(in srgb, var(--color-border) 25%, transparent);
+	stroke: var(--color-border);
+}
+
+.bisectValue {
+	font-family: var(--font-family-mono);
+	font-size: 13px;
+	fill: var(--color-text-secondary);
+}
+
+.bisectValueDead {
+	fill: var(--color-text-dim);
+}
+
+.bisectIndex {
+	font-family: var(--font-family-mono);
+	font-size: 11px;
+	fill: var(--color-text-muted);
+}
+
+.probeLabel {
+	font-family: var(--font-family-mono);
+	font-size: 13px;
+	font-weight: var(--font-weight-bold);
+	fill: var(--topic-foundations-ink);
+}
+
+.probeTick {
+	stroke: var(--topic-foundations);
+	stroke-width: 1.5;
+	stroke-linecap: round;
+}
+
+.rangeLine {
+	fill: none;
+	stroke: var(--topic-foundations);
+	stroke-width: 2;
+	stroke-linecap: round;
+	stroke-linejoin: round;
+}
+
+.rangeLabel {
+	font-family: var(--font-family-mono);
+	font-size: 12px;
+	fill: var(--color-text-secondary);
+}
+
+/* ---- 6 invariant ---- */
+.invDead {
+	fill: color-mix(in srgb, var(--color-border-strong) 35%, transparent);
+}
+
+.invLive {
+	fill: var(--topic-foundations);
+}
+
+.invLabel {
+	font-family: var(--font-family-mono);
+	font-size: 13px;
+	font-weight: var(--font-weight-bold);
+	fill: var(--color-text-secondary);
+}
+
+.invNote {
+	font-family: var(--font-family-sans);
+	font-size: 12.5px;
+	fill: var(--color-text-muted);
+}
+
+/* ---- 7 cases ---- */
 .caseBest {
-	fill: color-mix(in srgb, var(--topic-graphs) 22%, transparent);
-	stroke: var(--topic-graphs);
+	fill: color-mix(in srgb, var(--color-success) 22%, transparent);
+	stroke: var(--color-success);
 	stroke-width: 1.5;
 }
 
 .caseWorst {
-	fill: color-mix(in srgb, var(--topic-hashing) 22%, transparent);
-	stroke: var(--topic-hashing);
+	fill: color-mix(in srgb, var(--color-error) 22%, transparent);
+	stroke: var(--color-error);
 	stroke-width: 1.5;
 }
 

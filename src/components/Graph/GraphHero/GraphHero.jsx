@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { ChevronDown, RotateCcw, Plus, Minus, Layers } from 'lucide-react';
 import styles from './GraphHero.module.css';
 import { GRAPH_ALGORITHMS } from '../../../utils/graphAlgorithms.js';
@@ -32,6 +32,18 @@ const GraphHero = ({
 	const [readMoreOpen, setReadMoreOpen] = useState(false);
 	const [presetOpen, setPresetOpen] = useState(false);
 	const [graphMenuOpen, setGraphMenuOpen] = useState(false);
+
+	useEffect(() => {
+		if (!presetOpen && !graphMenuOpen) return;
+		const onKey = e => {
+			if (e.key === 'Escape') {
+				setPresetOpen(false);
+				setGraphMenuOpen(false);
+			}
+		};
+		document.addEventListener('keydown', onKey);
+		return () => document.removeEventListener('keydown', onKey);
+	}, [graphMenuOpen, presetOpen]);
 
 	const info = GRAPH_ALGORITHMS[algorithmId];
 	const meta = GRAPH_ALGORITHM_META[algorithmId] || {};

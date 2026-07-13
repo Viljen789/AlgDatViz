@@ -267,13 +267,17 @@ const HeroInstrument = ({ className }) => {
 		settle();
 	};
 	const onKey = e => {
-		if (e.key === 'ArrowRight') {
-			e.preventDefault();
-			goTo(clamp(active + 1, 0, LAST));
-		} else if (e.key === 'ArrowLeft') {
-			e.preventDefault();
-			goTo(clamp(active - 1, 0, LAST));
-		}
+		let next;
+		if (e.key === 'ArrowRight' || e.key === 'ArrowUp')
+			next = clamp(active + 1, 0, LAST);
+		else if (e.key === 'ArrowLeft' || e.key === 'ArrowDown')
+			next = clamp(active - 1, 0, LAST);
+		else if (e.key === 'Home') next = 0;
+		else if (e.key === 'End') next = LAST;
+		else return;
+
+		e.preventDefault();
+		goTo(next);
 	};
 
 	const stop = STOPS[active];
@@ -375,15 +379,12 @@ const HeroInstrument = ({ className }) => {
 					<span className={styles.trackBase} />
 					<span className={styles.trackFill} ref={fillRef} />
 					{STOPS.map((s, i) => (
-						<button
+						<span
 							key={s.name}
-							type="button"
 							className={styles.stopDot}
 							style={{ left: `${(i / LAST) * 100}%` }}
 							data-active={i === active ? 'true' : undefined}
-							onClick={() => goTo(i)}
-							aria-label={s.name}
-							tabIndex={-1}
+							aria-hidden="true"
 						/>
 					))}
 					<span className={styles.thumb} ref={thumbRef} aria-hidden="true" />
@@ -395,6 +396,7 @@ const HeroInstrument = ({ className }) => {
 							type="button"
 							className={styles.stopLabel}
 							data-active={i === active ? 'true' : undefined}
+							aria-pressed={i === active}
 							onClick={() => goTo(i)}
 						>
 							{s.name}

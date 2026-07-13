@@ -124,7 +124,11 @@ const RadixSortView = ({
 	};
 
 	return (
-		<div className={styles.radixSortContainer}>
+		<div
+			className={styles.radixSortContainer}
+			role="region"
+			aria-label="Radix sort digit workspace"
+		>
 			<div className={styles.phaseIndicator}>
 				<span className={styles.phaseLabel}>{phaseLabel}</span>
 				<span className={styles.phaseNarration}>{narration}</span>
@@ -148,10 +152,21 @@ const RadixSortView = ({
 
 			<div className={styles.bucketsSection}>
 				<h3 className={styles.sectionTitle}>Digit buckets 0-9</h3>
-				<div className={styles.bucketsContainer}>
+				<div
+					className={styles.bucketsContainer}
+					role="list"
+					aria-label="Digit buckets"
+				>
 					{processedBuckets.map(({ index, elements }) => (
 						<div
 							key={index}
+							role="listitem"
+							aria-label={`Digit bucket ${index}`}
+							aria-current={
+								currentDigit === index && phase === 'distributing'
+									? 'true'
+									: undefined
+							}
 							className={`${styles.bucket} ${
 								currentDigit === index && phase === 'distributing'
 									? styles.activeBucket

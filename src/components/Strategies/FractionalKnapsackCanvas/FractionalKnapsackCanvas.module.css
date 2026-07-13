@@ -1,0 +1,261 @@
+.canvas {
+	display: flex;
+	flex-direction: column;
+	gap: var(--space-lg);
+	width: 100%;
+	max-width: 100%;
+	margin: 0 auto;
+	padding: var(--space-sm) var(--space-xs) 0;
+}
+
+/* ─── Ranked cards ───────────────────────────────────── */
+
+.rank {
+	display: flex;
+	flex-direction: column;
+	gap: var(--space-sm);
+}
+
+.rankTag,
+.bagTag {
+	font-family: var(--font-family-sans);
+	font-size: var(--font-size-caption);
+	font-weight: var(--font-weight-semibold);
+	letter-spacing: var(--tracking-caps);
+	text-transform: uppercase;
+	color: var(--color-text-muted);
+}
+
+.cards {
+	display: flex;
+	gap: var(--space-md);
+	flex-wrap: wrap;
+}
+
+.card {
+	position: relative;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: 6px;
+	width: 84px;
+	padding: var(--space-sm);
+	border-radius: var(--border-radius-md);
+	border: 1px solid var(--color-border);
+	background: var(--surface-0);
+	transition:
+		border-color var(--duration-step) var(--ease-step),
+		opacity var(--duration-step) var(--ease-step),
+		box-shadow var(--duration-step) var(--ease-step);
+}
+
+.cardActive {
+	box-shadow: 0 0 0 1px color-mix(in srgb, var(--state-active) 35%, transparent),
+		0 0 26px -6px color-mix(in srgb, var(--state-active) 45%, transparent);
+	border-color: var(--state-active);
+}
+
+.cardHead {
+	display: flex;
+	align-items: baseline;
+	justify-content: space-between;
+	width: 100%;
+}
+
+.cardName {
+	font-family: var(--font-family-mono);
+	font-size: 14px;
+	font-weight: 700;
+	color: var(--color-text-primary);
+}
+
+.cardRatio {
+	font-family: var(--font-family-mono);
+	font-size: var(--font-size-caption);
+	color: var(--topic-accent);
+	font-weight: 700;
+}
+
+.cardFillTrack {
+	position: relative;
+	width: 100%;
+	height: 56px;
+	border-radius: var(--border-radius-sm);
+	border: 1px solid var(--color-border);
+	background: var(--color-bg-input);
+	overflow: hidden;
+	display: flex;
+	align-items: flex-end;
+}
+
+.cardFill {
+	width: 100%;
+	background: color-mix(in srgb, var(--topic-accent) 30%, transparent);
+	border-top: 2px solid var(--topic-accent);
+	transition: height var(--duration-step) var(--ease-step);
+}
+
+.cardMeta {
+	font-family: var(--font-family-mono);
+	font-size: 10px;
+	color: var(--color-text-muted);
+}
+
+.cardFraction {
+	position: absolute;
+	top: 30px;
+	left: 50%;
+	transform: translate(-50%, -50%);
+	font-family: var(--font-family-mono);
+	font-size: 12px;
+	font-weight: 700;
+	color: var(--topic-accent);
+	background: color-mix(in srgb, var(--surface-0) 80%, transparent);
+	padding: 1px 5px;
+	border-radius: var(--border-radius-pill);
+}
+
+/* States */
+.card-taken {
+	border-color: color-mix(in srgb, var(--topic-accent) 45%, transparent);
+}
+
+.card-fraction {
+	border-color: var(--topic-accent);
+}
+
+.card-skipped {
+	opacity: 0.4;
+}
+
+.card-skipped .cardFillTrack {
+	border-style: dashed;
+}
+
+/* ─── Capacity bar ───────────────────────────────────── */
+
+.bagWrap {
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+}
+
+.bagHead {
+	display: flex;
+	align-items: baseline;
+	justify-content: space-between;
+}
+
+.bagMeta {
+	font-family: var(--font-family-mono);
+	font-size: 12px;
+	color: var(--color-text-secondary);
+}
+
+.bag {
+	display: flex;
+	width: 100%;
+	height: 52px;
+	border-radius: var(--border-radius-md);
+	border: 1px solid var(--color-border);
+	background: var(--color-bg-input);
+	overflow: hidden;
+}
+
+.seg {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	border-right: 1px solid color-mix(in srgb, var(--color-bg-base) 40%, transparent);
+	transition: width var(--duration-step) var(--ease-step);
+	min-width: 0;
+}
+
+.segWhole {
+	background: color-mix(in srgb, var(--topic-accent) 28%, transparent);
+}
+
+.segFraction {
+	background: repeating-linear-gradient(
+		45deg,
+		color-mix(in srgb, var(--topic-accent) 30%, transparent),
+		color-mix(in srgb, var(--topic-accent) 30%, transparent) 6px,
+		color-mix(in srgb, var(--topic-accent) 12%, transparent) 6px,
+		color-mix(in srgb, var(--topic-accent) 12%, transparent) 12px
+	);
+}
+
+.segLabel {
+	font-family: var(--font-family-mono);
+	font-size: 12px;
+	font-weight: 700;
+	color: var(--color-text-primary);
+}
+
+.segEmpty {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	transition: width var(--duration-step) var(--ease-step);
+}
+
+.segEmptyLabel {
+	font-family: var(--font-family-mono);
+	font-size: var(--font-size-caption);
+	color: var(--color-text-dim);
+}
+
+/* ─── Legend ─────────────────────────────────────────── */
+
+.legendRow {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 16px;
+	justify-content: center;
+}
+
+.legendItem {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	font-size: var(--font-size-caption);
+	color: var(--color-text-muted);
+	font-family: var(--font-family-mono);
+}
+
+.swatch {
+	width: 12px;
+	height: 12px;
+	border-radius: 3px;
+	border: 1px solid var(--color-border);
+}
+
+.swatchWhole {
+	background: color-mix(in srgb, var(--topic-accent) 40%, transparent);
+	border-color: var(--topic-accent);
+}
+
+.swatchFraction {
+	background: repeating-linear-gradient(
+		45deg,
+		color-mix(in srgb, var(--topic-accent) 45%, transparent),
+		color-mix(in srgb, var(--topic-accent) 45%, transparent) 3px,
+		transparent 3px,
+		transparent 6px
+	);
+	border-color: var(--topic-accent);
+}
+
+.swatchSkip {
+	background: var(--color-bg-input);
+	opacity: 0.6;
+}
+
+@media (max-width: 720px) {
+	.canvas {
+		gap: 16px;
+	}
+	.card {
+		width: 70px;
+	}
+}

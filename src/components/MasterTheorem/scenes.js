@@ -15,7 +15,10 @@
 // shrinks the size by a CONSTANT, not a factor, so the theorem is silent and the
 // stage swaps its branching tree for an unrolling step-trace. Its numeric key is
 // DERIVED from unrollRecurrence (see ITERATION_CHECK below) — never hand-typed —
-// so it can only ever be what iteration actually produces.
+// so it can only ever be what iteration actually produces. The same scene also
+// names the third pensum tool beside recursion trees and the theorem: the
+// substitution method (guess a bound, prove it by induction), demonstrated on
+// the very closed form the unrolling suggests.
 
 import { unrollRecurrence, gPow2 } from './iterativeRecurrence.js';
 import { analyseRecurrence } from './masterMath.js';
@@ -283,7 +286,7 @@ export const SCENES = [
 		id: 'iteration-method',
 		eyebrow: 'When the theorem does not apply',
 		title: 'When the size shrinks by one, not by half: unroll it.',
-		body: 'The Master Theorem needs T(n/b) — the size DIVIDED by a constant. A recurrence like T(n) = T(n-1) + g(n) SUBTRACTS a constant instead; that is the wrong shape (b would be 1, and log_b a is undefined), so the theorem stays silent. Solve it by ITERATION: expand T(n) = T(n-1) + g(n) = T(n-2) + g(n-1) + g(n) = … = T(1) + Σ_{k=2}^{n} g(k). For g(k) = 2^{k-1} with T(1) = 1 the sum is the geometric series 1 + 2 + 4 + … + 2^{n-1}, giving the closed form T(n) = 2ⁿ − 1 ∈ Θ(2ⁿ).',
+		body: 'The Master Theorem needs T(n/b) — the size DIVIDED by a constant. A recurrence like T(n) = T(n-1) + g(n) SUBTRACTS a constant instead; that is the wrong shape (b would be 1, and log_b a is undefined), so the theorem stays silent. Solve it by ITERATION: expand T(n) = T(n-1) + g(n) = T(n-2) + g(n-1) + g(n) = … = T(1) + Σ_{k=2}^{n} g(k). For g(k) = 2^{k-1} with T(1) = 1 the sum is the geometric series 1 + 2 + 4 + … + 2^{n-1}, giving the closed form T(n) = 2ⁿ − 1 ∈ Θ(2ⁿ). Expanding like this is one of three standard tools for recurrences: recursion trees draw the work level by level, the Master Theorem pattern-matches a·T(n/b) + f(n), and the SUBSTITUTION METHOD covers the rest — guess a bound, then prove it by induction. The guess T(n) ≤ 2ⁿ − 1 checks cleanly here: it holds at T(1) = 1, and if T(n−1) ≤ 2ⁿ⁻¹ − 1 then T(n) = T(n−1) + 2ⁿ⁻¹ ≤ 2·2ⁿ⁻¹ − 1 = 2ⁿ − 1. When a recurrence fits neither a tree nor the theorem’s shape, substitution is the tool that still works.',
 		check: {
 			kind: 'numeric',
 			// DERIVED key, not hand-typed: unrollRecurrence({baseN:1, baseVal:1,

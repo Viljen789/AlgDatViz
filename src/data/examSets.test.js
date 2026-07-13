@@ -53,6 +53,7 @@ import { SSSP_ALGO_ORDER } from '../components/ShortestPaths/ssspMeta.js';
 import {
 	buildMaxHeapTrace,
 	extractMaxTrace,
+	insertTrace,
 } from '../components/Heaps/heapTrace.js';
 import { analyseRecurrence } from '../components/MasterTheorem/masterMath.js';
 import {
@@ -84,6 +85,12 @@ import {
 	buildClimbingStairsFrames,
 } from '../components/Strategies/coinChangeFrames.js';
 import { activitySelect } from '../components/Strategies/activitySelect.js';
+import { buildHuffmanFrames } from '../components/Strategies/huffmanFrames.js';
+import { buildLcsFrames } from '../components/Strategies/lcsFrames.js';
+import { buildKnapsack01Frames } from '../components/Strategies/knapsack01Frames.js';
+import { buildRodCuttingFrames } from '../components/Strategies/rodCuttingFrames.js';
+import { buildFractionalKnapsackFrames } from '../components/Strategies/fractionalKnapsackFrames.js';
+import { createGraphAlgorithmSteps } from '../utils/graphAlgorithms.js';
 import { tableDoubling } from '../components/Foundations/tableDoubling.js';
 import { galeShapley, blockingPairs, isStable } from '../lib/galeShapley.js';
 
@@ -398,6 +405,66 @@ const MS2_RIGHT = [2, 3, 5, 7];
 const P1_COINS = [1, 3, 4];
 const P1_TARGET = 6;
 const P2_N = 6;
+
+const P5_SYMBOLS = [
+	{ char: 'a', freq: 45 },
+	{ char: 'b', freq: 13 },
+	{ char: 'c', freq: 12 },
+	{ char: 'd', freq: 16 },
+	{ char: 'e', freq: 9 },
+	{ char: 'f', freq: 5 },
+];
+
+const P6_X = 'ABCBDAB';
+const P6_Y = 'BDCAB';
+
+const P7_ITEMS = [
+	{ name: 'A', weight: 6, value: 30 },
+	{ name: 'B', weight: 5, value: 20 },
+	{ name: 'C', weight: 5, value: 20 },
+];
+const P7_W = 10;
+
+const P8_PRICES = [1, 5, 8, 9, 10, 17, 17, 20];
+const P8_N = 8;
+
+const P9_ITEMS = [
+	{ name: 'A', weight: 5, value: 10 },
+	{ name: 'B', weight: 4, value: 40 },
+	{ name: 'C', weight: 6, value: 30 },
+	{ name: 'D', weight: 3, value: 50 },
+];
+const P9_W = 10;
+
+const G3_GRAPH = {
+	nodes: ['A', 'B', 'C', 'D', 'E', 'F', 'G'].map(id => ({ id, label: id })),
+	edges: [
+		{ from: 'A', to: 'B' },
+		{ from: 'B', to: 'C' },
+		{ from: 'C', to: 'A' },
+		{ from: 'C', to: 'D' },
+		{ from: 'D', to: 'E' },
+		{ from: 'E', to: 'D' },
+		{ from: 'E', to: 'F' },
+		{ from: 'F', to: 'G' },
+		{ from: 'G', to: 'F' },
+	],
+};
+
+// The final component assignment of a Kosaraju run: the last step carrying a
+// non-empty componentMap. Mirrors the bank's read-off (the whole point is to
+// re-derive it independently and let any disagreement surface).
+const sccComponentMap = graph => {
+	const steps = createGraphAlgorithmSteps(graph, 'scc', {
+		startNodeId: 'A',
+		isDirected: true,
+	});
+	for (let i = steps.length - 1; i >= 0; i--) {
+		const m = steps[i].componentMap;
+		if (m && Object.keys(m).length) return m;
+	}
+	return {};
+};
 
 // ── per-problem re-derivations ──────────────────────────────────────────────
 // Each recipe returns a map { partIndex → re-derived expected answer }. Only the
@@ -727,6 +794,22 @@ const RECIPES = {
 			// part 4 (cycle ⇒ no order) is conceptual → STATIC
 		};
 	},
+	'graphs-3': () => {
+		const map = sccComponentMap(G3_GRAPH);
+		const dGroup = Object.keys(map)
+			.filter(v => map[v] === map.D)
+			.sort();
+		const cycledMap = sccComponentMap({
+			nodes: G3_GRAPH.nodes,
+			edges: [...G3_GRAPH.edges, { from: 'G', to: 'A' }],
+		});
+		return {
+			0: new Set(Object.values(map)).size, // numeric: number of SCCs
+			1: `{${dGroup.join(', ')}}`, // choice: D's component
+			2: new Set(Object.values(cycledMap)).size, // numeric: SCCs after adding G→A
+			// part 3 (why pass 2 runs on the transpose) is conceptual → STATIC
+		};
+	},
 	// Trace-step probes: the answer is the NEXT decision, re-derived from the frame
 	// stream of the same generator on the same fixed input (S1_GRAPH / G1_GRAPH).
 	'sssp-probe-1': () => {
@@ -991,6 +1074,55 @@ const RECIPES = {
 			// part 3 (termination + man-optimality) is conceptual → STATIC below.
 		};
 	},
+	'strategies-5': () => {
+		const run = buildHuffmanFrames(P5_SYMBOLS);
+		return {
+			0: run.summary.codes.a.length, // numeric: bits for the most frequent symbol
+			1: run.summary.codes.f.length, // numeric: bits for the least frequent symbol
+			2: run.summary.huffmanBits, // numeric: total encoded bits
+			// part 3 (why merging the two rarest is safe) is conceptual → STATIC below.
+		};
+	},
+	'strategies-6': () => {
+		const run = buildLcsFrames({ x: P6_X, y: P6_Y });
+		return {
+			0: run.summary.dp[4][5], // numeric: the match cell (diagonal + 1)
+			1: run.summary.dp[7][3], // numeric: the mismatch cell (max of up/left)
+			2: run.summary.length, // numeric: LCS length dp[m][n]
+			// part 3 (match vs max recurrence case) is conceptual → STATIC below.
+		};
+	},
+	'strategies-7': () => {
+		const run = buildKnapsack01Frames({ items: P7_ITEMS, capacity: P7_W });
+		return {
+			0: run.summary.dp[2][P7_W], // numeric: dp[2][10], first two items only
+			1: run.summary.best, // numeric: the 0/1 optimum
+			2: run.summary.chosenNames.join(' + '), // choice: the packed items
+			// part 3 (why greedy-by-ratio fails 0/1) is conceptual → STATIC below.
+		};
+	},
+	'strategies-8': () => {
+		const run = buildRodCuttingFrames({ prices: P8_PRICES, n: P8_N });
+		return {
+			0: run.summary.dp[4], // numeric: dp[4]
+			1: run.summary.revenue, // numeric: dp[8], the optimal revenue
+			2: run.summary.pieces.join(' + '), // choice: the recovered decomposition
+			// part 3 (optimal substructure) is conceptual → STATIC below.
+		};
+	},
+	'strategies-9': () => {
+		const run = buildFractionalKnapsackFrames({
+			items: P9_ITEMS,
+			capacity: P9_W,
+		});
+		const split = run.summary.states.find(s => s.status === 'fraction');
+		return {
+			0: run.summary.sorted.map(it => it.name).join(' ≥ '), // choice: ratio order
+			1: split.fraction, // numeric: fraction of the split item
+			2: run.summary.total, // numeric: the packed total
+			// part 3 (the exchange argument) is conceptual → STATIC below.
+		};
+	},
 	// Purely conceptual sets: no generator produces these. Every part is static.
 	'stacks-queues-2': () => ({}),
 	'np-1': () => ({}),
@@ -1134,6 +1266,146 @@ RECIPES['sorting-3'] = () => {
 	};
 };
 
+// Binary search: re-implement Bisect locally (closed [lo, hi], mid =
+// ⌊(lo+hi)/2⌋, one three-way comparison per probed element) so the
+// re-derivation does not trust the bank's inline runner. The worst-case bound
+// for n = 14 is the same explicit ⌈log₂(n+1)⌉ expression, recomputed fresh.
+RECIPES['foundations-5'] = () => {
+	const arr = [2, 5, 8, 12, 16, 23, 38, 56, 72, 91];
+	const target = 23;
+	let lo = 0;
+	let hi = arr.length - 1;
+	const probes = [];
+	while (lo <= hi) {
+		const mid = Math.floor((lo + hi) / 2);
+		probes.push(mid);
+		if (arr[mid] === target) break;
+		if (target < arr[mid]) hi = mid - 1;
+		else lo = mid + 1;
+	}
+	return {
+		0: probes[0], // numeric: first probed index
+		1: probes.map(i => `index ${i} (value ${arr[i]})`), // order: probe sequence
+		2: probes.length, // numeric: comparisons (one three-way per probe)
+		3: Math.ceil(Math.log2(14 + 1)), // numeric: worst case for n = 14
+	};
+};
+
+// DFS edge classification: re-implement the timestamped DFS and the standard
+// coloring rules locally (undiscovered → tree; open → back; finished and
+// discovered later → forward; finished and discovered earlier → cross) so the
+// re-derivation does not trust the bank's inline DFS. The back-edge ⇔ cycle
+// part is conceptual (STATIC).
+RECIPES['graphs-4'] = () => {
+	const adj = { A: ['B', 'D'], B: ['C', 'D'], C: ['A'], D: ['C', 'E'], E: [] };
+	const disc = {};
+	const fin = {};
+	const kind = {};
+	let time = 0;
+	const visit = u => {
+		disc[u] = ++time;
+		for (const v of adj[u]) {
+			if (disc[v] === undefined) {
+				kind[`${u}→${v}`] = 'tree';
+				visit(v);
+			} else if (fin[v] === undefined) kind[`${u}→${v}`] = 'back';
+			else if (disc[v] > disc[u]) kind[`${u}→${v}`] = 'forward';
+			else kind[`${u}→${v}`] = 'cross';
+		}
+		fin[u] = ++time;
+	};
+	visit('A');
+	const lastFinisher = Object.keys(fin).reduce((best, v) =>
+		fin[v] > fin[best] ? v : best
+	);
+	return {
+		0: {
+			bd: kind['B→D'],
+			ca: kind['C→A'],
+			ad: kind['A→D'],
+			dc: kind['D→C'],
+		}, // classify: one edge of each kind
+		1: fin.C, // numeric: C's finish time
+		2: lastFinisher, // choice: the root finishes last
+		// part 3 (back edge ⇔ cycle) is conceptual → STATIC
+	};
+};
+
+// Increase-key: at the LAST index the operation (set A[i] ← k, bubble up) is
+// exactly insertTrace on the heap minus that leaf, so the array and swap count
+// re-derive from the generator; the parent index is the local ⌊(i−1)/2⌋
+// formula. The "why bubble UP" part is conceptual (STATIC).
+RECIPES['heaps-4'] = () => {
+	const heap = [13, 12, 9, 7, 8, 3, 1];
+	const run = insertTrace({ heap: heap.slice(0, -1), key: 14 });
+	return {
+		0: Math.floor((6 - 1) / 2), // numeric: parent index of index 6
+		1: `[${run.finalHeap.join(', ')}]`, // choice: array after the bubble-up
+		2: run.swaps, // numeric: swap count
+		// part 3 (why increase-key bubbles UP) is conceptual → STATIC
+	};
+};
+
+// Subset-sum: re-derive the certificate by local brute force over all 2^6
+// subsets — asserting it is UNIQUE, so the choice part has exactly one correct
+// option — and the decoy's sum with fresh arithmetic. The pseudopolynomial
+// part is conceptual (STATIC).
+RECIPES['np-4'] = () => {
+	const set = [2, 5, 9, 14, 21, 30];
+	const target = 40;
+	const certs = [];
+	for (let mask = 1; mask < 1 << set.length; mask++) {
+		const subset = set.filter((_, i) => mask & (1 << i));
+		if (subset.reduce((a, b) => a + b, 0) === target) certs.push(subset);
+	}
+	assert.equal(
+		certs.length,
+		1,
+		'np-4 expects a UNIQUE subset-sum certificate (the choice part depends on it)'
+	);
+	return {
+		0: `{${certs[0].join(', ')}}`, // choice: the certificate subset
+		1: 2 + 9 + 30, // numeric: the decoy's sum
+		// part 2 (pseudopolynomial vs polynomial) is conceptual → STATIC
+	};
+};
+
+// Clique ↔ vertex cover: re-derive the complement edge set, the clique pair
+// count, and the cover size from first principles on the replicated 5-vertex
+// graph — asserting V \ S really covers every complement edge. The reduction
+// direction is conceptual (STATIC).
+RECIPES['np-5'] = () => {
+	const vertices = [1, 2, 3, 4, 5];
+	const gEdges = [
+		[1, 2],
+		[1, 3],
+		[2, 3],
+		[3, 4],
+		[4, 5],
+	];
+	const clique = [1, 2, 3];
+	const has = (a, b) =>
+		gEdges.some(([u, v]) => (u === a && v === b) || (u === b && v === a));
+	const comp = [];
+	for (let i = 0; i < vertices.length; i++) {
+		for (let j = i + 1; j < vertices.length; j++) {
+			if (!has(vertices[i], vertices[j]))
+				comp.push([vertices[i], vertices[j]]);
+		}
+	}
+	const cover = vertices.filter(v => !clique.includes(v));
+	assert.ok(
+		comp.every(([u, v]) => cover.includes(u) || cover.includes(v)),
+		'np-5 expects V \\ S to cover every complement edge'
+	);
+	return {
+		0: (clique.length * (clique.length - 1)) / 2, // numeric: clique pair count
+		1: comp.map(([u, v]) => `${u}–${v}`).join(', '), // choice: Ḡ's edge set
+		2: cover.length, // numeric: cover size n − k
+		// part 3 (reduction direction) is conceptual → STATIC
+	};
+};
+
 // ── STATIC allowlist: parts whose answer is genuinely conceptual prose ───────
 // A generator cannot produce these (they are definitions / which-algorithm /
 // why-this-is-true choices). Keyed by `${setId}#${partIndex}`, each with a short
@@ -1162,6 +1434,8 @@ const STATIC = {
 	'linsort-3#4': 'concept: one-bucket skew degrades bucket sort to Theta(n^2)',
 	'graphs-1#3': 'concept: BFS-vs-DFS frontier discipline',
 	'graphs-2#4': 'concept: a graph with a cycle has no topological order',
+	'graphs-3#3':
+		'concept: why pass 2 runs on the transpose in reverse finish order',
 	'trees-2#1':
 		'concept: successor fits between left subtree and rest of right subtree',
 	'hashing-1#3': 'concept: why resize rehashes every key',
@@ -1202,6 +1476,16 @@ const STATIC = {
 	'strategies-3#3': 'concept: exchange argument; why greedy is optimal here',
 	'strategies-4#3':
 		'concept: Gale-Shapley always terminates with a stable matching and is man-optimal (each man gets his best partner in any stable matching)',
+	'strategies-5#3':
+		'concept: exchange argument; merging the two rarest symbols first is safe',
+	'strategies-6#3':
+		'concept: match → diagonal + 1, mismatch → max of up/left',
+	'strategies-7#3':
+		'concept: why greedy-by-ratio fails when items are indivisible',
+	'strategies-8#3':
+		'concept: optimal substructure justifies the rod-cutting recurrence',
+	'strategies-9#3':
+		'concept: the unit-swap exchange argument needs divisible items',
 	// (stacks-queues-1 has no static parts — all three are re-derived.)
 	'stacks-queues-2#0': 'concept: undo wants a stack',
 	'stacks-queues-2#1': 'concept: print queue wants a FIFO',
@@ -1237,6 +1521,14 @@ const STATIC = {
 		'concept: reduction direction (known-hard INTO target) for NP-hardness',
 	'np-3#4':
 		'concept: the yes<->yes correctness guarantee (IS size ≥ s iff VC size ≤ n−s)',
+	'graphs-4#3':
+		'concept: a back edge closes a cycle; a digraph is acyclic iff DFS finds none',
+	'heaps-4#3':
+		'concept: an increased key can only break the parent relation, so the repair bubbles up',
+	'np-4#2':
+		'concept: O(n·t) is pseudopolynomial — exponential in the bit length of t',
+	'np-5#3':
+		'concept: reduction direction (known-hard CLIQUE INTO target VERTEX-COVER)',
 };
 
 // ── the tests ───────────────────────────────────────────────────────────────

@@ -216,8 +216,8 @@
 .lensCore {
 	display: flex;
 	flex-direction: column;
-	gap: 12px;
-	padding: 16px;
+	gap: var(--space-md);
+	padding: var(--space-md) var(--space-lg);
 	border-radius: var(--radius-lg);
 	background: var(--surface-0);
 	border: 1px solid var(--color-border-subtle);
@@ -226,8 +226,8 @@
 .controlCore {
 	display: flex;
 	flex-direction: column;
-	gap: 14px;
-	padding: 18px;
+	gap: var(--space-md);
+	padding: var(--space-md) var(--space-lg);
 	border-radius: var(--radius-lg);
 	background: var(--surface-0);
 	border: 1px solid var(--color-border-subtle);
@@ -236,8 +236,8 @@
 .compareCore {
 	display: flex;
 	flex-direction: column;
-	gap: 12px;
-	padding: 15px;
+	gap: var(--space-md);
+	padding: var(--space-md) var(--space-lg);
 	border-radius: var(--radius-lg);
 	background: var(--surface-0);
 	border: 1px solid var(--color-border-subtle);
@@ -288,9 +288,9 @@
 .lensSignature {
 	margin: 0;
 	color: var(--color-text-primary);
-	font-size: 13px;
-	font-weight: 650;
-	line-height: 1.45;
+	font-size: var(--font-size-label);
+	font-weight: var(--font-weight-semibold);
+	line-height: var(--line-height-snug);
 }
 
 .lensSample {
@@ -321,7 +321,7 @@
 .lensContrast span {
 	color: var(--color-text-muted);
 	font-size: 10px;
-	font-weight: 800;
+	font-weight: var(--font-weight-bold);
 	letter-spacing: 0.14em;
 	text-transform: uppercase;
 }
@@ -354,19 +354,20 @@
 
 .panelTitle {
 	margin: 9px 0 0;
-	font-size: 24px;
-	line-height: 1;
-	font-weight: 700;
-	letter-spacing: 0;
+	font-family: var(--font-family-display);
+	font-size: var(--font-size-heading-md);
+	line-height: var(--line-height-heading);
+	font-weight: var(--font-weight-display);
+	letter-spacing: var(--tracking-heading);
 	color: var(--color-text-primary);
 }
 
 .compareTitle {
 	margin: 8px 0 0;
-	font-size: 16px;
-	line-height: 1.15;
-	font-weight: 750;
-	letter-spacing: 0;
+	font-size: var(--font-size-heading-sm);
+	line-height: var(--line-height-heading);
+	font-weight: var(--font-weight-semibold);
+	letter-spacing: var(--tracking-heading);
 	color: var(--color-text-primary);
 }
 
@@ -451,7 +452,7 @@
 	color: var(--color-text-muted);
 	font-family: var(--font-family-mono);
 	font-size: 10px;
-	font-weight: 800;
+	font-weight: var(--font-weight-bold);
 }
 
 .compareName,
@@ -736,13 +737,27 @@
 }
 
 @media (max-width: 760px) {
+	.embedded {
+		height: auto;
+		overflow: visible;
+	}
+
 	.body {
 		gap: 14px;
-		padding: 0 14px 18px;
+		padding: 0 8px 18px;
+	}
+
+	.embedded .body {
+		overflow: visible;
 	}
 
 	.canvasShell {
 		border-radius: 24px;
+	}
+
+	.embedded .canvasShell {
+		height: clamp(520px, 72dvh, 680px);
+		min-height: 0;
 	}
 
 	.canvas {
@@ -756,9 +771,31 @@
 	}
 
 	.canvasStage {
-		padding: 18px 18px 120px;
+		padding: 18px 12px 120px;
 		overflow-x: auto;
 		justify-content: flex-start;
+	}
+
+	.embedded .canvasShellSpecial {
+		height: auto;
+	}
+
+	.canvasShellSpecial .canvas {
+		height: auto;
+	}
+
+	.canvasShellSpecial .canvasStage {
+		flex: none;
+		align-items: flex-start;
+		padding-bottom: 18px;
+		overflow-x: auto;
+		overflow-y: visible;
+		overscroll-behavior-x: contain;
+	}
+
+	.canvasShellSpecial .canvasFooter {
+		position: static;
+		padding: 0 12px 12px;
 	}
 
 	.canvasFooter {

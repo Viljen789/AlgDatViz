@@ -282,7 +282,6 @@
 	font-family: var(--font-family-mono);
 	font-size: var(--font-size-caption);
 	color: var(--color-text-dim);
-	font-style: italic;
 }
 
 .entry {

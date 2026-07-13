@@ -20,7 +20,7 @@ const initialCheckStates = () =>
  * from theme.css via the topic accent.
  */
 const StacksQueuesLesson = () => {
-	const { markVisited, markCompleted } = useProgress();
+	const { markVisited } = useProgress();
 	const [checkStates, setCheckStates] = useState(initialCheckStates);
 
 	const topic = TOPIC_BY_ID[TOPIC_ID];
@@ -47,13 +47,9 @@ const StacksQueuesLesson = () => {
 		[]
 	);
 
-	const handlePlaygroundInteract = useCallback(() => {
-		markCompleted(TOPIC_ID);
-	}, [markCompleted]);
-
 	const renderPlayground = useCallback(
-		() => <StacksQueuesPlayground onUserInteract={handlePlaygroundInteract} />,
-		[handlePlaygroundInteract]
+		() => <StacksQueuesPlayground />,
+		[]
 	);
 
 	const handleVisit = useCallback(() => {

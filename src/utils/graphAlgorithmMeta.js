@@ -29,6 +29,11 @@ export const GRAPH_ALGORITHM_META = {
 		motionPhrase: 'remove no-prereq, repeat until empty',
 		complexity: 'O(V + E)',
 	},
+	scc: {
+		category: 'Connectivity',
+		motionPhrase: 'finish order, then reverse and peel',
+		complexity: 'O(V + E)',
+	},
 	maxflow: {
 		category: 'Flow',
 		motionPhrase: 'augmenting path, send the bottleneck',
@@ -43,6 +48,7 @@ export const GRAPH_ALGORITHM_ORDER = [
 	'kruskal',
 	'prim',
 	'topo',
+	'scc',
 	'maxflow',
 ];
 
@@ -51,5 +57,6 @@ export const GRAPH_CATEGORY_ORDER = [
 	'Shortest path',
 	'Spanning tree',
 	'Ordering',
+	'Connectivity',
 	'Flow',
 ];

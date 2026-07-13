@@ -35,15 +35,11 @@ const initialCheckStates = () =>
  * step/scrub/replay playground.
  */
 const MergeSortLesson = () => {
-	const { markVisited, markCompleted } = useProgress();
+	const { markVisited } = useProgress();
 	const [checkStates, setCheckStates] = useState(initialCheckStates);
 	const [sandboxOpen, setSandboxOpen] = useState(false);
 
 	const topic = TOPIC_BY_ID[TOPIC_ID];
-
-	const handlePlaygroundInteract = useCallback(() => {
-		markCompleted(TOPIC_ID);
-	}, [markCompleted]);
 
 	// Generic submit for every non-`pair` check kind (choice / numeric / order /
 	// text / …). Grading is the pure, shared checkAnswer; this host only records
@@ -67,6 +63,18 @@ const MergeSortLesson = () => {
 		}));
 	}, []);
 
+	const handleRetry = useCallback(sceneId => {
+		const scene = SCENES.find(s => s.id === sceneId);
+		if (scene?.check?.kind !== 'pair') return;
+		setCheckStates(prev => ({
+			...prev,
+			[sceneId]: {
+				selected: [],
+				attempts: prev[sceneId]?.attempts || 1,
+			},
+		}));
+	}, []);
+
 	// Pair-check: the user picks two adjacent bars directly on the stage. Lock
 	// when a valid adjacent pair is selected; a second non-adjacent click resets
 	// to a new first selection. This is what makes the first check interactive.
@@ -78,13 +86,13 @@ const MergeSortLesson = () => {
 			if (current.status) return prev;
 			const sel = current.selected || [];
 			if (sel.length === 0) {
-				return { ...prev, [scene.id]: { selected: [slot] } };
+				return { ...prev, [scene.id]: { ...current, selected: [slot] } };
 			}
 			if (sel.length === 1) {
 				if (sel[0] === slot) return prev;
 				const isAdjacent = Math.abs(sel[0] - slot) === 1;
 				if (!isAdjacent) {
-					return { ...prev, [scene.id]: { selected: [slot] } };
+					return { ...prev, [scene.id]: { ...current, selected: [slot] } };
 				}
 				const pair = [sel[0], slot].sort((a, b) => a - b);
 				const isCorrect = scene.check.validate(pair);
@@ -92,6 +100,7 @@ const MergeSortLesson = () => {
 					...prev,
 					[scene.id]: {
 						selected: pair,
+						attempts: (current.attempts || 0) + 1,
 						status: isCorrect ? 'correct' : 'incorrect',
 					},
 				};
@@ -117,7 +126,7 @@ const MergeSortLesson = () => {
 				interactionMode: 'pair',
 				selectedSlots: cs.selected || [],
 				exampleSlots:
-					cs.status === 'incorrect'
+					cs.status === 'incorrect' && cs.attempts >= 2
 						? activeSceneDef.check.exampleCorrectPair
 						: [],
 				answerStatus: cs.status || null,
@@ -148,10 +157,7 @@ const MergeSortLesson = () => {
 		[stageInteractionFor, handleBarClick]
 	);
 
-	const renderPlayground = useCallback(
-		() => <MergeSortPlayground onUserInteract={handlePlaygroundInteract} />,
-		[handlePlaygroundInteract]
-	);
+	const renderPlayground = useCallback(() => <MergeSortPlayground />, []);
 
 	const handleVisit = useCallback(() => {
 		markVisited(TOPIC_ID);
@@ -225,6 +231,7 @@ const MergeSortLesson = () => {
 			cheatSheet={cheatSheet}
 			checkStates={checkStates}
 			onAnswer={handleAnswer}
+			onRetry={handleRetry}
 			playgroundEyebrow="Sandbox"
 			playgroundTitle="Now your turn. Step, scrub, replay."
 			playgroundLede="The same eight values, the actual algorithm. Use space, the arrow keys, or the controls below. Want bubble, quick, heap, or radix? Open the full sandbox below."
@@ -239,8 +246,8 @@ const MergeSortLesson = () => {
 							Eight more views, eight algorithms.
 						</h2>
 						<p className={styles.sandboxBody}>
-							Merge sort is one of a family. Open the multi-algorithm sandbox
-							to compare bubble, quick, heap, insertion, selection, counting,
+							Merge sort is one of a family. Open the multi-algorithm sandbox to
+							compare bubble, quick, heap, insertion, selection, counting,
 							radix, and bucket sort on the same data — bars, boxes, recursion
 							tree, synchronized pseudocode, and a head-to-head operation count.
 						</p>

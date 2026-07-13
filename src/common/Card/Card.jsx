@@ -1,4 +1,5 @@
 import { createElement } from 'react';
+import { Card as SharedCard } from '@viljen789/study-ui';
 import styles from './Card.module.css';
 
 /**
@@ -34,11 +35,16 @@ const Card = ({
 
 	const mergedStyle = accent ? { ...style, '--card-accent': accent } : style;
 
-	return createElement(
+	return createElement(SharedCard, {
 		as,
-		{ className: classes, style: mergedStyle, ...rest },
-		children
-	);
+		interactive,
+		padded,
+		accent,
+		className: classes,
+		style: mergedStyle,
+		...rest,
+		children,
+	});
 };
 
 /** CardEmpty — a token-wired empty-state slot for use inside a Card. */

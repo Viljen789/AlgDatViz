@@ -30,7 +30,15 @@
 	   strip every scroll frame (the jank) and is off-brand. */
 	background: var(--color-bg-app);
 	border-bottom: 1px solid var(--color-border-subtle);
-	padding: var(--space-md) clamp(var(--space-lg), 4vw, var(--space-3xl));
+	/* Same horizontal rhythm as .hero, so the crumbs share the content's left edge. */
+	padding: var(--space-md) clamp(var(--space-xl), 6vw, var(--space-4xl));
+	/* min-height makes --topic-header-h true by construction, so every sticky
+	   offset that reads the token lines up with the real header. */
+	box-sizing: border-box;
+	min-height: var(--topic-header-h);
+	display: flex;
+	flex-direction: column;
+	justify-content: center;
 }
 
 .topicHeaderInner {
@@ -52,6 +60,9 @@
 }
 
 .crumbLink {
+	display: inline-flex;
+	align-items: center;
+	min-height: 44px;
 	color: var(--color-text-secondary);
 	text-decoration: none;
 	border-radius: var(--radius-sm);
@@ -74,6 +85,7 @@
 .skipBtn {
 	display: inline-flex;
 	align-items: center;
+	min-height: 44px;
 	gap: 7px;
 	padding: 7px 12px;
 	background: transparent;
@@ -120,7 +132,7 @@
 	margin: 0;
 	font-family: var(--font-family-mono);
 	font-size: var(--font-size-caption);
-	font-weight: var(--font-weight-bold);
+	font-weight: var(--font-weight-semibold);
 	letter-spacing: var(--tracking-caps);
 	text-transform: uppercase;
 	color: var(--color-text-muted);
@@ -129,7 +141,7 @@
 .heroTitle {
 	margin: 0;
 	font-family: var(--font-family-display);
-	font-size: var(--font-size-display-lg);
+	font-size: var(--font-size-display-xl);
 	font-weight: var(--font-weight-display);
 	line-height: var(--line-height-display);
 	letter-spacing: var(--tracking-display);
@@ -154,7 +166,7 @@
 	margin: 0;
 	font-family: var(--font-family-mono);
 	font-size: var(--font-size-caption);
-	font-weight: var(--font-weight-bold);
+	font-weight: var(--font-weight-semibold);
 	letter-spacing: var(--tracking-caps);
 	text-transform: uppercase;
 	color: var(--color-text-muted);
@@ -244,7 +256,7 @@
 	display: block;
 	font-family: var(--font-family-mono);
 	font-size: var(--font-size-caption);
-	font-weight: var(--font-weight-bold);
+	font-weight: var(--font-weight-semibold);
 	letter-spacing: var(--tracking-caps);
 	text-transform: uppercase;
 	color: var(--color-text-muted);
@@ -377,10 +389,10 @@
 .playgroundSection {
 	max-width: 1280px;
 	margin: 0 auto;
-	padding: clamp(var(--space-3xl), 8vw, var(--space-4xl))
+	padding: clamp(var(--space-2xl), 5vw, var(--space-3xl))
 		clamp(var(--space-xl), 6vw, var(--space-4xl))
 		clamp(var(--space-2xl), 5vw, var(--space-3xl));
-	scroll-margin-top: 84px;
+	scroll-margin-top: calc(var(--topic-header-h) + var(--space-sm));
 }
 
 .playgroundHeader {
@@ -394,7 +406,7 @@
 .playgroundTitle {
 	margin: 0;
 	font-family: var(--font-family-display);
-	font-size: var(--font-size-display-lg);
+	font-size: var(--font-size-heading-lg);
 	font-weight: var(--font-weight-display);
 	line-height: var(--line-height-heading);
 	letter-spacing: var(--tracking-display);
@@ -530,12 +542,15 @@
 	gap: var(--space-md);
 }
 
-/* Primary: launch the inline retrieval drill. Solid brand chrome fill. */
+/* Primary: launch the inline retrieval drill. Solid brand chrome fill.
+   Deliberately NOT <Button>: its primary variant is accent-blue, while this
+   surface reads in the brand hue (and the sibling CTA is a Link), so the
+   one-off stays but on token values only. */
 .lockInPrimary {
 	display: inline-flex;
 	align-items: center;
 	gap: var(--space-sm);
-	padding: 10px 18px;
+	padding: var(--space-sm) var(--space-lg);
 	background: hsl(var(--brand-h) var(--brand-s) var(--brand-l));
 	border: 1px solid hsl(var(--brand-h) var(--brand-s) var(--brand-l));
 	border-radius: var(--radius-md);
@@ -564,7 +579,7 @@
 	display: inline-flex;
 	align-items: center;
 	gap: var(--space-sm);
-	padding: 10px 16px;
+	padding: var(--space-sm) var(--space-md);
 	background: transparent;
 	border: 1px solid var(--color-border);
 	border-radius: var(--radius-md);
@@ -621,8 +636,8 @@
 .lockInDrillClose {
 	display: inline-flex;
 	align-items: center;
-	gap: 6px;
-	padding: 6px 12px;
+	gap: var(--space-xs);
+	padding: var(--space-xs) var(--space-sm);
 	background: transparent;
 	border: 1px solid var(--color-border);
 	border-radius: var(--radius-md);

@@ -1,7 +1,8 @@
 import { useMemo } from 'react';
-import { floydWarshall, reconstructPath, formatDist } from './fwTrace.js';
+import { floydWarshall, formatDist } from './fwTrace.js';
 import { slowApsp } from './slowApsp.js';
 import { SHARED_GRAPH } from './apspMeta.js';
+import { SCENES, selectViewForScene } from './scenes.js';
 import { buildEdges, projectNodes, VIEW_H, VIEW_W } from './graphLayout.js';
 import StateLegend from '../../common/StateLegend/StateLegend';
 import { SceneNarration } from '../../common/PlaybackEngine';
@@ -13,14 +14,14 @@ import styles from './AllPairsShortestPathsStage.module.css';
 // --color-warning; the diagonal spotlight is the accent again.
 const SW_WRITE = 'var(--topic-accent)';
 const SW_READ = 'color-mix(in srgb, var(--topic-accent) 22%, var(--surface-2))';
-const SW_PATH = 'color-mix(in srgb, var(--color-warning) 20%, var(--surface-2))';
+const SW_PATH =
+	'color-mix(in srgb, var(--color-warning) 20%, var(--surface-2))';
 const SW_DIAG = 'color-mix(in srgb, var(--topic-accent) 60%, var(--surface-2))';
 
 // Canonical answers measured once from the generator (shared by every scene).
 const FW = floydWarshall(SHARED_GRAPH);
 const IDS = FW.ids;
 const LAYERS = FW.layers; // LAYERS[k] = D after allowing {1..k}; LAYERS[0] = direct
-const PATH_1_3 = reconstructPath(FW.pred, IDS, '1', '3'); // ['1','2','4','3']
 
 // Slow-APSP layers for the matrix-multiplication scene. DIFFERENT indexing from
 // FW: SLOW.layers[m−1] === L^(m), so SLOW.layers[0] === L^(1) === W and
@@ -34,115 +35,6 @@ const EDGES = buildEdges(SHARED_GRAPH.edges, NODES);
 const idxOf = id => IDS.indexOf(id);
 const cellKey = (i, j) => `${i},${j}`;
 
-// Per-scene emphasis. Each picks which k-layer to show in the matrix and which
-// cells to spotlight, mirroring the prose. The matrix-across-k feel comes from
-// scenes 1→3 stepping the layer index 0 → 2 → final.
-const SCENE_VIEW = activeScene => {
-	switch (activeScene) {
-		// 0 all-pairs — the final matrix, every cell lit as "the answer".
-		case 0:
-			return {
-				layer: LAYERS.length - 1,
-				kLabel: 'final',
-				caption: `The full ${IDS.length}×${IDS.length} answer: d[i][j] for every ordered pair`,
-			};
-		// 1 intermediates — k = 0, the direct-edge matrix (no intermediates yet).
-		case 1:
-			return {
-				layer: 0,
-				kLabel: '0',
-				caption:
-					'k = 0 — direct edges only (∞ where no edge, 0 on the diagonal)',
-			};
-		// 2 recurrence — the final layer; spotlight d[1][3] + its two readers.
-		case 2: {
-			const i = idxOf('1');
-			const j = idxOf('3');
-			const k = idxOf('4'); // the last intermediate that settles 1→3
-			return {
-				layer: LAYERS.length - 1,
-				kLabel: 'final',
-				write: [i, j],
-				readIK: [i, k],
-				readKJ: [k, j],
-				caption: 'd[1][3] = min(old, d[1][4] + d[4][3]) — one cell reads two',
-			};
-		}
-		// 3 fill-across-k — after k = 2; spotlight d[1][4] (now 1→2→4).
-		case 3: {
-			const i = idxOf('1');
-			const j = idxOf('4');
-			const k = idxOf('2');
-			return {
-				layer: 2,
-				kLabel: '2',
-				write: [i, j],
-				readIK: [i, k],
-				readKJ: [k, j],
-				caption: 'After k = 2: d[1][4] = d[1][2] + d[2][4] = 4 (via 2)',
-			};
-		}
-		// 4 predecessor — final matrix; light the reconstructed 1→3 path cells.
-		case 4: {
-			const pathCells = new Set();
-			for (let p = 0; p < PATH_1_3.length - 1; p++) {
-				pathCells.add(cellKey(idxOf(PATH_1_3[p]), idxOf(PATH_1_3[p + 1])));
-			}
-			return {
-				layer: LAYERS.length - 1,
-				kLabel: 'final',
-				pathCells,
-				caption: `π reconstructs 1 → 3 as ${PATH_1_3.join(' → ')}`,
-			};
-		}
-		// 5 transitive closure — final matrix shown as reachability (boolean).
-		case 5:
-			return {
-				layer: LAYERS.length - 1,
-				kLabel: 'final',
-				boolean: true,
-				caption: 'Same loop, OR/AND: T[i][j] = reachable? (✓ = yes)',
-			};
-		// 6 matrix-mult — final matrix as "the product".
-		case 6:
-			return {
-				layer: LAYERS.length - 1,
-				kLabel: 'final',
-				caption: 'D = the (min, +) "product" — combining paths through every k',
-			};
-		// 7 when — final matrix; spotlight the diagonal (neg-cycle diagnostic).
-		case 7: {
-			const diag = new Set(IDS.map((_, i) => cellKey(i, i)));
-			return {
-				layer: LAYERS.length - 1,
-				kLabel: 'final',
-				diagCells: diag,
-				caption:
-					'Diagonal stays 0 here — a negative d[v][v] would flag a neg cycle',
-			};
-		}
-		// 8 slow-apsp — the (min, +) matrix product. Source = SLOW.layers (indexed
-		// by edge count, NOT by FW's intermediate k). Show L^(2) (≤ 2-edge paths)
-		// and spotlight d[2][3]: ∞ at one edge, but 2→4→3 = 1 + (−5) = −4 at two.
-		case 8:
-		default: {
-			const i = idxOf('2');
-			const j = idxOf('3');
-			const k = idxOf('4'); // the single intermediate that achieves the min
-			return {
-				slow: true,
-				layer: 1, // SLOW.layers[1] === L^(2)
-				kLabel: 'L⁽²⁾',
-				write: [i, j],
-				readIK: [i, k], // L⁽¹⁾[2][4] = 1
-				readKJ: [k, j], // W[4][3] = −5
-				caption:
-					'L⁽²⁾ = L⁽¹⁾ ⊗ W: d[2][3] drops to −4 via 2→4→3 (no direct 2→3 edge)',
-			};
-		}
-	}
-};
-
 const NODE_R = 7;
 
 /**
@@ -155,7 +47,12 @@ const NODE_R = 7;
  * fwTrace.js, so the picture can never disagree with the algorithm.
  */
 const AllPairsShortestPathsStage = ({ activeScene = 0 }) => {
-	const view = useMemo(() => SCENE_VIEW(activeScene), [activeScene]);
+	// Scene → sticky view by stable id (never a numeric index): the selector lives
+	// in scenes.js so an inserted/reordered scene can't desync the matrix view.
+	const view = useMemo(
+		() => selectViewForScene(SCENES[activeScene]?.id),
+		[activeScene]
+	);
 	// Most scenes read FW's k-indexed layers; the Slow-APSP scene reads the
 	// edge-indexed L^(m) layers instead (view.slow flips the source).
 	const matrix = view.slow ? SLOW.layers[view.layer] : LAYERS[view.layer];
@@ -182,7 +79,11 @@ const AllPairsShortestPathsStage = ({ activeScene = 0 }) => {
 		if (write || readIK) {
 			return [
 				{ swatch: SW_WRITE, label: 'writes d[i][j]', aria: 'accent' },
-				{ swatch: SW_READ, label: 'reads d[i][k], d[k][j]', aria: 'accent tint' },
+				{
+					swatch: SW_READ,
+					label: 'reads d[i][k], d[k][j]',
+					aria: 'accent tint',
+				},
 			];
 		}
 		return [];

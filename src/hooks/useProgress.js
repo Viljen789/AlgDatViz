@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useMemo, useSyncExternalStore } from 'react';
 import { PROGRESS_TOPICS } from '../data/curriculum.js';
 
 const STORAGE_KEY = 'algdatviz:progress:v1';
@@ -83,10 +83,10 @@ const emptyState = () => ({
 	scenes: {},
 });
 
-const readState = () => {
-	if (typeof window === 'undefined') return emptyState();
+const stateFromStorage = storage => {
+	if (!storage) return emptyState();
 	try {
-		const raw = window.localStorage.getItem(STORAGE_KEY);
+		const raw = storage.getItem(STORAGE_KEY);
 		if (!raw) return emptyState();
 		const parsed = JSON.parse(raw);
 		const completed = Array.isArray(parsed.completed) ? parsed.completed : [];
@@ -133,101 +133,137 @@ const readState = () => {
 	}
 };
 
-const writeState = next => {
-	if (typeof window === 'undefined') return;
+const browserEventTarget = () =>
+	typeof window === 'undefined' ? null : window;
+
+const browserStorage = () => {
+	if (typeof window === 'undefined') return null;
 	try {
-		window.localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+		return window.localStorage;
 	} catch {
-		// Storage may be unavailable (Safari private mode, quota). Fail silent.
+		return null;
 	}
 };
 
-export const useProgress = () => {
-	const [state, setState] = useState(readState);
+// One deep, observable progress store shared by every useProgress consumer.
+// Actions always re-read the latest persisted snapshot before reducing, so an
+// action from a client that rendered earlier can never replace checks/scenes a
+// different client wrote later. The in-memory snapshot is cached (required by
+// useSyncExternalStore) and same-tab writes synchronously notify subscribers;
+// the browser `storage` event keeps other tabs in lockstep.
+export const createProgressStore = (options = {}) => {
+	const storage = Object.prototype.hasOwnProperty.call(options, 'storage')
+		? options.storage
+		: browserStorage();
+	const eventTarget = Object.prototype.hasOwnProperty.call(
+		options,
+		'eventTarget'
+	)
+		? options.eventTarget
+		: browserEventTarget();
+	const serverSnapshot = emptyState();
+	let snapshot = stateFromStorage(storage);
+	let fingerprint = JSON.stringify(snapshot);
+	let memoryOnly = false;
+	let listening = false;
+	const listeners = new Set();
 
-	useEffect(() => {
-		if (typeof window === 'undefined') return undefined;
-		const onStorage = event => {
-			if (event.key !== STORAGE_KEY) return;
-			setState(readState());
-		};
-		window.addEventListener('storage', onStorage);
-		return () => window.removeEventListener('storage', onStorage);
-	}, []);
+	const getSnapshot = () => snapshot;
+	const getServerSnapshot = () => serverSnapshot;
 
-	const markVisited = useCallback(topicId => {
-		setState(prev => {
+	const publish = next => {
+		const nextFingerprint = JSON.stringify(next);
+		if (nextFingerprint === fingerprint) return snapshot;
+		snapshot = next;
+		fingerprint = nextFingerprint;
+		for (const listener of [...listeners]) listener();
+		return snapshot;
+	};
+
+	const persist = next => {
+		if (!storage) {
+			memoryOnly = true;
+			return;
+		}
+		try {
+			storage.setItem(STORAGE_KEY, JSON.stringify(next));
+			memoryOnly = false;
+		} catch {
+			// Storage may be unavailable (Safari private mode, quota). Keep the
+			// shared in-memory snapshot live even when persistence fails.
+			memoryOnly = true;
+		}
+	};
+
+	const latestState = () =>
+		memoryOnly || !storage ? snapshot : stateFromStorage(storage);
+
+	const update = reducer => {
+		const latest = latestState();
+		const next = reducer(latest);
+		if (next === latest) {
+			// If this client had a stale snapshot, converge it on the latest persisted
+			// value even though the requested action itself was a no-op.
+			publish(latest);
+			return snapshot;
+		}
+		persist(next);
+		publish(next);
+		return snapshot;
+	};
+
+	const markVisited = topicId =>
+		update(prev => {
 			const alreadyVisited = prev.visited.includes(topicId);
 			if (prev.lastVisited === topicId && alreadyVisited) return prev;
-			const next = {
+			return {
 				...prev,
 				lastVisited: topicId,
 				visited: alreadyVisited ? prev.visited : [...prev.visited, topicId],
 			};
-			writeState(next);
-			return next;
 		});
-	}, []);
 
-	const markCompleted = useCallback(topicId => {
-		setState(prev => {
+	const markCompleted = topicId =>
+		update(prev => {
 			const alreadyCompleted = prev.completed.includes(topicId);
 			const alreadyVisited = prev.visited.includes(topicId);
 			if (alreadyCompleted && alreadyVisited) return prev;
-			const next = {
+			return {
 				...prev,
 				completed: alreadyCompleted
 					? prev.completed
 					: [...prev.completed, topicId],
 				visited: alreadyVisited ? prev.visited : [...prev.visited, topicId],
 			};
-			writeState(next);
-			return next;
 		});
-	}, []);
 
-	// Record the outcome of a retrieval check. Called on EVERY resolved answer
-	// (correct or wrong) so the first attempt's outcome is captured for honest
-	// first-try mastery; the merge is non-punitive (a wrong answer never un-records
-	// a prior correct, and the first correct answer flips `correct` true without
-	// rewriting `firstTry`). Anything that wouldn't change state returns prev
-	// unchanged — critical so the recording effect can't loop on re-renders. A
-	// topic with a recorded check is also implicitly visited.
-	const recordCheck = useCallback((topicId, checkId, correct) => {
+	const recordCheck = (topicId, checkId, correct) => {
 		if (!topicId || checkId == null) return;
-		setState(prev => {
+		update(prev => {
 			const topicChecks = prev.checks[topicId] || {};
 			const existing = topicChecks[checkId];
 			const merged = mergeCheckRecord(existing, correct);
 			const recordChanged = merged !== existing;
 			const alreadyVisited = prev.visited.includes(topicId);
 			if (!recordChanged && alreadyVisited) return prev;
-			const next = {
+			return {
 				...prev,
 				visited: alreadyVisited ? prev.visited : [...prev.visited, topicId],
 				checks: recordChanged
 					? { ...prev.checks, [topicId]: { ...topicChecks, [checkId]: merged } }
 					: prev.checks,
 			};
-			writeState(next);
-			return next;
 		});
-	}, []);
+	};
 
-	// Record how far into a topic's scrolly the reader has reached. Only ever
-	// advances the stored index (furthestSceneIndex), so re-reading an earlier
-	// scene can't rewind the resume point. Returns prev unchanged when nothing
-	// moves forward — critical so the scrolly's onActiveScene notifier can fire
-	// on every scroll without looping re-renders. A topic with a recorded scene
-	// is implicitly visited (you can't read a scene without opening the topic).
-	const recordScene = useCallback((topicId, sceneIndex) => {
+	const recordScene = (topicId, sceneIndex) => {
 		if (!topicId) return;
-		setState(prev => {
+		update(prev => {
 			const current = prev.scenes[topicId] || 0;
 			const nextIdx = furthestSceneIndex(current, sceneIndex);
 			const alreadyVisited = prev.visited.includes(topicId);
 			if (nextIdx === current && alreadyVisited) return prev;
-			const next = {
+			return {
 				...prev,
 				visited: alreadyVisited ? prev.visited : [...prev.visited, topicId],
 				scenes:
@@ -235,16 +271,72 @@ export const useProgress = () => {
 						? prev.scenes
 						: { ...prev.scenes, [topicId]: nextIdx },
 			};
-			writeState(next);
-			return next;
 		});
-	}, []);
+	};
 
-	const reset = useCallback(() => {
+	const reset = () => {
 		const next = emptyState();
-		writeState(next);
-		setState(next);
-	}, []);
+		persist(next);
+		publish(next);
+	};
+
+	const syncFromStorage = () => {
+		memoryOnly = false;
+		publish(stateFromStorage(storage));
+	};
+
+	const onStorage = event => {
+		if (event?.key != null && event.key !== STORAGE_KEY) return;
+		syncFromStorage();
+	};
+
+	const startListening = () => {
+		if (listening || !eventTarget?.addEventListener) return;
+		eventTarget.addEventListener('storage', onStorage);
+		listening = true;
+	};
+
+	const stopListening = () => {
+		if (!listening || !eventTarget?.removeEventListener) return;
+		eventTarget.removeEventListener('storage', onStorage);
+		listening = false;
+	};
+
+	const subscribe = listener => {
+		listeners.add(listener);
+		if (listeners.size === 1) {
+			startListening();
+			// Storage may have changed between module evaluation and the first mount.
+			syncFromStorage();
+		}
+		return () => {
+			listeners.delete(listener);
+			if (listeners.size === 0) stopListening();
+		};
+	};
+
+	return {
+		getSnapshot,
+		getServerSnapshot,
+		subscribe,
+		markVisited,
+		markCompleted,
+		recordCheck,
+		recordScene,
+		reset,
+	};
+};
+
+const progressStore = createProgressStore();
+
+export const useProgress = () => {
+	const state = useSyncExternalStore(
+		progressStore.subscribe,
+		progressStore.getSnapshot,
+		progressStore.getServerSnapshot
+	);
+	const { markVisited, markCompleted, recordCheck, recordScene, reset } =
+		progressStore;
 
 	const completedSet = useMemo(
 		() => new Set(state.completed),

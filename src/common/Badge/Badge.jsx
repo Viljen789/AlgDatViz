@@ -1,3 +1,4 @@
+import { Badge as SharedBadge } from '@viljen789/study-ui';
 import styles from './Badge.module.css';
 
 // A small status pill ("NEXT", "SOON", "NEW", "NEXT UP", "BETA"). Centralises the
@@ -13,13 +14,20 @@ const Badge = ({
 	className = '',
 	...rest
 }) => (
-	<span
+	<SharedBadge
+		tone={
+			tone === 'review'
+				? 'review'
+				: tone === 'brand' || tone === 'accent'
+					? 'brand'
+					: 'neutral'
+		}
 		className={`${styles.badge} ${styles[tone] ?? ''} ${className}`}
 		{...rest}
 	>
 		{Icon && <Icon size={11} strokeWidth={2.4} aria-hidden="true" />}
 		{children}
-	</span>
+	</SharedBadge>
 );
 
 export default Badge;

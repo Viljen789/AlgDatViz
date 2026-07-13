@@ -142,7 +142,7 @@
 	left: var(--space-sm);
 	font-family: var(--font-family-mono);
 	font-size: var(--font-size-caption);
-	font-weight: var(--font-weight-bold);
+	font-weight: var(--font-weight-semibold);
 	letter-spacing: var(--tracking-caps);
 	text-transform: uppercase;
 	color: var(--color-text-muted);
@@ -210,7 +210,7 @@
 .assignTag {
 	font-family: var(--font-family-mono);
 	font-size: var(--font-size-caption);
-	font-weight: var(--font-weight-bold);
+	font-weight: var(--font-weight-semibold);
 	letter-spacing: var(--tracking-caps);
 	text-transform: uppercase;
 	color: var(--topic-accent-ink);
@@ -320,7 +320,7 @@
 .colTag {
 	font-family: var(--font-family-mono);
 	font-size: var(--font-size-caption);
-	font-weight: var(--font-weight-bold);
+	font-weight: var(--font-weight-semibold);
 	letter-spacing: var(--tracking-caps);
 	text-transform: uppercase;
 	color: var(--color-text-muted);
@@ -443,7 +443,7 @@
 }
 
 .dirCallout em {
-	font-style: italic;
+	font-style: normal;
 	color: var(--topic-accent-ink);
 	font-weight: var(--font-weight-semibold);
 }
@@ -517,7 +517,7 @@
 .gadgetTag {
 	font-family: var(--font-family-mono);
 	font-size: var(--font-size-caption);
-	font-weight: var(--font-weight-bold);
+	font-weight: var(--font-weight-semibold);
 	letter-spacing: var(--tracking-caps);
 	text-transform: uppercase;
 	color: var(--color-text-muted);

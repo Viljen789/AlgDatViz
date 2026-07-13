@@ -92,6 +92,7 @@ const Tabs = ({ tabs, defaultActive = 0, onChange }) => {
 							role="tabpanel"
 							aria-labelledby={`${baseId}-tab-${i}`}
 							aria-hidden={i !== activeIndex}
+							inert={i !== activeIndex || undefined}
 							className={styles.tabView}
 						>
 							<div className={styles.tabViewContent}>{tab.content}</div>

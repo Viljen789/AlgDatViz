@@ -63,7 +63,7 @@
 	height: 38px;
 	background: color-mix(in srgb, var(--glass-tint) 3.5%, transparent);
 	border-color: color-mix(in srgb, var(--glass-tint) 6%, transparent);
-	border-radius: 12px;
+	border-radius: var(--radius-md);
 	transition:
 		background var(--duration-step) var(--ease-quiet),
 		color var(--duration-step) var(--ease-quiet),
@@ -140,7 +140,13 @@
 	appearance: none;
 	height: 4px;
 	border-radius: 2px;
-	background: var(--color-border);
+	/* Played portion fills with the topic accent; --range-fill is set inline
+	   from the current step so the track doubles as a progress readout. */
+	background: linear-gradient(
+		to right,
+		var(--play-accent) var(--range-fill, 0%),
+		var(--color-border) var(--range-fill, 0%)
+	);
 	accent-color: var(--play-accent);
 	outline: none;
 	margin: 0;
@@ -148,7 +154,11 @@
 
 .panel .range {
 	height: 5px;
-	background: color-mix(in srgb, var(--glass-tint) 8%, transparent);
+	background: linear-gradient(
+		to right,
+		var(--play-accent) var(--range-fill, 0%),
+		color-mix(in srgb, var(--glass-tint) 8%, transparent) var(--range-fill, 0%)
+	);
 }
 
 .range::-webkit-slider-thumb {
@@ -162,6 +172,41 @@
 }
 
 .panel .range::-webkit-slider-thumb {
+	width: 14px;
+	height: 14px;
+	box-shadow: 0 0 0 5px color-mix(in srgb, var(--play-accent) 12%, transparent);
+	background: var(--play-accent);
+}
+
+/* Firefox parity: the gradient above paints the whole input, so give Firefox
+   an explicit progress segment and a matching thumb. */
+.range::-moz-range-track {
+	height: 4px;
+	border-radius: 2px;
+	background: transparent;
+}
+
+.range::-moz-range-progress {
+	height: 4px;
+	border-radius: 2px;
+	background: var(--play-accent);
+}
+
+.range::-moz-range-thumb {
+	width: 12px;
+	height: 12px;
+	border-radius: 50%;
+	background: var(--play-accent);
+	cursor: pointer;
+	border: 0;
+}
+
+.panel .range::-moz-range-track,
+.panel .range::-moz-range-progress {
+	height: 5px;
+}
+
+.panel .range::-moz-range-thumb {
 	width: 14px;
 	height: 14px;
 	box-shadow: 0 0 0 5px color-mix(in srgb, var(--play-accent) 12%, transparent);
@@ -227,7 +272,7 @@
 	min-width: 86px;
 	background: color-mix(in srgb, var(--glass-tint) 3.5%, transparent);
 	border-color: color-mix(in srgb, var(--glass-tint) 8%, transparent);
-	border-radius: 999px;
+	border-radius: var(--radius-pill);
 	color: var(--color-text-primary);
 	transition:
 		background var(--duration-step) var(--ease-quiet),
@@ -293,7 +338,7 @@
 }
 
 .panel .speedItem {
-	border-radius: 10px;
+	border-radius: var(--radius-sm);
 	transition:
 		background var(--duration-step) var(--ease-quiet),
 		color var(--duration-step) var(--ease-quiet);

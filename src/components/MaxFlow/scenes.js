@@ -16,10 +16,7 @@ import {
 	edmondsKarpTrace,
 	extractMinCut,
 } from './maxFlowTrace.js';
-import {
-	CLRS_NETWORK,
-	MATCHING_NETWORK,
-} from './maxFlowMeta.js';
+import { CLRS_NETWORK, MATCHING_NETWORK } from './maxFlowMeta.js';
 
 // Canonical answers measured once from the generators.
 const EK = edmondsKarpTrace(CLRS_NETWORK);
@@ -29,7 +26,9 @@ const MATCH = edmondsKarpTrace(MATCHING_NETWORK).value; // 3
 
 // A concrete residual-capacity prediction. After pushing 12 units along
 // s→v1→v3→t, the forward residual of s→v1 (capacity 16) is 16 − 12 = 4.
-const SV1_CAP = CLRS_NETWORK.edges.find(e => e.from === 's' && e.to === 'v1').capacity; // 16
+const SV1_CAP = CLRS_NETWORK.edges.find(
+	e => e.from === 's' && e.to === 'v1'
+).capacity; // 16
 const PUSHED = 12;
 const SV1_RESIDUAL = SV1_CAP - PUSHED; // 4
 // And the back edge v1→s then has residual = flow = 12.
@@ -101,8 +100,7 @@ export const SCENES = [
 				'The capacity of the first edge',
 				'Exactly one unit, always',
 			],
-			answer:
-				'The minimum residual capacity along the path (its bottleneck)',
+			answer: 'The minimum residual capacity along the path (its bottleneck)',
 			misconceptions: {
 				'The maximum capacity on the path':
 					'Pushing the maximum would overflow the tightest edge. The same amount must flow along every edge of the path, so the smallest residual capacity, not the largest, is the binding limit.',
@@ -129,8 +127,7 @@ export const SCENES = [
 				'After exactly |V| − 1 iterations',
 				'When the source has no outgoing edges',
 			],
-			answer:
-				'When no augmenting path exists in the residual network',
+			answer: 'When no augmenting path exists in the residual network',
 			misconceptions: {
 				'When every edge is saturated':
 					'A maximum flow rarely saturates every edge; only the edges crossing the min cut must be full. Many edges can sit below capacity at the optimum, so saturation of all edges is not the stopping signal.',
@@ -184,7 +181,9 @@ export const SCENES = [
 			placeholder: 'a capacity',
 			explanation: `${MIN_CUT.capacity}. The reachable set from s in the final residual network is S = {${MIN_CUT.S.join(', ')}}; the saturated edges crossing it (${MIN_CUT.edges
 				.map(e => `${e.from}→${e.to}`)
-				.join(', ')}) sum to ${MIN_CUT.capacity} — exactly the max-flow value. Min-cut capacity always equals max-flow value.`,
+				.join(
+					', '
+				)}) sum to ${MIN_CUT.capacity} — exactly the max-flow value. Min-cut capacity always equals max-flow value.`,
 		},
 	},
 	{
@@ -239,3 +238,171 @@ export const MEASURED = {
 	finalFlow: EK.flow,
 	finalResidual: extractMinCut(CLRS_NETWORK, EK.flow),
 };
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Sticky-stage view + legend selection (consumed by MaxFlowStage).
+//
+// The stage paints one sticky flow-network view per scene: which network to
+// show, the flow snapshot, an optional residual overlay, an augmenting path, the
+// min-cut partition, the caption, and the per-scene legend. It is keyed by scene
+// id (NOT a numeric index), mirroring ShortestPaths' VIEW_FOR_SCENE and
+// StrategiesStage's SCENE_BOARDS. The stage previously carried TWO hard-coded
+// numeric switches (SCENE_VIEW and SCENE_LEGEND), either of which would desync if
+// a scene were inserted above — the same off-by-N bug class that shipped in
+// GraphStage / ShortestPathsStage. Keying both by id (and folding the legend into
+// each view) makes that impossible. Living here (a pure module) keeps the
+// selection unit-testable without importing the JSX stage.
+
+const FINAL_FLOW = EK.flow;
+
+// A mid-run flow snapshot: 12 units pushed along s→v1→v3→t, used to illustrate
+// the residual network and an augmenting path before the final state.
+const MID_FLOW = { 's->v1': 12, 'v1->v3': 12, 'v3->t': 12 };
+
+const pathEdgeSet = path => {
+	const s = new Set();
+	if (!path) return s;
+	path.forEach(re => {
+		// On the stage we highlight the ORIGINAL edge a residual edge belongs to.
+		s.add(re.edgeKey);
+		// Also mark the residual orientation so back edges can be styled.
+		s.add(`${re.from}->${re.to}`);
+	});
+	return s;
+};
+
+// Legend swatch colours mirror the on-canvas edge/node styling in the stage
+// (resting edge, topic-accent for flow, warning for the cut) so the picture and
+// the key never disagree.
+const ACCENT = 'var(--topic-accent)';
+const WARNING = 'var(--color-warning)';
+const RESTING = 'var(--color-border-strong)';
+
+// Shared by the three "flow on the network" scenes (Ford-Fulkerson, Edmonds-Karp,
+// integrality) — flowing vs. saturated edges.
+const FLOW_LEGEND = [
+	{ label: 'label = f / c', swatch: ACCENT, aria: 'green' },
+	{ label: 'saturated (f = c)', swatch: ACCENT, aria: 'bold green' },
+];
+
+// id → view builder. Every scene id above has an explicit entry; each builder
+// returns the network + flow snapshot + overlays + caption + the per-scene
+// legend (only the meanings actually drawn in that scene, named in words for the
+// spoken key). Builders are lazy so this map sits at module scope.
+const VIEW_FOR_SCENE = {
+	// flow-network — just capacities, zero flow.
+	'flow-network': () => ({
+		network: CLRS_NETWORK,
+		flow: {},
+		caption: 'Capacities on every edge · source s · sink t',
+		legend: [
+			{ label: 'number = capacity c', swatch: RESTING, aria: 'grey edge' },
+		],
+	}),
+	// residual — show spare (forward) + cancel (back) capacities.
+	residual: () => ({
+		network: CLRS_NETWORK,
+		flow: MID_FLOW,
+		showResidual: true,
+		caption:
+			'After pushing 12 on s→v1→v3→t: forward residual = c − f, back residual = f',
+		legend: [
+			{
+				label: 'forward residual = c − f',
+				swatch: RESTING,
+				aria: 'grey edge',
+			},
+			{ label: 'back residual = f', swatch: RESTING, aria: 'cancellable' },
+		],
+	}),
+	// augmenting-path — a residual s→t path with its bottleneck.
+	'augmenting-path': () => {
+		const path = [
+			{
+				from: 's',
+				to: 'v2',
+				kind: 'forward',
+				edgeKey: 's->v2',
+				residual: 13,
+			},
+			{
+				from: 'v2',
+				to: 'v4',
+				kind: 'forward',
+				edgeKey: 'v2->v4',
+				residual: 14,
+			},
+			{ from: 'v4', to: 't', kind: 'forward', edgeKey: 'v4->t', residual: 4 },
+		];
+		return {
+			network: CLRS_NETWORK,
+			flow: MID_FLOW,
+			showResidual: true,
+			path,
+			pathSet: pathEdgeSet(path),
+			bottleneck: 4,
+			caption: 'Augmenting path s → v2 → v4 → t · bottleneck = 4',
+			legend: [
+				{ label: 'augmenting path', swatch: ACCENT, aria: 'green dashed' },
+				{ label: 'residual = c − f', swatch: RESTING, aria: 'grey edge' },
+			],
+		};
+	},
+	// ford-fulkerson — the augment-until-stuck loop reaching the max flow.
+	'ford-fulkerson': () => ({
+		network: CLRS_NETWORK,
+		flow: FINAL_FLOW,
+		showFlow: true,
+		caption: `Augment until no path remains · max flow = ${EK.value}`,
+		legend: FLOW_LEGEND,
+	}),
+	// edmonds-karp — same final flow, framed as shortest-path augmentation.
+	'edmonds-karp': () => ({
+		network: CLRS_NETWORK,
+		flow: FINAL_FLOW,
+		showFlow: true,
+		caption: 'Same loop, shortest augmenting path each time (BFS)',
+		legend: FLOW_LEGEND,
+	}),
+	// max-flow-min-cut — reveal the cut partition.
+	'max-flow-min-cut': () => ({
+		network: CLRS_NETWORK,
+		flow: FINAL_FLOW,
+		showFlow: true,
+		minCut: MIN_CUT,
+		caption: `Min cut S = {${MIN_CUT.S.join(', ')}} · capacity ${MIN_CUT.capacity} = max flow`,
+		legend: [
+			{ label: 'source side S', swatch: ACCENT, aria: 'green' },
+			{ label: 'cut edge', swatch: WARNING, aria: 'amber' },
+		],
+	}),
+	// integrality — final integer flow on every edge.
+	integrality: () => ({
+		network: CLRS_NETWORK,
+		flow: FINAL_FLOW,
+		showFlow: true,
+		caption: 'Integer capacities → every edge flow is a whole number',
+		legend: FLOW_LEGEND,
+	}),
+	// matching — the unit-capacity bipartite-matching network.
+	matching: () => {
+		const match = edmondsKarpTrace(MATCHING_NETWORK);
+		return {
+			network: MATCHING_NETWORK,
+			flow: match.flow,
+			showFlow: true,
+			caption: `Unit capacities · max flow ${match.value} = maximum matching size`,
+			legend: [{ label: 'matched edge', swatch: ACCENT, aria: 'green' }],
+		};
+	},
+};
+
+// Pure id → view selector. Every scene id has an explicit entry above; an unknown
+// id (only possible if a scene were added without a view) falls back to the
+// flow-network view (the bare capacity network) rather than a numeric default
+// meant for a different scene. Exported (with the map) so stageSceneCoverage.test
+// can assert every scene id is mapped and no scene silently inherits a stale case.
+export const selectViewForScene = sceneId =>
+	(VIEW_FOR_SCENE[sceneId] ?? VIEW_FOR_SCENE['flow-network'])();
+
+export { VIEW_FOR_SCENE };

@@ -1,3 +1,4 @@
+import { Eyebrow as SharedEyebrow } from '@viljen789/study-ui';
 import styles from './Eyebrow.module.css';
 
 // The mono, uppercase, letter-spaced kicker used above headings across the site
@@ -13,14 +14,15 @@ const Eyebrow = ({
 	className = '',
 	...rest
 }) => {
-	const Tag = as;
 	return (
-		<Tag
+		<SharedEyebrow
+			as={as}
+			tone={tone === 'accent' ? 'brand' : 'neutral'}
 			className={`${styles.eyebrow} ${tone === 'accent' ? styles.accent : ''} ${className}`}
 			{...rest}
 		>
 			{children}
-		</Tag>
+		</SharedEyebrow>
 	);
 };
 

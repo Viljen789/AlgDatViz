@@ -9,6 +9,11 @@ import StepControlBar from '../../common/StepControlBar/StepControlBar.jsx';
 import CoinChangeCanvas from './CoinChangeCanvas/CoinChangeCanvas.jsx';
 import ClimbingStairsCanvas from './ClimbingStairsCanvas/ClimbingStairsCanvas.jsx';
 import IntervalSchedulingCanvas from './IntervalSchedulingCanvas/IntervalSchedulingCanvas.jsx';
+import RodCuttingCanvas from './RodCuttingCanvas/RodCuttingCanvas.jsx';
+import LcsCanvas from './LcsCanvas/LcsCanvas.jsx';
+import Knapsack01Canvas from './Knapsack01Canvas/Knapsack01Canvas.jsx';
+import FractionalKnapsackCanvas from './FractionalKnapsackCanvas/FractionalKnapsackCanvas.jsx';
+import HuffmanCanvas from './HuffmanCanvas/HuffmanCanvas.jsx';
 import StrategiesAlgorithmPicker from './StrategiesAlgorithmPicker/StrategiesAlgorithmPicker.jsx';
 import StrategiesReadMoreOverlay from './StrategiesReadMoreOverlay/StrategiesReadMoreOverlay.jsx';
 import {
@@ -19,12 +24,26 @@ import {
 	CLIMBING_STAIRS_RANGE,
 	INTERVAL_SCHEDULING_PSEUDO,
 	INTERVAL_SCHEDULING_PRESETS,
+	ROD_CUTTING_PSEUDO,
+	ROD_CUTTING_PRESETS,
+	LCS_PSEUDO,
+	LCS_PRESETS,
+	KNAPSACK01_PSEUDO,
+	FRACTIONAL_KNAPSACK_PSEUDO,
+	KNAPSACK_PRESETS,
+	HUFFMAN_PSEUDO,
+	HUFFMAN_PRESETS,
 } from './strategiesMeta.js';
 import {
 	buildCoinChangeFrames,
 	buildClimbingStairsFrames,
 	buildIntervalSchedulingFrames,
 } from './coinChangeFrames.js';
+import { buildHuffmanFrames } from './huffmanFrames.js';
+import { buildRodCuttingFrames } from './rodCuttingFrames.js';
+import { buildLcsFrames } from './lcsFrames.js';
+import { buildKnapsack01Frames } from './knapsack01Frames.js';
+import { buildFractionalKnapsackFrames } from './fractionalKnapsackFrames.js';
 import styles from './StrategiesDashboard.module.css';
 
 // Playback speed values map directly onto usePlayback's speed. Higher = faster.
@@ -41,6 +60,12 @@ const StrategiesDashboard = ({ onUserInteract }) => {
 	const [intervalPresetId, setIntervalPresetId] = useState(
 		INTERVAL_SCHEDULING_PRESETS[0].id
 	);
+	const [huffmanPresetId, setHuffmanPresetId] = useState(HUFFMAN_PRESETS[0].id);
+	const [rodPresetId, setRodPresetId] = useState(ROD_CUTTING_PRESETS[0].id);
+	const [lcsPresetId, setLcsPresetId] = useState(LCS_PRESETS[0].id);
+	// 0/1 and fractional knapsack share one instance selector so the same bag can
+	// be solved both ways.
+	const [knapsackPresetId, setKnapsackPresetId] = useState(KNAPSACK_PRESETS[0].id);
 	const [stairsN, setStairsN] = useState(CLIMBING_STAIRS_RANGE.default);
 	const [pickerOpen, setPickerOpen] = useState(false);
 	const [presetOpen, setPresetOpen] = useState(false);
@@ -65,6 +90,31 @@ const StrategiesDashboard = ({ onUserInteract }) => {
 		[intervalPresetId]
 	);
 
+	const huffmanPreset = useMemo(
+		() =>
+			HUFFMAN_PRESETS.find(p => p.id === huffmanPresetId) || HUFFMAN_PRESETS[0],
+		[huffmanPresetId]
+	);
+
+	const rodPreset = useMemo(
+		() =>
+			ROD_CUTTING_PRESETS.find(p => p.id === rodPresetId) ||
+			ROD_CUTTING_PRESETS[0],
+		[rodPresetId]
+	);
+
+	const lcsPreset = useMemo(
+		() => LCS_PRESETS.find(p => p.id === lcsPresetId) || LCS_PRESETS[0],
+		[lcsPresetId]
+	);
+
+	const knapsackPreset = useMemo(
+		() =>
+			KNAPSACK_PRESETS.find(p => p.id === knapsackPresetId) ||
+			KNAPSACK_PRESETS[0],
+		[knapsackPresetId]
+	);
+
 	const { frames, lines } = useMemo(() => {
 		if (algorithmId === 'coinChange') {
 			const built = buildCoinChangeFrames({
@@ -77,9 +127,47 @@ const StrategiesDashboard = ({ onUserInteract }) => {
 			const built = buildClimbingStairsFrames(stairsN);
 			return { frames: built.frames, lines: CLIMBING_STAIRS_PSEUDO };
 		}
+		if (algorithmId === 'rodCutting') {
+			const built = buildRodCuttingFrames({
+				prices: rodPreset.prices,
+				n: rodPreset.n,
+			});
+			return { frames: built.frames, lines: ROD_CUTTING_PSEUDO };
+		}
+		if (algorithmId === 'lcs') {
+			const built = buildLcsFrames({ x: lcsPreset.x, y: lcsPreset.y });
+			return { frames: built.frames, lines: LCS_PSEUDO };
+		}
+		if (algorithmId === 'knapsack01') {
+			const built = buildKnapsack01Frames({
+				items: knapsackPreset.items,
+				capacity: knapsackPreset.capacity,
+			});
+			return { frames: built.frames, lines: KNAPSACK01_PSEUDO };
+		}
+		if (algorithmId === 'fractionalKnapsack') {
+			const built = buildFractionalKnapsackFrames({
+				items: knapsackPreset.items,
+				capacity: knapsackPreset.capacity,
+			});
+			return { frames: built.frames, lines: FRACTIONAL_KNAPSACK_PSEUDO };
+		}
+		if (algorithmId === 'huffman') {
+			const built = buildHuffmanFrames(huffmanPreset.symbols);
+			return { frames: built.frames, lines: HUFFMAN_PSEUDO };
+		}
 		const built = buildIntervalSchedulingFrames(intervalPreset.intervals);
 		return { frames: built.frames, lines: INTERVAL_SCHEDULING_PSEUDO };
-	}, [algorithmId, preset, stairsN, intervalPreset]);
+	}, [
+		algorithmId,
+		preset,
+		stairsN,
+		intervalPreset,
+		huffmanPreset,
+		rodPreset,
+		lcsPreset,
+		knapsackPreset,
+	]);
 
 	const player = usePlayback(frames, { speed: 200 });
 	const {
@@ -102,7 +190,17 @@ const StrategiesDashboard = ({ onUserInteract }) => {
 	// coin preset, stairs count, or interval preset all rebuild the frame list.
 	useEffect(() => {
 		reset();
-	}, [algorithmId, presetId, stairsN, intervalPresetId, reset]);
+	}, [
+		algorithmId,
+		presetId,
+		stairsN,
+		intervalPresetId,
+		huffmanPresetId,
+		rodPresetId,
+		lcsPresetId,
+		knapsackPresetId,
+		reset,
+	]);
 
 	const algo = STRATEGY_ALGORITHMS[algorithmId];
 	const frame = currentFrame;
@@ -125,6 +223,30 @@ const StrategiesDashboard = ({ onUserInteract }) => {
 	const handleIntervalPresetChange = id => {
 		notifyInteract();
 		setIntervalPresetId(id);
+		setPresetOpen(false);
+	};
+
+	const handleHuffmanPresetChange = id => {
+		notifyInteract();
+		setHuffmanPresetId(id);
+		setPresetOpen(false);
+	};
+
+	const handleRodPresetChange = id => {
+		notifyInteract();
+		setRodPresetId(id);
+		setPresetOpen(false);
+	};
+
+	const handleLcsPresetChange = id => {
+		notifyInteract();
+		setLcsPresetId(id);
+		setPresetOpen(false);
+	};
+
+	const handleKnapsackPresetChange = id => {
+		notifyInteract();
+		setKnapsackPresetId(id);
 		setPresetOpen(false);
 	};
 
@@ -163,6 +285,11 @@ const StrategiesDashboard = ({ onUserInteract }) => {
 
 	const showCoinPreset = algorithmId === 'coinChange';
 	const showIntervalPreset = algorithmId === 'intervalScheduling';
+	const showHuffmanPreset = algorithmId === 'huffman';
+	const showRodPreset = algorithmId === 'rodCutting';
+	const showLcsPreset = algorithmId === 'lcs';
+	const showKnapsackPreset =
+		algorithmId === 'knapsack01' || algorithmId === 'fractionalKnapsack';
 	const showStairsControl = algorithmId === 'climbingStairs';
 
 	const narration = useMemo(() => {
@@ -306,6 +433,221 @@ const StrategiesDashboard = ({ onUserInteract }) => {
 								</div>
 							</>
 						)}
+						{showRodPreset && (
+							<>
+								<span className={styles.notationDot} aria-hidden="true">
+									·
+								</span>
+								<div className={styles.presetWrap} ref={presetWrapRef}>
+									<button
+										type="button"
+										className={styles.presetBtn}
+										onClick={() => setPresetOpen(o => !o)}
+										aria-haspopup="listbox"
+										aria-expanded={presetOpen}
+										title="Pick a price table"
+									>
+										<span>
+											n = {rodPreset.n} · {rodPreset.label}
+										</span>
+										<ChevronDown size={12} strokeWidth={2} aria-hidden="true" />
+									</button>
+									{presetOpen && (
+										<ul className={styles.presetMenu} role="listbox">
+											{ROD_CUTTING_PRESETS.map(p => (
+												<li
+													key={p.id}
+													role="option"
+													aria-selected={p.id === rodPresetId}
+												>
+													<button
+														type="button"
+														className={`${styles.presetItem} ${
+															p.id === rodPresetId ? styles.presetItemActive : ''
+														}`}
+														onClick={() => handleRodPresetChange(p.id)}
+													>
+														<span className={styles.presetItemHead}>
+															{p.label}
+														</span>
+														<span className={styles.presetItemMath}>
+															n = {p.n} · price [{p.prices.join(', ')}]
+														</span>
+														<span className={styles.presetItemIntent}>
+															{p.intent}
+														</span>
+													</button>
+												</li>
+											))}
+										</ul>
+									)}
+								</div>
+							</>
+						)}
+						{showLcsPreset && (
+							<>
+								<span className={styles.notationDot} aria-hidden="true">
+									·
+								</span>
+								<div className={styles.presetWrap} ref={presetWrapRef}>
+									<button
+										type="button"
+										className={styles.presetBtn}
+										onClick={() => setPresetOpen(o => !o)}
+										aria-haspopup="listbox"
+										aria-expanded={presetOpen}
+										title="Pick a string pair"
+									>
+										<span>
+											{lcsPreset.x} / {lcsPreset.y}
+										</span>
+										<ChevronDown size={12} strokeWidth={2} aria-hidden="true" />
+									</button>
+									{presetOpen && (
+										<ul className={styles.presetMenu} role="listbox">
+											{LCS_PRESETS.map(p => (
+												<li
+													key={p.id}
+													role="option"
+													aria-selected={p.id === lcsPresetId}
+												>
+													<button
+														type="button"
+														className={`${styles.presetItem} ${
+															p.id === lcsPresetId ? styles.presetItemActive : ''
+														}`}
+														onClick={() => handleLcsPresetChange(p.id)}
+													>
+														<span className={styles.presetItemHead}>
+															{p.label}
+														</span>
+														<span className={styles.presetItemMath}>
+															X = {p.x} · Y = {p.y}
+														</span>
+														<span className={styles.presetItemIntent}>
+															{p.intent}
+														</span>
+													</button>
+												</li>
+											))}
+										</ul>
+									)}
+								</div>
+							</>
+						)}
+						{showKnapsackPreset && (
+							<>
+								<span className={styles.notationDot} aria-hidden="true">
+									·
+								</span>
+								<div className={styles.presetWrap} ref={presetWrapRef}>
+									<button
+										type="button"
+										className={styles.presetBtn}
+										onClick={() => setPresetOpen(o => !o)}
+										aria-haspopup="listbox"
+										aria-expanded={presetOpen}
+										title="Pick a knapsack instance"
+									>
+										<span>
+											W = {knapsackPreset.capacity} ·{' '}
+											{knapsackPreset.items.length} items
+										</span>
+										<ChevronDown size={12} strokeWidth={2} aria-hidden="true" />
+									</button>
+									{presetOpen && (
+										<ul className={styles.presetMenu} role="listbox">
+											{KNAPSACK_PRESETS.map(p => (
+												<li
+													key={p.id}
+													role="option"
+													aria-selected={p.id === knapsackPresetId}
+												>
+													<button
+														type="button"
+														className={`${styles.presetItem} ${
+															p.id === knapsackPresetId
+																? styles.presetItemActive
+																: ''
+														}`}
+														onClick={() => handleKnapsackPresetChange(p.id)}
+													>
+														<span className={styles.presetItemHead}>
+															{p.label}
+														</span>
+														<span className={styles.presetItemMath}>
+															W = {p.capacity} ·{' '}
+															{p.items
+																.map(it => `${it.name}(${it.weight}/${it.value})`)
+																.join('  ')}
+														</span>
+														<span className={styles.presetItemIntent}>
+															{p.intent}
+														</span>
+													</button>
+												</li>
+											))}
+										</ul>
+									)}
+								</div>
+							</>
+						)}
+						{showHuffmanPreset && (
+							<>
+								<span className={styles.notationDot} aria-hidden="true">
+									·
+								</span>
+								<div className={styles.presetWrap} ref={presetWrapRef}>
+									<button
+										type="button"
+										className={styles.presetBtn}
+										onClick={() => setPresetOpen(o => !o)}
+										aria-haspopup="listbox"
+										aria-expanded={presetOpen}
+										title="Pick a symbol table"
+									>
+										<span>
+											{huffmanPreset.symbols.length} symbols ·{' '}
+											{huffmanPreset.label}
+										</span>
+										<ChevronDown size={12} strokeWidth={2} aria-hidden="true" />
+									</button>
+									{presetOpen && (
+										<ul className={styles.presetMenu} role="listbox">
+											{HUFFMAN_PRESETS.map(p => (
+												<li
+													key={p.id}
+													role="option"
+													aria-selected={p.id === huffmanPresetId}
+												>
+													<button
+														type="button"
+														className={`${styles.presetItem} ${
+															p.id === huffmanPresetId
+																? styles.presetItemActive
+																: ''
+														}`}
+														onClick={() => handleHuffmanPresetChange(p.id)}
+													>
+														<span className={styles.presetItemHead}>
+															{p.label}
+														</span>
+														<span className={styles.presetItemMath}>
+															{p.symbols
+																.map(s => `${s.char}:${s.freq}`)
+																.join('  ')}
+														</span>
+														<span className={styles.presetItemIntent}>
+															{p.intent}
+														</span>
+													</button>
+												</li>
+											))}
+										</ul>
+									)}
+								</div>
+							</>
+						)}
 						{showStairsControl && (
 							<>
 								<span className={styles.notationDot} aria-hidden="true">
@@ -398,6 +740,17 @@ const StrategiesDashboard = ({ onUserInteract }) => {
 								intervals={intervalPreset.intervals}
 							/>
 						)}
+						{algorithmId === 'rodCutting' && (
+							<RodCuttingCanvas frame={frame} />
+						)}
+						{algorithmId === 'lcs' && <LcsCanvas frame={frame} />}
+						{algorithmId === 'knapsack01' && (
+							<Knapsack01Canvas frame={frame} />
+						)}
+						{algorithmId === 'fractionalKnapsack' && (
+							<FractionalKnapsackCanvas frame={frame} />
+						)}
+						{algorithmId === 'huffman' && <HuffmanCanvas frame={frame} />}
 					</div>
 
 					<FrameTrace

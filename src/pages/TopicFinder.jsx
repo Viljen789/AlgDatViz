@@ -7,9 +7,11 @@ import styles from './TopicFinder.module.css';
 // A quiet index that sits directly under the hero so a reader can find an exact
 // topic in seconds, without scrolling down to the animated spine. A single
 // labelled text field filters every built topic by case-insensitive substring
-// over its name, nav label, and phase; matches render as a compact, scannable
-// grid of chips. Each chip is a real route link (so it works without JS) and
-// marks the topic visited on click, mirroring HomePage's own visit handler.
+// over its name, nav label, phase, AND its algorithm keywords — so searching
+// "huffman", "dijkstra", or "knapsack" surfaces the topic that teaches it, not
+// just topics whose title happens to match. Matches render as a compact,
+// scannable grid of chips. Each chip is a real route link (so it works without
+// JS) and marks the topic visited on click, mirroring HomePage's own handler.
 //
 // `markVisited` is passed in from HomePage so this section shares the page's
 // single progress source (one localStorage-backed hook instance) rather than
@@ -17,7 +19,7 @@ import styles from './TopicFinder.module.css';
 const matches = (topic, needle) => {
 	if (!needle) return true;
 	const haystack =
-		`${topic.name} ${topic.navLabel} ${topic.phase}`.toLowerCase();
+		`${topic.name} ${topic.navLabel} ${topic.phase} ${topic.keywords ?? ''}`.toLowerCase();
 	return haystack.includes(needle);
 };
 
@@ -28,10 +30,13 @@ const TopicFinder = ({ markVisited }) => {
 
 	const needle = query.trim().toLowerCase();
 
-	// Empty query shows every topic; otherwise the substring filter, in teaching
-	// order (BUILT_TOPICS is already ordered).
+	// The curriculum spine already shows every topic. This command surface stays
+	// quiet until the learner asks for something, then returns a bounded set.
 	const results = useMemo(
-		() => BUILT_TOPICS.filter(topic => matches(topic, needle)),
+		() =>
+			needle
+				? BUILT_TOPICS.filter(topic => matches(topic, needle)).slice(0, 6)
+				: [],
 		[needle]
 	);
 
@@ -84,8 +89,9 @@ const TopicFinder = ({ markVisited }) => {
 					Find your topic
 				</h2>
 				<p className={styles.sub}>
-					Type a name or phase to filter all {BUILT_TOPICS.length} topics. Press
-					Enter to open the first match.
+					Type a topic, an algorithm (&ldquo;huffman&rdquo;,
+					&ldquo;dijkstra&rdquo;), or a phase to filter all{' '}
+					{BUILT_TOPICS.length} topics. Press Enter to open the first match.
 				</p>
 			</header>
 
@@ -102,7 +108,7 @@ const TopicFinder = ({ markVisited }) => {
 					value={query}
 					onChange={event => setQuery(event.target.value)}
 					onKeyDown={onInputKeyDown}
-					placeholder="Search topics, e.g. sorting, graphs, hashing"
+					placeholder="Search topics or algorithms, e.g. huffman, dijkstra"
 					aria-label="Search topics"
 					aria-describedby="topic-finder-count"
 					autoComplete="off"
@@ -111,12 +117,12 @@ const TopicFinder = ({ markVisited }) => {
 			</div>
 
 			<p id="topic-finder-count" className={styles.count} aria-live="polite">
-				{needle
-					? `${results.length} of ${BUILT_TOPICS.length} topics`
-					: `${BUILT_TOPICS.length} topics`}
+				{needle ? `${results.length} matching topics` : `${BUILT_TOPICS.length} topics indexed`}
 			</p>
 
-			{results.length === 0 ? (
+			{!needle ? (
+				<p className={styles.idle}>Search by name, phase, or algorithm. The full teaching order continues below.</p>
+			) : results.length === 0 ? (
 				<p className={styles.empty}>No topic matches. Try another word.</p>
 			) : (
 				<ul className={styles.grid}>

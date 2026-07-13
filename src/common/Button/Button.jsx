@@ -1,3 +1,4 @@
+import { Button as SharedButton } from '@viljen789/study-ui';
 import styles from './Button.module.css';
 
 /**
@@ -33,17 +34,18 @@ const Button = ({
 		.join(' ');
 
 	return (
-		<button
+		<SharedButton
 			type={type}
 			onClick={onClick}
-			disabled={disabled || loading}
-			aria-busy={loading || undefined}
+			disabled={disabled}
+			loading={loading}
+			variant={variant}
+			size={size}
 			className={classes}
 			{...rest}
 		>
-			{loading && <span className={styles.spinner} aria-hidden="true" />}
-			<span className={styles.label}>{children}</span>
-		</button>
+			{children}
+		</SharedButton>
 	);
 };
 

@@ -4,6 +4,15 @@ import styles from './GraphVisualizer.module.css';
 const NODE_RADIUS = 26;
 const VIEW_PADDING = 115;
 
+// Distinct fills for strongly-connected-component coloring (SCC only). Each entry
+// is applied inline so it overrides the state classes once a node is assigned.
+// Hues are well spread; saturation/lightness ride the shared topic tokens so
+// both themes retone automatically.
+const SCC_COLORS = [226, 162, 28, 286, 338, 178].map(hue => ({
+	stroke: `hsl(${hue} var(--topic-s) var(--topic-l))`,
+	fill: `hsl(${hue} var(--topic-s) var(--topic-l) / 0.32)`,
+}));
+
 const makeEdgeKey = (from, to, isDirected = false) => {
 	if (isDirected || from === to) return `${from}->${to}`;
 	return [from, to].sort().join('--');
@@ -94,6 +103,9 @@ const GraphVisualizer = ({
 		...(algorithmState?.stackNodes || []),
 	]);
 	const settledNodes = new Set(algorithmState?.settledNodes || []);
+	// Only SCC sets componentMap (nodeId → component index); other algorithms
+	// leave it null and are unaffected.
+	const componentMap = algorithmState?.componentMap || null;
 	const pathEdgeKeys = toKeySet(algorithmState?.pathEdges, isDirected);
 	const candidateEdgeKeys = toKeySet(algorithmState?.candidateEdges, isDirected);
 	const rejectedEdgeKeys = toKeySet(algorithmState?.rejectedEdges, isDirected);
@@ -273,6 +285,21 @@ const GraphVisualizer = ({
 					const isVisited = visitedNodes.has(nodeId);
 					const isQueued = queuedNodes.has(nodeId);
 					const isSettled = settledNodes.has(nodeId);
+					// SCC component fill — applied to assigned, non-active nodes so the
+					// current node still flashes its active ring before settling into
+					// its component colour.
+					const compIndex =
+						componentMap && componentMap[nodeId] != null
+							? componentMap[nodeId]
+							: null;
+					const compStyle =
+						compIndex != null && !isActive
+							? {
+									fill: SCC_COLORS[compIndex % SCC_COLORS.length].fill,
+									stroke: SCC_COLORS[compIndex % SCC_COLORS.length].stroke,
+									strokeWidth: 4,
+								}
+							: undefined;
 
 					return (
 						<g
@@ -296,6 +323,7 @@ const GraphVisualizer = ({
 						>
 							<circle
 								r={NODE_RADIUS}
+								style={compStyle}
 								className={`${styles.nodeCircle} ${
 									isVisited ? styles.nodeVisited : ''
 								} ${isQueued ? styles.nodeQueued : ''} ${

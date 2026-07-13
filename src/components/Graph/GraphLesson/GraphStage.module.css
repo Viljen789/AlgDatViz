@@ -163,6 +163,7 @@
 .reprTitle {
 	font-family: var(--font-family-mono);
 	font-size: var(--font-size-caption);
+	font-weight: var(--font-weight-semibold);
 	letter-spacing: var(--tracking-caps);
 	text-transform: uppercase;
 	color: var(--color-text-muted);
@@ -240,6 +241,7 @@
 	gap: 2px;
 	font-family: var(--font-family-mono);
 	font-size: var(--font-size-caption);
+	font-weight: var(--font-weight-semibold);
 	letter-spacing: var(--tracking-caps);
 	text-transform: uppercase;
 	color: var(--color-text-muted);
@@ -248,6 +250,7 @@
 
 .traversalOrder {
 	font-size: 12px;
+	font-weight: var(--font-weight-regular);
 	letter-spacing: var(--tracking-wide);
 	text-transform: none;
 	color: var(--topic-accent);

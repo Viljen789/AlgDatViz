@@ -8,6 +8,7 @@ import {
 } from '../components/Review/reviewBank.js';
 import { MAX_BOX, forecastDue } from '../components/Review/srsSchedule.js';
 import { BUILT_TOPICS, FIRST_TOPIC } from '../data/curriculum.js';
+import Eyebrow from '../common/Eyebrow/Eyebrow.jsx';
 import ReviewSession from '../components/Review/ReviewSession.jsx';
 import { logActivity } from '../lib/activityLog.js';
 import useProgress from '../hooks/useProgress.js';
@@ -20,6 +21,11 @@ const TOPIC_NAME_BY_ID = REVIEW_BANK.reduce((map, entry) => {
 	if (!map.has(entry.topicId)) map.set(entry.topicId, entry.topicName);
 	return map;
 }, new Map());
+
+// Lowercase a topic name for mid-sentence use ("Study sorting"), but leave
+// acronym-led names (NP-completeness) untouched.
+const lowerName = name =>
+	/^[A-Z][a-z]/.test(name) ? name[0].toLowerCase() + name.slice(1) : name;
 
 // "tomorrow", "in 2 days", … — the human read of a whole-day offset.
 const offsetLabel = offset => {
@@ -150,10 +156,11 @@ const ReviewPage = () => {
 				</nav>
 			</header>
 
+			{!started && (
 			<section className={styles.hero} aria-labelledby="review-title">
 				<p className={styles.eyebrow}>Test yourself · Spaced retrieval</p>
 				<h1 id="review-title" className={styles.title}>
-					Pull it from memory, right before you'd forget.
+					Pull it from memory, right before you’d forget.
 				</h1>
 				<p className={styles.lede}>
 					Re-reading feels like learning; retrieving is learning. The schedule
@@ -173,14 +180,6 @@ const ReviewPage = () => {
 					<div className={styles.stat}>
 						<dt className={styles.statLabel}>Scheduled</dt>
 						<dd className={styles.statValue}>{scheduledCount}</dd>
-					</div>
-					<div className={styles.stat}>
-						<dt className={styles.statLabel}>Question bank</dt>
-						<dd className={styles.statValue}>{bankSize}</dd>
-					</div>
-					<div className={styles.stat}>
-						<dt className={styles.statLabel}>Review topics</dt>
-						<dd className={styles.statValue}>{topicCount}</dd>
 					</div>
 				</dl>
 
@@ -206,19 +205,19 @@ const ReviewPage = () => {
 									/>
 									{forecast.nextDueMs === null ? (
 										<span>
-											You're caught up. Answer a lesson check to start your
+											You’re caught up. Answer a lesson check to start your
 											review schedule, or practice a mixed set below.
 										</span>
 									) : (
 										<span>
-											You're caught up.
+											You’re caught up.
 											{forecast.byDay.length > 0 ? (
 												<> {forecastSentence(forecast.byDay[0])} </>
 											) : (
 												<> Your next review returns soon. </>
 											)}
 											<Link to={studyTopic.to} className={styles.caughtUpLink}>
-												Study {studyTopic.name}
+												Study {lowerName(studyTopic.name)}
 											</Link>{' '}
 											or practice a mixed set below.
 										</span>
@@ -234,24 +233,32 @@ const ReviewPage = () => {
 								<span>Mixed session</span>
 							</button>
 						</div>
-						{dueTotal > 0 && (
-							<p className={styles.dueMeta}>
-								{duePlan.dueCount} scheduled · {duePlan.freshCount} new today
-							</p>
-						)}
+						<p className={styles.dueMeta}>
+							{dueTotal > 0 &&
+								`${duePlan.dueCount} scheduled · ${duePlan.freshCount} new today · `}
+							{bankSize} questions across {topicCount} topics
+						</p>
 					</div>
 				)}
 			</section>
+			)}
 
 			{started && (
-				<section className={styles.sessionWrap} aria-label="Review session">
-					<ReviewSession
-						key={runId}
-						questions={sessionQuestions}
-						onRestart={restart}
-						onGraded={handleGraded}
-					/>
-				</section>
+				<>
+					<header className={styles.sessionHead}>
+						<Eyebrow>Review session</Eyebrow>
+					</header>
+					<section className={styles.sessionWrap} aria-label="Review session">
+						<div className={styles.sessionCard}>
+							<ReviewSession
+								key={runId}
+								questions={sessionQuestions}
+								onRestart={restart}
+								onGraded={handleGraded}
+							/>
+						</div>
+					</section>
+				</>
 			)}
 		</div>
 	);

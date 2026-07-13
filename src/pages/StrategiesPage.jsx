@@ -23,7 +23,7 @@ const initialCheckStates = () =>
  * by the shared playback engine.
  */
 const StrategiesPage = () => {
-	const { markVisited, markCompleted } = useProgress();
+	const { markVisited } = useProgress();
 	const [checkStates, setCheckStates] = useState(initialCheckStates);
 
 	const topic = TOPIC_BY_ID[TOPIC_ID];
@@ -45,10 +45,6 @@ const StrategiesPage = () => {
 		}));
 	}, []);
 
-	const handlePlaygroundInteract = useCallback(() => {
-		markCompleted(TOPIC_ID);
-	}, [markCompleted]);
-
 	const handleVisit = useCallback(() => {
 		markVisited(TOPIC_ID);
 	}, [markVisited]);
@@ -66,8 +62,8 @@ const StrategiesPage = () => {
 	);
 
 	const renderPlayground = useCallback(
-		() => <StrategiesDashboard onUserInteract={handlePlaygroundInteract} />,
-		[handlePlaygroundInteract]
+		() => <StrategiesDashboard />,
+		[]
 	);
 
 	const eyebrow = useMemo(

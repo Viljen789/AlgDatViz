@@ -241,7 +241,7 @@
 	font-family: var(--font-family-mono);
 	font-size: var(--font-size-label);
 	color: var(--color-text-muted);
-	letter-spacing: 0.02em;
+	letter-spacing: var(--tracking-wide);
 }
 
 .recurseControls {
@@ -320,7 +320,7 @@
 .stickSize {
 	flex: 0 0 2.6rem;
 	font-family: var(--font-family-mono);
-	font-size: 11px;
+	font-size: var(--font-size-caption);
 	color: var(--color-text-muted);
 	text-align: right;
 }
@@ -408,7 +408,7 @@
 	font-family: var(--font-family-mono);
 	font-size: 12px;
 	color: var(--color-text-secondary);
-	letter-spacing: 0.02em;
+	letter-spacing: var(--tracking-wide);
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -459,6 +459,6 @@
 		align-items: flex-end;
 	}
 	.notation {
-		font-size: 11px;
+		font-size: var(--font-size-caption);
 	}
 }

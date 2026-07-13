@@ -221,6 +221,7 @@ const VerifyBoard = ({ holdReveal = false }) => {
 // ── Roster: the standard NP-complete problems vs P ───────────────────────────
 
 const NPC_PROBLEMS = [
+	'CIRCUIT-SAT',
 	'SAT',
 	'3-SAT',
 	'CLIQUE',

@@ -43,6 +43,21 @@ const YesNo = ({ value, yes = 'Yes', no = 'No' }) =>
 // the lesson). Falls back to the path home if an id is ever unmapped.
 const topicRoute = topicId => TOPIC_BY_ID[topicId]?.to ?? '/';
 
+// Quadratic-or-worse: the worst-case cells worth a second look get the warning
+// tone. The lesson data writes these as 'O(n²)' today; the alternates cover the
+// plain-text spellings should a lesson ever switch notation.
+const slowWorst = s => /n²|n\^2|2\^n|n·k/.test(s);
+
+// The on-page section nav: one pill per block, anchored to the existing heading
+// ids below. Kept here (not derived) because the labels are editorial shorthand.
+const SECTION_LINKS = [
+	{ id: 'complexity-heading', label: 'Complexity' },
+	{ id: 'sorts-heading', label: 'Sorting' },
+	{ id: 'decisions-heading', label: 'Which algorithm when' },
+	{ id: 'greedy-heading', label: 'Greedy or DP' },
+	{ id: 'glossary-heading', label: 'Norwegian terms' },
+];
+
 const ReferencePage = () => {
 	return (
 		<div className={styles.page}>
@@ -66,6 +81,17 @@ const ReferencePage = () => {
 					make under pressure. Each value is pulled from the same lesson data
 					the topics use, so this sheet says exactly what the algorithms do.
 				</p>
+				<nav className={styles.sectionNav} aria-label="On this page">
+					{SECTION_LINKS.map(link => (
+						<a
+							key={link.id}
+							href={`#${link.id}`}
+							className={styles.sectionNavLink}
+						>
+							{link.label}
+						</a>
+					))}
+				</nav>
 			</section>
 
 			{/* ---- Complexity at a glance ---- */}
@@ -139,7 +165,13 @@ const ReferencePage = () => {
 										<code className={styles.cellCode}>{row.average}</code>
 									</td>
 									<td>
-										<code className={styles.cellCode}>{row.worst}</code>
+										<code
+											className={`${styles.cellCode}${
+												slowWorst(row.worst) ? ` ${styles.cellCodeWarn}` : ''
+											}`}
+										>
+											{row.worst}
+										</code>
 									</td>
 									<td>
 										<YesNo value={row.stable} />

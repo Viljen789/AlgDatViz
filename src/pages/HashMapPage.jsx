@@ -69,7 +69,7 @@ const CHEAT_SHEET = {
  * Keeps the original route (/hashmap) and default export.
  */
 const HashMapPage = () => {
-	const { markVisited, markCompleted } = useProgress();
+	const { markVisited } = useProgress();
 	const [checkStates, setCheckStates] = useState(initialCheckStates);
 
 	const topic = TOPIC_BY_ID[TOPIC_ID];
@@ -102,13 +102,9 @@ const HashMapPage = () => {
 		[]
 	);
 
-	const handlePlaygroundInteract = useCallback(() => {
-		markCompleted(TOPIC_ID);
-	}, [markCompleted]);
-
 	const renderPlayground = useCallback(
-		() => <HashMapPlayground onUserInteract={handlePlaygroundInteract} />,
-		[handlePlaygroundInteract]
+		() => <HashMapPlayground />,
+		[]
 	);
 
 	const handleVisit = useCallback(() => {

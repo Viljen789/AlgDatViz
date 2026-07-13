@@ -1,19 +1,19 @@
 /* =============================================================================
    AlgDatViz — Design tokens (single source of truth)
    -----------------------------------------------------------------------------
-   This file is consumed by ~100 CSS-module files. Every token name that existed
-   before the Phase 1 redesign is preserved (re-pointed to the new system where
-   it improves consistency) so existing pages keep rendering. New work should
-   prefer the canonical tokens documented in each section below; the "Backward
-   compatibility" block at the end keeps the legacy aliases alive.
+   This file is consumed by ~100 CSS-module files. Use the canonical tokens
+   documented in each section below. (The pre-Phase-1 grey/blue and --spacing-*
+   aliases have been fully migrated and removed; --border-radius-* and the
+   legacy font-size names remain as aliases while their users migrate.)
 
    Naming:
      --color-*   raw + semantic colors and surfaces
      --topic-*   per-topic signature hues (one harmonized HSL family)
      --font-*    typography (families, scale, line-height, tracking, weight)
-     --space-*   / --spacing-*  spacing scale
+     --space-*   spacing scale
      --radius-*  / --border-radius-*  corner radii
      --shadow-*  elevation language
+     --z-*       layer scale
      --ease-* / --duration-*  motion
    ============================================================================ */
 
@@ -365,7 +365,7 @@
 
 	/* ---------------------------------------------------------------------------
 	   7. TYPOGRAPHY
-	   Families: Display = Bricolage Grotesque, Body = Inter, Mono = JetBrains.
+	   Families: Display = Newsreader, Body = Inter, Mono = JetBrains.
 	   A modular type scale (ratio ~1.2 minor third, fluid at the top) gives
 	   deliberate display / heading / body / label / caption steps with matching
 	   line-height and tracking. Large display gets tight tracking; body gets a
@@ -417,7 +417,7 @@
 	--font-weight-display: 600; /* Newsreader editorial display */
 
 	/* ---------------------------------------------------------------------------
-	   8. SPACING — 4px base. New --space-* names; legacy --spacing-* aliased.
+	   8. SPACING — 4px base.
 	   --------------------------------------------------------------------------- */
 	--space-2xs: 2px;
 	--space-xs: 4px;
@@ -428,14 +428,6 @@
 	--space-2xl: 44px;
 	--space-3xl: 72px;
 	--space-4xl: 112px;
-
-	--spacing-xs: var(--space-xs);
-	--spacing-sm: var(--space-sm);
-	--spacing-md: var(--space-md);
-	--spacing-lg: var(--space-lg);
-	--spacing-xl: var(--space-xl);
-	--spacing-2xl: var(--space-2xl);
-	--spacing-3xl: var(--space-3xl);
 
 	/* ---------------------------------------------------------------------------
 	   9. RADII — new --radius-* names; legacy --border-radius-* aliased.
@@ -514,24 +506,31 @@
 	   12. COMPONENT-LEVEL TOKENS (shared primitives)
 	   --------------------------------------------------------------------------- */
 	--focus-ring: var(--shadow-focus);
-	--switch-width: 20px;
-	--switch-height: 10px;
+	/* ToggleSwitch geometry — the component derives thumb size and travel from
+	   these (44x24 matches its long-standing rendered size). */
+	--switch-width: 44px;
+	--switch-height: 24px;
 
-	/* ===========================================================================
-	   BACKWARD COMPATIBILITY
-	   Legacy token names still referenced by ~100 module files. Keep these
-	   working until downstream files are migrated in later phases. Do not remove.
-	   =========================================================================== */
-	--color-slight-grey: var(--surface-hover);
-	--color-light-grey: var(--surface-2);
-	--color-medium-grey: var(--color-border);
-	--color-dark-grey: var(--color-text-secondary);
-	--color-light-blue: var(--color-info-wash);
-	--color-lighter-blue: hsl(
-		var(--topic-foundations-h) var(--topic-s) var(--topic-l) / 0.08
-	);
-	--color-dark-blue: var(--surface-2);
-	--color-swapping-bar: var(--state-flight);
+	/* Shared page shell: one content width for every study page (Home, Exam,
+	   Review, Reference, Progress, TopicFinder) so sibling pages stop flipping
+	   between 1100/1280px, and one sticky-header offset for the topic pages'
+	   pinned chrome (was three drifting magic numbers: 72/76/84px). */
+	--page-max: 1280px;
+	--topic-header-h: 76px;
+
+	/* Scrolly scenes dim to this while out of focus (consumed by TopicScrolly;
+	   was referenced without ever being defined). */
+	--scene-inactive-opacity: 0.62;
+
+	/* Layer scale — replaces the ad-hoc 100/1000/2000/3000 magic z-indexes.
+	   New code should reach for these; top-level overlays get repointed as
+	   they're touched. */
+	--z-raised: 2;
+	--z-sticky: 20;
+	--z-overlay: 100;
+	--z-modal: 110;
+	--z-toast: 120;
+
 }
 
 /* =============================================================================
@@ -665,10 +664,6 @@
 	   amber/teal/azure can't reach AA as small text on white). Identity still
 	   reads via the accent icon, left bar and tinted background. */
 	--nav-active-text: var(--color-text-primary);
-
-	/* Legacy greys re-pointed so old aliases stay sensible on light. */
-	--color-medium-grey: var(--color-border-strong);
-	--color-dark-grey: var(--color-text-secondary);
 }
 
 @media (prefers-reduced-motion: reduce) {

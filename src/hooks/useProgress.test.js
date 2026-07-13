@@ -1,11 +1,36 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
+	createProgressStore,
 	firstTryStatsFrom,
 	furthestSceneIndex,
 	mergeCheckRecord,
 	migrateCheckValue,
 } from './useProgress.js';
+
+const createMemoryStorage = () => {
+	const values = new Map();
+	return {
+		getItem: key => values.get(key) ?? null,
+		setItem: (key, value) => values.set(key, String(value)),
+	};
+};
+
+const createMemoryEventTarget = () => {
+	const listeners = new Map();
+	return {
+		addEventListener: (type, listener) => {
+			if (!listeners.has(type)) listeners.set(type, new Set());
+			listeners.get(type).add(listener);
+		},
+		removeEventListener: (type, listener) => {
+			listeners.get(type)?.delete(listener);
+		},
+		dispatch: (type, event) => {
+			for (const listener of listeners.get(type) || []) listener(event);
+		},
+	};
+};
 
 // furthestSceneIndex is the pure merge rule behind topic resume: it only ever
 // moves the stored "furthest scene" forward, and treats anything malformed as
@@ -133,5 +158,92 @@ test('firstTryStatsFrom: empty/absent checks is a clean zero (no divide-by-zero)
 		attempted: 0,
 		firstTry: 0,
 		rate: 0,
+	});
+});
+
+test('progress actions merge the latest persisted checks and scenes instead of erasing them', () => {
+	const storage = createMemoryStorage();
+	// Two stores model two hook instances that both mounted before either wrote.
+	// The second instance therefore starts with the stale empty snapshot that used
+	// to overwrite the first instance's newer retrieval state on completion.
+	const lesson = createProgressStore({ storage });
+	const playground = createProgressStore({ storage });
+
+	lesson.recordCheck('sorting', 'merge-step', true);
+	lesson.recordScene('sorting', 4);
+	playground.markCompleted('sorting');
+
+	assert.deepEqual(playground.getSnapshot().checks.sorting['merge-step'], {
+		correct: true,
+		firstTry: true,
+	});
+	assert.equal(playground.getSnapshot().scenes.sorting, 4);
+	assert.deepEqual(playground.getSnapshot().completed, ['sorting']);
+});
+
+test('same-tab progress actions immediately update subscribers', () => {
+	const store = createProgressStore({ storage: createMemoryStorage() });
+	const seen = [];
+	const unsubscribe = store.subscribe(() => seen.push(store.getSnapshot()));
+
+	store.recordCheck('graphs', 'bfs-next', false);
+
+	assert.equal(seen.length, 1);
+	assert.deepEqual(seen[0].checks.graphs['bfs-next'], {
+		correct: false,
+		firstTry: false,
+	});
+	assert.deepEqual(seen[0].visited, ['graphs']);
+
+	unsubscribe();
+	store.markCompleted('graphs');
+	assert.equal(seen.length, 1, 'unsubscribed clients stay quiet');
+});
+
+test('storage events synchronize the cached snapshot from another tab', () => {
+	const storage = createMemoryStorage();
+	const eventTarget = createMemoryEventTarget();
+	const store = createProgressStore({ storage, eventTarget });
+	let notifications = 0;
+	const unsubscribe = store.subscribe(() => {
+		notifications += 1;
+	});
+
+	storage.setItem(
+		'algdatviz:progress:v1',
+		JSON.stringify({
+			completed: ['trees'],
+			visited: [],
+			lastVisited: 'trees',
+			checks: { trees: { traversal: true } },
+			scenes: { trees: 3 },
+		})
+	);
+	eventTarget.dispatch('storage', { key: 'algdatviz:progress:v1' });
+
+	assert.equal(notifications, 1);
+	assert.deepEqual(store.getSnapshot().completed, ['trees']);
+	assert.deepEqual(store.getSnapshot().visited, ['trees']);
+	assert.deepEqual(store.getSnapshot().checks.trees.traversal, {
+		correct: true,
+		firstTry: true,
+	});
+	assert.equal(store.getSnapshot().scenes.trees, 3);
+	unsubscribe();
+});
+
+test('the server snapshot is stable and browser-independent', () => {
+	const store = createProgressStore({ storage: null, eventTarget: null });
+	const first = store.getServerSnapshot();
+
+	store.recordCheck('sorting', 'merge-step', true);
+
+	assert.equal(store.getServerSnapshot(), first);
+	assert.deepEqual(first, {
+		completed: [],
+		visited: [],
+		lastVisited: null,
+		checks: {},
+		scenes: {},
 	});
 });

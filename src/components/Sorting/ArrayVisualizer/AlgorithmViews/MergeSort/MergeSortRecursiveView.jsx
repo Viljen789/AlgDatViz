@@ -120,7 +120,11 @@ const MergeSortRecursiveView = ({ array = [], currentFrame = null }) => {
 		phase === 'completed' || currentFrame?.sorted?.length === values.length;
 
 	return (
-		<div className={styles.container}>
+		<div
+			className={styles.container}
+			role="region"
+			aria-label="Merge sort recursive workspace"
+		>
 			<header className={styles.header}>
 				<div>
 					<span className={styles.phaseBadge}>{copy.label}</span>

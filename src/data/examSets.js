@@ -46,6 +46,8 @@ import {
 import {
 	buildMaxHeapTrace,
 	extractMaxTrace,
+	insertTrace,
+	parentIndex,
 } from '../components/Heaps/heapTrace.js';
 import { analyseRecurrence } from '../components/MasterTheorem/masterMath.js';
 import {
@@ -80,6 +82,12 @@ import {
 	buildClimbingStairsFrames,
 } from '../components/Strategies/coinChangeFrames.js';
 import { activitySelect } from '../components/Strategies/activitySelect.js';
+import { buildHuffmanFrames } from '../components/Strategies/huffmanFrames.js';
+import { buildLcsFrames } from '../components/Strategies/lcsFrames.js';
+import { buildKnapsack01Frames } from '../components/Strategies/knapsack01Frames.js';
+import { buildRodCuttingFrames } from '../components/Strategies/rodCuttingFrames.js';
+import { buildFractionalKnapsackFrames } from '../components/Strategies/fractionalKnapsackFrames.js';
+import { createGraphAlgorithmSteps } from '../utils/graphAlgorithms.js';
 import { tableDoubling } from '../components/Foundations/tableDoubling.js';
 import { galeShapley, blockingPairs, isStable } from '../lib/galeShapley.js';
 import { dijkstraSettleProbe, bfsDequeueProbe } from './traceProbes.js';
@@ -1797,8 +1805,9 @@ const problemG2 = {
 		{
 			kind: 'choice',
 			prompt:
-				'Suppose we add the edge F→A, creating a cycle A→C→E→F→A. How many ' +
-				'vertices can a topological sort now place?',
+				'Suppose we add the edge F→A, creating a cycle A→C→E→F→A. A ' +
+				'topological order must place every vertex — which vertices can one ' +
+				'place now?',
 			options: [
 				'None — a graph with a cycle has no topological order',
 				'All six, in some order',
@@ -1817,6 +1826,160 @@ const problemG2 = {
 				'prerequisite ahead of it, so none can be placed first. Kahn’s in-degrees ' +
 				'never all reach 0, which is exactly how it DETECTS the cycle: fewer vertices ' +
 				'come out than went in. A topological order exists only for a DAG.',
+		},
+	],
+};
+
+// =============================================================================
+// GRAPHS (strongly connected components) — Kosaraju's two-pass DFS on the same
+// directed graph the Graph playground's 'Strongly connected' preset uses: three
+// SCCs whose condensation is the chain {A,B,C} → {D,E} → {F,G}. The component
+// count, D's component, and the effect of closing the big cycle are all read off
+// createGraphAlgorithmSteps(..., 'scc') — the final step's componentMap assigns
+// every vertex its component. Only the WHY of the transpose pass is conceptual.
+// =============================================================================
+
+const G3_GRAPH = {
+	nodes: ['A', 'B', 'C', 'D', 'E', 'F', 'G'].map(id => ({ id, label: id })),
+	edges: [
+		{ from: 'A', to: 'B' },
+		{ from: 'B', to: 'C' },
+		{ from: 'C', to: 'A' },
+		{ from: 'C', to: 'D' },
+		{ from: 'D', to: 'E' },
+		{ from: 'E', to: 'D' },
+		{ from: 'E', to: 'F' },
+		{ from: 'F', to: 'G' },
+		{ from: 'G', to: 'F' },
+	],
+};
+
+// The last step carrying a non-empty componentMap holds the final assignment.
+const sccComponentMap = graph => {
+	const steps = createGraphAlgorithmSteps(graph, 'scc', {
+		startNodeId: 'A',
+		isDirected: true,
+	});
+	for (let i = steps.length - 1; i >= 0; i--) {
+		const m = steps[i].componentMap;
+		if (m && Object.keys(m).length) return m;
+	}
+	return {};
+};
+
+const G3_MAP = sccComponentMap(G3_GRAPH);
+const G3_COUNT = new Set(Object.values(G3_MAP)).size; // 3 components
+// Members grouped by component index (discovery order = reverse finish order,
+// which on this graph walks the condensation chain source-first).
+const G3_GROUPS = [...new Set(Object.values(G3_MAP))].map(c =>
+	Object.keys(G3_MAP)
+		.filter(v => G3_MAP[v] === c)
+		.sort()
+);
+const G3_GROUPS_STR = G3_GROUPS.map(g => `{${g.join(', ')}}`).join(' → ');
+const G3_D_GROUP_STR = `{${G3_GROUPS.find(g => g.includes('D')).join(', ')}}`;
+// Close the loop: one extra edge G→A threads every vertex onto a single cycle,
+// so the whole condensation collapses. The new count is DERIVED by re-running
+// the generator on the augmented graph, never asserted by hand.
+const G3_CYCLED_MAP = sccComponentMap({
+	nodes: G3_GRAPH.nodes,
+	edges: [...G3_GRAPH.edges, { from: 'G', to: 'A' }],
+});
+const G3_CYCLED_COUNT = new Set(Object.values(G3_CYCLED_MAP)).size; // 1
+
+const problemG3 = {
+	kind: 'problem',
+	stem:
+		'Directed graph with vertices A through G and edges A→B, B→C, C→A, C→D, ' +
+		'D→E, E→D, E→F, F→G, G→F. Run Kosaraju’s algorithm: pass 1 is a DFS of G ' +
+		'recording finish times; then transpose the graph (reverse every edge); ' +
+		'pass 2 runs DFS on Gᵀ, starting each tree from the unassigned vertex with ' +
+		'the LATEST finish time. Each pass-2 tree is one strongly connected ' +
+		'component.',
+	parts: [
+		{
+			kind: 'numeric',
+			prompt:
+				'How many strongly connected components does the graph have?',
+			answer: G3_COUNT,
+			placeholder: 'a count',
+			explanation:
+				`${G3_COUNT}: ${G3_GROUPS_STR}. Each is a cycle (A→B→C→A, D→E→D, ` +
+				'F→G→F), and the one-way edges C→D and E→F connect them without ever ' +
+				'coming back. Collapsing each component to a point gives the ' +
+				'condensation — a chain here, and like every condensation, a DAG.',
+		},
+		{
+			kind: 'choice',
+			prompt:
+				'Which set is the strongly connected component containing D — the ' +
+				'MAXIMAL set of vertices that can all reach each other?',
+			options: [G3_D_GROUP_STR, '{C, D, E}', '{D, E, F}', '{D}'],
+			answer: G3_D_GROUP_STR,
+			misconceptions: {
+				'{C, D, E}':
+					'C→D gets INTO D’s component, but nothing in {D, E} leads back to C, ' +
+					'so C and D are not mutually reachable. C→D is an edge of the ' +
+					'condensation — one-way traffic between components, not membership.',
+				'{D, E, F}':
+					'E→F reaches F, but no edge returns from {F, G} to D or E, so the ' +
+					'reachability is one-way. Strong connectivity needs BOTH directions; ' +
+					'F and G form their own component.',
+				'{D}':
+					'D→E and E→D make D and E mutually reachable, so the component grows ' +
+					'past D alone. A component is the MAXIMAL mutually-reachable set, ' +
+					'never just the vertex itself when a cycle passes through it.',
+			},
+			explanation:
+				`D→E and E→D make D and E mutually reachable, and no other vertex both ` +
+				`reaches and is reached by them, so the component is ${G3_D_GROUP_STR}. ` +
+				'One-way edges in (from C) or out (to F) do not grow it.',
+		},
+		{
+			kind: 'numeric',
+			prompt:
+				'Add the single edge G→A. How many strongly connected components are ' +
+				'there now?',
+			answer: G3_CYCLED_COUNT,
+			placeholder: 'a count',
+			explanation:
+				`${G3_CYCLED_COUNT}. G→A closes the loop A→B→C→D→E→F→G→A, so every ` +
+				'vertex can reach every other by going around it; the three old ' +
+				'components merge into one. A single well-placed edge can collapse the ' +
+				'entire condensation.',
+		},
+		{
+			kind: 'choice',
+			prompt:
+				'Pass 1’s finish order is the whole point. Why does pass 2 run on the ' +
+				'TRANSPOSE, starting from the latest-finishing vertex?',
+			options: [
+				'Reversing the edges keeps every component intact but turns its escape routes inward, so a DFS from the latest finisher is trapped inside exactly one component at a time',
+				'The transpose has fewer edges, so the second pass runs faster',
+				'A DFS on the original graph cannot visit every vertex',
+				'The transpose sorts the vertices by finish time, so no ordering is needed',
+			],
+			answer:
+				'Reversing the edges keeps every component intact but turns its escape routes inward, so a DFS from the latest finisher is trapped inside exactly one component at a time',
+			misconceptions: {
+				'The transpose has fewer edges, so the second pass runs faster':
+					'Gᵀ has exactly the same vertices and edge count — only the ' +
+					'directions flip. The point is correctness, not speed: components are ' +
+					'unchanged in Gᵀ, but edges that LEFT a component now enter it, so ' +
+					'pass 2 cannot leak into a neighboring component.',
+				'A DFS on the original graph cannot visit every vertex':
+					'Pass 1 does visit every vertex, restarting wherever needed — that is ' +
+					'how every finish time gets assigned. The problem is that a single ' +
+					'DFS tree in G can span SEVERAL components; the transpose plus the ' +
+					'finish order is what stops that in pass 2.',
+			},
+			explanation:
+				'The latest finisher sits in a source component of the condensation. In ' +
+				'Gᵀ that component’s outgoing edges point inward, so a DFS from that ' +
+				'vertex covers exactly its own component and stops. Peeling components ' +
+				'off newest-finish-first repeats the trick — each pass-2 tree is one ' +
+				'SCC, which is why skipping the ordering (or the transpose) breaks ' +
+				'Kosaraju.',
 		},
 	],
 };
@@ -2012,7 +2175,7 @@ const problemHM1 = {
 					'The hash h of a key is fixed. What changes on resize is the table size m in the compression step h mod m, which is why every index must be recomputed.',
 			},
 			explanation:
-				'A key’s slot is h mod m. Doubling m (to a new prime) changes h mod m for ' +
+				'A key’s slot is h mod m. Doubling m changes h mod m for ' +
 				'essentially every key, so the whole table is rebuilt to spread the chains out ' +
 				'again and restore O(1) average operations.',
 		},
@@ -3451,6 +3614,582 @@ const problemStableMatch = {
 };
 
 // =============================================================================
+// STRATEGIES — Huffman coding (CLRS §15.3), the greedy that builds an optimal
+// prefix code. The classic a–f frequency table (the same instance the
+// Strategies playground opens with). Codeword lengths, the total encoded bit
+// count, and the fixed-width comparison are all read off buildHuffmanFrames'
+// summary; only the WHY (the exchange argument for merging the two rarest
+// first) is conceptual.
+// =============================================================================
+
+const P5_SYMBOLS = [
+	{ char: 'a', freq: 45 },
+	{ char: 'b', freq: 13 },
+	{ char: 'c', freq: 12 },
+	{ char: 'd', freq: 16 },
+	{ char: 'e', freq: 9 },
+	{ char: 'f', freq: 5 },
+];
+const P5_RUN = buildHuffmanFrames(P5_SYMBOLS);
+const P5_CODES = P5_RUN.summary.codes; // char → codeword string
+const P5_LEN_A = P5_CODES.a.length; // 1 bit for the most frequent symbol
+const P5_LEN_F = P5_CODES.f.length; // 4 bits for the least frequent symbol
+const P5_BITS = P5_RUN.summary.huffmanBits; // Σ freq · depth = 224
+const P5_FIXED_BITS = P5_RUN.summary.fixedBits; // 100 chars × 3 bits = 300
+const P5_FIXED_WIDTH = P5_RUN.summary.fixedWidth; // ⌈log₂ 6⌉ = 3
+const P5_SAVING = P5_RUN.summary.saving; // 25% smaller than fixed-width
+const P5_TOTAL_FREQ = P5_SYMBOLS.reduce((acc, s) => acc + s.freq, 0); // 100
+// The Σ freq · length sum, spelled out term by term from the DERIVED codes.
+const P5_SUM_STR = P5_SYMBOLS.map(
+	s => `${s.freq}·${P5_CODES[s.char].length}`
+).join(' + ');
+
+const problemP5 = {
+	kind: 'problem',
+	stem:
+		`Huffman coding. A ${P5_TOTAL_FREQ}-character message uses six symbols ` +
+		'with frequencies a: 45, b: 13, c: 12, d: 16, e: 9, f: 5. Build the ' +
+		'Huffman tree: repeatedly extract the two lowest-frequency trees from a ' +
+		'min-priority queue and merge them under a new parent whose frequency is ' +
+		'their sum; read codes off the tree with 0 down every left edge and 1 ' +
+		'down every right edge.',
+	parts: [
+		{
+			kind: 'numeric',
+			prompt:
+				'How many bits long is the codeword for a, the MOST frequent symbol?',
+			answer: P5_LEN_A,
+			placeholder: 'a bit count',
+			explanation:
+				`a (frequency 45) stays out of every merge until the very last one, so ` +
+				`it ends up directly under the root: its codeword is “${P5_CODES.a}”, ` +
+				`${P5_LEN_A} bit. Nearly half the message is spelled one bit per ` +
+				'character — that is where the compression comes from.',
+		},
+		{
+			kind: 'numeric',
+			prompt:
+				'How many bits long is the codeword for f, the LEAST frequent symbol?',
+			answer: P5_LEN_F,
+			placeholder: 'a bit count',
+			explanation:
+				`f (frequency 5) is in the very first merge (f + e = 14), and every ` +
+				`later merge pushes that subtree one level deeper: its codeword is ` +
+				`“${P5_CODES.f}”, ${P5_LEN_F} bits. Rare symbols can afford long codes ` +
+				'because they are paid for so seldom.',
+		},
+		{
+			kind: 'numeric',
+			prompt:
+				'Encoding the whole message with these codes, how many bits does it ' +
+				'take in total (Σ frequency × codeword length)?',
+			answer: P5_BITS,
+			placeholder: 'a bit count',
+			explanation:
+				`${P5_SUM_STR} = ${P5_BITS} bits. A fixed ${P5_FIXED_WIDTH}-bit code ` +
+				`(the smallest that can tell 6 symbols apart) needs ` +
+				`${P5_FIXED_BITS}, so the tree is about ${P5_SAVING}% smaller: common ` +
+				'symbols sit shallow, rare ones sink deep.',
+		},
+		{
+			kind: 'choice',
+			prompt:
+				'Each round greedily merges the TWO RAREST trees. Why is that choice ' +
+				'safe — why can it never lock out the optimal code?',
+			options: [
+				'An exchange argument: some optimal tree has its two deepest leaves as siblings, and swapping the two rarest symbols into those spots never increases Σ freq · depth, so an optimal tree merging them first always exists',
+				'Because rare symbols must get short codes, and merging them early keeps them shallow',
+				'Because the priority queue keeps the forest sorted, and sorted input makes any greedy optimal',
+				'It is not always safe; like greedy coin change, Huffman can be beaten by dynamic programming',
+			],
+			answer:
+				'An exchange argument: some optimal tree has its two deepest leaves as siblings, and swapping the two rarest symbols into those spots never increases Σ freq · depth, so an optimal tree merging them first always exists',
+			misconceptions: {
+				'Because rare symbols must get short codes, and merging them early keeps them shallow':
+					'It is the reverse: merging EARLY sends a symbol DEEPER, since every ' +
+					'later merge adds a level above it. The rarest symbols BELONG deepest ' +
+					'— depth costs freq × depth bits, so big depths should multiply the ' +
+					'smallest frequencies.',
+				'Because the priority queue keeps the forest sorted, and sorted input makes any greedy optimal':
+					'Sorting alone proves nothing — greedy coin change also scans coins ' +
+					'in sorted order and still fails. What makes Huffman safe is the ' +
+					'exchange argument: the two rarest symbols can always be made deepest ' +
+					'siblings in some optimal tree without increasing the total bits.',
+				'It is not always safe; like greedy coin change, Huffman can be beaten by dynamic programming':
+					'Huffman’s greedy is provably optimal for prefix codes. Coin change ' +
+					'lacks a safe-swap argument, which is why its greedy can fail; ' +
+					'Huffman has one, so no DP (or anything else) builds a shorter ' +
+					'encoding.',
+			},
+			explanation:
+				'Take any optimal tree: its two deepest leaves are siblings, and ' +
+				'swapping the two least frequent symbols into those two spots never ' +
+				'increases Σ freq · depth, because the smallest frequencies are the ' +
+				'cheapest to place at the biggest depth. So SOME optimal tree merges ' +
+				'the two rarest first — exactly what the greedy does — and repeating ' +
+				'the argument keeps it optimal all the way up.',
+		},
+	],
+};
+
+// =============================================================================
+// STRATEGIES — longest common subsequence (CLRS §14.4), the 2-D DP. The
+// textbook instance ABCBDAB / BDCAB (the Strategies playground's classic
+// preset). Every asked cell, the LCS length, and the traceback witness are read
+// off buildLcsFrames' summary dp table; only the recurrence-case choice (match
+// → diagonal + 1 vs mismatch → max) is conceptual.
+// =============================================================================
+
+const P6_X = 'ABCBDAB';
+const P6_Y = 'BDCAB';
+const P6_RUN = buildLcsFrames({ x: P6_X, y: P6_Y });
+const P6_DP = P6_RUN.summary.dp; // (m+1) × (n+1), border zeros
+const P6_LEN = P6_RUN.summary.length; // dp[7][5] = 4
+const P6_LCS = P6_RUN.summary.lcs; // the traceback's witness, 'BCAB'
+const P6_CELL_MATCH = P6_DP[4][5]; // 3 — X[4] = Y[5] = B, diagonal + 1
+const P6_CELL_MISS = P6_DP[7][3]; // 2 — X[7] = B vs Y[3] = C, carry the max
+
+const problemP6 = {
+	kind: 'problem',
+	stem:
+		`Longest common subsequence of X = ${P6_X} (m = ${P6_X.length}) and ` +
+		`Y = ${P6_Y} (n = ${P6_Y.length}) — the textbook instance. Fill ` +
+		'dp[i][j] = the LCS length of the prefixes X[1..i] and Y[1..j]: on a ' +
+		'match (X[i] = Y[j]) extend the diagonal, dp[i−1][j−1] + 1; otherwise ' +
+		'carry max(dp[i−1][j], dp[i][j−1]). Row 0 and column 0 are all zeros.',
+	parts: [
+		{
+			kind: 'numeric',
+			prompt: `X[4] = B and Y[5] = B match. What is dp[4][5]?`,
+			answer: P6_CELL_MATCH,
+			placeholder: 'a length',
+			explanation:
+				`A match extends the best answer of BOTH shorter prefixes: dp[4][5] = ` +
+				`dp[3][4] + 1 = ${P6_DP[3][4]} + 1 = ${P6_CELL_MATCH}. The diagonal ` +
+				'step is what lets a shared character actually join the subsequence.',
+		},
+		{
+			kind: 'numeric',
+			prompt: `X[7] = B and Y[3] = C do NOT match. What is dp[7][3]?`,
+			answer: P6_CELL_MISS,
+			placeholder: 'a length',
+			explanation:
+				`On a mismatch at least one of the two end characters cannot be in the ` +
+				`LCS, so drop one and keep the better result: dp[7][3] = ` +
+				`max(dp[6][3], dp[7][2]) = max(${P6_DP[6][3]}, ${P6_DP[7][2]}) = ` +
+				`${P6_CELL_MISS}. No + 1 — nothing was matched here.`,
+		},
+		{
+			kind: 'numeric',
+			prompt:
+				`What is dp[${P6_X.length}][${P6_Y.length}], the length of the LCS of ` +
+				'the full strings?',
+			answer: P6_LEN,
+			placeholder: 'a length',
+			explanation:
+				`The table bottoms out at dp[${P6_X.length}][${P6_Y.length}] = ` +
+				`${P6_LEN}; tracing back through the diagonal steps recovers one ` +
+				`witness, “${P6_LCS}”. Its characters appear in order in both strings ` +
+				'but need not be adjacent — that is what subsequence (not substring) ' +
+				'means.',
+		},
+		{
+			kind: 'choice',
+			prompt:
+				'When does the recurrence take dp[i−1][j−1] + 1 rather than ' +
+				'max(dp[i−1][j], dp[i][j−1])?',
+			options: [
+				'Only when X[i] = Y[j]: the shared character extends an LCS of both shorter prefixes, so the diagonal value grows by one',
+				'Whenever the diagonal cell happens to be the largest of the three neighbors',
+				'On every cell — the max is just a tie-break between equal neighbors',
+				'Only on the main diagonal of the table, where i = j',
+			],
+			answer:
+				'Only when X[i] = Y[j]: the shared character extends an LCS of both shorter prefixes, so the diagonal value grows by one',
+			misconceptions: {
+				'Whenever the diagonal cell happens to be the largest of the three neighbors':
+					'The rule is driven by the CHARACTERS, not by which neighbor is ' +
+					'biggest. Taking diagonal + 1 on a mismatch would count a character ' +
+					'the strings do not share, inflating the length — the + 1 must be ' +
+					'paid for by a real match.',
+				'On every cell — the max is just a tie-break between equal neighbors':
+					'The two cases are different formulas, not one formula with a ' +
+					'tie-break: a match adds one to the DIAGONAL; a mismatch copies the ' +
+					'better of up and left, adding nothing. Mixing them up either loses ' +
+					'matches or invents them.',
+			},
+			explanation:
+				'The + 1 pays for one real shared character, so it is only legal when ' +
+				'X[i] and Y[j] are that character. On a mismatch at least one of the ' +
+				'two ends is useless to the LCS; dropping it (a step up or left) and ' +
+				'keeping the better result is all that remains.',
+		},
+	],
+};
+
+// =============================================================================
+// STRATEGIES — 0/1 knapsack (learning-goal [F9]), on the classic instance where
+// greedy-by-ratio FAILS: A (w6, v30, ratio 5) outranks B and C (w5, v20, ratio
+// 4 each), yet the optimum ignores A entirely. The dp cells, the optimum, and
+// the packed set come from buildKnapsack01Frames; the ratio order (and what the
+// SAME greedy earns when items may split) comes from
+// buildFractionalKnapsackFrames on the same items. Only the WHY of the failure
+// is conceptual.
+// =============================================================================
+
+const P7_ITEMS = [
+	{ name: 'A', weight: 6, value: 30 },
+	{ name: 'B', weight: 5, value: 20 },
+	{ name: 'C', weight: 5, value: 20 },
+];
+const P7_W = 10;
+const P7_RUN = buildKnapsack01Frames({ items: P7_ITEMS, capacity: P7_W });
+const P7_DP = P7_RUN.summary.dp; // dp[i][w], top row zeros
+const P7_BEST = P7_RUN.summary.best; // 40 — B + C fill the bag exactly
+const P7_CHOSEN_STR = P7_RUN.summary.chosenNames.join(' + '); // 'B + C'
+const P7_DP_2_10 = P7_DP[2][P7_W]; // 30 — best from items A, B only
+// Ratio order and the divisible-greedy total, derived from the fractional
+// generator on the SAME items (A first at ratio 5; splitting reaches 46).
+const P7_FRAC = buildFractionalKnapsackFrames({
+	items: P7_ITEMS,
+	capacity: P7_W,
+});
+const P7_RATIO_FIRST = P7_FRAC.summary.sorted[0].name; // 'A'
+const P7_FRAC_TOTAL = P7_FRAC.summary.total; // 46
+
+const problemP7 = {
+	kind: 'problem',
+	stem:
+		`0/1 knapsack, capacity W = ${P7_W}. Three items, each taken whole or not ` +
+		'at all: A (weight 6, value 30), B (weight 5, value 20), C (weight 5, ' +
+		'value 20). Fill dp[i][w] = the best value from the first i items within ' +
+		'capacity w: skip (dp[i−1][w]) or, if it fits, take ' +
+		'(valueᵢ + dp[i−1][w − weightᵢ]) — whichever is larger. By value per ' +
+		`weight, ${P7_RATIO_FIRST} looks best: ratio 5 against 4 for the others.`,
+	parts: [
+		{
+			kind: 'numeric',
+			prompt:
+				`Using only the first two items (A and B), what is dp[2][${P7_W}]?`,
+			answer: P7_DP_2_10,
+			placeholder: 'a value',
+			explanation:
+				`A and B together weigh 11 > ${P7_W}, so this row can hold at most ` +
+				`one of them: dp[2][${P7_W}] = max(skip B: dp[1][${P7_W}] = ` +
+				`${P7_DP[1][P7_W]}, take B: 20 + dp[1][5] = 20 + ${P7_DP[1][5]}) = ` +
+				`${P7_DP_2_10}. A alone wins the pair.`,
+		},
+		{
+			kind: 'numeric',
+			prompt:
+				`What is dp[3][${P7_W}], the optimal value with all three items ` +
+				'available?',
+			answer: P7_BEST,
+			placeholder: 'a value',
+			explanation:
+				`Taking C beats keeping row 2: 20 + dp[2][5] = 20 + ${P7_DP[2][5]} = ` +
+				`${P7_BEST} against ${P7_DP_2_10}. dp[3][${P7_W}] = ${P7_BEST} — and ` +
+				'notice the winning plan never touches A, despite its best-in-class ' +
+				'ratio.',
+		},
+		{
+			kind: 'choice',
+			prompt: 'Which items does the optimum actually pack?',
+			options: [P7_CHOSEN_STR, 'A alone', 'A + B', 'A + C'],
+			answer: P7_CHOSEN_STR,
+			misconceptions: {
+				'A alone':
+					'That is what greedy-by-ratio buys: A has the best ratio (5), but it ' +
+					`occupies 6 of the ${P7_W} capacity and strands 4 — too little for ` +
+					'anything else. Its 30 loses to the 40 of B + C.',
+				'A + B':
+					`A + B weighs 6 + 5 = 11, over the capacity ${P7_W}. An infeasible ` +
+					'pair can never be the optimum, however good the ratios look.',
+				'A + C':
+					`A + C weighs 6 + 5 = 11, over the capacity ${P7_W}. An infeasible ` +
+					'pair can never be the optimum, however good the ratios look.',
+			},
+			explanation:
+				`B + C fill the bag exactly (5 + 5 = ${P7_W}) for ${P7_BEST}. Two ` +
+				'mediocre ratios that waste nothing beat one great ratio that strands ' +
+				'capacity — the table finds this because it weighs every take/skip ' +
+				'combination.',
+		},
+		{
+			kind: 'choice',
+			prompt:
+				`Greedy-by-ratio grabs ${P7_RATIO_FIRST} first and finishes with value ` +
+				`${P7_ITEMS[0].value}, below the optimum ${P7_BEST}. Yet the SAME ` +
+				`ratio rule with fractions allowed reaches ${P7_FRAC_TOTAL}. Why does ` +
+				'density-first work with fractions but fail in the 0/1 setting?',
+			options: [
+				'With fractions the last item can be split to top the bag off, so density is all that matters; a whole item can strand capacity, and the stranded gap can cost more than its density gained',
+				'Because the fractional problem has more items to choose from',
+				'Because the 0/1 dp table is an approximation, and 40 is not really optimal',
+				'Density-first also fails for fractional knapsack; both versions need dynamic programming',
+			],
+			answer:
+				'With fractions the last item can be split to top the bag off, so density is all that matters; a whole item can strand capacity, and the stranded gap can cost more than its density gained',
+			misconceptions: {
+				'Because the 0/1 dp table is an approximation, and 40 is not really optimal':
+					'The dp table is exact — its subproblems enumerate every feasible ' +
+					`take/skip combination, so ${P7_BEST} IS the 0/1 optimum. The gap up ` +
+					`to ${P7_FRAC_TOTAL} is the price of indivisibility, not an ` +
+					'approximation error.',
+				'Density-first also fails for fractional knapsack; both versions need dynamic programming':
+					'For the fractional problem, density-first is provably optimal — an ' +
+					'exchange argument swaps capacity unit by unit toward denser items. ' +
+					'Only indivisible items break that swap, so only 0/1 needs the DP ' +
+					'table.',
+			},
+			explanation:
+				'The exchange argument behind fractional greedy trades capacity a unit ' +
+				'at a time, which requires items to split. Whole items break it: ' +
+				`taking dense A leaves a 4-unit hole nothing can fill, while the ` +
+				`fractional greedy takes A and then 4/5 of B for ${P7_FRAC_TOTAL}. ` +
+				`Forced to keep items whole, only the table finds B + C = ${P7_BEST}.`,
+		},
+	],
+};
+
+// =============================================================================
+// STRATEGIES — rod cutting (CLRS §14.1), the first DP of the course, on the
+// textbook price table (the Strategies playground's classic preset). dp values,
+// the optimal revenue, and the recovered pieces are read off
+// buildRodCuttingFrames' summary (dp, pieces, revenue, wholeRodPrice, gain);
+// only the WHY of the recurrence (optimal substructure) is conceptual.
+// =============================================================================
+
+const P8_PRICES = [1, 5, 8, 9, 10, 17, 17, 20]; // price[i] for length i = 1..8
+const P8_N = 8;
+const P8_RUN = buildRodCuttingFrames({ prices: P8_PRICES, n: P8_N });
+const P8_DP = P8_RUN.summary.dp; // [0, 1, 5, 8, 10, 13, 17, 18, 22]
+const P8_REVENUE = P8_RUN.summary.revenue; // dp[8] = 22
+const P8_PIECES_STR = P8_RUN.summary.pieces.join(' + '); // '2 + 6'
+const P8_WHOLE = P8_RUN.summary.wholeRodPrice; // price[8] = 20
+const P8_GAIN = P8_RUN.summary.gain; // 22 − 20 = 2
+
+const problemP8 = {
+	kind: 'problem',
+	stem:
+		`Rod cutting with the CLRS price table. A rod of length n = ${P8_N} can ` +
+		'be cut into integer pieces; a piece of length i sells for price[i]: ' +
+		`[${P8_PRICES.join(', ')}] for lengths 1 through ${P8_N}. Fill dp[j] = ` +
+		'the best revenue for a rod of length j = max over leading pieces i of ' +
+		'price[i] + dp[j − i], with dp[0] = 0.',
+	parts: [
+		{
+			kind: 'numeric',
+			prompt: 'What is dp[4], the best revenue from a rod of length 4?',
+			answer: P8_DP[4],
+			placeholder: 'a revenue',
+			explanation:
+				`Selling the length-4 piece whole fetches ${P8_PRICES[3]}, but two ` +
+				`length-2 pieces fetch ${P8_PRICES[1]} + ${P8_PRICES[1]} = ` +
+				`${P8_DP[4]}, so dp[4] = ${P8_DP[4]}. The table already beats no-cut ` +
+				'on this subproblem — and dp[8] will reuse the answer.',
+		},
+		{
+			kind: 'numeric',
+			prompt: `What is dp[${P8_N}], the best revenue for the full rod?`,
+			answer: P8_REVENUE,
+			placeholder: 'a revenue',
+			explanation:
+				`dp[${P8_N}] = ${P8_REVENUE}, via a leading piece of 2: ` +
+				`price[2] + dp[6] = ${P8_PRICES[1]} + ${P8_DP[6]}. Selling the rod ` +
+				`whole fetches only ${P8_WHOLE}, so cutting earns ${P8_GAIN} more.`,
+		},
+		{
+			kind: 'choice',
+			prompt: 'Which decomposition achieves that optimal revenue?',
+			options: [P8_PIECES_STR, '8 (no cut)', '1 + 7', '4 + 4'],
+			answer: P8_PIECES_STR,
+			misconceptions: {
+				'8 (no cut)':
+					`The uncut rod sells for price[${P8_N}] = ${P8_WHOLE}, which ` +
+					`${P8_PIECES_STR} beats by ${P8_GAIN}. The biggest piece is a decoy ` +
+					'— prices are not proportional to length, and the table checks ' +
+					'every first cut rather than trusting the whole.',
+				'1 + 7':
+					`1 + 7 earns ${P8_PRICES[0]} + ${P8_PRICES[6]} = ` +
+					`${P8_PRICES[0] + P8_PRICES[6]}. The length-1 piece is nearly ` +
+					'worthless (price 1); a first cut must leave a REMAINDER worth ' +
+					'cutting, which is what dp[j − i] measures.',
+				'4 + 4':
+					`4 + 4 earns ${P8_PRICES[3]} + ${P8_PRICES[3]} = ` +
+					`${P8_PRICES[3] + P8_PRICES[3]}. Halving feels balanced but ignores ` +
+					'the price table: length 6 is disproportionately valuable, and only ' +
+					'the max over ALL leading pieces notices that.',
+			},
+			explanation:
+				`Following firstCut from ${P8_N} down recovers a piece of 2 then a ` +
+				`piece of 6: ${P8_PRICES[1]} + ${P8_PRICES[5]} = ${P8_REVENUE}. The ` +
+				'length-6 price (17) is the bargain in this table, and the length-2 ' +
+				'piece cashes in the remainder.',
+		},
+		{
+			kind: 'choice',
+			prompt:
+				'Why does dp[j] = max over i of price[i] + dp[j − i] find the true ' +
+				'optimum?',
+			options: [
+				'Optimal substructure: after the first piece of length i is sold, what remains is a smaller rod whose best revenue is the same subproblem dp[j − i], already solved optimally',
+				'Because the recurrence tries pieces in decreasing price order, like a greedy',
+				'Because each dp[j − i] is recomputed fresh for every j, avoiding stale values',
+				'It only finds the optimum when prices increase with length',
+			],
+			answer:
+				'Optimal substructure: after the first piece of length i is sold, what remains is a smaller rod whose best revenue is the same subproblem dp[j − i], already solved optimally',
+			misconceptions: {
+				'Because the recurrence tries pieces in decreasing price order, like a greedy':
+					'The max examines EVERY leading piece i from 1 to j — no ordering ' +
+					'matters and nothing is committed early. That exhaustiveness over ' +
+					'first choices is exactly what a greedy lacks.',
+				'Because each dp[j − i] is recomputed fresh for every j, avoiding stale values':
+					'The opposite is the point: dp[j − i] is computed ONCE and reused by ' +
+					'every larger j (overlapping subproblems). Recomputing it fresh is ' +
+					'the exponential naive recursion that DP replaces.',
+			},
+			explanation:
+				'Cutting a first piece of length i leaves a rod of length j − i whose ' +
+				'best revenue does not depend on how the first piece was chosen — ' +
+				'optimal substructure. Trying every i and adding the stored dp[j − i] ' +
+				'therefore covers every possible decomposition without listing them ' +
+				'all explicitly.',
+		},
+	],
+};
+
+// =============================================================================
+// STRATEGIES — fractional knapsack (learning-goal [G3]), the greedy that IS
+// optimal, on the Strategies playground's greedy-splits-win preset. The ratio
+// order, the split fraction, and the packed total are read off
+// buildFractionalKnapsackFrames' summary; the 0/1 optimum on the SAME items
+// (for the indivisibility contrast) is read off buildKnapsack01Frames. Only the
+// exchange argument itself is conceptual.
+// =============================================================================
+
+const P9_ITEMS = [
+	{ name: 'A', weight: 5, value: 10 },
+	{ name: 'B', weight: 4, value: 40 },
+	{ name: 'C', weight: 6, value: 30 },
+	{ name: 'D', weight: 3, value: 50 },
+];
+const P9_W = 10;
+const P9_RUN = buildFractionalKnapsackFrames({
+	items: P9_ITEMS,
+	capacity: P9_W,
+});
+const P9_ORDER = P9_RUN.summary.sorted.map(it => it.name); // ['D','B','C','A']
+const P9_ORDER_STR = P9_ORDER.join(' ≥ '); // the greedy's own ranking
+const P9_SPLIT = P9_RUN.summary.states.find(s => s.status === 'fraction'); // C
+const P9_TOTAL = P9_RUN.summary.total; // 105, bag exactly full
+// The same items forced 0/1: the DP packs B + D for 90, so splitting is worth 15.
+const P9_01_BEST = buildKnapsack01Frames({ items: P9_ITEMS, capacity: P9_W })
+	.summary.best;
+const P9_GAP = P9_TOTAL - P9_01_BEST;
+
+const problemP9 = {
+	kind: 'problem',
+	stem:
+		`Fractional knapsack, capacity W = ${P9_W}. Items may be taken in part: ` +
+		'A (weight 5, value 10), B (weight 4, value 40), C (weight 6, value 30), ' +
+		'D (weight 3, value 50). The greedy sorts by value ÷ weight, takes the ' +
+		'densest item first, and splits the last item to fill the bag exactly.',
+	parts: [
+		{
+			kind: 'choice',
+			prompt:
+				'In which order does the greedy rank the items (densest first)?',
+			options: [
+				P9_ORDER_STR,
+				'C ≥ A ≥ B ≥ D',
+				'D ≥ B ≥ A ≥ C',
+				'A ≥ B ≥ C ≥ D',
+			],
+			answer: P9_ORDER_STR,
+			misconceptions: {
+				'C ≥ A ≥ B ≥ D':
+					'That ranks by WEIGHT, heaviest first. Bulk is a cost, not a merit: ' +
+					'C carries a big value but only 30/6 = 5 per unit of capacity, the ' +
+					'second worst density here.',
+				'D ≥ B ≥ A ≥ C':
+					'That ranks by weight, lightest first — right about D and B, but ' +
+					'only by luck. A is light yet nearly worthless per unit ' +
+					'(10/5 = 2); density, value ÷ weight, is the greedy’s key.',
+				'A ≥ B ≥ C ≥ D':
+					'That is just the order the items were listed in. The greedy’s ' +
+					'first step is to SORT by value ÷ weight: 50/3 ≈ 16.7, 40/4 = 10, ' +
+					'30/6 = 5, 10/5 = 2.',
+			},
+			explanation:
+				`Densities: D = 50/3 ≈ 16.7, B = 40/4 = 10, C = 30/6 = 5, ` +
+				`A = 10/5 = 2, so the greedy ranks ${P9_ORDER_STR}. Every unit of ` +
+				'capacity should go to the item paying the most per unit.',
+		},
+		{
+			kind: 'numeric',
+			prompt:
+				`The bag fills up mid-item. What FRACTION of ${P9_SPLIT.name} ends up ` +
+				'in the bag?',
+			answer: P9_SPLIT.fraction,
+			placeholder: 'a fraction, e.g. 0.25',
+			explanation:
+				`After D (weight 3) and B (weight 4) are taken whole, ` +
+				`${P9_W - P9_ITEMS[3].weight - P9_ITEMS[1].weight} of the ${P9_W} ` +
+				`capacity remains and ${P9_SPLIT.name} weighs ${P9_SPLIT.weight}: the ` +
+				`greedy takes 3/6 = ${P9_SPLIT.fraction} of it for ` +
+				`${P9_SPLIT.fraction * P9_SPLIT.value} value. Splitting the LAST item ` +
+				'fills the bag exactly — the move 0/1 knapsack forbids.',
+		},
+		{
+			kind: 'numeric',
+			prompt: 'What total value does the greedy pack?',
+			answer: P9_TOTAL,
+			placeholder: 'a value',
+			explanation:
+				`${P9_ITEMS[3].value} (all of D) + ${P9_ITEMS[1].value} (all of B) + ` +
+				`${P9_SPLIT.fraction * P9_SPLIT.value} (half of C) = ${P9_TOTAL}, ` +
+				`with the bag exactly full at ${P9_W}/${P9_W}. Density order ` +
+				'guarantees no unit of capacity could have earned more.',
+		},
+		{
+			kind: 'choice',
+			prompt:
+				'Why is density-first PROVABLY optimal here, when the same greedy ' +
+				'fails for 0/1 knapsack?',
+			options: [
+				'An exchange argument: if an optimal packing spent a unit of capacity on a less dense item while a denser one was not fully taken, swapping that unit toward the denser item never lowers the total — a swap possible only because items divide into arbitrary units',
+				'Because sorting by ratio happens to sort by value on this instance',
+				'Because the fractional problem has fewer feasible solutions to check',
+				'The exchange argument works for 0/1 knapsack too; the DP table is just faster',
+			],
+			answer:
+				'An exchange argument: if an optimal packing spent a unit of capacity on a less dense item while a denser one was not fully taken, swapping that unit toward the denser item never lowers the total — a swap possible only because items divide into arbitrary units',
+			misconceptions: {
+				'Because sorting by ratio happens to sort by value on this instance':
+					'A coincidence of this instance, not the reason. The proof trades ' +
+					'capacity between items unit by unit on ANY instance; it needs ' +
+					'divisibility, not any agreement between value and density.',
+				'The exchange argument works for 0/1 knapsack too; the DP table is just faster':
+					'It does not: with indivisible items you cannot swap a UNIT of ' +
+					'capacity, only whole items, and a whole dense item can strand ' +
+					`capacity. On these very items 0/1 reaches only ${P9_01_BEST} — ` +
+					`${P9_GAP} below the fractional ${P9_TOTAL} — which is exactly why ` +
+					'0/1 needs the DP table.',
+			},
+			explanation:
+				'Take any optimal fractional packing: if a unit of capacity holds ' +
+				'something less dense while a denser item is not exhausted, swapping ' +
+				'that unit never lowers the value. So an optimal packing exists in ' +
+				'strict density order — precisely what the greedy builds. The swap ' +
+				'needs divisible items; forced whole, these same items cap at ' +
+				`${P9_01_BEST} against the greedy’s ${P9_TOTAL}.`,
+		},
+	],
+};
+
+// =============================================================================
 // NP-COMPLETENESS — conceptual classification (P / NP / NP-hard / NP-complete),
 // the reduction DIRECTION for proving NP-hardness, and the verifier-in-polynomial-
 // time definition of NP. All 'choice'/'classify' with unambiguous correct options.
@@ -3779,9 +4518,11 @@ const problemQS2 = {
 			],
 			answer: 'Choose the pivot at random (or median-of-three)',
 			explanation:
-				`A random (or median-of-three) pivot makes a badly unbalanced split ` +
-				`extremely unlikely, so quicksort runs in its Θ(n log n) average case on ` +
-				`any input, including already-sorted data.`,
+				`A random pivot makes a badly unbalanced split extremely unlikely on ` +
+				`every input — including already-sorted data — so quicksort runs in its ` +
+				`Θ(n log n) expected time. Median-of-three defuses the sorted and ` +
+				`reverse-sorted traps too, though contrived inputs can still force it ` +
+				`quadratic; only the random pivot carries a per-input guarantee.`,
 		},
 	],
 };
@@ -5818,6 +6559,640 @@ const problemNP3 = {
 	],
 };
 
+// =============================================================================
+// FOUNDATIONS (binary search) — run Bisect on a concrete sorted array. The
+// probe sequence, the first probed index, and the comparison count are all read
+// off an inline runner (closed interval [lo, hi], mid = ⌊(lo+hi)/2⌋, 0-indexed,
+// one THREE-WAY comparison per probed element — the convention every part
+// states). The worst-case bound for n = 14 is the explicit expression
+// ⌈log₂(n+1)⌉, never a typed number.
+// =============================================================================
+
+const BS_ARRAY = [2, 5, 8, 12, 16, 23, 38, 56, 72, 91];
+const BS_TARGET = 23;
+
+// The Bisect runner: probe mid, stop on equality, otherwise halve the closed
+// interval. Every probe (index + value, in order) is collected for the keys.
+const bisectProbes = (arr, target) => {
+	let lo = 0;
+	let hi = arr.length - 1;
+	const probes = [];
+	while (lo <= hi) {
+		const mid = Math.floor((lo + hi) / 2);
+		probes.push({ index: mid, value: arr[mid] });
+		if (arr[mid] === target) return { probes, foundAt: mid };
+		if (target < arr[mid]) hi = mid - 1;
+		else lo = mid + 1;
+	}
+	return { probes, foundAt: -1 };
+};
+
+const BS_RUN = bisectProbes(BS_ARRAY, BS_TARGET);
+const BS_LABELS = BS_RUN.probes.map(p => `index ${p.index} (value ${p.value})`);
+// A stable non-answer order to drag from (house style: the reversed sequence).
+const BS_ITEMS_SHUFFLED = [...BS_LABELS].slice().reverse();
+const BS_FIRST_INDEX = BS_RUN.probes[0].index;
+const BS_COMPARISONS = BS_RUN.probes.length;
+// Worst case for n = 14: each probe removes the probed cell plus at least half
+// of the rest, so the interval sizes run 14 → 7 → 3 → 1 → 0. In general
+// ⌈log₂(n+1)⌉ probes; computed here as the explicit expression (the answer key).
+const BS_WORST_N = 14;
+const BS_WORST = Math.ceil(Math.log2(BS_WORST_N + 1)); // 4
+
+const problemBisect5 = {
+	kind: 'problem',
+	stem:
+		`Binary search (Bisect) looks for ${BS_TARGET} in the sorted array ` +
+		`[${BS_ARRAY.join(', ')}] (indices 0..${BS_ARRAY.length - 1}). It keeps a ` +
+		'closed interval [lo, hi], starting at [0, 9]. Each step probes ' +
+		'mid = ⌊(lo + hi)/2⌋ and compares A[mid] with the target: equal stops, ' +
+		'target smaller continues in [lo, mid−1], target larger in [mid+1, hi].',
+	parts: [
+		{
+			kind: 'numeric',
+			prompt:
+				'Which index does the FIRST probe inspect (mid of the starting ' +
+				'interval [0, 9])?',
+			answer: BS_FIRST_INDEX,
+			placeholder: 'an index',
+			explanation:
+				`mid = ⌊(0 + 9)/2⌋ = ${BS_FIRST_INDEX}, so the first element inspected ` +
+				`is A[${BS_FIRST_INDEX}] = ${BS_ARRAY[BS_FIRST_INDEX]}. Bisect always ` +
+				'starts in the middle — that is what halves the search space.',
+		},
+		{
+			kind: 'order',
+			prompt:
+				'Arrange the probes in the order Bisect makes them (every element it ' +
+				'inspects, first to last).',
+			items: BS_ITEMS_SHUFFLED,
+			answer: BS_LABELS,
+			explanation:
+				`Probe 1: index 4 holds 16 < ${BS_TARGET}, so the search moves right to ` +
+				`[5, 9]. Probe 2: index 7 holds 56 > ${BS_TARGET}, so it moves left to ` +
+				`[5, 6]. Probe 3: index 5 holds ${BS_TARGET} — found. The probe ` +
+				`sequence is ${BS_LABELS.join(', ')}.`,
+		},
+		{
+			kind: 'numeric',
+			prompt:
+				'Counting ONE three-way comparison (<, =, >) per probed element, how ' +
+				'many comparisons does this search make before it stops?',
+			answer: BS_COMPARISONS,
+			placeholder: 'a count',
+			explanation:
+				`${BS_COMPARISONS} — one per probe (indices 4, 7, 5). Each comparison ` +
+				'discards the probed cell and one whole half, which is why the total ' +
+				'stays logarithmic.',
+		},
+		{
+			kind: 'numeric',
+			prompt:
+				`Now the general bound. On a sorted array of n = ${BS_WORST_N} ` +
+				'elements, how many probes does Bisect need in the WORST case ' +
+				'(same convention: one three-way comparison per probed element)?',
+			answer: BS_WORST,
+			placeholder: 'a count',
+			explanation:
+				'Each probe removes the probed cell and at least half of what is left, ' +
+				`so the worst-case interval sizes run ${BS_WORST_N} → 7 → 3 → 1 → 0: ` +
+				`${BS_WORST} probes. In general the bound is ⌈log₂(n + 1)⌉ = ` +
+				`⌊log₂ n⌋ + 1; for n = ${BS_WORST_N} that is ⌈log₂ 15⌉ = ${BS_WORST}. ` +
+				'(Conventions that count the = and < tests separately double the ' +
+				'constant; we count probed elements, one three-way comparison each.)',
+		},
+	],
+};
+
+// =============================================================================
+// GRAPHS (DFS edge classification) — one DFS from A over a fixed directed graph
+// (alphabetical neighbor order) meets one edge of every kind: tree, back,
+// forward, cross. Discovery/finish times and every classification are read off
+// an inline timestamped DFS using the standard coloring rules (undiscovered →
+// tree; discovered but unfinished → back; finished, discovered later → forward;
+// finished, discovered earlier → cross). Only the back-edge ⇔ cycle fact is
+// conceptual (STATIC).
+// =============================================================================
+
+// Adjacency in the exact order DFS considers neighbors (alphabetical).
+const G4_ADJ = {
+	A: ['B', 'D'],
+	B: ['C', 'D'],
+	C: ['A'],
+	D: ['C', 'E'],
+	E: [],
+};
+
+// Timestamped DFS: the clock ticks on every discovery and every finish
+// (timestamps 1..2n), and each explored edge is classified on the spot.
+const dfsTimestamps = (adj, root) => {
+	const disc = {};
+	const fin = {};
+	const kind = {};
+	let time = 0;
+	const visit = u => {
+		disc[u] = ++time;
+		for (const v of adj[u]) {
+			const edge = `${u}→${v}`;
+			if (disc[v] === undefined) {
+				kind[edge] = 'tree';
+				visit(v);
+			} else if (fin[v] === undefined) kind[edge] = 'back';
+			else if (disc[v] > disc[u]) kind[edge] = 'forward';
+			else kind[edge] = 'cross';
+		}
+		fin[u] = ++time;
+	};
+	visit(root);
+	return { disc, fin, kind };
+};
+
+const G4_DFS = dfsTimestamps(G4_ADJ, 'A');
+// The four probed edges — one of each class, though the classes themselves are
+// read off the run, never asserted here.
+const G4_EDGE_ITEMS = [
+	{ id: 'bd', label: 'B→D' },
+	{ id: 'ca', label: 'C→A' },
+	{ id: 'ad', label: 'A→D' },
+	{ id: 'dc', label: 'D→C' },
+];
+const G4_EDGE_ANSWER = {
+	bd: G4_DFS.kind['B→D'],
+	ca: G4_DFS.kind['C→A'],
+	ad: G4_DFS.kind['A→D'],
+	dc: G4_DFS.kind['D→C'],
+};
+const G4_FIN_C = G4_DFS.fin.C;
+const G4_LAST_FINISHER = Object.keys(G4_DFS.fin).reduce((best, v) =>
+	G4_DFS.fin[v] > G4_DFS.fin[best] ? v : best
+);
+// The full d/f table, quoted in the explanations so the trace is checkable.
+const G4_TIMES_STR = Object.keys(G4_ADJ)
+	.map(v => `${v} ${G4_DFS.disc[v]}/${G4_DFS.fin[v]}`)
+	.join(', ');
+
+const problemDfsClassify4 = {
+	kind: 'problem',
+	stem:
+		'Directed graph with vertices A through E and edges A→B, A→D, B→C, B→D, ' +
+		'C→A, D→C, D→E. Run DFS from A, considering each vertex’s out-neighbors ' +
+		'in alphabetical order, and stamp every vertex with discovery/finish ' +
+		'times (the clock ticks on each discovery and each finish, so the ' +
+		'timestamps run 1..10).',
+	parts: [
+		{
+			kind: 'classify',
+			prompt:
+				'Classify each edge by what DFS finds when it explores it. (Tree: the ' +
+				'target is undiscovered. Back: the target is a still-open ancestor. ' +
+				'Forward: the target is an already-finished descendant. Cross: the ' +
+				'target is finished and was discovered earlier, in another subtree.)',
+			items: G4_EDGE_ITEMS,
+			categories: [
+				{ id: 'tree', label: 'Tree edge' },
+				{ id: 'back', label: 'Back edge' },
+				{ id: 'forward', label: 'Forward edge' },
+				{ id: 'cross', label: 'Cross edge' },
+			],
+			answer: G4_EDGE_ANSWER,
+			explanation:
+				`The trace gives discovery/finish times ${G4_TIMES_STR}. B→D reaches ` +
+				'the undiscovered D — tree. C→A reaches A while A is still open (an ' +
+				'ancestor on the current path) — back. A→D is explored last, after D ' +
+				'(a descendant via B) has finished — forward. D→C reaches the ' +
+				'finished C, discovered earlier in B’s other subtree — cross.',
+		},
+		{
+			kind: 'numeric',
+			prompt: 'What is C’s FINISH time?',
+			answer: G4_FIN_C,
+			placeholder: 'a timestamp',
+			explanation:
+				`The full table is ${G4_TIMES_STR}. C is discovered at time 3 (via ` +
+				'A→B→C); its only out-edge C→A hits the open ancestor A, so nothing new ' +
+				`opens and C finishes at time ${G4_FIN_C} — the first vertex to finish.`,
+		},
+		{
+			kind: 'choice',
+			prompt: 'Which vertex finishes LAST?',
+			options: ['A', 'B', 'D', 'E'],
+			answer: G4_LAST_FINISHER,
+			misconceptions: {
+				E:
+					'E is discovered last (time 6), but discovery and finish are ' +
+					'different clocks: E is a leaf of the DFS tree, so it closes right ' +
+					'away at time 7. The root stays open until everything under it is done.',
+			},
+			explanation:
+				`${G4_LAST_FINISHER} finishes last, at time 10: the root of the DFS ` +
+				'tree cannot finish until every vertex reachable from it has finished. ' +
+				'This is the parenthesis structure — each vertex’s interval nests ' +
+				'inside its ancestors’ intervals.',
+		},
+		{
+			kind: 'choice',
+			prompt:
+				'DFS found the back edge C→A. What does that prove about the graph?',
+			options: [
+				'It contains a cycle — the tree path A→B→C plus the back edge C→A closes one; a directed graph is acyclic if and only if DFS finds NO back edge',
+				'Nothing: back edges also occur in acyclic graphs',
+				'The graph is disconnected',
+				'The graph has more than one topological order',
+			],
+			answer:
+				'It contains a cycle — the tree path A→B→C plus the back edge C→A closes one; a directed graph is acyclic if and only if DFS finds NO back edge',
+			misconceptions: {
+				'Nothing: back edges also occur in acyclic graphs':
+					'A back edge points to a still-open ancestor, so the tree path down ' +
+					'plus that one edge back is always a directed cycle. DAGs can produce ' +
+					'tree, forward, and cross edges — never back edges.',
+			},
+			explanation:
+				'A back edge runs from a vertex to an ancestor that is still on the ' +
+				'recursion stack, so following the tree path A→B→C and then C→A goes ' +
+				'around a cycle. The converse holds too: no back edge means every edge ' +
+				'points “past” finished work, so no cycle exists — this is exactly how ' +
+				'DFS decides whether a topological sort is possible.',
+		},
+	],
+};
+
+// =============================================================================
+// HEAPS (increase-key) — MaxHeapIncreaseKey on a concrete max-heap. The raised
+// key sits at the LAST index, so the whole operation (set A[i] ← k, then bubble
+// up) is EXACTLY insertTrace on the heap minus that leaf — the same equivalence
+// CLRS uses in reverse, where Max-Heap-Insert appends −∞ and increase-keys the
+// last slot. The parent index, the resulting array, and the swap count are all
+// read off parentIndex / insertTrace, never typed; only the "why bubble UP"
+// choice is conceptual (STATIC).
+// =============================================================================
+
+const H4_HEAP = [13, 12, 9, 7, 8, 3, 1]; // a valid max-heap
+const H4_INDEX = 6; // the stated index (the last leaf, value 1)
+const H4_NEWKEY = 14;
+// IncreaseKey at the last index = insert the new key into the heap minus that
+// leaf: identical array states, identical comparisons and swaps.
+const H4_RUN = insertTrace({ heap: H4_HEAP.slice(0, -1), key: H4_NEWKEY });
+const H4_AFTER = H4_RUN.finalHeap;
+const H4_AFTER_STR = `[${H4_AFTER.join(', ')}]`;
+const H4_PARENT = parentIndex(H4_INDEX);
+// Distractors in the heaps house style, all distinct from the answer: the naive
+// overwrite (no bubble-up at all), a one-swap near-miss (stopped a level too
+// early), and the sorted-descending array (the "a heap is sorted" misconception).
+const H4_NAIVE_STR = `[${[...H4_HEAP.slice(0, -1), H4_NEWKEY].join(', ')}]`;
+const H4_ONE_SWAP_STR = (() => {
+	const a = [...H4_HEAP];
+	a[H4_INDEX] = H4_NEWKEY;
+	const p = parentIndex(H4_INDEX);
+	[a[H4_INDEX], a[p]] = [a[p], a[H4_INDEX]];
+	return `[${a.join(', ')}]`;
+})();
+const H4_SORTED_DESC_STR = `[${[...H4_AFTER].sort((a, b) => b - a).join(', ')}]`;
+
+const problemH4 = {
+	kind: 'problem',
+	stem:
+		`The array [${H4_HEAP.join(', ')}] is a valid max-heap. Run ` +
+		`MaxHeapIncreaseKey(A, ${H4_INDEX}, ${H4_NEWKEY}): set ` +
+		`A[${H4_INDEX}] ← ${H4_NEWKEY} (a key may only be INCREASED this way), ` +
+		'then restore the heap by bubbling the raised key up past every smaller ' +
+		'parent.',
+	parts: [
+		{
+			kind: 'numeric',
+			prompt:
+				`The bubble-up repeatedly compares the raised key with its PARENT. ` +
+				`Which index holds the parent of index ${H4_INDEX} (⌊(i−1)/2⌋)?`,
+			answer: H4_PARENT,
+			placeholder: 'an index',
+			explanation:
+				`⌊(${H4_INDEX} − 1)/2⌋ = ${H4_PARENT}, which holds ` +
+				`${H4_HEAP[H4_PARENT]}. The implicit-array layout is the whole trick: ` +
+				'parent and children are index arithmetic, no pointers needed.',
+		},
+		{
+			kind: 'choice',
+			prompt:
+				'Bubble the raised key up (swap with the parent while the key is ' +
+				'larger) until the heap property holds again. What is the array ' +
+				'afterwards?',
+			options: [H4_AFTER_STR, H4_NAIVE_STR, H4_ONE_SWAP_STR, H4_SORTED_DESC_STR],
+			answer: H4_AFTER_STR,
+			misconceptions: {
+				[H4_NAIVE_STR]:
+					`That is the array with A[${H4_INDEX}] overwritten but never bubbled ` +
+					`up — ${H4_NEWKEY} would sit below both ${H4_HEAP[H4_PARENT]} and ` +
+					`${H4_HEAP[0]}, violating the heap property twice over.`,
+				[H4_ONE_SWAP_STR]:
+					`One swap short: after ${H4_NEWKEY} rises past ` +
+					`${H4_HEAP[H4_PARENT]} to index ${H4_PARENT}, it still exceeds the ` +
+					`root ${H4_HEAP[0]}, so it must swap once more.`,
+			},
+			explanation:
+				`${H4_NEWKEY} swaps with its parent ${H4_HEAP[H4_PARENT]} (index ` +
+				`${H4_PARENT}), still exceeds the root ${H4_HEAP[0]}, swaps again, and ` +
+				`stops at index 0: ${H4_AFTER_STR}. Every parent is again ≥ its children.`,
+		},
+		{
+			kind: 'numeric',
+			prompt: 'How many SWAPS does the bubble-up make?',
+			answer: H4_RUN.swaps,
+			placeholder: 'a count',
+			explanation:
+				`${H4_RUN.swaps}: ${H4_NEWKEY} ↔ ${H4_HEAP[H4_PARENT]}, then ` +
+				`${H4_NEWKEY} ↔ ${H4_HEAP[0]}. IncreaseKey climbs one leaf-to-root ` +
+				'path, at most ⌊log₂ n⌋ levels, so it is O(log n) — the same cost ' +
+				'that lets a priority queue raise a priority cheaply.',
+		},
+		{
+			kind: 'choice',
+			prompt:
+				'After a key INCREASES in a max-heap, why does the repair only ever ' +
+				'look UP the tree (toward the root)?',
+			options: [
+				'A bigger key still dominates its children — only the parent relation can break, so the key rises until its parent is at least as large',
+				'It must also sift DOWN, because the children may now violate the property',
+				'The whole array must be rebuilt with BuildMaxHeap, costing O(n)',
+				'Nothing can break: a max-heap accepts any key change without repair',
+			],
+			answer:
+				'A bigger key still dominates its children — only the parent relation can break, so the key rises until its parent is at least as large',
+			misconceptions: {
+				'It must also sift DOWN, because the children may now violate the property':
+					'The key only got LARGER, and it already dominated its children ' +
+					'before the change, so it still does. Growth can only break the ' +
+					'relation with the parent above — sifting down is what a DECREASED ' +
+					'key (or extract-max) needs.',
+			},
+			explanation:
+				'The heap property compares each node with its children. Raising a key ' +
+				'keeps every comparison below it true and can only falsify the one with ' +
+				'its parent, so the repair walks upward — mirror-image of extract-max, ' +
+				'where the new root may be too small and must sift down.',
+		},
+	],
+};
+
+// =============================================================================
+// NP-COMPLETENESS, set 4 — SUBSET-SUM as a concrete NP problem: exhibit and
+// VERIFY a certificate, then separate pseudopolynomial from polynomial. The
+// certificate is found by inline brute force over all 2^6 subsets (for this
+// instance it is UNIQUE — {5, 14, 21} — so the choice part has exactly one
+// correct option), and the decoy sums are computed, never typed. The
+// pseudopolynomial part is conceptual (STATIC).
+// =============================================================================
+
+const NP4_SET = [2, 5, 9, 14, 21, 30];
+const NP4_TARGET = 40;
+const NP4_SUM = xs => xs.reduce((a, b) => a + b, 0);
+// Brute-force every non-empty subset. For this instance exactly one certificate
+// exists; the derived answer is that subset.
+const NP4_CERTS = (() => {
+	const found = [];
+	for (let mask = 1; mask < 1 << NP4_SET.length; mask++) {
+		const subset = NP4_SET.filter((_, i) => mask & (1 << i));
+		if (NP4_SUM(subset) === NP4_TARGET) found.push(subset);
+	}
+	return found;
+})();
+const NP4_CERT = NP4_CERTS[0]; // [5, 14, 21]
+const NP4_CERT_STR = `{${NP4_CERT.join(', ')}}`;
+// Decoys: plausible near-misses whose sums (41, 35, 37) are computed for the
+// explanations, so no option accidentally hits the target.
+const NP4_DECOY = [2, 9, 30];
+const NP4_DECOY_STR = `{${NP4_DECOY.join(', ')}}`;
+const NP4_DECOY_SUM = NP4_SUM(NP4_DECOY); // 41
+const NP4_DECOY2 = [5, 9, 21];
+const NP4_DECOY3 = [2, 14, 21];
+
+const problemNP4 = {
+	kind: 'problem',
+	stem:
+		`SUBSET-SUM asks: given the set S = {${NP4_SET.join(', ')}} and the ` +
+		`target t = ${NP4_TARGET}, is there a subset of S whose elements sum to ` +
+		'exactly t? It is NP-complete — yet a YES answer is easy to back up with ' +
+		'a certificate: the subset itself.',
+	parts: [
+		{
+			kind: 'choice',
+			prompt: 'Which subset is a valid certificate for this instance?',
+			options: [
+				NP4_CERT_STR,
+				NP4_DECOY_STR,
+				`{${NP4_DECOY2.join(', ')}}`,
+				`{${NP4_DECOY3.join(', ')}}`,
+			],
+			answer: NP4_CERT_STR,
+			misconceptions: {
+				[NP4_DECOY_STR]:
+					`Close, but ${NP4_DECOY.join(' + ')} = ${NP4_DECOY_SUM} ≠ ` +
+					`${NP4_TARGET}, and “close” does not count. A certificate must hit ` +
+					'the target exactly; checking that is one addition.',
+			},
+			explanation:
+				`${NP4_CERT.join(' + ')} = ${NP4_TARGET} exactly. The decoys sum to ` +
+				`${NP4_DECOY_SUM}, ${NP4_SUM(NP4_DECOY2)}, and ${NP4_SUM(NP4_DECOY3)}. ` +
+				'(For this instance the certificate is unique — the other 62 non-empty ' +
+				`subsets all miss ${NP4_TARGET}.)`,
+		},
+		{
+			kind: 'numeric',
+			prompt:
+				'VERIFYING a proposed certificate is the easy part. What do the ' +
+				`elements of the (wrong) candidate ${NP4_DECOY_STR} sum to?`,
+			answer: NP4_DECOY_SUM,
+			placeholder: 'a sum',
+			explanation:
+				`${NP4_DECOY.join(' + ')} = ${NP4_DECOY_SUM}, so the verifier rejects ` +
+				'it. Verification is adding at most n numbers and comparing with t — ' +
+				'polynomial time, which is exactly what puts SUBSET-SUM in NP. FINDING ' +
+				'a certificate may still take exponential search.',
+		},
+		{
+			kind: 'choice',
+			prompt:
+				'The classic dynamic program solves SUBSET-SUM in O(n·t) time. Why ' +
+				'does that NOT make SUBSET-SUM polynomial (and prove P = NP)?',
+			options: [
+				'The input encodes t in binary using only about log₂ t bits, so O(n·t) is exponential in the INPUT SIZE — pseudopolynomial, not polynomial',
+				'Because O(n·t) is quadratic, and quadratic algorithms do not count as polynomial',
+				'Because the dynamic program only finds the certificate, not the YES/NO answer',
+				'It does — a polynomial bound in any parameter settles P = NP',
+			],
+			answer:
+				'The input encodes t in binary using only about log₂ t bits, so O(n·t) is exponential in the INPUT SIZE — pseudopolynomial, not polynomial',
+			misconceptions: {
+				'It does — a polynomial bound in any parameter settles P = NP':
+					'Polynomial time means polynomial in the LENGTH of the input ' +
+					'encoding. Writing t takes ~log₂ t bits, so t itself can be 2 to the ' +
+					'power of the bit count — O(n·t) blows up exponentially as the ' +
+					'encoding grows. That is why the DP settles nothing about P vs NP.',
+			},
+			explanation:
+				'The instance size is the number of BITS: n numbers of about log₂ t ' +
+				'bits each. A running time of O(n·t) is polynomial in the numeric ' +
+				'VALUE t but exponential in its bit length — the definition of ' +
+				'pseudopolynomial. Doubling the bits of t squares the work, so ' +
+				'SUBSET-SUM remains NP-complete despite its friendly-looking DP.',
+		},
+	],
+};
+
+// =============================================================================
+// NP-COMPLETENESS, set 5 — CLIQUE ↔ VERTEX-COVER through the COMPLEMENT GRAPH,
+// run concretely on one 5-vertex graph. The chain: S is a clique in G ⇔ S is
+// independent in the complement Ḡ ⇔ V \ S is a vertex cover of Ḡ; so G has a
+// clique of size k iff Ḡ has a vertex cover of size n − k. The complement's
+// edge set is COMPUTED from G (never typed), the module verifies that V \ S
+// covers every complement edge, and the clique-edge count and cover size are
+// explicit expressions. Only the reduction DIRECTION is conceptual (STATIC) —
+// framed exactly as in np-2/np-3: known-hard INTO target. (np-3 runs the
+// sibling IS ↔ VC complement-SET reduction on one graph; this one flips the
+// GRAPH, which is how CLIQUE reaches VERTEX-COVER.)
+// =============================================================================
+
+const NP5_N = 5;
+const NP5_VERTICES = [1, 2, 3, 4, 5];
+const NP5_G_EDGES = [
+	[1, 2],
+	[1, 3],
+	[2, 3],
+	[3, 4],
+	[4, 5],
+];
+const NP5_CLIQUE = [1, 2, 3]; // the claimed clique in G
+const NP5_K = NP5_CLIQUE.length;
+// A size-k clique contains all its pairs: k(k−1)/2, as an explicit expression.
+const NP5_CLIQUE_EDGES = (NP5_K * (NP5_K - 1)) / 2; // 3
+
+const np5HasEdge = (edges, a, b) =>
+	edges.some(([u, v]) => (u === a && v === b) || (u === b && v === a));
+// The complement graph's edges: every vertex pair NOT joined in G.
+const NP5_COMP_EDGES = (() => {
+	const out = [];
+	for (let i = 0; i < NP5_VERTICES.length; i++) {
+		for (let j = i + 1; j < NP5_VERTICES.length; j++) {
+			const a = NP5_VERTICES[i];
+			const b = NP5_VERTICES[j];
+			if (!np5HasEdge(NP5_G_EDGES, a, b)) out.push([a, b]);
+		}
+	}
+	return out;
+})();
+const np5EdgeSetStr = edges => edges.map(([u, v]) => `${u}–${v}`).join(', ');
+const NP5_COMP_STR = np5EdgeSetStr(NP5_COMP_EDGES); // 1–4, 1–5, 2–4, 2–5, 3–5
+const NP5_G_STR = np5EdgeSetStr(NP5_G_EDGES);
+// Distractors: G's own edge set (forgot to complement), a near-miss with one
+// wrong pair, and all ten pairs (complemented nothing away).
+const NP5_NEAR_STR = np5EdgeSetStr(
+	NP5_COMP_EDGES.map(([u, v]) => (u === 3 && v === 5 ? [3, 4] : [u, v]))
+);
+const NP5_ALL_PAIRS_STR = np5EdgeSetStr(
+	NP5_VERTICES.flatMap((a, i) => NP5_VERTICES.slice(i + 1).map(b => [a, b]))
+);
+// V \ S, and the verification that it covers every complement edge. The size is
+// read off the computed set (and equals n − k by construction). The coverage
+// check is derived per edge and quoted in the explanation below.
+const NP5_COVER = NP5_VERTICES.filter(v => !NP5_CLIQUE.includes(v)); // [4, 5]
+const NP5_COVER_CHECK = NP5_COMP_EDGES.map(([u, v]) => {
+	const by = NP5_COVER.includes(u) ? u : NP5_COVER.includes(v) ? v : null;
+	return `${u}–${v} by ${by}`;
+}).join(', '); // every edge names its covering endpoint
+const NP5_COVER_SIZE = NP5_COVER.length; // 2 = n − k
+
+const problemNP5 = {
+	kind: 'problem',
+	stem:
+		`CLIQUE and VERTEX-COVER are two NP-complete problems joined by one ` +
+		`construction. Let G have vertices 1, 2, 3, 4, 5 and edges ${NP5_G_STR} ` +
+		`(n = ${NP5_N}). The key fact: S is a clique in G exactly when S has NO ` +
+		'edges in the complement graph Ḡ — so every edge of Ḡ must have an ' +
+		'endpoint OUTSIDE S, making V \\ S a vertex cover of Ḡ. A size-k clique ' +
+		'in G therefore corresponds to a size-(n − k) vertex cover in Ḡ.',
+	parts: [
+		{
+			kind: 'numeric',
+			prompt:
+				`The claimed clique is S = {${NP5_CLIQUE.join(', ')}}, size k = ` +
+				`${NP5_K}. To verify it, every pair inside S must be an edge of G. ` +
+				'How many pairs is that (k(k−1)/2)?',
+			answer: NP5_CLIQUE_EDGES,
+			placeholder: 'a count',
+			explanation:
+				`${NP5_K}·${NP5_K - 1}/2 = ${NP5_CLIQUE_EDGES}: the pairs 1–2, 1–3, ` +
+				'and 2–3, all of which are edges of G, so S is a clique. Checking a ' +
+				'clique certificate is polynomial — test each of the k(k−1)/2 pairs.',
+		},
+		{
+			kind: 'choice',
+			prompt:
+				'Build the complement graph Ḡ: same five vertices, an edge exactly ' +
+				'where G has NONE. Which is Ḡ’s edge set?',
+			options: [NP5_COMP_STR, NP5_G_STR, NP5_NEAR_STR, NP5_ALL_PAIRS_STR],
+			answer: NP5_COMP_STR,
+			misconceptions: {
+				[NP5_G_STR]:
+					'That is G’s own edge set. The complement keeps the vertices and ' +
+					'flips every pair: pairs joined in G are dropped, pairs NOT joined ' +
+					'become edges.',
+				[NP5_ALL_PAIRS_STR]:
+					'That is every pair — the complete graph K₅. The complement only ' +
+					'keeps the pairs G does NOT join; the five pairs G already joins ' +
+					'must be dropped.',
+			},
+			explanation:
+				`Of the 10 vertex pairs on 5 vertices, G uses 5 (${NP5_G_STR}), so Ḡ ` +
+				`gets the other 5: ${NP5_COMP_STR}. Notice no pair inside the clique ` +
+				'{1, 2, 3} appears — a clique in G is an independent set in Ḡ.',
+		},
+		{
+			kind: 'numeric',
+			prompt:
+				'Because S is independent in Ḡ, every edge of Ḡ has an endpoint in ' +
+				`V \\ S = {${NP5_COVER.join(', ')}} — a vertex cover of Ḡ. What is its ` +
+				'size (n − k)?',
+			answer: NP5_COVER_SIZE,
+			placeholder: 'a set size',
+			explanation:
+				`${NP5_N} − ${NP5_K} = ${NP5_COVER_SIZE}. Check every edge of Ḡ: ` +
+				`${NP5_COVER_CHECK} — all covered. The complement map turns a bigger ` +
+				'clique in G into a smaller cover in Ḡ, pair for pair.',
+		},
+		{
+			kind: 'choice',
+			prompt:
+				'You know CLIQUE is NP-hard and want to prove VERTEX-COVER is ' +
+				'NP-hard using this construction. Which reduction do you build?',
+			options: [
+				'Reduce CLIQUE to VERTEX-COVER (CLIQUE ≤p VERTEX-COVER): map (G, k) to (Ḡ, n − k)',
+				'Reduce VERTEX-COVER to CLIQUE (VERTEX-COVER ≤p CLIQUE): map (G, k) to (Ḡ, n − k)',
+				'Reduce both problems to SAT and compare the two formulas',
+				'Either direction proves VERTEX-COVER NP-hard equally well',
+			],
+			answer:
+				'Reduce CLIQUE to VERTEX-COVER (CLIQUE ≤p VERTEX-COVER): map (G, k) to (Ḡ, n − k)',
+			misconceptions: {
+				'Reduce VERTEX-COVER to CLIQUE (VERTEX-COVER ≤p CLIQUE): map (G, k) to (Ḡ, n − k)':
+					'That direction maps the TARGET into the known-hard problem, which ' +
+					'only shows VERTEX-COVER is no harder than CLIQUE (an upper bound). ' +
+					'To prove VERTEX-COVER is HARD you must map the KNOWN-hard problem ' +
+					'INTO it: CLIQUE ≤p VERTEX-COVER.',
+				'Either direction proves VERTEX-COVER NP-hard equally well':
+					'Both maps exist — complementing the graph is its own inverse — but ' +
+					'only CLIQUE ≤p VERTEX-COVER (known-hard INTO target) establishes ' +
+					'VERTEX-COVER’s hardness. The reverse direction would prove CLIQUE ' +
+					'hard from VERTEX-COVER instead.',
+			},
+			explanation:
+				'To prove a target B NP-hard you reduce a KNOWN NP-hard problem A ' +
+				'INTO B (A ≤p B), so a fast solver for B would solve A too. Here the ' +
+				'map (G, k) ↦ (Ḡ, n − k) is computable in polynomial time and ' +
+				'answer-preserving: G has a clique of size ≥ k iff Ḡ has a vertex ' +
+				'cover of size ≤ n − k. That is CLIQUE ≤p VERTEX-COVER.',
+		},
+	],
+};
+
 export const EXAM_SETS = [
 	{
 		id: 'mst-1',
@@ -5994,6 +7369,12 @@ export const EXAM_SETS = [
 		problem: problemG2,
 	},
 	{
+		id: 'graphs-3',
+		topicId: 'graphs',
+		topicName: 'Graphs',
+		problem: problemG3,
+	},
+	{
 		// Trace-step probe: freeze BFS mid-run, predict the next dequeue.
 		id: 'graphs-probe-1',
 		topicId: 'graphs',
@@ -6134,6 +7515,36 @@ export const EXAM_SETS = [
 		problem: problemStableMatch,
 	},
 	{
+		id: 'strategies-5',
+		topicId: 'strategies',
+		topicName: 'Strategies',
+		problem: problemP5,
+	},
+	{
+		id: 'strategies-6',
+		topicId: 'strategies',
+		topicName: 'Strategies',
+		problem: problemP6,
+	},
+	{
+		id: 'strategies-7',
+		topicId: 'strategies',
+		topicName: 'Strategies',
+		problem: problemP7,
+	},
+	{
+		id: 'strategies-8',
+		topicId: 'strategies',
+		topicName: 'Strategies',
+		problem: problemP8,
+	},
+	{
+		id: 'strategies-9',
+		topicId: 'strategies',
+		topicName: 'Strategies',
+		problem: problemP9,
+	},
+	{
 		id: 'np-1',
 		topicId: 'np-completeness',
 		topicName: 'NP-completeness',
@@ -6150,6 +7561,36 @@ export const EXAM_SETS = [
 		topicId: 'np-completeness',
 		topicName: 'NP-completeness',
 		problem: problemNP3,
+	},
+	{
+		id: 'foundations-5',
+		topicId: 'foundations',
+		topicName: 'Arrays & complexity',
+		problem: problemBisect5,
+	},
+	{
+		id: 'graphs-4',
+		topicId: 'graphs',
+		topicName: 'Graphs',
+		problem: problemDfsClassify4,
+	},
+	{
+		id: 'heaps-4',
+		topicId: 'heaps',
+		topicName: 'Heaps & priority queues',
+		problem: problemH4,
+	},
+	{
+		id: 'np-4',
+		topicId: 'np-completeness',
+		topicName: 'NP-completeness',
+		problem: problemNP4,
+	},
+	{
+		id: 'np-5',
+		topicId: 'np-completeness',
+		topicName: 'NP-completeness',
+		problem: problemNP5,
 	},
 ];
 

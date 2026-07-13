@@ -82,7 +82,7 @@ const CHEAT_SHEET = {
  * wires <Route path="/mst">.
  */
 const MstPage = () => {
-	const { markVisited, markCompleted } = useProgress();
+	const { markVisited } = useProgress();
 	const [checkStates, setCheckStates] = useState(initialCheckStates);
 
 	const topic = TOPIC_BY_ID[TOPIC_ID];
@@ -105,13 +105,9 @@ const MstPage = () => {
 		[]
 	);
 
-	const handlePlaygroundInteract = useCallback(() => {
-		markCompleted(TOPIC_ID);
-	}, [markCompleted]);
-
 	const renderPlayground = useCallback(
-		() => <MstSandbox onUserInteract={handlePlaygroundInteract} />,
-		[handlePlaygroundInteract]
+		() => <MstSandbox />,
+		[]
 	);
 
 	const handleVisit = useCallback(() => {

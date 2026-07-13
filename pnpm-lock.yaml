@@ -8,6 +8,9 @@ importers:
 
   .:
     dependencies:
+      '@viljen789/study-ui':
+        specifier: github:Viljen789/study-ui#v0.3.0
+        version: https://codeload.github.com/Viljen789/study-ui/tar.gz/84d8da5b7591142a773cf2f1a346440eaccbf938(react-dom@19.2.5(react@19.2.5))(react@19.2.5)
       framer-motion:
         specifier: ^12.23.12
         version: 12.38.0(react-dom@19.2.5(react@19.2.5))(react@19.2.5)
@@ -547,6 +550,13 @@ packages:
 
   '@types/react@19.2.14':
     resolution: {integrity: sha512-ilcTH/UniCkMdtexkoCN0bI7pMcJDvmQFPvuPvmEaYA/NSfFTAgdUSLAoVjaRJm7+6PvcM+q1zYOwS4wTYMF9w==}
+
+  '@viljen789/study-ui@https://codeload.github.com/Viljen789/study-ui/tar.gz/84d8da5b7591142a773cf2f1a346440eaccbf938':
+    resolution: {gitHosted: true, integrity: sha512-TnKUi7csnXCtoSbaZZ8Jj+PtvDqONnz5eEciRianED7eIX9B9BgTh4k4FjOD28kQZZgz0WJtRapUQt5WHG4+Qw==, tarball: https://codeload.github.com/Viljen789/study-ui/tar.gz/84d8da5b7591142a773cf2f1a346440eaccbf938}
+    version: 0.3.0
+    peerDependencies:
+      react: '>=18 <20'
+      react-dom: '>=18 <20'
 
   '@vitejs/plugin-react@4.7.0':
     resolution: {integrity: sha512-gUu9hwfWvvEDBBmgtAowQCojwZmJ5mcLn3aufeCsitijs3+f2NsrPtlAWIR6OPiqljl96GVCUbLe0HyqIpVaoA==}
@@ -1469,6 +1479,11 @@ snapshots:
   '@types/react@19.2.14':
     dependencies:
       csstype: 3.2.3
+
+  '@viljen789/study-ui@https://codeload.github.com/Viljen789/study-ui/tar.gz/84d8da5b7591142a773cf2f1a346440eaccbf938(react-dom@19.2.5(react@19.2.5))(react@19.2.5)':
+    dependencies:
+      react: 19.2.5
+      react-dom: 19.2.5(react@19.2.5)
 
   '@vitejs/plugin-react@4.7.0(vite@7.3.2)':
     dependencies:

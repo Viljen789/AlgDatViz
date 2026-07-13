@@ -106,7 +106,11 @@ const HeapSortView = ({
 						: 'Start a run to see the array interpreted as a binary heap.';
 
 	return (
-		<div className={styles.heapSortContainer}>
+		<div
+			className={styles.heapSortContainer}
+			role="region"
+			aria-label="Heap sort tree workspace"
+		>
 			<div className={styles.phaseIndicator}>
 				<span className={styles.phaseLabel}>{phaseLabel}</span>
 				<span className={styles.phaseNarration}>{narration}</span>
@@ -138,7 +142,11 @@ const HeapSortView = ({
 				rightChild !== undefined) && (
 				<div className={styles.operationSection}>
 					<h3 className={styles.sectionTitle}>Current heap check</h3>
-					<div className={styles.operationDetails}>
+					<div
+						className={styles.operationDetails}
+						role="group"
+						aria-label="Current heap check"
+					>
 						{parentIndex !== undefined && (
 							<div className={styles.operationDetail}>
 								<strong>Parent</strong>
@@ -177,6 +185,7 @@ const HeapSortView = ({
 										${node.isSwapping ? styles.swappingNode : ''}
 										${node.isRoot ? styles.rootNode : ''}
 										${node.isMax ? styles.maxNode : ''}`}
+									data-heap-node
 									style={{
 										'--level': levelIndex,
 										'--position': node.position,

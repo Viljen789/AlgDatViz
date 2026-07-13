@@ -46,12 +46,14 @@
 .scoreNum {
 	font-size: var(--font-size-display-2xl);
 	font-weight: var(--font-weight-display);
+	font-variant-numeric: lining-nums tabular-nums;
 	letter-spacing: var(--tracking-display);
 }
 
 .scoreOf {
 	font-size: var(--font-size-display-lg);
 	font-weight: var(--font-weight-semibold);
+	font-variant-numeric: lining-nums tabular-nums;
 	color: var(--color-text-muted);
 }
 
@@ -66,7 +68,7 @@
 	display: block;
 	height: 100%;
 	border-radius: var(--radius-pill);
-	background: var(--color-success);
+	background: var(--review-brand);
 	transition: width var(--duration-merge) var(--ease-quiet);
 }
 
@@ -245,7 +247,7 @@
 	align-items: center;
 	gap: var(--space-sm);
 	padding: var(--space-md) var(--space-xl);
-	background: var(--color-accent-blue);
+	background: var(--review-brand);
 	color: var(--color-text-on-accent);
 	border: none;
 	border-radius: var(--radius-pill);

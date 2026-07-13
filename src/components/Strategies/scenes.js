@@ -8,6 +8,12 @@
 //   • OVERLAPPING SUBPROBLEMS — the same subproblem recurs many times, so naive
 //     recursion explodes. Optimal substructure + this ⇒ reach for DP (memoize).
 //
+// Around that spine sit the worked examples: rod cutting, LCS and 0/1 knapsack
+// deepen the DP idea right after it is named (1-D table → 2-D table → the bag
+// where density greedy dies), and fractional knapsack + Huffman follow the
+// interval-scheduling scene as the greedy successes — each carrying its own
+// exchange argument — before the decision rule sums it all up.
+//
 // The synchronized stage (StrategiesStage) reacts to the active scene *by id*
 // (not a fragile integer index) so prose and visualization stay in lockstep.
 //
@@ -15,6 +21,11 @@
 // punished — the explanation reveals either way, so every attempt teaches.
 
 import { buildCoinChangeFrames } from './coinChangeFrames.js';
+import { buildRodCuttingFrames } from './rodCuttingFrames.js';
+import { buildLcsFrames } from './lcsFrames.js';
+import { buildKnapsack01Frames } from './knapsack01Frames.js';
+import { buildFractionalKnapsackFrames } from './fractionalKnapsackFrames.js';
+import { buildHuffmanFrames } from './huffmanFrames.js';
 import { blockingPairs } from '../../lib/galeShapley.js';
 
 // The greedy-trap predict answer is DERIVED, never hand-typed: run the SAME
@@ -81,6 +92,64 @@ export const STABLE_OPTIONS = [
 	stablePairLabel('m3', 'w3'), // Cyrus ⇄ Yuki — Cyrus already has his top choice
 	"It's already stable",
 ];
+
+// ── The five worked examples (rod cutting, LCS, 0/1 + fractional knapsack, ────
+// Huffman). Each instance lives here so the stage renders the SAME runs the
+// answers are derived from, exactly like the coin-change and stable-matching
+// beats above. Every answer is read off a generator summary — never hand-typed —
+// and lessonPredict.test.js re-derives each one independently so no key can
+// drift from the generator the stage (and the playground) animates.
+
+// Rod cutting — the first four prices of the CLRS §14.1 table, rod length 4.
+// dp[4] = max(1+8, 5+5, 8+1, 9+0) = 10 by cutting 2 + 2 — one better than the 9
+// an uncut rod fetches, a margin only the full max notices.
+export const ROD_PRICES = [1, 5, 8, 9];
+export const ROD_N = 4;
+export const ROD_RUN = buildRodCuttingFrames({ prices: ROD_PRICES, n: ROD_N });
+export const ROD_REVENUE = ROD_RUN.summary.revenue; // = 10 (pieces 2 + 2)
+
+// LCS — the playground's small pair (AGCAT / GAC), 5 × 3 cells. The final cell
+// compares T with C (no match), so it carries max(up, left) = 2; the traceback
+// recovers "AC". The scene's predict is that final cell's value.
+export const LCS_X = 'AGCAT';
+export const LCS_Y = 'GAC';
+export const LCS_RUN = buildLcsFrames({ x: LCS_X, y: LCS_Y });
+export const LCS_LENGTH = LCS_RUN.summary.length; // = 2 = dp[5][3]
+
+// Knapsack — the playground's "ratio trap" preset (strategiesMeta.js), solved
+// BOTH ways on the same bag: the 0/1 table proves 7 (take Q whole, leave the
+// denser P behind) while density greedy on indivisible items banks only 2; let
+// items split (fractional) and the same density rule is provably optimal at
+// 7.25 (P whole + 3/4 of Q).
+export const KNAPSACK_CAPACITY = 4;
+export const KNAPSACK_ITEMS = [
+	{ name: 'P', weight: 1, value: 2 },
+	{ name: 'Q', weight: 4, value: 7 },
+];
+export const KNAPSACK01_RUN = buildKnapsack01Frames({
+	items: KNAPSACK_ITEMS,
+	capacity: KNAPSACK_CAPACITY,
+});
+export const KNAPSACK01_BEST = KNAPSACK01_RUN.summary.best; // = 7 (Q alone)
+export const FRACTIONAL_RUN = buildFractionalKnapsackFrames({
+	items: KNAPSACK_ITEMS,
+	capacity: KNAPSACK_CAPACITY,
+});
+export const FRACTIONAL_TOTAL = FRACTIONAL_RUN.summary.total; // = 7.25
+
+// Huffman — the letters of ABRACADABRA (the playground preset). A's 5
+// occurrences earn it the 1-bit code; the other six letters pay 3 bits each:
+// 5·1 + 6·3 = 23 bits, against 11 × 3 = 33 for a fixed-width code.
+export const HUFFMAN_SYMBOLS = [
+	{ char: 'A', freq: 5 },
+	{ char: 'B', freq: 2 },
+	{ char: 'R', freq: 2 },
+	{ char: 'C', freq: 1 },
+	{ char: 'D', freq: 1 },
+];
+export const HUFFMAN_RUN = buildHuffmanFrames(HUFFMAN_SYMBOLS);
+export const HUFFMAN_BITS = HUFFMAN_RUN.summary.huffmanBits; // = 23
+export const HUFFMAN_FIXED_BITS = HUFFMAN_RUN.summary.fixedBits; // = 33
 
 export const SCENES = [
 	{
@@ -159,16 +228,99 @@ export const SCENES = [
 		id: 'overlapping-subproblems',
 		eyebrow: 'The DP signature',
 		title: 'Overlapping subproblems: the same work, over and over.',
-		body: 'Count the ways to climb stairs: ways(n) = ways(n − 1) + ways(n − 2). Expand it naively and the tree explodes — ways(5) makes 15 calls, and ways(2) alone is recomputed three times. That repetition is the signature of DP. Memoize (or fill a table) and each subproblem is solved exactly once: the exponential tree collapses to a linear table.',
+		body: 'Count the ways to climb stairs: ways(n) = ways(n − 1) + ways(n − 2). Expand it naively and the tree explodes — ways(5) makes 15 calls, and ways(2) alone is recomputed three times. That repetition is the signature of DP. Memoize (or fill a table) and each subproblem is solved exactly once: the exponential tree collapses to a linear table. Collapse the repeated calls instead of the tree and you get the SUBPROBLEM GRAPH — one node per distinct subproblem, an edge where one needs the other’s answer — and DP’s running time reads straight off it: roughly vertices plus edges. Solving that graph bottom-up in dependency order is exactly how the shortest-paths lesson relaxes a DAG; DP and DAG shortest paths are the same picture.',
 		// numeric: grounded in the pure, unit-tested climbingStairsRecursion census
 		// (buildOverlapCensus(5) → ways(2) naive count = 3).
 		check: {
 			kind: 'numeric',
+			reviewSafe: false,
 			prompt:
 				'Expanding ways(5) with no memo, how many times is ways(2) computed?',
 			answer: 3,
 			explanation:
-				'In the naive call tree of ways(5), the subproblem ways(2) appears three separate times — that is an overlapping subproblem. Memoization caches the first result so the other two evaluations are free, turning the exponential tree into an O(n) table.',
+				'In the naive call tree of ways(5), the subproblem ways(2) appears three separate times — that is an overlapping subproblem. Memoization caches the first result so the other two evaluations are free, turning the exponential tree into an O(n) table. In the subproblem graph all three calls are one ways(2) vertex with its answer computed once — count that graph’s vertices and edges and you have already priced the whole DP run.',
+		},
+	},
+	{
+		id: 'rod-cutting',
+		eyebrow: 'The recipe, reused',
+		title: 'Rod cutting: pick a first piece, trust the table for the rest.',
+		body: 'A rod of length 4, where pieces of length 1, 2, 3, 4 sell for 1, 5, 8, 9. This is coin change wearing price tags: dp[j] = max(price[i] + dp[j − i]) — one leading piece now, plus the best already-solved answer for what remains. Optimal substructure supplies the recurrence; overlapping subproblems (every dp[j − i] is reused across lengths) make the table worth filling. It has settled through dp[3] = 8. Commit to dp[4] before the last cell fills.',
+		// predict (choice-mode) + revealGate: the RodBoard holds the honest frame
+		// where dp[0..3] are settled and dp[4] is still pending; the student runs the
+		// max themselves before the stage writes it. The answer is DERIVED from the
+		// real generator — buildRodCuttingFrames({prices:[1,5,8,9], n:4}).summary
+		// .revenue === 10 (cut 2 + 2), beating the whole rod's 9 by one. Re-derived
+		// independently in lessonPredict.test.js so the key can never drift.
+		check: {
+			kind: 'predict',
+			reviewSafe: false,
+			revealGate: true,
+			prompt:
+				'Try every leading piece against the settled cells — price[i] + dp[4 − i] for i = 1..4. What revenue does the max write into dp[4]?',
+			options: [4, 9, 10, 13],
+			answer: ROD_REVENUE,
+			misconceptions: {
+				4: 'Four is the all-unit cut, 1 + 1 + 1 + 1 — a single candidate (i = 1 all the way down), not the max. dp[4] also tries a leading piece of 2, and price[2] + dp[2] = 5 + 5 = 10 more than doubles the unit plan.',
+				9: 'Nine is what the uncut rod fetches (price[4]) — and also what a 3 + 1 cut earns (8 + 1). Both are candidates dp[4] weighs and rejects, because 2 + 2 earns 5 + 5 = 10. Selling whole is one option among many, never the default.',
+				13: 'That adds price[3] + price[2] = 8 + 5 — pieces totaling length 5, cut from a rod of length 4. The recurrence cannot make this mistake: pairing price[i] with dp[4 − i] spends exactly the rod you have.',
+			},
+			explanation:
+				'dp[4] = max(1 + dp[3], 5 + dp[2], 8 + dp[1], 9 + dp[0]) = max(9, 10, 9, 9) = 10 — cut the rod into 2 + 2. Every candidate is one piece plus an already-optimal smaller answer (optimal substructure), and those smaller cells are read again and again across lengths (overlapping subproblems). Cutting beats selling whole by exactly 1, a margin only the full max ever notices.',
+		},
+	},
+	{
+		id: 'lcs',
+		eyebrow: 'Two dimensions',
+		title: 'Longest common subsequence: the table grows a second dimension.',
+		body: 'Compare AGCAT with GAC. One index cannot name this subproblem — the state is a pair of prefixes, so the table gains a dimension: dp[i][j] is the LCS length of X[1..i] and Y[1..j]. A match extends the diagonal, dp[i−1][j−1] + 1. A mismatch drops one character and carries the better of up and left. The fill has reached the final cell, where T meets C.',
+		// predict (choice-mode) + revealGate: the LcsBoard holds the frame just
+		// before the corner cell is written (active cell dp[5][2], with dp[4][3] and
+		// dp[5][2] both settled at 2), so the student applies the mismatch rule
+		// themselves. The answer is DERIVED from the real generator —
+		// buildLcsFrames({x:'AGCAT', y:'GAC'}).summary.length === 2 === dp[5][3],
+		// with traceback "AC". Re-derived in lessonPredict.test.js.
+		check: {
+			kind: 'predict',
+			reviewSafe: false,
+			revealGate: true,
+			prompt:
+				'The final cell compares X[5] = T with Y[3] = C — no match. What value lands in dp[5][3]?',
+			options: [0, 2, 3],
+			answer: LCS_LENGTH,
+			misconceptions: {
+				0: 'A mismatch does not reset the count — that is the longest common SUBSTRING recurrence, where the run must be contiguous. A subsequence survives a mismatch: the cell carries the better prefix answer forward, max(↑, ←) = 2.',
+				3: 'The +1 rides only the diagonal, and only on a match. T ≠ C, so dp[5][3] copies the better of up (2) and left (2) with nothing added — dropping a character can never lengthen the common subsequence.',
+			},
+			explanation:
+				'No match, so dp[5][3] = max(dp[4][3], dp[5][2]) = max(2, 2) = 2: drop the T or the C and keep the better prefix answer. The +1 travels only on the diagonal, when both strings agree. Fifteen cells, each solved once from three already-final neighbours — overlapping subproblems in two dimensions — and the traceback walks the corner home to an actual subsequence, “AC”.',
+		},
+	},
+	{
+		id: 'knapsack-01',
+		eyebrow: 'All or nothing',
+		title: '0/1 knapsack: indivisible items break the density rule.',
+		body: 'A bag of capacity 4 and two indivisible items: P weighs 1 and pays 2, Q weighs 4 and pays 7. By density P looks better — 2 per unit of weight against Q’s 1.75. But nothing here can be split, so each cell weighs two whole futures: skip the item (copy the cell above) or take all of it (its value plus the cell above, shifted left by its weight). Row Q has reached the full bag.',
+		// predict (choice-mode) + revealGate: the KnapsackBoard holds the frame just
+		// before the corner cell dp[2][4] is written (row P settled at 2, row Q
+		// settled through w = 3), so the student weighs take-vs-skip themselves. The
+		// answer is DERIVED from the real generator — buildKnapsack01Frames on the
+		// playground's ratio-trap instance gives summary.best === 7 (Q alone), while
+		// density greedy banks 2 — the distractor. Re-derived in lessonPredict.test.js.
+		check: {
+			kind: 'predict',
+			reviewSafe: false,
+			revealGate: true,
+			prompt:
+				'At the corner cell the bag is finally big enough for Q. What optimal value fills dp[Q][4] — the best this bag can carry?',
+			options: [2, 7, 9],
+			answer: KNAPSACK01_BEST,
+			misconceptions: {
+				2: 'Two is density greedy’s answer: grab P first (ratio 2 beats 1.75) and strand 3 capacity the indivisible Q cannot use. The table never pre-commits — at the full bag it still compares both futures, and taking Q for 7 wins.',
+				9: 'Nine takes both items, but P + Q weigh 5 in a bag of capacity 4. The take branch pays for Q out of what remains — 7 + dp[P][0] — and that 0 is the table saying P no longer fits once Q is in.',
+			},
+			explanation:
+				'dp[Q][4] = max(skip Q → dp[P][4] = 2, take Q → 7 + dp[P][0] = 7) = 7. Dense little P is the trap: taking it first leaves 3 capacity the indivisible Q cannot enter, which is exactly what density greedy does — it banks 2. The table, comparing both whole futures at every capacity, quietly leaves the “better ratio” behind. No exchange argument survives indivisibility; this bag returns two scenes from now with the one rule change that saves it.',
 		},
 	},
 	{
@@ -194,6 +346,56 @@ export const SCENES = [
 			},
 			explanation:
 				'Earliest-finish is the rule with an exchange-argument proof: any optimal schedule can swap its first activity for the earliest-finishing one without losing any activities. That proof IS the greedy-choice property. Earliest-start and shortest-duration both have easy counterexamples.',
+		},
+	},
+	{
+		id: 'fractional-knapsack',
+		eyebrow: 'One rule change',
+		title: 'Fractional knapsack: let items split and greedy becomes a theorem.',
+		body: 'The 0/1 bag returns — capacity 4, P (weight 1, value 2), Q (weight 4, value 7) — with one rule changed: items may now be split. That change is everything. Sort by value per weight, take the densest whole, and shave a fraction off the last item so the bag closes exactly full. The exchange argument works again: any plan holding sparser weight improves by swapping it, gram for gram, for denser weight. Greedy has taken P whole; 3 capacity remains, and Q weighs 4.',
+		// numeric + revealGate: the FractionalBoard holds the frame right after P is
+		// taken whole (bag ¼ full, value 2) — the canvas would otherwise display the
+		// final total the student is asked to compute. The answer is DERIVED from the
+		// real generator — buildFractionalKnapsackFrames on the SAME ratio-trap bag
+		// gives summary.total === 7.25 (2 + ¾ · 7), beating the 0/1 optimum of 7.
+		// Re-derived in lessonPredict.test.js.
+		check: {
+			kind: 'numeric',
+			reviewSafe: false,
+			revealGate: true,
+			prompt:
+				'P is in whole and 3 capacity remains. Splitting is allowed — what total value does greedy close the bag with?',
+			answer: FRACTIONAL_TOTAL,
+			placeholder: 'Total value (decimals allowed)',
+			explanation:
+				'P fills 1 unit for value 2; the remaining 3 capacity takes 3/4 of Q for 0.75 × 7 = 5.25 — total 7.25. Hold this one bag’s three answers side by side: density greedy on indivisible items banked 2, the 0/1 table proved 7, and splitting reaches 7.25 — above every whole-item plan, because the bag closes with zero slack at the best value per unit of weight. Divisibility alone turned the same greedy rule from trap into theorem.',
+		},
+	},
+	{
+		id: 'huffman',
+		eyebrow: 'Greedy builds a code',
+		title: 'Huffman coding: merge the two rarest, out comes an optimal code.',
+		body: 'Count the letters of ABRACADABRA — A five times, B and R twice, C and D once — and give each a binary codeword no other codeword is a prefix of. Huffman’s greedy move: merge the two rarest trees under a new parent, repeat until one tree stands. The exchange argument holds because the two rarest symbols can always be made deepest siblings without lengthening the code. Each leaf’s path — 0 left, 1 right — is its codeword, read off in the table below the tree.',
+		// choice + revealGate: the tree and codeword table must stay visible (the
+		// question is computed FROM them), so the board only withholds its bit-total
+		// verdict until the student commits. The answer is DERIVED from the real
+		// generator — buildHuffmanFrames(ABRACADABRA counts).summary.huffmanBits ===
+		// 23, against fixedBits === 33 and a plain sum of codeword lengths of 13 (the
+		// two distractors). Re-derived in lessonPredict.test.js.
+		check: {
+			kind: 'choice',
+			reviewSafe: false,
+			revealGate: true,
+			prompt:
+				'Encode all 11 letters of ABRACADABRA with the codewords shown. How many bits long is the message?',
+			options: [13, 23, 33],
+			answer: HUFFMAN_BITS,
+			misconceptions: {
+				13: 'That sums each codeword once — 1 + 3 + 3 + 3 + 3 — as if every letter occurred a single time. A message pays a codeword per occurrence: A’s 1 bit is spent five times, so the total is Σ freq × length = 23.',
+				33: 'Thirty-three is the fixed-width baseline — 5 distinct symbols need 3 bits each, and 11 × 3 = 33. Huffman beats it by ten bits (about 30%) precisely because A, nearly half the message, pays 1 bit instead of 3.',
+			},
+			explanation:
+				'A costs 1 bit and appears 5 times; B, R, C, D cost 3 bits across the 6 remaining letters: 5 × 1 + 6 × 3 = 23 bits, against 33 fixed-width. The message length is the tree’s weighted path length, Σ freq × depth — and the greedy merges minimize exactly that, sinking the rare C and D where long codes are cheap and keeping A shallow where a short code pays off five times over.',
 		},
 	},
 	{
@@ -268,6 +470,7 @@ export const SCENES = [
 		// drift from galeShapley.js, exactly like the greedy-trap coin count above.
 		check: {
 			kind: 'predict',
+			reviewSafe: false,
 			revealGate: true,
 			prompt:
 				'Is this proposed matching stable? If not, which pair would break it by eloping?',

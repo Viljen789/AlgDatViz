@@ -1,8 +1,6 @@
 export const ALGORITHM_INFO = {
 	bubbleSort: {
-		name: 'Bubble Sort',
-		description:
-			'Bubble Sort sammenligner tilstøtende elementer i arrayet og bytter dem hvis de er i feil rekkefølge. Etter hver gjennomgang er det største elementet garantert på sin endelige posisjon. Algoritmen fortsetter å gjøre gjennomganger til ingen bytter er nødvendig, noe som indikerer at arrayet er sortert.',
+		name: 'Bubble sort',
 		intuition:
 			'Think of the array as full of small local inversions. Bubble Sort fixes only neighboring inversions, so large values drift right one swap at a time.',
 		thoughtProcess:
@@ -36,16 +34,9 @@ export const ALGORITHM_INFO = {
 			stable: 1,
 			inPlace: 1,
 		},
-		cases: {
-			best: 'Det beste tilfellet inntreffer når arrayet allerede er sortert. En enkelt gjennomgang er nok til å bekrefte dette.',
-			worst:
-				'Det verste tilfellet inntreffer når arrayet er sortert i omvendt rekkefølge. Det krever maksimalt antall bytter og sammenligninger.',
-		},
 	},
 	selectionSort: {
-		name: 'Selection Sort',
-		description:
-			'Selection Sort deler arrayet i en sortert og usortert del. For hver posisjon i den sorterte delen finner algoritmen det minste elementet i den usorterte delen og bytter det med elementet på gjeldende posisjon. Dette fortsetter til hele arrayet er sortert, hvor den sorterte delen vokser med ett element for hver iterasjon.',
+		name: 'Selection sort',
 		intuition:
 			'Selection Sort behaves like repeatedly picking the next smallest card from a messy hand and placing it into a fixed position.',
 		thoughtProcess:
@@ -79,16 +70,9 @@ export const ALGORITHM_INFO = {
 			stable: 0,
 			inPlace: 1,
 		},
-		cases: {
-			best: 'Det beste tilfellet har samme tidskompleksitet som det verste, siden algoritmen alltid må finne minimum i hver runde.',
-			worst:
-				'Det verste tilfellet inntreffer når arrayet er sortert i omvendt rekkefølge, men tidskompleksiteten forblir O(n²).',
-		},
 	},
 	insertionSort: {
-		name: 'Insertion Sort',
-		description:
-			'Insertion Sort bygger den sorterte listen ett element av gangen ved å ta hvert element fra den usorterte delen og sette det inn på riktig posisjon i den sorterte delen. Den sammenligner det gjeldende elementet med elementene til venstre og flytter dem til høyre til den finner riktig posisjon for innsetting.',
+		name: 'Insertion sort',
 		intuition:
 			'Insertion Sort feels like sorting playing cards in your hand: take the next card and slide it left until it fits.',
 		thoughtProcess:
@@ -122,16 +106,9 @@ export const ALGORITHM_INFO = {
 			stable: 1,
 			inPlace: 1,
 		},
-		cases: {
-			best: 'Det beste tilfellet inntreffer når arrayet allerede er sortert. Algoritmen trenger bare å sammenligne hvert element med forgjengeren.',
-			worst:
-				'Det verste tilfellet inntreffer når arrayet er sortert i omvendt rekkefølge. Hvert element må flyttes til begynnelsen av arrayet.',
-		},
 	},
 	mergeSort: {
-		name: 'Merge Sort',
-		description:
-			'Merge Sort deler arrayet rekursivt i to like store halvdeler til hver del inneholder kun ett element. Deretter fletter den disse halvdelene sammen ved å sammenligne elementer fra hver halvdel og velge det minste til det nye arrayet. Fletteprosessen fortsetter rekursivt oppover til hele arrayet er rekonstruert i sortert rekkefølge.',
+		name: 'Merge sort',
 		intuition:
 			'Merge Sort wins by making the problem boring: split until every piece is already sorted, then merge those pieces in order.',
 		thoughtProcess:
@@ -169,16 +146,9 @@ export const ALGORITHM_INFO = {
 			stable: 1,
 			inPlace: 0,
 		},
-		cases: {
-			best: 'Det beste tilfellet har samme tidskompleksitet som andre tilfeller på grunn av algoritmens konsistente deling og fletting.',
-			worst:
-				'Det verste tilfellet har også O(n log n) tidskompleksitet, noe som gjør flettesortering forutsigbar i ytelse.',
-		},
 	},
 	quickSort: {
-		name: 'Quick Sort',
-		description:
-			'Quick Sort velger et pivot-element og partisjonerer arrayet slik at alle elementer mindre enn pivot kommer til venstre og alle større elementer kommer til høyre. Pivot plasseres på sin endelige sorterte posisjon. Algoritmen fortsetter rekursivt på venstre og høyre partisjon til alle sub-arrayer inneholder kun ett element.',
+		name: 'Quick sort',
 		intuition:
 			'Quick Sort asks one value to act as a divider: smaller values go left, larger values go right, and the divider lands in its final place.',
 		thoughtProcess:
@@ -213,16 +183,9 @@ export const ALGORITHM_INFO = {
 			stable: 0,
 			inPlace: 1,
 		},
-		cases: {
-			best: 'Det beste tilfellet inntreffer når pivot-elementet alltid er medianen av arrayet, noe som fører til perfekt balanserte partisjoner.',
-			worst:
-				'Det verste tilfellet inntreffer når pivot alltid er det minste eller største elementet, noe som fører til ubalanserte partisjoner og degradering til O(n²).',
-		},
 	},
 	heapSort: {
-		name: 'Heap Sort',
-		description:
-			'Heap Sort bygger først en max-heap fra arrayet hvor hver foreldre-node er større enn sine barn. Deretter fjerner den gjentatte ganger det største elementet (roten) fra heap, plasserer det på slutten av arrayet, og gjenoppbygger heap-egenskapen for de gjenværende elementene. Dette fortsetter til heap er tom og arrayet er sortert.',
+		name: 'Heap sort',
 		intuition:
 			'Heap Sort turns the array into a tournament where the largest remaining value is always at the root and ready to be removed.',
 		thoughtProcess:
@@ -261,16 +224,9 @@ export const ALGORITHM_INFO = {
 			stable: 0,
 			inPlace: 1,
 		},
-		cases: {
-			best: 'Det beste tilfellet har samme tidskompleksitet som andre tilfeller på grunn av heap-operasjonenes natur.',
-			worst:
-				'Det verste tilfellet opprettholder O(n log n) ytelse, noe som gjør haugsortering til et pålitelig valg for kritiske applikasjoner.',
-		},
 	},
 	countingSort: {
-		name: 'Counting Sort',
-		description:
-			'Counting Sort oppretter et hjelpende array for å telle frekvensen av hvert element i input-arrayet. Den itererer gjennom input-arrayet og inkrementerer telleren for hvert element. Deretter rekonstruerer den det sorterte arrayet ved å iterere gjennom telling-arrayet og plassere hvert element det antallet ganger det forekom.',
+		name: 'Counting sort',
 		intuition:
 			'Counting Sort avoids comparisons entirely. If values are small integers, just count how many of each value exists and play the counts back in order.',
 		thoughtProcess:
@@ -304,16 +260,9 @@ export const ALGORITHM_INFO = {
 			stable: 1,
 			inPlace: 0,
 		},
-		cases: {
-			best: 'Det beste tilfellet inntreffer når området av verdier (k) er lite sammenlignet med antall elementer (n).',
-			worst:
-				'Det verste tilfellet inntreffer når området av verdier er svært stort, noe som krever mye ekstra minne for tellearrayet.',
-		},
 	},
 	radixSort: {
-		name: 'Radix Sort',
-		description:
-			'Radix Sort sorterer elementene ved å prosessere hvert siffer individuelt fra høyre til venstre (minst til mest signifikant). For hvert siffer-posisjon bruker den en stabil sorteringsalgoritme (vanligvis counting sort) for å sortere elementene basert på det gjeldende sifferet. Dette sikrer at rekkefølgen fra tidligere siffer-sorteringer bevares.',
+		name: 'Radix sort',
 		intuition:
 			'Radix Sort sorts numbers the way a filing system might: group by one digit, keep the order stable, then move to the next digit.',
 		thoughtProcess:
@@ -351,16 +300,9 @@ export const ALGORITHM_INFO = {
 			stable: 1,
 			inPlace: 0,
 		},
-		cases: {
-			best: 'Det beste tilfellet inntreffer når tallene har få siffer (liten d) og sifferområdet er begrenset (liten k).',
-			worst:
-				'Det verste tilfellet inntreffer når tallene har mange siffer, noe som øker antall gjennomganger som trengs.',
-		},
 	},
 	bucketSort: {
-		name: 'Bucket Sort',
-		description:
-			'Bucket Sort fordeler elementene i flere bøtter (sub-arrayer) basert på elementenes verdier. Hvert element plasseres i en bøtte ved å beregne en bøtte-indeks fra elementets verdi. Deretter sorteres hver bøtte individuelt med en annen sorteringsalgoritme, og til slutt settes alle sorterte bøtter sammen til det endelige sorterte arrayet.',
+		name: 'Bucket sort',
 		intuition:
 			'Bucket Sort assumes values can be spread into neighborhoods. If each neighborhood is small, sorting inside each one becomes cheap.',
 		thoughtProcess:
@@ -394,11 +336,6 @@ export const ALGORITHM_INFO = {
 		properties: {
 			stable: 1,
 			inPlace: 0,
-		},
-		cases: {
-			best: 'Det beste tilfellet inntreffer når elementene er jevnt distribuert mellom bøttene, noe som minimerer arbeidet i hver bøtte.',
-			worst:
-				'Det verste tilfellet inntreffer når alle elementene havner i samme bøtte, noe som degraderer til ytelsen til den interne sorteringsalgoritmen.',
 		},
 	},
 };

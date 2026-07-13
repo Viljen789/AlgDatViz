@@ -1,11 +1,12 @@
 .sidebar {
-	width: 218px;
+	width: 240px;
 	flex-shrink: 0;
 	background: var(--color-bg-sidebar);
 	border-right: 1px solid var(--color-border);
 	display: flex;
 	flex-direction: column;
 	height: 100vh;
+	height: 100dvh;
 	box-sizing: border-box;
 }
 
@@ -15,6 +16,26 @@
 	display: flex;
 	align-items: center;
 	gap: var(--space-sm);
+}
+
+.brandMark {
+	color: var(--color-text-primary);
+	flex: 0 0 auto;
+}
+
+.logo:hover .brandMark [data-trace] {
+	animation: brandTrace 680ms var(--ease-quiet, ease) both;
+}
+
+@keyframes brandTrace {
+	from {
+		stroke-dasharray: 1;
+		stroke-dashoffset: 1;
+	}
+	to {
+		stroke-dasharray: 1;
+		stroke-dashoffset: 0;
+	}
 }
 
 .logoText {
@@ -33,6 +54,13 @@
 	display: flex;
 	flex-direction: column;
 	overflow-y: auto;
+	/* Bottom fade as a scroll cue: rows dissolving at the edge signal more
+	   below. --mask-ink keeps the mask opaque in both themes. */
+	mask-image: linear-gradient(
+		to bottom,
+		var(--mask-ink) calc(100% - 24px),
+		transparent
+	);
 }
 
 .navList li {
@@ -41,6 +69,8 @@
 
 .navLink {
 	width: 100%;
+	min-height: 40px;
+	box-sizing: border-box;
 	padding: var(--space-sm) var(--space-lg);
 	border: none;
 	cursor: pointer;
@@ -164,6 +194,7 @@
    the icons left-aligned across one- and two-digit numbers. */
 .number {
 	flex-shrink: 0;
+	width: 2ch;
 	font-family: var(--font-family-mono);
 	font-size: var(--font-size-caption);
 	font-weight: var(--font-weight-regular);
@@ -213,9 +244,11 @@
    design: a small mono chip tinted with the topic's --accent (never red). The
    word "Next" carries the meaning, so it reads without colour. */
 /* Layout only — the topic-tinted look comes from the shared <Badge tone="accent">,
-   which reads the row's --accent. */
+   which reads the row's --accent. Inline padding tightens from the Badge default
+   so the first topic's label ("Arrays & big-O") keeps its full width beside it. */
 .nextChip {
 	flex-shrink: 0;
+	padding-inline: var(--space-xs);
 }
 
 /* Tint the leading status dot to agree with the chip (the next row is, by
@@ -268,17 +301,22 @@
 	display: block;
 	height: 100%;
 	border-radius: var(--radius-pill);
-	background: linear-gradient(
-		90deg,
-		var(--color-accent-blue),
-		var(--color-accent-green)
-	);
+	background: var(--brand);
 	transition: width var(--duration-step) var(--ease-quiet);
 }
 
 @media (prefers-reduced-motion: reduce) {
+	.logo:hover .brandMark [data-trace] {
+		animation: none;
+	}
 	.progressFill {
 		transition: none;
+	}
+}
+
+@media (min-width: 721px) and (max-width: 959px), (any-pointer: coarse) {
+	.navLink {
+		min-height: 44px;
 	}
 }
 
@@ -286,42 +324,72 @@
 
 @media (max-width: 720px) {
 	.sidebar {
-		width: 64px;
+		width: 100%;
+		height: 60px;
+		flex-direction: row;
+		border-right: 0;
+		border-bottom: 1px solid var(--color-border);
 	}
 
 	.logo {
 		justify-content: center;
-		padding: var(--space-lg) 0;
+		width: 58px;
+		padding: 0;
+		border-right: 1px solid var(--color-border);
+		border-bottom: 0;
 	}
 
 	.logoText,
-	.label,
-	.progressLabel,
 	.progressCount,
 	.soonBadge,
 	/* No room on the rail for the phase headers or the number prefix; the
 	   icon column carries identity here, so both recede entirely. */
-	.phaseHead,
+		.phaseHead,
 	.number,
 	/* No room for the text chip on the rail; the accent-tinted corner pip
 	   (.next .statusDot) carries the "next" cue here instead. */
-	.nextChip {
+		.nextChip {
+		display: none;
+	}
+
+	/* .navList li has higher selector specificity than .phaseHead on its own. */
+	.navList .phaseHead {
+		display: none;
+	}
+
+	.navList {
+		flex-direction: row;
+		overflow-x: auto;
+		overflow-y: hidden;
+		padding: 0 var(--space-xs);
+		mask-image: none;
+	}
+
+	.navList li:not(.utilityItem) {
 		display: none;
 	}
 
 	.navLink {
 		justify-content: center;
-		gap: 0;
-		padding: var(--space-md) 0;
+		flex-direction: column;
+		gap: 2px;
+		min-width: 58px;
+		min-height: 59px;
+		padding: 5px 7px 4px;
+		font-size: 10px;
 	}
 
 	.navBar {
-		height: 22px;
+		inset: auto 8px 0;
+		width: auto;
+		height: 2px;
+		transform: none;
+		border-radius: var(--radius-pill) var(--radius-pill) 0 0;
 	}
 
 	.icon {
-		width: 34px;
-		height: 34px;
+		width: 24px;
+		height: 24px;
 		justify-content: center;
 		border-radius: var(--radius-lg);
 	}
@@ -331,13 +399,7 @@
 	}
 
 	/* Show the per-topic status as a corner pip on the rail. */
-	.status {
-		position: absolute;
-		top: 8px;
-		right: 8px;
-		width: 10px;
-		height: 10px;
-	}
+	.status { display: none; }
 
 	.statusCheck {
 		width: 10px;
@@ -345,7 +407,7 @@
 	}
 
 	.footer {
-		padding: var(--space-md) var(--space-sm);
+		display: none;
 	}
 
 	.progressHead {

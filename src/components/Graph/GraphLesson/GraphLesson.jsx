@@ -22,7 +22,7 @@ const initialCheckStates = () =>
  * signature hue (var(--topic-graphs)).
  */
 const GraphLesson = () => {
-	const { markVisited, markCompleted } = useProgress();
+	const { markVisited } = useProgress();
 	const [checkStates, setCheckStates] = useState(initialCheckStates);
 
 	const topic = TOPIC_BY_ID[TOPIC_ID];
@@ -54,14 +54,9 @@ const GraphLesson = () => {
 		[]
 	);
 
-	// Marking the topic complete once the student actually drives the playground.
-	const handlePlaygroundInteract = useCallback(() => {
-		markCompleted(TOPIC_ID);
-	}, [markCompleted]);
-
 	const renderPlayground = useCallback(
-		() => <GraphDashboard onUserInteract={handlePlaygroundInteract} />,
-		[handlePlaygroundInteract]
+		() => <GraphDashboard />,
+		[]
 	);
 
 	const handleVisit = useCallback(() => {
@@ -110,7 +105,7 @@ const GraphLesson = () => {
 						tree, and the synced pseudocode all update in lockstep.
 					</p>
 				</header>
-				<OneFrontier onUserInteract={handlePlaygroundInteract} />
+				<OneFrontier />
 			</section>
 		</TopicTemplate>
 	);

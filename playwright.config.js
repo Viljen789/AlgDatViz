@@ -32,10 +32,12 @@ export default defineConfig({
 			name: 'mobile',
 			use: {
 				...devices['Pixel 5'],
-				viewport: { width: 393, height: 851 },
+				// Preserve the real Pixel width while giving component snapshots enough
+				// vertical room to avoid fixed app chrome being composited over them.
+				// Full-app QA still runs at the actual phone height.
+				viewport: { width: 393, height: 1100 },
 				isMobile: true,
 			},
 		},
 	],
 });
-
