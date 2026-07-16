@@ -184,7 +184,7 @@ export const SCENES = [
 					'You reasoned fewer buckets means less overhead, but it means each bucket holds more items, so the inner sort dominates. Linear time needs about n buckets so each stays small, plus a uniform spread to fill them evenly.',
 			},
 			explanation:
-				'Bucket sort is fast in expectation when keys spread evenly, so each bucket stays small (≈ n/m). Skewed input that piles everything into one bucket reduces it to the inner sort\'s cost — O(n²) with insertion sort in the worst case. The linear time is an average-case assumption, not a guarantee.',
+				"Bucket sort is fast in expectation when keys spread evenly, so each bucket stays small (≈ n/m). Skewed input that piles everything into one bucket reduces it to the inner sort's cost — O(n²) with insertion sort in the worst case. The linear time is an average-case assumption, not a guarantee.",
 		},
 	},
 	{

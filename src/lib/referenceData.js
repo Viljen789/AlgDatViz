@@ -150,7 +150,8 @@ const strategyChoice = (() => {
 		id: 'strategy',
 		topicId: 'strategies',
 		title: 'Greedy or dynamic programming',
-		question: 'Optimal substructure either way. Commit greedily, or fill a table?',
+		question:
+			'Optimal substructure either way. Commit greedily, or fill a table?',
 		options: [
 			{
 				when: 'An exchange argument proves the local choice safe',
@@ -187,7 +188,8 @@ const searchChoice = (() => {
 			{
 				when: 'No usable order',
 				pick: 'Linear scan',
-				because: 'O(n). With nothing sorted there is nothing to rule out, so every element may need a look. Sorting first only pays off across many searches.',
+				because:
+					'O(n). With nothing sorted there is nothing to rule out, so every element may need a look. Sorting first only pays off across many searches.',
 			},
 		],
 	};
@@ -204,7 +206,8 @@ const apspChoice = (() => {
 		id: 'apsp',
 		topicId: 'apsp',
 		title: 'All-pairs shortest paths',
-		question: 'Every distance for every pair. One matrix, or V single-source runs?',
+		question:
+			'Every distance for every pair. One matrix, or V single-source runs?',
 		options: [
 			{
 				when: 'Dense graph, or negative edges present',
@@ -231,7 +234,8 @@ const maxFlowChoice = (() => {
 		id: 'maxflow',
 		topicId: 'max-flow',
 		title: 'Maximum flow',
-		question: 'Augment until no path remains. Any path, or always the shortest?',
+		question:
+			'Augment until no path remains. Any path, or always the shortest?',
 		options: [
 			{
 				when: 'Capacities are small integers',

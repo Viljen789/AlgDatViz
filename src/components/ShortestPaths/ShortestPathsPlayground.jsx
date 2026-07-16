@@ -11,6 +11,7 @@ import { SSSP_PSEUDO, buildSsspTrace, buildStateRows } from './relaxTrace.js';
 import { SSSP_ALGORITHMS, SSSP_ALGO_ORDER, SSSP_PRESETS } from './ssspMeta.js';
 import { buildEdges, projectNodes, VIEW_H, VIEW_W } from './graphLayout.js';
 import styles from './ShortestPathsPlayground.module.css';
+import { useTeachingStateSnapshot } from '../../lib/useTeachingStateSnapshot.js';
 
 const INITIAL_PRESET = SSSP_PRESETS[0];
 
@@ -98,6 +99,19 @@ const ShortestPathsPlayground = ({ onUserInteract }) => {
 
 	const algo = SSSP_ALGORITHMS[algorithmId];
 	const frame = currentFrame || frames[0];
+	useTeachingStateSnapshot(
+		'controls',
+		{ presetId, graph, source, algorithmId, frame },
+		snapshot => {
+			if (!snapshot?.graph || !(snapshot.algorithmId in SSSP_ALGORITHMS))
+				return;
+			setPresetId(snapshot.presetId || INITIAL_PRESET.id);
+			setGraph(snapshot.graph);
+			setSource(snapshot.source);
+			setAlgorithmId(snapshot.algorithmId);
+			setFrames([snapshot.frame || idleFrame(snapshot.graph, snapshot.source)]);
+		}
+	);
 
 	// Geometry recomputed when the graph changes.
 	const projected = useMemo(() => projectNodes(graph.nodes), [graph]);

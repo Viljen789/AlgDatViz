@@ -23,7 +23,8 @@
 //   6        dp[i][j] = max(dp[i−1][j], dp[i][j−1])
 //   7  trace back from dp[m][n] to read the subsequence
 
-const toChars = s => (typeof s === 'string' ? s.split('') : Array.isArray(s) ? s : []);
+const toChars = s =>
+	typeof s === 'string' ? s.split('') : Array.isArray(s) ? s : [];
 
 const cloneGrid = grid => grid.map(row => [...row]);
 
@@ -117,7 +118,12 @@ export const buildLcsFrames = ({ x, y }) => {
 				description,
 				line: match ? 4 : 6,
 				state: [
-					{ id: 'cell', label: `dp[${i}][${j}]`, value: dp[i][j], active: true },
+					{
+						id: 'cell',
+						label: `dp[${i}][${j}]`,
+						value: dp[i][j],
+						active: true,
+					},
 					{
 						id: 'chars',
 						label: `X[${i}] vs Y[${j}]`,

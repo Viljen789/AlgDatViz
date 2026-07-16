@@ -1,4 +1,5 @@
 import { createElement, useState } from 'react';
+import { ComparisonRail } from '@viljen789/study-ui';
 import {
 	AlertTriangle,
 	Brain,
@@ -52,7 +53,8 @@ const normalizeComplexityTiles = complexity => {
 		if (time.best) tiles.push({ label: 'Best', value: time.best });
 		if (time.average) tiles.push({ label: 'Average', value: time.average });
 		if (time.worst) tiles.push({ label: 'Worst', value: time.worst });
-		if (time.amortized) tiles.push({ label: 'Amortized', value: time.amortized });
+		if (time.amortized)
+			tiles.push({ label: 'Amortized', value: time.amortized });
 		if (time.result) tiles.push({ label: 'Result', value: time.result });
 	}
 
@@ -72,7 +74,10 @@ const ComplexityGrid = ({ complexity }) => {
 	return (
 		<div className={styles.complexityGrid}>
 			{tiles.map(tile => (
-				<div key={`${tile.label}-${tile.value}`} className={styles.complexityTile}>
+				<div
+					key={`${tile.label}-${tile.value}`}
+					className={styles.complexityTile}
+				>
 					<span>{tile.label}</span>
 					<strong>{tile.value}</strong>
 				</div>
@@ -160,16 +165,21 @@ const Legend = ({ items = DEFAULT_LEGEND }) => {
 
 const CompareCards = ({ cards }) => {
 	if (!cards?.length) return null;
+	const items = cards.map((card, index) => ({
+		id: `comparison-${index}`,
+		title: card.title,
+		detail: card.label,
+	}));
+	const values = Object.fromEntries(
+		cards.map((card, index) => [`comparison-${index}`, card.text])
+	);
 	return (
-		<div className={styles.compareGrid}>
-			{cards.map(card => (
-				<div key={card.title} className={styles.compareCard}>
-					<span>{card.label}</span>
-					<strong>{card.title}</strong>
-					<p>{card.text}</p>
-				</div>
-			))}
-		</div>
+		<ComparisonRail
+			className={styles.comparisonRail}
+			ariaLabel="Algorithm comparison"
+			items={items}
+			rows={[{ id: 'meaning', label: 'In practice', values }]}
+		/>
 	);
 };
 
@@ -193,7 +203,9 @@ const Walkthrough = ({ steps, accent }) => {
 
 	const activeStep = steps[Math.min(activeIndex, steps.length - 1)];
 	const progress =
-		steps.length <= 1 ? 100 : Math.round((activeIndex / (steps.length - 1)) * 100);
+		steps.length <= 1
+			? 100
+			: Math.round((activeIndex / (steps.length - 1)) * 100);
 
 	return (
 		<section className={styles.walkthrough}>
@@ -257,9 +269,14 @@ const LearningPanel = ({
 		}));
 
 	return (
-		<div className={styles.learningPanel} style={{ '--learning-accent': accent }}>
+		<div
+			className={styles.learningPanel}
+			style={{ '--learning-accent': accent }}
+		>
 			<header className={styles.hero}>
-				<div className={styles.eyebrow}>{content.category || 'Learning lens'}</div>
+				<div className={styles.eyebrow}>
+					{content.category || 'Learning lens'}
+				</div>
 				<h3>{content.name || content.title}</h3>
 				{summary && <p>{summary}</p>}
 			</header>
@@ -275,7 +292,9 @@ const LearningPanel = ({
 
 			<Section icon={Gauge} title="Why This Complexity">
 				<Variables variables={content.complexity?.variables} />
-				<BulletList items={content.complexity?.why || content.complexityReason} />
+				<BulletList
+					items={content.complexity?.why || content.complexityReason}
+				/>
 			</Section>
 
 			<CompareCards cards={content.compareCards} />

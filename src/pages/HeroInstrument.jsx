@@ -6,6 +6,7 @@ import {
 	useReducedMotion,
 } from 'framer-motion';
 import { MoveHorizontal } from 'lucide-react';
+import { Annotation } from '@viljen789/study-ui';
 import styles from './HeroInstrument.module.css';
 
 // The Home hero instrument: one conserved set of 14 values that the reader GRABS
@@ -405,11 +406,17 @@ const HeroInstrument = ({ className }) => {
 				</div>
 			</div>
 
-			<figcaption className={styles.caption} aria-live="polite">
+			<Annotation
+				as="figcaption"
+				variant="technical"
+				tone="brand"
+				className={styles.caption}
+				aria-live="polite"
+			>
 				<span className={styles.capName}>{stop.name}</span>
 				<span className={styles.capNote}>{stop.note}</span>
 				<span className={styles.capCost}>{stop.cost}</span>
-			</figcaption>
+			</Annotation>
 		</figure>
 	);
 };

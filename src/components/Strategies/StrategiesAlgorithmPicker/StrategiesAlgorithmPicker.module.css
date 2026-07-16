@@ -61,11 +61,7 @@
 
 .rowActive {
 	background: var(--topic-strategies-wash);
-	border-color: color-mix(
-		in srgb,
-		var(--topic-strategies) 45%,
-		transparent
-	);
+	border-color: color-mix(in srgb, var(--topic-strategies) 45%, transparent);
 }
 
 .rowActive:hover {

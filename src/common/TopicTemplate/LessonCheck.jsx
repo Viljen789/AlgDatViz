@@ -1,13 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
-import {
-	ArrowDown,
-	ArrowRight,
-	ArrowUp,
-	Check,
-	Eye,
-	MousePointerClick,
-	RotateCcw,
-} from 'lucide-react';
+import { ChoiceGroup, FeedbackStack } from '@viljen789/study-ui';
+import { ArrowDown, ArrowUp, Check, MousePointerClick } from 'lucide-react';
 import StepProbeFrame from './StepProbeFrame.jsx';
 import styles from './LessonCheck.module.css';
 
@@ -77,30 +70,18 @@ const ChoiceRow = ({
 }) => {
 	const stacked = options.some(opt => String(opt).length > STACK_THRESHOLD);
 	return (
-		<div
-			className={`${styles.choiceRow} ${stacked ? styles.choiceRowStacked : ''}`}
-			role="group"
-			aria-label="Answer choices"
-		>
-			{options.map(opt => {
-				const isPicked = isAnswered && selected === opt;
-				const isAnswer = isAnswered && showAnswer && opt === answer;
-				return (
-					<button
-						key={opt}
-						type="button"
-						className={`${styles.choice} ${isAnswer ? styles.choiceAnswer : ''} ${
-							isPicked && !isAnswer ? styles.choicePickedWrong : ''
-						}`}
-						onClick={() => !isAnswered && onPick(opt)}
-						disabled={isAnswered}
-						aria-pressed={isPicked}
-					>
-						{opt}
-					</button>
-				);
-			})}
-		</div>
+		<ChoiceGroup
+			className={styles.choiceGroup}
+			options={options.map(option => ({ value: option, label: option }))}
+			value={isAnswered ? selected : null}
+			correctValue={answer}
+			revealCorrect={isAnswered && showAnswer}
+			locked={isAnswered}
+			layout={stacked ? 'stack' : 'inline'}
+			onChange={onPick}
+			ariaLabel="Answer choices"
+			style={{ '--sui-choice-accent': 'var(--topic-accent)' }}
+		/>
 	);
 };
 
@@ -673,10 +654,10 @@ const LessonCheck = ({
 	// one-shot because they intentionally omit onRetry.
 	const solutionVisible = Boolean(
 		isAnswered &&
-		(status === 'correct' ||
-			!retryEnabled ||
-			solutionRequested ||
-			retryCount > 0)
+			(status === 'correct' ||
+				!retryEnabled ||
+				solutionRequested ||
+				retryCount > 0)
 	);
 	useEffect(() => {
 		if (solutionVisible) onReveal?.();
@@ -794,80 +775,54 @@ const LessonCheck = ({
 				)
 			)}
 
-			{showCorrectionPrompt && (
-				<div className={styles.coaching} role="status" aria-live="polite">
-					<p className={styles.misconception}>
-						<span className={styles.misconceptionLabel}>
-							Hint for this attempt
-						</span>
-						{check.retryHint ||
-							RETRY_HINT[check.kind] ||
-							'Re-check the rule in this scene, then make the decision once more.'}
-					</p>
-					<div className={styles.feedbackActions}>
-						<button
-							type="button"
-							className={styles.retryButton}
-							onClick={handleRetry}
-						>
-							<RotateCcw size={14} strokeWidth={2.2} aria-hidden="true" />
-							<span>Try again</span>
-						</button>
-						<button
-							type="button"
-							className={styles.revealButton}
-							onClick={handleShowAnswer}
-						>
-							<Eye size={14} strokeWidth={2} aria-hidden="true" />
-							<span>Show worked answer</span>
-						</button>
-					</div>
-				</div>
-			)}
-
-			{solutionVisible && check.kind !== 'problem' && (
-				<div className={styles.reveal} role="status" aria-live="polite">
-					{misconception && (
-						<p className={styles.misconception}>
-							<span className={styles.misconceptionLabel}>
-								Why that was wrong
-							</span>
-							{misconception}
-						</p>
-					)}
-					{revealAnswer != null && (
-						<p className={styles.revealAnswer}>
-							<span className={styles.revealAnswerLabel}>Answer</span>
-							<span className={styles.revealAnswerValue}>{revealAnswer}</span>
-						</p>
-					)}
-					<p className={styles.explanation}>{check.explanation}</p>
-				</div>
-			)}
-
-			{isAnswered && (status === 'correct' || solutionVisible) && (
-				<div className={styles.postActions}>
-					{status === 'incorrect' && retryEnabled && (
-						<button
-							type="button"
-							className={styles.retryButton}
-							onClick={handleRetry}
-						>
-							<RotateCcw size={14} strokeWidth={2.2} aria-hidden="true" />
-							<span>Try once more</span>
-						</button>
-					)}
-					{status === 'correct' && onContinue && (
-						<button
-							type="button"
-							className={styles.continueButton}
-							onClick={onContinue}
-						>
-							<span>{continueLabel || 'Continue'}</span>
-							<ArrowRight size={14} strokeWidth={2.2} aria-hidden="true" />
-						</button>
-					)}
-				</div>
+			{(showCorrectionPrompt || solutionVisible) && (
+				<FeedbackStack
+					className={styles.feedbackStack}
+					style={{ '--sui-color-brand': 'var(--topic-accent)' }}
+					stage={
+						showCorrectionPrompt
+							? 'coaching'
+							: status === 'correct'
+								? 'complete'
+								: 'revealed'
+					}
+					status={status}
+					heading={
+						showCorrectionPrompt
+							? 'Hint for this attempt'
+							: status === 'correct'
+								? 'That holds'
+								: 'Worked answer'
+					}
+					coaching={
+						check.retryHint ||
+						RETRY_HINT[check.kind] ||
+						'Re-check the rule in this scene, then make the decision once more.'
+					}
+					revealed={
+						check.kind === 'problem' ? null : (
+							<>
+								{misconception && (
+									<p className={styles.misconception}>
+										<span className={styles.misconceptionLabel}>
+											Why that was wrong
+										</span>
+										{misconception}
+									</p>
+								)}
+								<p className={styles.explanation}>{check.explanation}</p>
+							</>
+						)
+					}
+					answer={revealAnswer}
+					onRetry={
+						status === 'incorrect' && retryEnabled ? handleRetry : undefined
+					}
+					onReveal={showCorrectionPrompt ? handleShowAnswer : undefined}
+					onContinue={status === 'correct' ? onContinue : undefined}
+					retryLabel={solutionVisible ? 'Try once more' : 'Try again'}
+					continueLabel={continueLabel || 'Continue'}
+				/>
 			)}
 		</aside>
 	);

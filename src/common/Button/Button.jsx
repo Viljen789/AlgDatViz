@@ -1,5 +1,18 @@
 import { Button as SharedButton } from '@viljen789/study-ui';
+import { Link } from 'react-router-dom';
 import styles from './Button.module.css';
+
+const classesFor = ({ variant, size, loading, className, transport = false }) =>
+	[
+		styles.button,
+		styles[variant],
+		styles[size],
+		loading ? styles.loading : '',
+		transport ? styles.transport : '',
+		className,
+	]
+		.filter(Boolean)
+		.join(' ');
 
 /**
  * Button — token-wired primitive.
@@ -21,17 +34,10 @@ const Button = ({
 	loading = false,
 	disabled = false,
 	className = '',
+	transport = false,
 	...rest
 }) => {
-	const classes = [
-		styles.button,
-		styles[variant],
-		styles[size],
-		loading ? styles.loading : '',
-		className,
-	]
-		.filter(Boolean)
-		.join(' ');
+	const classes = classesFor({ variant, size, loading, className, transport });
 
 	return (
 		<SharedButton
@@ -48,5 +54,35 @@ const Button = ({
 		</SharedButton>
 	);
 };
+
+export const ActionLink = ({
+	children,
+	variant = 'secondary',
+	size = 'md',
+	className = '',
+	...rest
+}) => (
+	<Link
+		className={classesFor({
+			variant,
+			size,
+			loading: false,
+			className,
+		})}
+		{...rest}
+	>
+		{children}
+	</Link>
+);
+
+export const TransportButton = ({ className = '', ...props }) => (
+	<Button
+		variant="ghost"
+		size="sm"
+		transport
+		className={className}
+		{...props}
+	/>
+);
 
 export default Button;

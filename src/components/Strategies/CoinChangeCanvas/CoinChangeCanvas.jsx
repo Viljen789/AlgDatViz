@@ -17,10 +17,7 @@ const CoinChangeCanvas = ({ frame, preset }) => {
 	const tableWidth = cellCount * CELL_W + Math.max(0, cellCount - 1) * CELL_GAP;
 
 	const activeI = frame?.activeI ?? null;
-	const predecessors = useMemo(
-		() => frame?.predecessors ?? [],
-		[frame]
-	);
+	const predecessors = useMemo(() => frame?.predecessors ?? [], [frame]);
 	const winningIndex = frame?.winningPredecessor?.prevIndex ?? null;
 	const dpTable = frame?.dpTable ?? [];
 	const equation = frame?.equation;
@@ -74,10 +71,7 @@ const CoinChangeCanvas = ({ frame, preset }) => {
 			/>
 
 			<div className={styles.tableScroll}>
-				<div
-					className={styles.tableInner}
-					style={{ width: `${tableWidth}px` }}
-				>
+				<div className={styles.tableInner} style={{ width: `${tableWidth}px` }}>
 					<svg
 						className={styles.arrowLayer}
 						width={tableWidth}
@@ -197,9 +191,7 @@ const EquationStrip = ({
 	}
 
 	const showResult = phase === 'resolved';
-	const winning = equation.candidates.find(
-		c => c.prevIndex === winningIndex
-	);
+	const winning = equation.candidates.find(c => c.prevIndex === winningIndex);
 
 	return (
 		<div className={styles.equationStrip}>
@@ -233,9 +225,7 @@ const EquationStrip = ({
 				<span className={styles.equationOp}>=</span>
 				<span className={styles.equationConst}>1</span>
 				<span className={styles.equationOp}>+</span>
-				<span className={styles.equationTermWinning}>
-					{winning?.prevValue}
-				</span>
+				<span className={styles.equationTermWinning}>{winning?.prevValue}</span>
 				<span className={styles.equationOp}>=</span>
 				<span className={styles.equationResult}>{activeValue}</span>
 			</span>

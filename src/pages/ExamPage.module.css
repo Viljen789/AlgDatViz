@@ -169,7 +169,7 @@
 	gap: 3px;
 	background: var(--surface-1);
 	border: 1px solid var(--color-border);
-	border-radius: var(--radius-pill);
+	border-radius: 0;
 }
 
 .modeOption {
@@ -228,10 +228,13 @@
 
 .primaryBtn:hover {
 	filter: brightness(1.05);
+	transform: translate(-1px, -1px);
+	box-shadow: var(--shadow-action-hover);
 }
 
 .primaryBtn:active {
-	transform: translateY(1px);
+	transform: translate(2px, 2px);
+	box-shadow: var(--shadow-action-pressed);
 }
 
 .primaryBtn:focus-visible {

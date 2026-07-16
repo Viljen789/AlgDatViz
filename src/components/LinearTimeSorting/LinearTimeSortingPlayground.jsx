@@ -15,6 +15,7 @@ import CountingSortView from '../Sorting/ArrayVisualizer/AlgorithmViews/Counting
 import RadixSortView from '../Sorting/ArrayVisualizer/AlgorithmViews/RadixSort/RadixSortView.jsx';
 import BucketSortView from '../Sorting/ArrayVisualizer/AlgorithmViews/BucketSort/BucketSortView.jsx';
 import { PSEUDO_BY_ALGORITHM, stepToPseudoFrame } from './sortingPseudo.js';
+import { useTeachingStateSnapshot } from '../../lib/useTeachingStateSnapshot.js';
 import styles from './LinearTimeSortingPlayground.module.css';
 
 const SPEED_OPTIONS = [
@@ -110,6 +111,23 @@ const LinearTimeSortingPlayground = ({ onUserInteract }) => {
 	const [array, setArray] = useState(ALGORITHMS.counting.demo);
 	const [customText, setCustomText] = useState('');
 	const [customHint, setCustomHint] = useState('');
+	useTeachingStateSnapshot(
+		'controls',
+		{ algorithmId, array, customText },
+		snapshot => {
+			if (snapshot?.algorithmId in ALGORITHMS) {
+				setAlgorithmId(snapshot.algorithmId);
+				if (
+					Array.isArray(snapshot.array) &&
+					snapshot.array.length > 0 &&
+					snapshot.array.every(Number.isFinite)
+				)
+					setArray(snapshot.array);
+			}
+			if (typeof snapshot?.customText === 'string')
+				setCustomText(snapshot.customText);
+		}
+	);
 
 	const algorithm = ALGORITHMS[algorithmId];
 

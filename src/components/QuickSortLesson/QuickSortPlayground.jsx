@@ -8,6 +8,7 @@ import StepControlBar from '../../common/StepControlBar/StepControlBar.jsx';
 import Input from '../../common/Input/Input.jsx';
 import Button from '../../common/Button/Button.jsx';
 import { usePlayback, PseudoState } from '../../common/PlaybackEngine';
+import { useTeachingStateSnapshot } from '../../lib/useTeachingStateSnapshot.js';
 import styles from './QuickSortPlayground.module.css';
 
 const QUICK_SORT_LINES = PSEUDO_CODE.quickSort;
@@ -58,6 +59,17 @@ const QuickSortPlayground = ({ onUserInteract }) => {
 	const [values, setValues] = useState(() => randomArray());
 	const [customText, setCustomText] = useState('');
 	const [customHint, setCustomHint] = useState('');
+	useTeachingStateSnapshot('controls', { values, customText }, snapshot => {
+		if (
+			Array.isArray(snapshot?.values) &&
+			snapshot.values.length > 0 &&
+			snapshot.values.every(Number.isFinite)
+		) {
+			setValues(snapshot.values.slice(0, MAX_VALUES));
+		}
+		if (typeof snapshot?.customText === 'string')
+			setCustomText(snapshot.customText);
+	});
 	const frames = useMemo(() => framesFor(values), [values]);
 	const valueMax = useMemo(() => Math.max(...values, 1), [values]);
 

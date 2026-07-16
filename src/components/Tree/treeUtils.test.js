@@ -61,16 +61,21 @@ test('deleteValue removes a node and preserves sorted order', () => {
 	const root = deleteValue(tree(), 23);
 	assert.equal(containsValue(root, 23), false, '23 is gone');
 	const seq = inorderValues(root);
-	assert.deepEqual(seq, [...seq].sort((a, b) => a - b), 'still sorted');
+	assert.deepEqual(
+		seq,
+		[...seq].sort((a, b) => a - b),
+		'still sorted'
+	);
 });
 
 // ── inorderValues is the sorted sequence (drives the `order` retrieval check) ──
 
 test('inorderValues returns the values in sorted order', () => {
 	assert.deepEqual(inorderValues(tree()), [12, 23, 31, 42, 54, 61, 72]);
-	assert.deepEqual(inorderValues(buildBst([50, 30, 70, 40, 60])), [
-		30, 40, 50, 60, 70,
-	]);
+	assert.deepEqual(
+		inorderValues(buildBst([50, 30, 70, 40, 60])),
+		[30, 40, 50, 60, 70]
+	);
 	assert.deepEqual(inorderValues(null), []);
 });
 
@@ -93,7 +98,11 @@ test('getSearchSteps reports the comparison direction in state', () => {
 	const steps = getSearchSteps(tree(), 54);
 	const compare = steps[0].state.find(r => r.id === 'compare');
 	assert.equal(compare.value, '54 > 42 → right', 'first compare goes right');
-	assert.equal(steps[0].line, 4, 'going right highlights the right-branch line');
+	assert.equal(
+		steps[0].line,
+		4,
+		'going right highlights the right-branch line'
+	);
 });
 
 test('getSearchSteps ends on a "fell off the tree" frame when absent', () => {

@@ -40,7 +40,10 @@ const dfsSteps = () =>
 // labelled rows.
 const assertConformant = (frame, lineCount) => {
 	assert.equal(typeof frame.line, 'number');
-	assert.ok(frame.line >= 0 && frame.line < lineCount, 'line in pseudocode range');
+	assert.ok(
+		frame.line >= 0 && frame.line < lineCount,
+		'line in pseudocode range'
+	);
 	assert.ok(Array.isArray(frame.state), 'state is an array');
 	assert.ok(frame.state.length > 0, 'state has rows');
 	for (const row of frame.state) {

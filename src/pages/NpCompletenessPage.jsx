@@ -130,10 +130,7 @@ const NpCompletenessPage = () => {
 		[]
 	);
 
-	const renderPlayground = useCallback(
-		() => <NpCompletenessExplorer />,
-		[]
-	);
+	const renderPlayground = useCallback(() => <NpCompletenessExplorer />, []);
 
 	const handleVisit = useCallback(() => {
 		markVisited(TOPIC_ID);

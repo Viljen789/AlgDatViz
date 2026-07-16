@@ -88,9 +88,11 @@ export const buildCoinChangeFrames = ({ target, coins }) => {
 			dp[i] = minCandidate;
 		}
 
-		const greedyTaken = greedy.choices.slice(0, Math.min(i, greedy.choices.length));
-		const greedyRemainingNow =
-			target - greedyTaken.reduce((s, c) => s + c, 0);
+		const greedyTaken = greedy.choices.slice(
+			0,
+			Math.min(i, greedy.choices.length)
+		);
+		const greedyRemainingNow = target - greedyTaken.reduce((s, c) => s + c, 0);
 		const greedyDone = greedyTaken.length === greedy.choices.length;
 
 		const description =
@@ -103,8 +105,7 @@ export const buildCoinChangeFrames = ({ target, coins }) => {
 		// Live variable-state for PseudoState. The "coin under consideration" is
 		// the winning coin when one exists (the relax that set best), else the
 		// largest fitting coin we tried; null when nothing fit.
-		const coinUnderConsideration =
-			winning?.coin ?? candidates[0]?.coin ?? null;
+		const coinUnderConsideration = winning?.coin ?? candidates[0]?.coin ?? null;
 		const readCell = winning?.prevIndex ?? candidates[0]?.prevIndex ?? null;
 		const state = [
 			{ id: 'target', label: 'target', value: target },
@@ -112,7 +113,8 @@ export const buildCoinChangeFrames = ({ target, coins }) => {
 			{
 				id: 'c',
 				label: 'c (coin tried)',
-				value: coinUnderConsideration == null ? '—' : `${coinUnderConsideration}¢`,
+				value:
+					coinUnderConsideration == null ? '—' : `${coinUnderConsideration}¢`,
 			},
 			{
 				id: 'read',
@@ -133,7 +135,10 @@ export const buildCoinChangeFrames = ({ target, coins }) => {
 			activeI: i,
 			predecessors: candidates,
 			winningPredecessor: winning,
-			equation: candidates.length > 0 ? { i, candidates, winning, result: value } : null,
+			equation:
+				candidates.length > 0
+					? { i, candidates, winning, result: value }
+					: null,
 			greedyChoices: greedyTaken,
 			greedyRemaining: greedyRemainingNow,
 			greedyDone,
@@ -200,8 +205,7 @@ export const buildClimbingStairsFrames = (n = 6) => {
 		activeI: null,
 		predecessors: [],
 		title: 'Base cases',
-		description:
-			'dp[0] = 1 (one way to stand still) and dp[1] = 1 (one move).',
+		description: 'dp[0] = 1 (one way to stand still) and dp[1] = 1 (one move).',
 		line: 0,
 	});
 
@@ -245,7 +249,7 @@ export const buildClimbingStairsFrames = (n = 6) => {
 };
 
 // Frames for Interval Scheduling. Computes the greedy solution on a fixed set of intervals.
-export const buildIntervalSchedulingFrames = (intervals) => {
+export const buildIntervalSchedulingFrames = intervals => {
 	const sorted = [...intervals].sort((a, b) => a.end - b.end);
 	const frames = [];
 	const chosen = [];

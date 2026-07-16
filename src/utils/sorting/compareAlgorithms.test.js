@@ -20,4 +20,3 @@ test('comparison does not mutate the provided values', () => {
 
 	assert.deepEqual(values, [3, 2, 1, 2]);
 });
-

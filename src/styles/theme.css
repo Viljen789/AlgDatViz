@@ -29,32 +29,32 @@
 	   greys feel intentional and warm-cool balanced rather than pure black.
 	   --------------------------------------------------------------------------- */
 
-	--color-bg-app: hsl(36 12% 9%); /* warm "dark paper" canvas */
-	--color-bg-sunken: hsl(36 12% 7%); /* recessed wells, tracks */
-	--color-bg-sidebar: hsl(36 12% 11%); /* chrome / sidebar */
+	--color-bg-app: hsl(158 27% 8%); /* deep forest paper */
+	--color-bg-sunken: hsl(158 25% 6%); /* recessed wells, tracks */
+	--color-bg-sidebar: hsl(158 22% 9%); /* chrome / sidebar */
 
 	/* Layered surfaces — each step ~+2% lightness as it comes toward the user */
-	--surface-0: hsl(36 12% 9%); /* flush with canvas */
-	--surface-1: hsl(36 11% 12%); /* default panel / card */
-	--surface-2: hsl(36 11% 14%); /* raised panel, popover */
-	--surface-3: hsl(36 11% 16%); /* topmost: menus, tooltips, modals */
-	--surface-input: hsl(36 11% 13%); /* form field wells */
-	--surface-hover: hsl(36 11% 15%); /* generic interactive hover */
+	--surface-0: hsl(158 27% 8%); /* flush with canvas */
+	--surface-1: hsl(158 22% 11%); /* default panel / card */
+	--surface-2: hsl(158 19% 14%); /* raised panel, popover */
+	--surface-3: hsl(158 17% 17%); /* topmost: menus, tooltips, modals */
+	--surface-input: hsl(158 20% 12%); /* form field wells */
+	--surface-hover: hsl(158 18% 15%); /* generic interactive hover */
 
 	/* Borders / hairlines — low-saturation, increasing presence */
-	--color-border: hsl(36 8% 22%);
-	--color-border-strong: hsl(36 8% 34%);
-	--color-border-subtle: hsl(36 8% 18%);
+	--color-border: hsl(144 13% 28%);
+	--color-border-strong: hsl(102 18% 58%);
+	--color-border-subtle: hsl(151 13% 19%);
 
 	/* ---------------------------------------------------------------------------
 	   2. TEXT — tuned for WCAG AA on the surfaces above
 	   --------------------------------------------------------------------------- */
-	--color-text-primary: hsl(38 24% 92%); /* warm ink, AAA on bg */
-	--color-text-secondary: hsl(36 14% 74%); /* supporting body, AA on bg */
-	--color-text-muted: hsl(36 10% 60%); /* labels / meta, AA on bg */
-	--color-text-dim: hsl(36 10% 48%); /* decorative / disabled hint */
-	--color-text-on-accent: hsl(232 40% 6%); /* text atop saturated accents */
-	--color-text-on-node: hsl(232 40% 6%);
+	--color-text-primary: hsl(43 39% 91%); /* warm paper ink */
+	--color-text-secondary: hsl(59 18% 74%); /* supporting body */
+	--color-text-muted: hsl(79 12% 62%); /* labels / meta */
+	--color-text-dim: hsl(100 8% 46%); /* decorative / disabled hint */
+	--color-text-on-accent: hsl(158 27% 8%);
+	--color-text-on-node: hsl(158 27% 8%);
 
 	/* ---------------------------------------------------------------------------
 	   3. PER-TOPIC SIGNATURE HUES — one harmonized HSL family
@@ -67,8 +67,8 @@
 	   Topic ids: foundations, stacks-queues, master-theorem, sorting, hashing,
 	              trees, graphs, strategies.
 	   --------------------------------------------------------------------------- */
-	--topic-s: 72%; /* shared saturation for the whole family */
-	--topic-l: 66%; /* shared lightness for the whole family */
+	--topic-s: 46%; /* quieter accents inside the editorial palette */
+	--topic-l: 63%;
 	/* "ink" lightness — a darker variant of every hue used ONLY where a hue must
 	   serve as <13px text. In DARK it equals --topic-l (the family value already
 	   clears AA on dark surfaces); in LIGHT it drops to a deep tone so the hue
@@ -76,22 +76,22 @@
 	   Tokenized so a single knob re-tones every *-ink derivative. */
 	--topic-l-ink: var(--topic-l);
 
-	--topic-foundations-h: 226; /* blue — the home base hue */
-	--topic-stacks-h: 250; /* indigo */
+	--topic-foundations-h: 151; /* forest / sage family */
+	--topic-stacks-h: 132;
 	--topic-master-h: 48; /* gold */
-	--topic-sorting-h: 210; /* azure */
-	--topic-quicksort-h: 200; /* cyan-azure — quicksort, sorting's sibling (white-on-fill clears AA in both themes, like sorting; no light flip needed) */
-	--topic-hashing-h: 28; /* amber */
-	--topic-trees-h: 286; /* violet */
-	--topic-graphs-h: 162; /* teal-green */
-	--topic-strategies-h: 338; /* rose */
+	--topic-sorting-h: 169; /* blue-green */
+	--topic-quicksort-h: 184;
+	--topic-hashing-h: 25; /* warm coral */
+	--topic-trees-h: 98; /* sage */
+	--topic-graphs-h: 157; /* forest */
+	--topic-strategies-h: 7; /* coral */
 	--topic-linsort-h: 128; /* green — linear-time sorting */
-	--topic-heaps-h: 312; /* magenta — heaps & priority queues */
+	--topic-heaps-h: 15; /* coral — heaps & priority queues */
 	--topic-mst-h: 88; /* yellow-green — minimum spanning trees */
-	--topic-sssp-h: 268; /* blue-violet — single-source shortest paths */
+	--topic-sssp-h: 173; /* teal — single-source shortest paths */
 	--topic-apsp-h: 108; /* lime — all-pairs shortest paths */
 	--topic-maxflow-h: 68; /* gold-green — maximum flow */
-	--topic-npc-h: 178; /* cyan — NP-completeness */
+	--topic-npc-h: 190; /* cyan — NP-completeness */
 
 	--topic-foundations: hsl(
 		var(--topic-foundations-h) var(--topic-s) var(--topic-l)
@@ -251,18 +251,29 @@
 	   never recolors per-topic identity or the algorithm --state-* roles.
 	   (foundations 226 is ALSO --state-active; it must not move.) Indigo = "learn",
 	   amber = "review". Lightness knobs are overridden per theme. */
-	--brand-h: 245;
-	--brand-s: 72%;
-	--brand-l: 68%; /* dark default; [data-theme='light'] drops to 60% */
+	--brand-h: 98;
+	--brand-s: 22%;
+	--brand-l: 67%;
 	--brand: hsl(var(--brand-h) var(--brand-s) var(--brand-l));
 	--brand-ink: hsl(
 		var(--brand-h) var(--brand-s) 80%
 	); /* small brand text (dark) */
 	--brand-wash: hsl(var(--brand-h) var(--brand-s) var(--brand-l) / 0.16);
+	/* A high-energy action signal. Editorial keeps it tied to the existing brand;
+	   the neutral preset overrides it with a vivid mint. */
+	--signal: var(--brand);
+	--signal-ink: var(--color-text-on-accent);
+	--signal-wash: var(--brand-wash);
+	--signal-shadow: var(--color-border-strong);
+	--action-shadow-color: var(--color-accent-yellow);
+	--shadow-action-rest: none;
+	--shadow-action-selected: 4px 4px 0 var(--action-shadow-color);
+	--shadow-action-hover: 5px 5px 0 var(--action-shadow-color);
+	--shadow-action-pressed: 1px 1px 0 var(--action-shadow-color);
 
-	--review-h: 32;
-	--review-s: 90%;
-	--review-l: 58%; /* dark default; light drops to 45% */
+	--review-h: 8;
+	--review-s: 58%;
+	--review-l: 63%;
 	--review-brand: hsl(var(--review-h) var(--review-s) var(--review-l));
 	--review-brand-ink: hsl(var(--review-h) var(--review-s) 70%);
 	--review-brand-wash: hsl(
@@ -270,7 +281,7 @@
 	);
 
 	/* Graph-paper substrate — opt-in via .gridPaper on working surfaces only. */
-	--grid-line: hsl(36 8% 20% / 0.55);
+	--grid-line: hsl(144 13% 28% / 0.55);
 	--grid-pitch: 24px;
 
 	/* The chrome "blue" now resolves to the indigo brand; the per-topic foundations
@@ -288,7 +299,7 @@
 	--color-accent-yellow: hsl(
 		var(--topic-master-h) var(--topic-s) var(--topic-l)
 	);
-	--color-accent-red: hsl(2 78% 66%);
+	--color-accent-red: hsl(8 58% 63%);
 
 	/* AA-safe "ink" siblings of the named accents (for <13px colored text). The
 	   azure/blue/red/purple slots already clear 4.5:1 small-text on white, but
@@ -373,7 +384,7 @@
 	   --------------------------------------------------------------------------- */
 	--font-family-display: 'Newsreader', Georgia, 'Times New Roman', serif;
 	--font-family-sans:
-		'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+		'Geist', 'Avenir Next', -apple-system, BlinkMacSystemFont, sans-serif;
 	--font-family-mono: 'JetBrains Mono', 'Roboto Mono', ui-monospace, monospace;
 
 	/* Type scale (px-based, fluid via clamp where it reads as "display") */
@@ -432,10 +443,10 @@
 	/* ---------------------------------------------------------------------------
 	   9. RADII — new --radius-* names; legacy --border-radius-* aliased.
 	   --------------------------------------------------------------------------- */
-	--radius-sm: 6px;
-	--radius-md: 10px;
-	--radius-lg: 14px; /* buttons, code blocks (Tutor xl) */
-	--radius-xl: 20px; /* cards, panels (Tutor 2xl) */
+	--radius-sm: 2px;
+	--radius-md: 3px;
+	--radius-lg: 4px;
+	--radius-xl: 6px;
 	--radius-pill: 999px;
 
 	--border-radius-sm: var(--radius-sm);
@@ -530,7 +541,6 @@
 	--z-overlay: 100;
 	--z-modal: 110;
 	--z-toast: 120;
-
 }
 
 /* =============================================================================
@@ -558,38 +568,42 @@
 
 	/* 1. SURFACES & ELEVATION — light canvas; raised surfaces brighten toward
 	   white and lean on shadow (not lightness steps) for elevation. */
-	--color-bg-app: hsl(40 30% 96%); /* warm cream "paper" canvas */
-	--color-bg-sunken: hsl(40 26% 92%); /* recessed wells, tracks */
-	--color-bg-sidebar: hsl(40 28% 98%); /* chrome / sidebar */
+	--color-bg-app: hsl(43 42% 95%); /* warm ivory paper */
+	--color-bg-sunken: hsl(96 15% 90%); /* muted sage well */
+	--color-bg-sidebar: hsl(43 34% 94%); /* editorial chrome */
 
-	--surface-0: hsl(40 30% 96%); /* flush with canvas */
-	--surface-1: hsl(40 40% 99%); /* default panel / card — warm paper-white */
-	--surface-2: hsl(40 35% 99.5%); /* raised panel, popover */
-	--surface-3: hsl(40 40% 100%); /* topmost: menus, tooltips, modals */
-	--surface-input: hsl(40 30% 98%); /* form field wells */
-	--surface-hover: hsl(40 28% 93%); /* generic interactive hover */
+	--surface-0: hsl(43 42% 95%); /* flush with canvas */
+	--surface-1: hsl(43 45% 97%); /* default panel / card */
+	--surface-2: hsl(98 14% 90%); /* sage raised panel */
+	--surface-3: hsl(98 13% 86%); /* topmost: menus, tooltips, modals */
+	--surface-input: hsl(43 36% 96%); /* form field wells */
+	--surface-hover: hsl(98 13% 88%); /* generic interactive hover */
 
 	/* Borders / hairlines — warm ink, darker than the surface */
-	--color-border: hsl(40 18% 82%);
-	--color-border-strong: hsl(38 16% 64%);
-	--color-border-subtle: hsl(40 20% 88%);
+	--color-border: hsl(151 15% 72%);
+	--color-border-strong: hsl(155 30% 28%);
+	--color-border-subtle: hsl(107 13% 84%);
 
 	/* Brand reads darker on paper; small brand text gets an AA ink. */
-	--brand-l: 60%;
-	--brand-ink: hsl(var(--brand-h) var(--brand-s) 42%);
-	--review-l: 45%;
-	--review-brand-ink: hsl(var(--review-h) var(--review-s) 34%);
+	--brand-h: 157;
+	--brand-s: 44%;
+	--brand-l: 18%;
+	--brand-ink: hsl(157 50% 14%);
+	--review-h: 7;
+	--review-s: 46%;
+	--review-l: 43%;
+	--review-brand-ink: hsl(7 52% 35%);
 
 	/* Graph-paper hairline on cream. */
-	--grid-line: hsl(40 18% 82% / 0.5);
+	--grid-line: hsl(151 15% 72% / 0.52);
 
 	/* 2. TEXT — dark ink ramp, all AA+ on the light surfaces above */
-	--color-text-primary: hsl(30 18% 14%); /* warm ink, ~13:1 on cream */
-	--color-text-secondary: hsl(32 14% 30%); /* ~8:1 */
-	--color-text-muted: hsl(34 13% 38%); /* AA body on cream */
-	--color-text-dim: hsl(34 12% 50%); /* large/decorative only */
-	--color-text-on-accent: hsl(0 0% 100%); /* white text atop dark accents */
-	--color-text-on-node: hsl(0 0% 100%);
+	--color-text-primary: hsl(157 44% 16%);
+	--color-text-secondary: hsl(156 18% 29%);
+	--color-text-muted: hsl(151 12% 39%);
+	--color-text-dim: hsl(144 8% 56%);
+	--color-text-on-accent: hsl(43 42% 95%);
+	--color-text-on-node: hsl(43 42% 95%);
 
 	/* Topic-fill text contrast — in light, white reads on the deep/blue/violet
 	   hues but FAILS AA on the lighter yellow-green band (gold→cyan). Flip just
@@ -611,17 +625,17 @@
 	   (master) and teal-green (graphs) cannot reach 4.5:1 as small text at any
 	   recognizable lightness — those few small-text spots use a neutral/ tinted
 	   treatment instead (see --nav-active-text and per-spot fixes). */
-	--topic-s: 62%;
-	--topic-l: 38%;
+	--topic-s: 45%;
+	--topic-l: 32%;
 	/* Ink lightness for small colored TEXT on white: every hue (incl. the two
 	   that can't reach AA at l38 — gold 48° and teal 162°) clears 4.5:1 at l30.
 	   The *-ink tokens + --color-accent-{green,orange,yellow}-ink derive from
 	   this, so all small topic-hued text becomes AA without desaturating the
 	   bright fills/icons that already pass at large sizes / 3:1. */
-	--topic-l-ink: 30%;
+	--topic-l-ink: 27%;
 
 	/* Brand red sits in the family lightness so it matches on white. */
-	--color-accent-red: hsl(2 72% 48%);
+	--color-accent-red: hsl(7 46% 43%);
 
 	/* 5. SEMANTIC status hues — re-toned for AA on light surfaces. */
 	--color-success: hsl(145 60% 33%); /* emerald, AA on white */
@@ -639,12 +653,12 @@
 
 	/* 10. ELEVATION / SHADOWS — paper sits flat; depth is border + fill, not
 	   shadow. Collapse the ramp to hairlines and kill the dark-mode glow conceits. */
-	--shadow-color: hsl(30 18% 14% / 0.08);
+	--shadow-color: hsl(157 44% 16% / 0.1);
 
 	--shadow-1: none;
-	--shadow-2: 0 1px 2px hsl(30 18% 14% / 0.05);
-	--shadow-3: 0 1px 3px hsl(30 18% 14% / 0.06);
-	--shadow-4: 0 2px 10px hsl(30 18% 14% / 0.08);
+	--shadow-2: 2px 2px 0 hsl(151 15% 72% / 0.58);
+	--shadow-3: 3px 3px 0 hsl(155 30% 28% / 0.2);
+	--shadow-4: 5px 5px 0 hsl(155 30% 28% / 0.18);
 
 	/* Glow conceits flatten on paper. */
 	--shadow-glow: none;
@@ -658,11 +672,129 @@
 	   same color-mix(... var(--glass-tint) X%) hairlines/insets read on white;
 	   keep the scrim deep but lighten the backdrop dim for light context. */
 	--glass-tint: hsl(30 18% 14%); /* warm ink for highlights/hairlines */
-	--scrim-ink: hsl(30 18% 16%); /* warm ink — modal dim + soft shadows */
+	--scrim-ink: hsl(157 44% 12%);
 
 	/* Sidebar active nav label: neutral text in light (topic hues like gold/
 	   amber/teal/azure can't reach AA as small text on white). Identity still
 	   reads via the accent icon, left bar and tinted background. */
+	--nav-active-text: var(--color-text-primary);
+}
+
+/* =============================================================================
+   WARM PAPER PALETTE — the product default (stored as "neutral" for backwards
+   compatibility with existing preferences).
+   ----------------------------------------------------------------------------
+   Mode and palette are intentionally independent. The original forest, sage,
+   coral and mustard treatment remains intact above and is selected with
+   data-palette='editorial'. These late overrides keep vivid color localized to
+   actions, progress and topic identity while the chrome stays paper-and-ink.
+   ============================================================================ */
+:root:not([data-palette='editorial']) {
+	--color-bg-app: #121413;
+	--color-bg-sunken: #0f1110;
+	--color-bg-sidebar: #161816;
+	--surface-0: #121413;
+	--surface-1: #181b19;
+	--surface-2: #1e211f;
+	--surface-3: #242725;
+	--surface-input: #1a1d1b;
+	--surface-hover: #222624;
+	--color-border: #343834;
+	--color-border-strong: #616761;
+	--color-border-subtle: #282c29;
+
+	--color-text-primary: #ecece7;
+	--color-text-secondary: #c2c5bf;
+	--color-text-muted: #a8aca6;
+	--color-text-dim: #767b76;
+	--color-text-on-accent: #121413;
+	--color-text-on-node: #121413;
+
+	--brand-h: 156;
+	--brand-s: 7%;
+	--brand-l: 69%;
+	--brand-ink: #d4d9d6;
+	--signal: #39dba7;
+	--signal-ink: #10211b;
+	--signal-wash: hsl(158 68% 54% / 0.16);
+	--signal-shadow: #616761;
+	--action-shadow-color: var(--signal-shadow);
+	--review-h: 7;
+	--review-s: 51%;
+	--review-l: 58%;
+	--review-brand-ink: hsl(7 55% 70%);
+	--grid-line: hsl(120 4% 22% / 0.52);
+
+	/* Keep topic identity deterministic but quieter than the editorial preset. */
+	--topic-s: 28%;
+	--topic-l: 61%;
+	--topic-l-ink: var(--topic-l);
+
+	--shadow-color: hsl(120 10% 2% / 0.48);
+	--shadow-1: 0 1px 2px hsl(120 10% 2% / 0.4);
+	--shadow-2:
+		0 2px 4px hsl(120 10% 2% / 0.32), 0 4px 12px hsl(120 10% 2% / 0.28);
+	--shadow-3:
+		0 4px 8px hsl(120 10% 2% / 0.32), 0 12px 28px hsl(120 10% 2% / 0.38);
+	--shadow-4:
+		0 8px 16px hsl(120 10% 2% / 0.38), 0 24px 56px hsl(120 10% 2% / 0.46);
+	--glass-tint: #ecece7;
+	--scrim-ink: #090a09;
+	--shadow-canvas-lamp: none;
+}
+
+[data-theme='light']:not([data-palette='editorial']) {
+	--color-bg-app: #f7f3e9;
+	--color-bg-sunken: #eee7d8;
+	--color-bg-sidebar: #f7f3e9;
+	--surface-0: #f7f3e9;
+	--surface-1: #fffdf8;
+	--surface-2: #eee7d8;
+	--surface-3: #d9e5d8;
+	--surface-input: #fffdf8;
+	--surface-hover: #e9eadf;
+	--color-border: #d8d2c5;
+	--color-border-strong: #1f4b3b;
+	--color-border-subtle: #e6e0d3;
+
+	--color-text-primary: #17382d;
+	--color-text-secondary: #1f4b3b;
+	--color-text-muted: #61746c;
+	--color-text-dim: #8a948e;
+	--color-text-on-accent: #fffdf8;
+	--color-text-on-node: #fffdf8;
+
+	--brand-h: 158;
+	--brand-s: 42%;
+	--brand-l: 21%;
+	--brand-ink: #17382d;
+	--signal: #1fe0a0;
+	--signal-ink: #10251d;
+	--signal-wash: hsl(158 76% 50% / 0.15);
+	--signal-shadow: #1f4b3b;
+	--action-shadow-color: var(--signal-shadow);
+	--review-h: 9;
+	--review-s: 64%;
+	--review-l: 56%;
+	--review-brand-ink: hsl(9 52% 35%);
+	--grid-line: hsl(158 18% 55% / 0.34);
+
+	--topic-s: 30%;
+	--topic-l: 34%;
+	--topic-l-ink: 27%;
+	--color-accent-red: #d65d47;
+
+	--shadow-color: hsl(158 42% 15% / 0.1);
+	--shadow-1: none;
+	--shadow-2: 2px 2px 0 hsl(115 20% 87% / 0.78);
+	--shadow-3: 3px 3px 0 hsl(158 42% 21% / 0.16);
+	--shadow-4: 5px 5px 0 hsl(158 42% 21% / 0.14);
+	--shadow-glow: none;
+	--shadow-glow-accent: 0 0 0 1px var(--brand-wash);
+	--shadow-canvas-lamp: none;
+	--shadow-card-hover: var(--shadow-2);
+	--glass-tint: #1f211f;
+	--scrim-ink: #161816;
 	--nav-active-text: var(--color-text-primary);
 }
 

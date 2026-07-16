@@ -158,7 +158,11 @@ const assertGatedChoice = (id, check) => {
 test('rod-cutting predict: the answer re-derives from buildRodCuttingFrames', () => {
 	const { summary } = buildRodCuttingFrames({ prices: ROD_PRICES, n: ROD_N });
 	assert.equal(summary.revenue, 10, 'generator: best revenue is 10');
-	assert.deepEqual(summary.pieces, [2, 2], 'generator: the optimal cut is 2 + 2');
+	assert.deepEqual(
+		summary.pieces,
+		[2, 2],
+		'generator: the optimal cut is 2 + 2'
+	);
 	assert.equal(
 		ROD_REVENUE,
 		summary.revenue,
@@ -188,7 +192,10 @@ test('rod-cutting predict: an independent recursion agrees with the answer', () 
 	// The misconception lines' claims: selling whole fetches 9, and the answer
 	// genuinely beats it (the scene's "margin only the max notices").
 	assert.equal(ROD_PRICES[ROD_N - 1], 9, 'the uncut rod fetches 9');
-	assert.ok(check.answer > ROD_PRICES[ROD_N - 1], 'cutting beats selling whole');
+	assert.ok(
+		check.answer > ROD_PRICES[ROD_N - 1],
+		'cutting beats selling whole'
+	);
 	assertGatedChoice('rod-cutting', check);
 });
 

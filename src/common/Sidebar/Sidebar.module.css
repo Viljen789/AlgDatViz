@@ -1,5 +1,5 @@
 .sidebar {
-	width: 240px;
+	width: 252px;
 	flex-shrink: 0;
 	background: var(--color-bg-sidebar);
 	border-right: 1px solid var(--color-border);
@@ -11,20 +11,38 @@
 }
 
 .logo {
-	padding: var(--space-lg) var(--space-lg);
+	min-height: 76px;
+	padding: var(--space-md) var(--space-lg);
 	border-bottom: 1px solid var(--color-border);
 	display: flex;
 	align-items: center;
-	gap: var(--space-sm);
+	gap: 12px;
+	color: var(--color-text-primary);
+	text-decoration: none;
+	transition: background-color var(--transition);
+}
+
+.logo:hover {
+	background: var(--surface-hover);
+}
+
+.logo:focus-visible {
+	outline: none;
+	box-shadow: inset 0 0 0 2px var(--brand);
 }
 
 .brandMark {
 	color: var(--color-text-primary);
 	flex: 0 0 auto;
+	transition: color var(--transition);
+}
+
+.logo:hover .brandMark {
+	color: var(--signal);
 }
 
 .logo:hover .brandMark [data-trace] {
-	animation: brandTrace 680ms var(--ease-quiet, ease) both;
+	animation: brandTrace 520ms var(--ease-quiet, ease) both;
 }
 
 @keyframes brandTrace {
@@ -38,18 +56,40 @@
 	}
 }
 
+.logoCopy {
+	display: flex;
+	min-width: 0;
+	flex-direction: column;
+	gap: 1px;
+}
+
 .logoText {
-	font-family: var(--font-family-display);
-	font-size: var(--font-size-heading-sm);
-	font-weight: var(--font-weight-bold);
+	font-family: var(--font-family-sans);
+	font-size: 0.98rem;
+	font-weight: var(--font-weight-semibold);
 	color: var(--color-text-primary);
-	letter-spacing: var(--tracking-heading);
+	letter-spacing: -0.035em;
+}
+
+.logoText span {
+	font-family: var(--font-family-display);
+	font-style: italic;
+	font-weight: var(--font-weight-medium);
+	letter-spacing: -0.05em;
+}
+
+.logoMeta {
+	font-family: var(--font-family-mono);
+	font-size: 9px;
+	letter-spacing: 0.06em;
+	color: var(--color-text-muted);
+	text-transform: uppercase;
 }
 
 .navList {
 	flex: 1;
 	margin: 0;
-	padding: var(--space-sm) 0;
+	padding: 10px 0;
 	list-style: none;
 	display: flex;
 	flex-direction: column;
@@ -67,45 +107,243 @@
 	display: flex;
 }
 
+.mobileTopics,
+.mobileCurrent {
+	display: none !important;
+}
+
+.topicSheet {
+	display: grid;
+	gap: var(--space-lg);
+}
+
+.mobileUtilityGrid {
+	display: grid;
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+	gap: var(--space-sm);
+	margin-top: var(--space-sm);
+}
+
+.mobileUtilityLink {
+	min-width: 0;
+	min-height: 58px;
+	display: flex;
+	align-items: center;
+	gap: var(--space-sm);
+	padding: var(--space-sm);
+	border: 1px solid var(--color-border);
+	border-radius: var(--radius-sm);
+	background: var(--surface-1);
+	color: var(--color-text-secondary);
+	text-decoration: none;
+	transition:
+		background var(--transition),
+		color var(--transition);
+}
+
+.mobileUtilityLink:hover,
+.mobileUtilityLink:focus-visible {
+	background: var(--surface-hover);
+	color: var(--color-text-primary);
+}
+
+.mobileUtilityLink:focus-visible {
+	outline: none;
+	box-shadow: var(--shadow-focus);
+}
+
+.mobileUtilityLink > svg {
+	flex: 0 0 auto;
+	color: var(--signal);
+}
+
+.mobileUtilityLink > span {
+	min-width: 0;
+	display: grid;
+	gap: 2px;
+}
+
+.mobileUtilityLink strong,
+.mobileUtilityLink small {
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.mobileUtilityLink strong {
+	font-size: var(--font-size-label);
+}
+
+.mobileUtilityLink small {
+	color: var(--color-text-muted);
+	font-size: var(--font-size-caption);
+}
+
+.mobileAppearanceControl {
+	margin-top: var(--space-sm);
+}
+
+.mobileTopicSection {
+	display: grid;
+	gap: var(--space-sm);
+}
+
+.topicSearch {
+	display: flex;
+	align-items: center;
+	gap: var(--space-sm);
+	min-height: 48px;
+	border-block: 1px solid var(--color-border);
+	color: var(--color-text-muted);
+}
+
+.topicSearch input {
+	min-width: 0;
+	flex: 1;
+	min-height: 46px;
+	border: 0;
+	outline: 0;
+	background: transparent;
+	color: var(--color-text-primary);
+	font: inherit;
+}
+
+.topicSearch input::placeholder {
+	color: var(--color-text-muted);
+}
+
+.topicResults {
+	max-height: min(44vh, 420px);
+	overflow-y: auto;
+	border-block: 1px solid var(--color-border);
+}
+
+.topicResult {
+	display: grid;
+	grid-template-columns: 2rem 1.25rem minmax(0, 1fr) auto;
+	align-items: center;
+	gap: var(--space-sm);
+	min-height: 58px;
+	padding-inline: var(--space-xs);
+	border-bottom: 1px solid var(--color-border);
+	color: var(--color-text-primary);
+	text-decoration: none;
+	transition: background var(--transition);
+}
+
+.topicResult:last-child {
+	border-bottom: 0;
+}
+
+.topicResult:hover,
+.topicResult:focus-visible {
+	background: var(--surface-hover);
+}
+
+.topicResult:focus-visible {
+	outline: 2px solid var(--brand);
+	outline-offset: -2px;
+}
+
+.topicResult > svg {
+	color: var(--accent);
+}
+
+.topicResultNumber,
+.topicResultStatus {
+	font-family: var(--font-family-mono);
+	font-size: var(--font-size-caption);
+	color: var(--color-text-muted);
+}
+
+.topicResultCopy {
+	display: grid;
+	min-width: 0;
+	gap: 2px;
+}
+
+.topicResultCopy strong,
+.topicResultCopy small {
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.topicResultCopy strong {
+	font-size: var(--font-size-label);
+}
+
+.topicResultCopy small {
+	color: var(--color-text-muted);
+}
+
+.topicEmpty {
+	margin: 0;
+	padding: var(--space-xl);
+	text-align: center;
+	color: var(--color-text-muted);
+	font-size: var(--font-size-label);
+}
+
 .navLink {
+	--nav-fill: var(--surface-hover);
+	--nav-reveal: 0;
 	width: 100%;
 	min-height: 40px;
 	box-sizing: border-box;
-	padding: var(--space-sm) var(--space-lg);
+	padding: 8px var(--space-lg);
 	border: none;
 	cursor: pointer;
 	display: flex;
 	align-items: center;
 	gap: var(--space-sm);
 	position: relative;
+	isolation: isolate;
+	overflow: hidden;
 	text-align: left;
-	transition:
-		color var(--transition),
-		background var(--transition);
+	transition: color var(--transition);
 	color: var(--color-text-secondary);
 	text-decoration: none;
 	font-family: var(--font-family-sans);
 	font-size: var(--font-size-label);
 	font-weight: var(--font-weight-regular);
-	background: transparent;
+	background-color: transparent;
 	/* Fallback accent for the Home link (no topic hue). */
-	--accent: var(--color-accent-blue);
+	--accent: var(--signal);
+}
+
+.navLink::before,
+.navLink::after {
+	content: '';
+	position: absolute;
+	z-index: -1;
+	inset: 0;
+	background: var(--nav-fill);
+	transform: scale(var(--nav-reveal));
+	transition: transform var(--duration-step) var(--ease-quiet);
+}
+
+.navLink::before {
+	clip-path: polygon(0 0, 100% 0, 0 100%);
+	transform-origin: top left;
+}
+
+.navLink::after {
+	clip-path: polygon(100% 0, 100% 100%, 0 100%);
+	transform-origin: bottom right;
 }
 
 .navLink:hover:not(.activeLink) {
+	--nav-reveal: 1.02;
 	color: var(--color-text-primary);
-	background: var(--surface-hover);
 }
 
 .navLink:hover:not(.activeLink) .icon {
 	color: var(--accent);
 }
 
-.navLink:hover:not(.activeLink) .navBar {
-	background: var(--accent);
-}
-
 .navLink:focus-visible {
+	--nav-reveal: 1.02;
 	outline: none;
 	box-shadow: var(--shadow-focus);
 	border-radius: var(--radius-sm);
@@ -113,13 +351,14 @@
 }
 
 .activeLink {
+	--nav-fill: color-mix(in srgb, var(--accent) 11%, var(--surface-1));
+	--nav-reveal: 1.02;
 	font-weight: var(--font-weight-semibold);
 	/* Label text uses an accent-or-neutral token: the topic hue in dark (legible
 	   on the dark tint), but neutral high-contrast text in light — gold/amber/
 	   teal/azure topic hues can't reach WCAG AA (4.5:1) as small text on white.
-	   Topic identity still reads via the icon, left bar and tinted background. */
+	   Topic identity still reads via the icon and tinted background. */
 	color: var(--nav-active-text, var(--accent));
-	background: color-mix(in srgb, var(--accent) 14%, transparent);
 }
 
 .activeLink .icon {
@@ -127,19 +366,7 @@
 }
 
 .navBar {
-	position: absolute;
-	left: 0;
-	top: 50%;
-	transform: translateY(-50%);
-	width: 3px;
-	height: 18px;
-	border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
-	background: transparent;
-	transition: background var(--transition);
-}
-
-.activeLink .navBar {
-	background: var(--accent);
+	display: none;
 }
 
 /* Coming-soon: muted, inert, not interactive. Neutral locked treatment. */
@@ -181,7 +408,8 @@
    Aligned to the row's text column (icon + gap), not the row inset. */
 /* Padding only — the mono uppercase look comes from the shared <Eyebrow>. */
 .phaseHead {
-	padding: var(--space-md) var(--space-lg) var(--space-xs);
+	padding: 22px var(--space-lg) 6px;
+	border-top: 1px solid var(--color-border-subtle);
 }
 
 /* First phase header sits flush under the nav padding (no double gap). */
@@ -292,7 +520,7 @@
 	position: relative;
 	width: 100%;
 	height: 5px;
-	border-radius: var(--radius-pill);
+	border-radius: 0;
 	background: var(--color-bg-sunken);
 	overflow: hidden;
 }
@@ -300,8 +528,8 @@
 .progressFill {
 	display: block;
 	height: 100%;
-	border-radius: var(--radius-pill);
-	background: var(--brand);
+	border-radius: 0;
+	background: var(--signal);
 	transition: width var(--duration-step) var(--ease-quiet);
 }
 
@@ -311,6 +539,15 @@
 	}
 	.progressFill {
 		transition: none;
+	}
+
+	.navLink {
+		transition-duration: 0ms;
+	}
+
+	.navLink::before,
+	.navLink::after {
+		transition-duration: 0ms;
 	}
 }
 
@@ -323,9 +560,14 @@
 /* ---------- Compact (rail) layout ---------- */
 
 @media (max-width: 720px) {
+	.mobileTopics {
+		display: flex !important;
+	}
+
 	.sidebar {
 		width: 100%;
 		height: 60px;
+		min-width: 0;
 		flex-direction: row;
 		border-right: 0;
 		border-bottom: 1px solid var(--color-border);
@@ -333,13 +575,56 @@
 
 	.logo {
 		justify-content: center;
-		width: 58px;
+		width: 44px;
+		height: 59px;
+		min-height: 59px;
+		flex: 0 0 44px;
 		padding: 0;
 		border-right: 1px solid var(--color-border);
 		border-bottom: 0;
 	}
 
-	.logoText,
+	.mobileCurrent {
+		display: flex !important;
+		min-width: 0;
+		flex: 1 1 0;
+		flex-direction: column;
+		justify-content: center;
+		gap: 2px;
+		padding: 6px var(--space-sm);
+		border: 0;
+		border-right: 1px solid var(--color-border);
+		background: transparent;
+		color: var(--color-text-primary);
+		text-align: left;
+		cursor: pointer;
+	}
+
+	.mobileCurrent span,
+	.mobileCurrent small {
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+	}
+
+	.mobileCurrent span {
+		font-size: 0.72rem;
+		font-weight: var(--font-weight-semibold);
+	}
+
+	.mobileCurrent small {
+		color: var(--color-text-muted);
+		font-family: var(--font-family-mono);
+		font-size: 0.56rem;
+		text-transform: uppercase;
+	}
+
+	.mobileCurrent:focus-visible {
+		outline: none;
+		box-shadow: var(--shadow-focus);
+	}
+
+	.logoCopy,
 	.progressCount,
 	.soonBadge,
 	/* No room on the rail for the phase headers or the number prefix; the
@@ -358,11 +643,22 @@
 	}
 
 	.navList {
+		flex: 0 0 auto;
+		min-width: 0;
 		flex-direction: row;
-		overflow-x: auto;
+		overflow-x: visible;
 		overflow-y: hidden;
-		padding: 0 var(--space-xs);
+		padding: 0;
 		mask-image: none;
+	}
+
+	.navList .utilityItem {
+		min-width: 0;
+		flex: 0 0 44px;
+	}
+
+	.mobileSecondary {
+		display: none !important;
 	}
 
 	.navList li:not(.utilityItem) {
@@ -373,18 +669,12 @@
 		justify-content: center;
 		flex-direction: column;
 		gap: 2px;
-		min-width: 58px;
+		width: 44px;
+		min-width: 44px;
+		max-width: 44px;
 		min-height: 59px;
-		padding: 5px 7px 4px;
+		padding: 5px 2px 4px;
 		font-size: 10px;
-	}
-
-	.navBar {
-		inset: auto 8px 0;
-		width: auto;
-		height: 2px;
-		transform: none;
-		border-radius: var(--radius-pill) var(--radius-pill) 0 0;
 	}
 
 	.icon {
@@ -394,12 +684,10 @@
 		border-radius: var(--radius-lg);
 	}
 
-	.activeLink .icon {
-		background: color-mix(in srgb, var(--accent) 14%, transparent);
-	}
-
 	/* Show the per-topic status as a corner pip on the rail. */
-	.status { display: none; }
+	.status {
+		display: none;
+	}
 
 	.statusCheck {
 		width: 10px;

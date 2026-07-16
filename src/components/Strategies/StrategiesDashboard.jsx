@@ -45,6 +45,7 @@ import { buildLcsFrames } from './lcsFrames.js';
 import { buildKnapsack01Frames } from './knapsack01Frames.js';
 import { buildFractionalKnapsackFrames } from './fractionalKnapsackFrames.js';
 import styles from './StrategiesDashboard.module.css';
+import { useTeachingStateSnapshot } from '../../lib/useTeachingStateSnapshot.js';
 
 // Playback speed values map directly onto usePlayback's speed. Higher = faster.
 const SPEED_OPTIONS = [
@@ -65,11 +66,42 @@ const StrategiesDashboard = ({ onUserInteract }) => {
 	const [lcsPresetId, setLcsPresetId] = useState(LCS_PRESETS[0].id);
 	// 0/1 and fractional knapsack share one instance selector so the same bag can
 	// be solved both ways.
-	const [knapsackPresetId, setKnapsackPresetId] = useState(KNAPSACK_PRESETS[0].id);
+	const [knapsackPresetId, setKnapsackPresetId] = useState(
+		KNAPSACK_PRESETS[0].id
+	);
 	const [stairsN, setStairsN] = useState(CLIMBING_STAIRS_RANGE.default);
 	const [pickerOpen, setPickerOpen] = useState(false);
 	const [presetOpen, setPresetOpen] = useState(false);
 	const [readMoreOpen, setReadMoreOpen] = useState(false);
+	useTeachingStateSnapshot(
+		'controls',
+		{
+			algorithmId,
+			presetId,
+			intervalPresetId,
+			huffmanPresetId,
+			rodPresetId,
+			lcsPresetId,
+			knapsackPresetId,
+			stairsN,
+		},
+		snapshot => {
+			if (!snapshot || !(snapshot.algorithmId in STRATEGY_ALGORITHMS)) return;
+			setAlgorithmId(snapshot.algorithmId);
+			if (typeof snapshot.presetId === 'string') setPresetId(snapshot.presetId);
+			if (typeof snapshot.intervalPresetId === 'string')
+				setIntervalPresetId(snapshot.intervalPresetId);
+			if (typeof snapshot.huffmanPresetId === 'string')
+				setHuffmanPresetId(snapshot.huffmanPresetId);
+			if (typeof snapshot.rodPresetId === 'string')
+				setRodPresetId(snapshot.rodPresetId);
+			if (typeof snapshot.lcsPresetId === 'string')
+				setLcsPresetId(snapshot.lcsPresetId);
+			if (typeof snapshot.knapsackPresetId === 'string')
+				setKnapsackPresetId(snapshot.knapsackPresetId);
+			if (Number.isFinite(snapshot.stairsN)) setStairsN(snapshot.stairsN);
+		}
+	);
 
 	// Scope playback keys to this player so a second playground on the page
 	// (e.g. the embedded sorting sandbox) cannot react to the same keypress.
@@ -463,7 +495,9 @@ const StrategiesDashboard = ({ onUserInteract }) => {
 													<button
 														type="button"
 														className={`${styles.presetItem} ${
-															p.id === rodPresetId ? styles.presetItemActive : ''
+															p.id === rodPresetId
+																? styles.presetItemActive
+																: ''
 														}`}
 														onClick={() => handleRodPresetChange(p.id)}
 													>
@@ -514,7 +548,9 @@ const StrategiesDashboard = ({ onUserInteract }) => {
 													<button
 														type="button"
 														className={`${styles.presetItem} ${
-															p.id === lcsPresetId ? styles.presetItemActive : ''
+															p.id === lcsPresetId
+																? styles.presetItemActive
+																: ''
 														}`}
 														onClick={() => handleLcsPresetChange(p.id)}
 													>
@@ -578,7 +614,9 @@ const StrategiesDashboard = ({ onUserInteract }) => {
 														<span className={styles.presetItemMath}>
 															W = {p.capacity} ·{' '}
 															{p.items
-																.map(it => `${it.name}(${it.weight}/${it.value})`)
+																.map(
+																	it => `${it.name}(${it.weight}/${it.value})`
+																)
 																.join('  ')}
 														</span>
 														<span className={styles.presetItemIntent}>
@@ -740,13 +778,9 @@ const StrategiesDashboard = ({ onUserInteract }) => {
 								intervals={intervalPreset.intervals}
 							/>
 						)}
-						{algorithmId === 'rodCutting' && (
-							<RodCuttingCanvas frame={frame} />
-						)}
+						{algorithmId === 'rodCutting' && <RodCuttingCanvas frame={frame} />}
 						{algorithmId === 'lcs' && <LcsCanvas frame={frame} />}
-						{algorithmId === 'knapsack01' && (
-							<Knapsack01Canvas frame={frame} />
-						)}
+						{algorithmId === 'knapsack01' && <Knapsack01Canvas frame={frame} />}
 						{algorithmId === 'fractionalKnapsack' && (
 							<FractionalKnapsackCanvas frame={frame} />
 						)}

@@ -13,7 +13,8 @@ export const TREE_OPERATIONS = {
 		name: 'Insert',
 		category: 'BST operation',
 		needsValue: true,
-		oneLine: 'Search to the first empty child pointer, then attach the new node there.',
+		oneLine:
+			'Search to the first empty child pointer, then attach the new node there.',
 		motionPhrase: 'search, then attach',
 		complexity: 'O(log n) avg · O(n) worst',
 	},
@@ -22,7 +23,8 @@ export const TREE_OPERATIONS = {
 		name: 'Delete',
 		category: 'BST operation',
 		needsValue: true,
-		oneLine: 'Find the node, then unlink while preserving the BST ordering rule.',
+		oneLine:
+			'Find the node, then unlink while preserving the BST ordering rule.',
 		motionPhrase: 'search, then unlink',
 		complexity: 'O(log n) avg · O(n) worst',
 	},

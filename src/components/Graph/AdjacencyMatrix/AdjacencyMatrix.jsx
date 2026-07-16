@@ -4,6 +4,7 @@ import {
 	AddNodeButton,
 	DeleteNodeButton,
 } from '../../../common/NodeButtons/NodeButtons.jsx';
+import { buildGraphMatrix } from '../../../utils/graphUtils.js';
 
 const AdjacencyMatrix = ({
 	graph,
@@ -32,24 +33,7 @@ const AdjacencyMatrix = ({
 		onCellSelect(null);
 	};
 	const { matrix, nodeMap } = useMemo(() => {
-		const nodeIds = graph.nodes.map(node => node.id);
-		const nodeMap = new Map(nodeIds.map((id, index) => [id, index]));
-		const size = graph.nodes.length;
-		const matrix = Array(size)
-			.fill(0)
-			.map(() => Array(size).fill(0));
-
-		graph.edges.forEach(edge => {
-			const fromIndex = nodeMap.get(edge.from);
-			const toIndex = nodeMap.get(edge.to);
-			if (fromIndex !== undefined && toIndex !== undefined) {
-				matrix[fromIndex][toIndex] = isWeighted ? edge.weight : 1;
-				if (!isDirected) {
-					matrix[toIndex][fromIndex] = isWeighted ? edge.weight : 1;
-				}
-			}
-		});
-		return { matrix, nodeMap };
+		return buildGraphMatrix(graph, isDirected, isWeighted);
 	}, [graph, isDirected, isWeighted]);
 
 	const selectedIndex = selectedNodeId ? nodeMap.get(selectedNodeId) : null;

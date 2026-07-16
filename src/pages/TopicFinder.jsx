@@ -23,21 +23,23 @@ const matches = (topic, needle) => {
 	return haystack.includes(needle);
 };
 
-const TopicFinder = ({ markVisited }) => {
+const TopicFinder = ({ markVisited, returning = false }) => {
 	const navigate = useNavigate();
 	const [query, setQuery] = useState('');
 	const chipRefs = useRef([]);
 
 	const needle = query.trim().toLowerCase();
 
-	// The curriculum spine already shows every topic. This command surface stays
-	// quiet until the learner asks for something, then returns a bounded set.
+	// Show a useful starting set before search so this section is a browse surface,
+	// not an empty interlude. A query still narrows the same bounded grid.
 	const results = useMemo(
 		() =>
 			needle
 				? BUILT_TOPICS.filter(topic => matches(topic, needle)).slice(0, 6)
-				: [],
-		[needle]
+				: returning
+					? []
+					: BUILT_TOPICS.slice(0, 6),
+		[needle, returning]
 	);
 
 	const clear = () => setQuery('');
@@ -82,16 +84,21 @@ const TopicFinder = ({ markVisited }) => {
 	};
 
 	return (
-		<section className={styles.finder} aria-labelledby="topic-finder-heading">
+		<section
+			className={`${styles.finder} ${returning ? styles.returning : ''}`}
+			aria-labelledby="topic-finder-heading"
+		>
 			<header className={styles.header}>
-				<p className={styles.eyebrow}>Jump to a topic</p>
+				<p className={styles.eyebrow}>
+					{returning ? 'Change direction' : 'Jump to a topic'}
+				</p>
 				<h2 id="topic-finder-heading" className={styles.heading}>
-					Find your topic
+					{returning ? 'Find something else' : 'Find your topic'}
 				</h2>
 				<p className={styles.sub}>
-					Type a topic, an algorithm (&ldquo;huffman&rdquo;,
-					&ldquo;dijkstra&rdquo;), or a phase to filter all{' '}
-					{BUILT_TOPICS.length} topics. Press Enter to open the first match.
+					{returning
+						? `Search all ${BUILT_TOPICS.length} topics when today's recommendation is not the right move.`
+						: `Type a topic, an algorithm (“huffman”, “dijkstra”), or a phase to filter all ${BUILT_TOPICS.length} topics. Press Enter to open the first match.`}
 				</p>
 			</header>
 
@@ -117,14 +124,17 @@ const TopicFinder = ({ markVisited }) => {
 			</div>
 
 			<p id="topic-finder-count" className={styles.count} aria-live="polite">
-				{needle ? `${results.length} matching topics` : `${BUILT_TOPICS.length} topics indexed`}
+				{needle
+					? `${results.length} matching topics`
+					: returning
+						? `${BUILT_TOPICS.length} topics available`
+						: `${BUILT_TOPICS.length} topics indexed`}
 			</p>
 
-			{!needle ? (
-				<p className={styles.idle}>Search by name, phase, or algorithm. The full teaching order continues below.</p>
-			) : results.length === 0 ? (
+			{needle && results.length === 0 ? (
 				<p className={styles.empty}>No topic matches. Try another word.</p>
-			) : (
+			) : results.length > 0 ? (
+				<>
 				<ul className={styles.grid}>
 					{results.map((topic, idx) => (
 						<li key={topic.id} className={styles.cell}>
@@ -143,10 +153,7 @@ const TopicFinder = ({ markVisited }) => {
 							>
 								<span className={styles.chipTop}>
 									<span className={styles.chipNum}>{topic.number}</span>
-									<span
-										className={styles.chipDot}
-										aria-hidden="true"
-									/>
+									<span className={styles.chipDot} aria-hidden="true" />
 								</span>
 								<span className={styles.chipName}>{topic.name}</span>
 								<span className={styles.chipMeta}>{topic.complexity}</span>
@@ -154,6 +161,17 @@ const TopicFinder = ({ markVisited }) => {
 						</li>
 					))}
 				</ul>
+				{!needle && !returning && (
+					<Link className={styles.browseAll} to="/path">
+						Browse the full learning path
+					</Link>
+				)}
+				</>
+			) : null}
+			{returning && !needle && (
+				<Link className={styles.browseAll} to="/path">
+					Open the full learning path
+				</Link>
 			)}
 		</section>
 	);

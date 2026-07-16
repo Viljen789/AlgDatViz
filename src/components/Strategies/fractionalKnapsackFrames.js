@@ -24,7 +24,11 @@ const round2 = x => Math.round(x * 100) / 100;
 
 export const buildFractionalKnapsackFrames = ({ items, capacity }) => {
 	const list = (items || []).filter(
-		it => it && Number.isFinite(it.weight) && it.weight > 0 && Number.isFinite(it.value)
+		it =>
+			it &&
+			Number.isFinite(it.weight) &&
+			it.weight > 0 &&
+			Number.isFinite(it.value)
 	);
 	const W = Number.isFinite(capacity) ? capacity : 0;
 
@@ -140,9 +144,23 @@ export const buildFractionalKnapsackFrames = ({ items, capacity }) => {
 				description: `${it.name} (w=${it.weight}) fits whole — add ${it.value}, ${remaining} capacity left.`,
 				line: 4,
 				state: [
-					{ id: 'item', label: 'item', value: `${it.name} (ratio ${round2(it.ratio)})` },
-					{ id: 'remaining', label: 'remaining', value: remaining, active: true },
-					{ id: 'total', label: 'total value', value: round2(total), active: true },
+					{
+						id: 'item',
+						label: 'item',
+						value: `${it.name} (ratio ${round2(it.ratio)})`,
+					},
+					{
+						id: 'remaining',
+						label: 'remaining',
+						value: remaining,
+						active: true,
+					},
+					{
+						id: 'total',
+						label: 'total value',
+						value: round2(total),
+						active: true,
+					},
 				],
 				verdict: null,
 			});
@@ -164,8 +182,18 @@ export const buildFractionalKnapsackFrames = ({ items, capacity }) => {
 				line: 7,
 				state: [
 					{ id: 'item', label: 'item', value: it.name },
-					{ id: 'frac', label: 'fraction f', value: `${remaining}/${it.weight}`, active: true },
-					{ id: 'total', label: 'total value', value: round2(total), active: true },
+					{
+						id: 'frac',
+						label: 'fraction f',
+						value: `${remaining}/${it.weight}`,
+						active: true,
+					},
+					{
+						id: 'total',
+						label: 'total value',
+						value: round2(total),
+						active: true,
+					},
 				],
 				verdict: null,
 			});
@@ -188,10 +216,22 @@ export const buildFractionalKnapsackFrames = ({ items, capacity }) => {
 		line: 8,
 		state: [
 			{ id: 'total', label: 'total value', value: round2(total), active: true },
-			{ id: 'weight', label: 'weight used', value: `${round2(usedWeight)}/${W}` },
+			{
+				id: 'weight',
+				label: 'weight used',
+				value: `${round2(usedWeight)}/${W}`,
+			},
 		],
 		verdict: `Greedy fills the bag for ${round2(total)} value — optimal, because fractions let the densest items always be used first. The same trick FAILS for 0/1 knapsack, where an item cannot be split.`,
 	});
 
-	return { frames, summary: { sorted, total: round2(total), usedWeight, states: snapshot(states) } };
+	return {
+		frames,
+		summary: {
+			sorted,
+			total: round2(total),
+			usedWeight,
+			states: snapshot(states),
+		},
+	};
 };

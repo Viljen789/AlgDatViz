@@ -667,7 +667,8 @@ const bfsSteps = (graph, options) => {
 				pathEdges: getTreeEdgesFromParents(parents),
 				structureLabel: 'Queue',
 				structure: [...queue],
-				insight: 'Everything still in the queue is waiting at the same or next depth.',
+				insight:
+					'Everything still in the queue is waiting at the same or next depth.',
 			})
 		);
 
@@ -723,7 +724,8 @@ const bfsSteps = (graph, options) => {
 						pathEdges: getTreeEdgesFromParents(parents),
 						structureLabel: 'Queue',
 						structure: [...queue],
-						insight: 'Skipping marked nodes prevents infinite loops in cyclic graphs.',
+						insight:
+							'Skipping marked nodes prevents infinite loops in cyclic graphs.',
 					})
 				);
 			}
@@ -739,7 +741,8 @@ const bfsSteps = (graph, options) => {
 			pathEdges: getTreeEdgesFromParents(parents),
 			structureLabel: 'Queue',
 			structure: [],
-			insight: 'Disconnected nodes need a new start node or an outer component loop.',
+			insight:
+				'Disconnected nodes need a new start node or an outer component loop.',
 		})
 	);
 
@@ -796,7 +799,8 @@ const dfsSteps = (graph, options) => {
 					pathEdges: getTreeEdgesFromParents(parents),
 					structureLabel: 'Stack',
 					structure: stack.map(item => item.nodeId),
-					insight: 'Duplicate entries are common in iterative DFS unless marked when pushed.',
+					insight:
+						'Duplicate entries are common in iterative DFS unless marked when pushed.',
 				})
 			);
 			continue;
@@ -833,7 +837,8 @@ const dfsSteps = (graph, options) => {
 					pathEdges: getTreeEdgesFromParents(parents),
 					structureLabel: 'Stack',
 					structure: stack.map(item => item.nodeId),
-					insight: 'DFS is about reachability and structure, not shortest paths.',
+					insight:
+						'DFS is about reachability and structure, not shortest paths.',
 				})
 			);
 			break;
@@ -861,7 +866,8 @@ const dfsSteps = (graph, options) => {
 				})),
 				structureLabel: 'Stack',
 				structure: stack.map(item => item.nodeId),
-				insight: 'Neighbor order changes the exact DFS tree, but not the concept.',
+				insight:
+					'Neighbor order changes the exact DFS tree, but not the concept.',
 			})
 		);
 	}
@@ -875,7 +881,8 @@ const dfsSteps = (graph, options) => {
 			pathEdges: getTreeEdgesFromParents(parents),
 			structureLabel: 'Stack',
 			structure: [],
-			insight: 'DFS is the basis for cycle detection, SCCs, and topological sorting.',
+			insight:
+				'DFS is the basis for cycle detection, SCCs, and topological sorting.',
 		})
 	);
 
@@ -894,7 +901,9 @@ const dijkstraSteps = (graph, options) => {
 	const queueLabels = () =>
 		queue
 			.slice()
-			.sort((a, b) => a.distance - b.distance || a.nodeId.localeCompare(b.nodeId))
+			.sort(
+				(a, b) => a.distance - b.distance || a.nodeId.localeCompare(b.nodeId)
+			)
 			.map(item => `${item.nodeId}:${formatDistance(item.distance)}`);
 
 	const steps = [
@@ -913,7 +922,9 @@ const dijkstraSteps = (graph, options) => {
 	];
 
 	while (queue.length) {
-		queue.sort((a, b) => a.distance - b.distance || a.nodeId.localeCompare(b.nodeId));
+		queue.sort(
+			(a, b) => a.distance - b.distance || a.nodeId.localeCompare(b.nodeId)
+		);
 		const { nodeId: current, distance } = queue.shift();
 		if (settled.has(current)) continue;
 
@@ -1137,7 +1148,9 @@ const kruskalSteps = (graph, options) => {
 					? `The MST uses ${mstEdges.length} edges with total weight ${mstWeight}.`
 					: `Only ${mstEdges.length} tree edges were found, so this graph is disconnected.`,
 			line: 2,
-			visitedNodes: [...new Set(mstEdges.flatMap(edge => [edge.from, edge.to]))],
+			visitedNodes: [
+				...new Set(mstEdges.flatMap(edge => [edge.from, edge.to])),
+			],
 			pathEdges: [...mstEdges],
 			rejectedEdges: [...rejected],
 			mstWeight,
@@ -1179,7 +1192,9 @@ const primSteps = (graph, options) => {
 			activeNodes: [startNodeId],
 			visitedNodes: asArray(visited),
 			structureLabel: 'Cut edges',
-			structure: crossingEdges().map(edge => `${edge.from}-${edge.to}:${edge.weight}`),
+			structure: crossingEdges().map(
+				edge => `${edge.from}-${edge.to}:${edge.weight}`
+			),
 			insight:
 				'The cut is the boundary between visited nodes and unvisited nodes.',
 		}),
@@ -1205,7 +1220,9 @@ const primSteps = (graph, options) => {
 				pathEdges: [...mstEdges],
 				mstWeight,
 				structureLabel: 'Cut edges',
-				structure: crossingEdges().map(item => `${item.from}-${item.to}:${item.weight}`),
+				structure: crossingEdges().map(
+					item => `${item.from}-${item.to}:${item.weight}`
+				),
 				insight:
 					'Prim stays connected the whole time; Kruskal may build several components first.',
 			})
@@ -1460,7 +1477,8 @@ const sccSteps = (graph, options) => {
 				componentMap: { ...componentMap },
 				structureLabel: 'Finish stack',
 				structure: remaining(),
-				insight: 'Newest-finish-first is what makes each pass-2 tree a full SCC.',
+				insight:
+					'Newest-finish-first is what makes each pass-2 tree a full SCC.',
 			})
 		);
 
@@ -1479,7 +1497,8 @@ const sccSteps = (graph, options) => {
 					componentMap: { ...componentMap },
 					structureLabel: 'Finish stack',
 					structure: remaining(),
-					insight: 'Every node the transpose-DFS reaches is mutually reachable with the root.',
+					insight:
+						'Every node the transpose-DFS reaches is mutually reachable with the root.',
 				})
 			);
 			for (const v of transpose.get(u) || []) {
@@ -1499,7 +1518,8 @@ const sccSteps = (graph, options) => {
 				componentMap: { ...componentMap },
 				structureLabel: 'Finish stack',
 				structure: remaining(),
-				insight: 'No edge in Gᵀ leaves this set to an unvisited node, so the component is complete.',
+				insight:
+					'No edge in Gᵀ leaves this set to an unvisited node, so the component is complete.',
 			})
 		);
 	}
@@ -1547,7 +1567,10 @@ const maxFlowSteps = (graph, options) => {
 	const currentFlowValue = () =>
 		[...capacities.values()]
 			.filter(edge => edge.from === sourceNodeId)
-			.reduce((sum, edge) => sum + flow[directedFlowKey(edge.from, edge.to)], 0);
+			.reduce(
+				(sum, edge) => sum + flow[directedFlowKey(edge.from, edge.to)],
+				0
+			);
 
 	const findResidualPath = () => {
 		const queue = [sourceNodeId];
@@ -1661,10 +1684,7 @@ const maxFlowSteps = (graph, options) => {
 		}
 
 		const bottleneck = Math.min(...search.path.map(edge => edge.residual));
-		const pathNodes = [
-			sourceNodeId,
-			...search.path.map(edge => edge.to),
-		];
+		const pathNodes = [sourceNodeId, ...search.path.map(edge => edge.to)];
 		const residualPathEdges = search.path.map(edge => ({
 			from: edge.from,
 			to: edge.to,
@@ -1686,7 +1706,9 @@ const maxFlowSteps = (graph, options) => {
 				flowValue: currentFlowValue(),
 				bottleneck,
 				structureLabel: 'Residual path',
-				structure: search.path.map(edge => `${edge.from}->${edge.to}:${edge.residual}`),
+				structure: search.path.map(
+					edge => `${edge.from}->${edge.to}:${edge.residual}`
+				),
 				insight:
 					'The bottleneck pipe controls the whole path. Wider pipes cannot carry extra unless every edge on the path can.',
 			})
@@ -1729,7 +1751,9 @@ const maxFlowSteps = (graph, options) => {
 			flowValue: currentFlowValue(),
 			structureLabel: 'Saturated edges',
 			structure: [...capacities.values()]
-				.filter(edge => flow[directedFlowKey(edge.from, edge.to)] === edge.capacity)
+				.filter(
+					edge => flow[directedFlowKey(edge.from, edge.to)] === edge.capacity
+				)
 				.map(edge => `${edge.from}->${edge.to}`),
 			insight:
 				'The final labels show flow/capacity. Saturated edges are full; unsaturated edges still have spare capacity.',
@@ -1776,7 +1800,12 @@ const structureToText = step => {
 export const bfsLineState = step => ({
 	line: typeof step?.line === 'number' ? step.line : 0,
 	state: [
-		{ id: 'current', label: 'current', value: firstActiveNode(step), active: true },
+		{
+			id: 'current',
+			label: 'current',
+			value: firstActiveNode(step),
+			active: true,
+		},
 		{ id: 'queue', label: 'queue (FIFO)', value: structureToText(step) },
 		{ id: 'visited', label: 'visited', value: visitedCount(step) },
 	],
@@ -1790,7 +1819,12 @@ export const bfsLineState = step => ({
 export const dfsLineState = step => ({
 	line: typeof step?.line === 'number' ? step.line : 0,
 	state: [
-		{ id: 'current', label: 'current', value: firstActiveNode(step), active: true },
+		{
+			id: 'current',
+			label: 'current',
+			value: firstActiveNode(step),
+			active: true,
+		},
 		{ id: 'stack', label: 'stack (LIFO)', value: structureToText(step) },
 		{ id: 'visited', label: 'visited', value: visitedCount(step) },
 	],
@@ -1816,10 +1850,16 @@ export const graphLineState = (algorithmId, step) => {
 export const createGraphAlgorithmSteps = (
 	graph,
 	algorithmId,
-	{ startNodeId, targetNodeId = '', isDirected = false, isWeighted = false } = {}
+	{
+		startNodeId,
+		targetNodeId = '',
+		isDirected = false,
+		isWeighted = false,
+	} = {}
 ) => {
 	const nodeIds = graph.nodes.map(node => node.id);
-	const start = startNodeId && nodeIds.includes(startNodeId) ? startNodeId : nodeIds[0];
+	const start =
+		startNodeId && nodeIds.includes(startNodeId) ? startNodeId : nodeIds[0];
 	if (!start || !GRAPH_ALGORITHMS[algorithmId]) return [];
 
 	const options = {

@@ -42,7 +42,9 @@
 	padding: var(--space-xs) var(--space-md);
 	border-radius: var(--radius-sm);
 	cursor: pointer;
-	transition: color var(--transition), background-color var(--transition),
+	transition:
+		color var(--transition),
+		background-color var(--transition),
 		border-color var(--transition);
 }
 

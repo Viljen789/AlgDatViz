@@ -39,7 +39,8 @@ const Knapsack01Canvas = ({ frame }) => {
 	);
 
 	const cellState = (i, w) => {
-		if (active && i === active.i && w === active.w) return took ? 'take' : 'active';
+		if (active && i === active.i && w === active.w)
+			return took ? 'take' : 'active';
 		const role = sources[key(i, w)];
 		if (role === 'take') return 'srctake';
 		if (role === 'skip') return 'srcskip';
@@ -109,15 +110,16 @@ const Knapsack01Canvas = ({ frame }) => {
 
 			<div className={styles.legendRow} aria-hidden="true">
 				<span className={styles.legendItem}>
-					<span className={`${styles.swatch} ${styles.swatchTake}`} /> take (value +
-					above-left)
+					<span className={`${styles.swatch} ${styles.swatchTake}`} /> take
+					(value + above-left)
 				</span>
 				<span className={styles.legendItem}>
-					<span className={`${styles.swatch} ${styles.swatchSkip}`} /> skip (cell
-					above)
+					<span className={`${styles.swatch} ${styles.swatchSkip}`} /> skip
+					(cell above)
 				</span>
 				<span className={styles.legendItem}>
-					<span className={`${styles.swatch} ${styles.swatchTrace}`} /> traceback
+					<span className={`${styles.swatch} ${styles.swatchTrace}`} />{' '}
+					traceback
 				</span>
 			</div>
 

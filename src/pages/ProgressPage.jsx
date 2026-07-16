@@ -13,10 +13,8 @@ import {
 	X,
 } from 'lucide-react';
 import { BUILT_TOPICS, FIRST_TOPIC, TOPIC_BY_ID } from '../data/curriculum.js';
-import {
-	REVIEW_BANK,
-	buildTopicQueue,
-} from '../components/Review/reviewBank.js';
+import { REVIEW_BANK } from '../components/Review/reviewBank.js';
+import { buildTopicQueue } from '../components/Review/topicReview.js';
 import ReviewSession from '../components/Review/ReviewSession.jsx';
 import Eyebrow from '../common/Eyebrow/Eyebrow.jsx';
 import { allMastery } from '../lib/mastery.js';
@@ -240,6 +238,7 @@ const ProgressPage = () => {
 				cards,
 				now: Date.now(),
 				newCap: TOPIC_NEW_CAP,
+				bank: REVIEW_BANK,
 			});
 			if (plan.queue.length === 0) return; // nothing to drill — leave the link
 			setDrill(prev => ({
@@ -371,19 +370,71 @@ const ProgressPage = () => {
 				</p>
 
 				<MetricGroup className={styles.stats} aria-label="Progress summary">
-					<Metric label="Streak" value={<span className={styles.metricIconValue}><Flame size={18} strokeWidth={2.2} aria-hidden="true" />{currentStreak}</span>} detail={`Longest ${longestStreak} days`} />
-					<Metric label="Days studied" value={daysStudied} detail="Activity on distinct days" />
-					<Metric label="Topics complete" value={overall.completed} suffix={`of ${overall.total}`} detail="Curriculum topics" />
-					<Metric label="First try" value={firstTryStats.attempted > 0 ? Math.round(firstTryStats.rate * 100) : "—"} suffix={firstTryStats.attempted > 0 ? "%" : undefined} detail={firstTryStats.attempted > 0 ? `${firstTryStats.firstTry}/${firstTryStats.attempted} checks first try` : "Answer a check to begin"} />
-					<Metric tone="review" label="Exam" value={daysUntilExam != null && daysUntilExam >= 0 ? daysUntilExam : "Not set"} suffix={daysUntilExam != null && daysUntilExam >= 0 ? "days" : undefined} detail={<><label className={styles.examInput}>
-							<span className={styles.srOnly}>Exam date</span>
-							<input
-								type="date"
-								value={examDate || ''}
-								min={today}
-								onChange={e => setExamDate(e.target.value)}
-							/>
-						</label>{daysUntilExam == null && <span className={styles.examHint}>Set a date for a day-by-day plan.</span>}</>} />
+					<Metric
+						label="Streak"
+						value={
+							<span className={styles.metricIconValue}>
+								<Flame size={18} strokeWidth={2.2} aria-hidden="true" />
+								{currentStreak}
+							</span>
+						}
+						detail={`Longest ${longestStreak} days`}
+					/>
+					<Metric
+						label="Days studied"
+						value={daysStudied}
+						detail="Activity on distinct days"
+					/>
+					<Metric
+						label="Topics complete"
+						value={overall.completed}
+						suffix={`of ${overall.total}`}
+						detail="Curriculum topics"
+					/>
+					<Metric
+						label="First try"
+						value={
+							firstTryStats.attempted > 0
+								? Math.round(firstTryStats.rate * 100)
+								: '—'
+						}
+						suffix={firstTryStats.attempted > 0 ? '%' : undefined}
+						detail={
+							firstTryStats.attempted > 0
+								? `${firstTryStats.firstTry}/${firstTryStats.attempted} checks first try`
+								: 'Answer a check to begin'
+						}
+					/>
+					<Metric
+						tone="review"
+						label="Exam"
+						value={
+							daysUntilExam != null && daysUntilExam >= 0
+								? daysUntilExam
+								: 'Not set'
+						}
+						suffix={
+							daysUntilExam != null && daysUntilExam >= 0 ? 'days' : undefined
+						}
+						detail={
+							<>
+								<label className={styles.examInput}>
+									<span className={styles.srOnly}>Exam date</span>
+									<input
+										type="date"
+										value={examDate || ''}
+										min={today}
+										onChange={e => setExamDate(e.target.value)}
+									/>
+								</label>
+								{daysUntilExam == null && (
+									<span className={styles.examHint}>
+										Set a date for a day-by-day plan.
+									</span>
+								)}
+							</>
+						}
+					/>
 				</MetricGroup>
 			</section>
 
@@ -425,9 +476,7 @@ const ProgressPage = () => {
 									const dayLabel = cell.future
 										? undefined
 										: `${formatPlanDate(cell.k)} · ${
-												cell.count > 0
-													? `${cell.count} answered`
-													: 'no study'
+												cell.count > 0 ? `${cell.count} answered` : 'no study'
 											}`;
 									return (
 										<span

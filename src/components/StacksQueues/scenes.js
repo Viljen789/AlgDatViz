@@ -21,8 +21,7 @@ export const SCENES = [
 		body: 'When work piles up, you need a rule for which piece to handle first. A stack and a queue are the two simplest rules — and the only real difference between them is which end you remove from.',
 		check: {
 			kind: 'choice',
-			prompt:
-				'What is the one thing that separates a stack from a queue?',
+			prompt: 'What is the one thing that separates a stack from a queue?',
 			options: ['Where you add', 'Where you remove', 'The values stored'],
 			answer: 'Where you remove',
 			misconceptions: {
@@ -55,7 +54,8 @@ export const SCENES = [
 	{
 		id: 'queue',
 		eyebrow: 'Queue · FIFO',
-		title: 'A queue is first in, first out. Add at the rear, remove at the front.',
+		title:
+			'A queue is first in, first out. Add at the rear, remove at the front.',
 		body: 'Enqueue A, B, C, D and they form a line. Dequeue, and A — the oldest — is served first. Like a line at a counter: fair, in arrival order. Two pointers, front and rear, each move one way, so every operation stays O(1).',
 		check: {
 			kind: 'order',

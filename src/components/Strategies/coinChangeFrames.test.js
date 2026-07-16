@@ -42,8 +42,16 @@ test('buildCoinChangeFrames — the {1,5,6}=10 trap: DP=2 beats greedy=5', () =>
 	});
 	// Ground truth for the spotbug/classify checks: 5+5 = two coins.
 	assert.equal(summary.dpFinal, 2, 'DP optimum is 2 coins (5 + 5)');
-	assert.equal(summary.greedyFinal, 5, 'greedy spends 5 coins (6 + 1 + 1 + 1 + 1)');
-	assert.equal(summary.greedySafe, false, 'greedy is NOT safe for this coin set');
+	assert.equal(
+		summary.greedyFinal,
+		5,
+		'greedy spends 5 coins (6 + 1 + 1 + 1 + 1)'
+	);
+	assert.equal(
+		summary.greedySafe,
+		false,
+		'greedy is NOT safe for this coin set'
+	);
 	const last = frames.at(-1);
 	assert.equal(last.line, 7, 'final frame is the return dp[target] line');
 	const dpFinalRow = last.state.find(r => r.id === 'dpFinal');
@@ -52,7 +60,11 @@ test('buildCoinChangeFrames — the {1,5,6}=10 trap: DP=2 beats greedy=5', () =>
 
 test('buildCoinChangeFrames — canonical set {1,5,10}: greedy and DP agree', () => {
 	const { summary } = buildCoinChangeFrames({ target: 14, coins: [1, 5, 10] });
-	assert.equal(summary.dpFinal, summary.greedyFinal, 'both find the same count');
+	assert.equal(
+		summary.dpFinal,
+		summary.greedyFinal,
+		'both find the same count'
+	);
 	assert.equal(summary.greedySafe, true, 'greedy is safe for a canonical set');
 });
 

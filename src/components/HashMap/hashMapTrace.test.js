@@ -91,8 +91,14 @@ test('buildResizeTrace grows m and preserves every entry', () => {
 	});
 	frames.forEach(assertFrameShape);
 	assert.ok(finalCapacity > 5, 'capacity grew');
-	const before = buckets.flat().map(e => e.key).sort();
-	const after = finalBuckets.flat().map(e => e.key).sort();
+	const before = buckets
+		.flat()
+		.map(e => e.key)
+		.sort();
+	const after = finalBuckets
+		.flat()
+		.map(e => e.key)
+		.sort();
 	assert.deepEqual(after, before, 'no entry lost or gained on resize');
 });
 

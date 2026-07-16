@@ -160,7 +160,12 @@ export const buildRodCuttingFrames = ({ prices, n }) => {
 			'Follow firstCut from n downward to recover the pieces that realise the optimal revenue.',
 		line: 7,
 		state: [
-			{ id: 'rev', label: `dp[${length}] (best revenue)`, value: revenue, active: true },
+			{
+				id: 'rev',
+				label: `dp[${length}] (best revenue)`,
+				value: revenue,
+				active: true,
+			},
 			{ id: 'pieces', label: 'pieces', value: pieces.join(' + ') },
 			{ id: 'whole', label: 'sell whole', value: wholeRodPrice },
 		],

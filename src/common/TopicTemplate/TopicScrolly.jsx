@@ -302,6 +302,7 @@ const TopicScrolly = ({
 
 	return (
 		<section
+			id="topic-visualization"
 			ref={rootRef}
 			className={styles.scrolly}
 			aria-label="Concept, scene by scene"

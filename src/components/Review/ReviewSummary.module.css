@@ -140,7 +140,9 @@
 	border-radius: var(--radius-lg);
 	text-decoration: none;
 	color: var(--color-text-primary);
-	transition: background-color var(--transition), border-color var(--transition),
+	transition:
+		background-color var(--transition),
+		border-color var(--transition),
 		transform var(--transition);
 }
 
@@ -242,30 +244,53 @@
 	flex-wrap: wrap;
 }
 
+.nextAction,
 .restartBtn {
 	display: inline-flex;
 	align-items: center;
 	gap: var(--space-sm);
 	padding: var(--space-md) var(--space-xl);
-	background: var(--review-brand);
-	color: var(--color-text-on-accent);
-	border: none;
-	border-radius: var(--radius-pill);
+	border-radius: 0;
 	font-family: var(--font-family-sans);
 	font-size: var(--font-size-body);
 	font-weight: var(--font-weight-semibold);
+	text-decoration: none;
+	transition:
+		background-color var(--transition),
+		color var(--transition),
+		border-color var(--transition),
+		transform var(--transition);
+}
+
+.nextAction {
+	background: var(--review-brand);
+	color: var(--color-text-on-accent);
+	border: 1px solid var(--review-brand);
+}
+
+.restartBtn {
+	background: transparent;
+	color: var(--color-text-secondary);
+	border: 1px solid var(--color-border-strong);
 	cursor: pointer;
-	transition: filter var(--transition), transform var(--transition);
+}
+
+.nextAction:hover {
+	transform: translate(-1px, -1px);
+	box-shadow: var(--shadow-action-hover);
 }
 
 .restartBtn:hover {
-	filter: brightness(1.06);
+	color: var(--color-text-primary);
+	background: var(--surface-hover);
 }
 
+.nextAction:active,
 .restartBtn:active {
 	transform: translateY(1px);
 }
 
+.nextAction:focus-visible,
 .restartBtn:focus-visible {
 	outline: none;
 	box-shadow: var(--shadow-focus);
@@ -310,6 +335,11 @@
 
 	.restartBtn {
 		flex: 1;
+		justify-content: center;
+	}
+
+	.nextAction {
+		flex: 1 1 100%;
 		justify-content: center;
 	}
 }

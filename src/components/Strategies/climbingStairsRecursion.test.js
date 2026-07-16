@@ -29,7 +29,11 @@ test('buildOverlapCensus — memo collapses every subproblem to exactly one', ()
 		assert.equal(row.memo, 1, `ways(${row.k}) is solved once with memoization`);
 		assert.ok(row.naive >= 1, `ways(${row.k}) recurs at least once naively`);
 	}
-	assert.equal(census.memoTotal, census.n + 1, 'memo total = number of subproblems');
+	assert.equal(
+		census.memoTotal,
+		census.n + 1,
+		'memo total = number of subproblems'
+	);
 });
 
 test('buildOverlapCensus — naive total equals the independent call-count formula', () => {

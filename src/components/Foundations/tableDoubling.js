@@ -24,7 +24,9 @@
 
 export function tableDoubling(n) {
 	if (!Number.isInteger(n) || n < 0) {
-		throw new RangeError(`tableDoubling: n must be a non-negative integer (got ${n})`);
+		throw new RangeError(
+			`tableDoubling: n must be a non-negative integer (got ${n})`
+		);
 	}
 
 	let capacity = n === 0 ? 0 : 1; // an empty table allocates nothing yet

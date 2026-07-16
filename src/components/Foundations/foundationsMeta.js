@@ -39,7 +39,10 @@ export const CHEAT_SHEET = {
 			items: [
 				{ term: 'worst', def: 'the guarantee — what you quote' },
 				{ term: 'average', def: 'expected over typical inputs' },
-				{ term: 'amortized', def: 'averaged over a run (dynamic-array append = O(1))' },
+				{
+					term: 'amortized',
+					def: 'averaged over a run (dynamic-array append = O(1))',
+				},
 			],
 		},
 	],

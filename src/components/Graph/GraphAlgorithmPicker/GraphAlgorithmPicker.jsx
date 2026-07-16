@@ -39,9 +39,13 @@ const GraphAlgorithmPicker = ({ isOpen, onClose, value, onChange }) => {
 											className={`${styles.row} ${isActive ? styles.rowActive : ''}`}
 											onClick={() => onChange(id)}
 										>
-											<span className={styles.name}>{info?.fullName || id}</span>
+											<span className={styles.name}>
+												{info?.fullName || id}
+											</span>
 											<span className={styles.phrase}>{meta.motionPhrase}</span>
-											<span className={styles.complexity}>{meta.complexity}</span>
+											<span className={styles.complexity}>
+												{meta.complexity}
+											</span>
 										</button>
 									</li>
 								);

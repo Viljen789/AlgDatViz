@@ -20,6 +20,7 @@ import useReducedMotion from '../../hooks/useReducedMotion.js';
 import { SQ_MODES } from './stacksQueuesMeta.js';
 import { sqFrames, SQ_PSEUDO } from './sqFrames.js';
 import styles from './StacksQueuesPlayground.module.css';
+import { useTeachingStateSnapshot } from '../../lib/useTeachingStateSnapshot.js';
 
 // Flip drives the stack<->queue morph (the same cells under a different access
 // discipline). Registration is idempotent — mirrors HomePage's ScrollTrigger.
@@ -55,6 +56,13 @@ const StacksQueuesPlayground = ({ onUserInteract }) => {
 	// shared nodes to morph: a stack and a queue are the same cells, only the
 	// access end differs. null means "use the mode's starting example".
 	const carriedItemsRef = useRef(null);
+	useTeachingStateSnapshot('controls', { mode, ops }, snapshot => {
+		if (snapshot?.mode === 'stack' || snapshot?.mode === 'queue') {
+			carriedItemsRef.current = null;
+			setMode(snapshot.mode);
+			setOps(Array.isArray(snapshot.ops) ? snapshot.ops : []);
+		}
+	});
 	// Cross-render handoffs for the pop/dequeue exit and the mode morph. Captured
 	// synchronously in the click handler (while the leaving node still exists),
 	// consumed in the layout effect once React has committed the shorter array.

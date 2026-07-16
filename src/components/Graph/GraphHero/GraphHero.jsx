@@ -93,7 +93,9 @@ const GraphHero = ({
 									type="button"
 									className={styles.endpointButton}
 									onClick={() => targetNodeId && onClearTarget?.()}
-									title={targetNodeId ? 'Clear target' : 'Shift-click a node to set'}
+									title={
+										targetNodeId ? 'Clear target' : 'Shift-click a node to set'
+									}
 									disabled={!targetNodeId}
 								>
 									{targetNodeId || '—'}
@@ -129,11 +131,7 @@ const GraphHero = ({
 								/>
 								<ul className={styles.menu} role="listbox">
 									{Object.entries(GRAPH_PRESETS).map(([id, preset]) => (
-										<li
-											key={id}
-											role="option"
-											aria-selected={id === presetId}
-										>
+										<li key={id} role="option" aria-selected={id === presetId}>
 											<button
 												type="button"
 												className={`${styles.menuItem} ${

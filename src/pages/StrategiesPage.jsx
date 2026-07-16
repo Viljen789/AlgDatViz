@@ -61,10 +61,7 @@ const StrategiesPage = () => {
 		[]
 	);
 
-	const renderPlayground = useCallback(
-		() => <StrategiesDashboard />,
-		[]
-	);
+	const renderPlayground = useCallback(() => <StrategiesDashboard />, []);
 
 	const eyebrow = useMemo(
 		() => `${topic?.number ?? '08'} · ${topic?.name ?? 'Strategies'}`,

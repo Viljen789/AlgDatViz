@@ -15,6 +15,26 @@ import { REVIEW_BANK, accentTokens } from '../components/Review/reviewBank.js';
 import { BUILT_TOPICS, TOPIC_BY_ID } from '../data/curriculum.js';
 import { EXAM_SETS, EXAM_TOPIC_IDS, buildExamSets } from '../data/examSets.js';
 import { logActivity } from '../lib/activityLog.js';
+import {
+	examDeadline,
+	examSecondsRemaining,
+	hasUnansweredProblems,
+} from '../lib/examClock.js';
+import {
+	createExamSeed,
+	examPaperUrl,
+	normalizeExamSeed,
+	readExamPaperIds,
+	resolveExamPaperSets,
+} from '../lib/examPaperState.js';
+import {
+	BALANCED_EXAM_PROBLEM_COUNT,
+	SECONDS_PER_EXAM_PART,
+	aggregateExamByTopic,
+	aggregateExamScore,
+	buildBalancedExamSets,
+	examBudgetSeconds,
+} from '../lib/examSitting.js';
 import { recordExamTopic, useExamLog } from '../lib/examLog.js';
 import { allMastery } from '../lib/mastery.js';
 import { rankWeakTopics, WEAK_THRESHOLD } from '../lib/weakTopics.js';
@@ -94,47 +114,18 @@ const verdictFor = ratio => {
 
 const pct = ratio => Math.round(ratio * 100);
 
-// ── Timed mode ────────────────────────────────────────────────────────────────
-// A calm, optional clock. The budget is derived from the run length: about two
-// minutes of working time per problem, so the total scales with the chosen set
-// and never needs a hand-typed number.
-const SECONDS_PER_PROBLEM = 120;
-const budgetFor = count => count * SECONDS_PER_PROBLEM;
-
 // Below this per-topic ratio the summary nudges the learner back to the lesson.
 // Shared with /progress's weakness ranking so the two surfaces agree on "weak".
 const STUDY_THRESHOLD = WEAK_THRESHOLD;
 
-// Aggregate the per-problem partial-credit scores into a per-topic average,
-// preserving teaching order. `scores[i]` aligns with `runSets[i]`. This is the
-// single source the summary renders AND the persist effect records from, so the
-// number stored to examLog is exactly the number the learner sees.
-const aggregateByTopic = (runSets, scores) => {
-	const map = new Map();
-	runSets.forEach((set, i) => {
-		if (!map.has(set.topicId)) {
-			map.set(set.topicId, {
-				...topicMeta(set.topicId, set.topicName),
-				sum: 0,
-				count: 0,
-			});
-		}
-		const t = map.get(set.topicId);
-		t.sum += scores[i] ?? 0;
-		t.count += 1;
-	});
-	return [...map.values()].map(t => ({
-		...t,
-		ratio: t.count ? t.sum / t.count : 0,
+// Decorate the pure, part-weighted aggregation with curriculum display metadata.
+// This is the single source the summary renders AND the persist effect records,
+// so the number stored to examLog is exactly the number the learner sees.
+const aggregateByTopic = (runSets, scores) =>
+	aggregateExamByTopic(runSets, scores).map(row => ({
+		...topicMeta(row.topicId, row.topicName),
+		...row,
 	}));
-};
-
-// "16 min" for a whole-minute budget, or "8:30" when it is not a round minute.
-const formatBudgetLabel = seconds => {
-	const mins = seconds / 60;
-	if (Number.isInteger(mins)) return `${mins} min`;
-	return `${Math.floor(mins)}:${String(seconds % 60).padStart(2, '0')}`;
-};
 
 // "MM:SS" for the live countdown, clamped at zero.
 const formatClock = seconds => {
@@ -220,11 +211,10 @@ const ExamSummary = ({
 		[runSets, scores]
 	);
 
-	const overall = useMemo(() => {
-		const valid = scores.filter(s => typeof s === 'number');
-		const sum = valid.reduce((a, b) => a + b, 0);
-		return valid.length ? sum / valid.length : 0;
-	}, [scores]);
+	const overall = useMemo(
+		() => aggregateExamScore(runSets, scores).ratio,
+		[runSets, scores]
+	);
 
 	// The problems scored below full credit — the misses to review and to retry.
 	// `scores[i]` aligns with `runSets[i]` (same ordering the summary aggregates).
@@ -236,11 +226,15 @@ const ExamSummary = ({
 	// Copy-link confirmation: flips to true for a beat after a successful copy.
 	const [copied, setCopied] = useState(false);
 	const copyLink = useCallback(() => {
-		navigator.clipboard?.writeText(window.location.href).then(() => {
+		const href = examPaperUrl(
+			window.location.href,
+			runSets.map(set => set.id)
+		);
+		navigator.clipboard?.writeText(href).then(() => {
 			setCopied(true);
 			setTimeout(() => setCopied(false), 2000);
 		}, noop);
-	}, []);
+	}, [runSets]);
 
 	// The single weakest topic that fell below the shared study threshold, if any.
 	// When it exists it earns the primary action (the most productive next step
@@ -272,7 +266,9 @@ const ExamSummary = ({
 				{endedOnClock && (
 					<p className={styles.timeNote}>
 						<Clock size={13} strokeWidth={2.2} aria-hidden="true" />
-						Time ran out. Unanswered problems scored zero.
+						{endedEarly
+							? 'Time ran out. Unanswered problems scored zero.'
+							: 'Time ended after your final answer. Every response was scored.'}
 					</p>
 				)}
 				{endedEarly && !endedOnClock && (
@@ -305,8 +301,8 @@ const ExamSummary = ({
 									<span className={styles.topicMeta}>
 										<span className={styles.topicName}>{t.name}</span>
 										<span className={styles.topicScore}>
-											{pct(t.ratio)}% · {t.count} problem
-											{t.count === 1 ? '' : 's'}
+											{pct(t.ratio)}% · {t.problemCount} problem
+											{t.problemCount === 1 ? '' : 's'} · {t.totalParts} parts
 										</span>
 									</span>
 									<span className={styles.topicBar} aria-hidden="true">
@@ -376,76 +372,80 @@ const ExamSummary = ({
 			{/* Primary row: the study/retake moves. Navigation and utilities live in
 			    the quiet meta row of middot-separated text links beneath. */}
 			<footer className={styles.summaryFoot}>
-			<div className={styles.summaryActions}>
-				{weakest ? (
-					<button
-						type="button"
-						className={styles.primaryBtn}
-						onClick={() => onStudyTopic(weakest.topicId)}
-					>
-						<ArrowRight size={15} strokeWidth={2.2} aria-hidden="true" />
-						<span>Study {lowerName(weakest.name)}</span>
-					</button>
-				) : (
-					<button
-						type="button"
-						className={styles.primaryBtn}
-						onClick={onRetake}
-					>
-						<RotateCcw size={15} strokeWidth={2.2} aria-hidden="true" />
-						<span>Retake this exam</span>
-					</button>
-				)}
-				{/* When a weak topic took primary, keep the honest replay reachable. */}
-				{weakest && (
-					<button type="button" className={styles.retakeBtn} onClick={onRetake}>
-						<RotateCcw size={14} strokeWidth={2.2} aria-hidden="true" />
-						<span>Retake this exam</span>
-					</button>
-				)}
-				{/* Retry only the misses, on a FRESH seed — the same shapes regenerated,
+				<div className={styles.summaryActions}>
+					{weakest ? (
+						<button
+							type="button"
+							className={styles.primaryBtn}
+							onClick={() => onStudyTopic(weakest.topicId)}
+						>
+							<ArrowRight size={15} strokeWidth={2.2} aria-hidden="true" />
+							<span>Study {lowerName(weakest.name)}</span>
+						</button>
+					) : (
+						<button
+							type="button"
+							className={styles.primaryBtn}
+							onClick={onRetake}
+						>
+							<RotateCcw size={15} strokeWidth={2.2} aria-hidden="true" />
+							<span>Retake this exam</span>
+						</button>
+					)}
+					{/* When a weak topic took primary, keep the honest replay reachable. */}
+					{weakest && (
+						<button
+							type="button"
+							className={styles.retakeBtn}
+							onClick={onRetake}
+						>
+							<RotateCcw size={14} strokeWidth={2.2} aria-hidden="true" />
+							<span>Retake this exam</span>
+						</button>
+					)}
+					{/* Retry only the misses, on a FRESH seed — the same shapes regenerated,
 				    so it's a cold retest of exactly what slipped, not a re-read. Hidden
 				    when the run was clean. */}
-				{missed.length > 0 && (
+					{missed.length > 0 && (
+						<button
+							type="button"
+							className={styles.retakeBtn}
+							onClick={() => onRetryMissed(missed)}
+						>
+							<RotateCcw size={14} strokeWidth={2.2} aria-hidden="true" />
+							<span>Retry the {missed.length} you missed</span>
+						</button>
+					)}
+				</div>
+				<p className={styles.summaryMetaRow}>
 					<button
 						type="button"
-						className={styles.retakeBtn}
-						onClick={() => onRetryMissed(missed)}
+						className={styles.metaLink}
+						onClick={onBackToSets}
 					>
-						<RotateCcw size={14} strokeWidth={2.2} aria-hidden="true" />
-						<span>Retry the {missed.length} you missed</span>
+						Back to exam sets
 					</button>
-				)}
-			</div>
-			<p className={styles.summaryMetaRow}>
-				<button
-					type="button"
-					className={styles.metaLink}
-					onClick={onBackToSets}
-				>
-					Back to exam sets
-				</button>
-				<span className={styles.metaDot} aria-hidden="true">
-					·
-				</span>
-				{/* Copy link to this paper — the sitting seed already lives in the URL,
+					<span className={styles.metaDot} aria-hidden="true">
+						·
+					</span>
+					{/* Copy link to this paper — the sitting seed already lives in the URL,
 				    so this just surfaces it. Reproducible / shareable; calm
 				    confirmation. */}
-				<button
-					type="button"
-					className={styles.metaLink}
-					onClick={copyLink}
-					aria-live="polite"
-				>
-					{copied ? 'Copied' : 'Copy link to this paper'}
-				</button>
-				<span className={styles.metaDot} aria-hidden="true">
-					·
-				</span>
-				<Link to="/review" className={styles.metaLink}>
-					Switch to spaced review
-				</Link>
-			</p>
+					<button
+						type="button"
+						className={styles.metaLink}
+						onClick={copyLink}
+						aria-live="polite"
+					>
+						{copied ? 'Copied' : 'Copy link to this paper'}
+					</button>
+					<span className={styles.metaDot} aria-hidden="true">
+						·
+					</span>
+					<Link to="/review" className={styles.metaLink}>
+						Switch to spaced review
+					</Link>
+				</p>
 			</footer>
 		</section>
 	);
@@ -464,13 +464,15 @@ const ExamSession = ({
 	const [index, setIndex] = useState(0);
 	// Per-problem controlled check state, keyed by set id: { status, score, perPart }.
 	const [states, setStates] = useState({});
+	const statesRef = useRef(states);
 	const [finished, setFinished] = useState(false);
 	// True when the run ended before every problem was answered (clock or End exam),
 	// so the summary can show an honest "unanswered scored zero" note.
 	const [endedEarly, setEndedEarly] = useState(false);
 	// Timed mode: seconds left on the clock, and whether the run ended on the clock.
-	const budget = useMemo(() => budgetFor(runSets.length), [runSets.length]);
+	const budget = useMemo(() => examBudgetSeconds(runSets), [runSets]);
 	const [secondsLeft, setSecondsLeft] = useState(budget);
+	const [deadline] = useState(() => (timed ? examDeadline(budget) : null));
 	const [endedOnClock, setEndedOnClock] = useState(false);
 	// Focus target: the problem heading, moved to on each advance for SR continuity.
 	const headingRef = useRef(null);
@@ -491,13 +493,15 @@ const ExamSession = ({
 			const result = checkAnswer(current.problem, payload);
 			setStates(prev => {
 				if (prev[current.id]?.status != null) return prev;
-				return {
+				const next = {
 					...prev,
 					[current.id]: {
 						...result,
 						status: result.correct ? 'correct' : 'incorrect',
 					},
 				};
+				statesRef.current = next;
+				return next;
 			});
 			// Any exam attempt counts as a day of study (streak / heatmap).
 			logActivity();
@@ -541,7 +545,7 @@ const ExamSession = ({
 		setExitArmed(false);
 		// Only flag "ended early" when problems genuinely remain unanswered, so the
 		// summary note is honest if the run was effectively complete.
-		if (answeredCount < total) setEndedEarly(true);
+		if (hasUnansweredProblems(states, total)) setEndedEarly(true);
 		setFinished(true);
 	}, [states, finished, total, exitArmed]);
 
@@ -565,26 +569,25 @@ const ExamSession = ({
 		return () => window.removeEventListener('keydown', onKeyDown);
 	}, [isAnswered, goNext]);
 
-	// Timed mode: a single interval that ticks the clock down once per second.
-	// It runs only while a timed run is in progress; reaching zero auto-ends the
-	// run into the summary (unanswered problems already score zero). The interval
-	// is cleared on unmount, on End exam, and the moment the run finishes.
+	// Timed mode is anchored to an absolute deadline. Background tabs and sleeping
+	// laptops can delay interval callbacks, so subtracting one per callback would
+	// quietly grant extra time; every tick instead derives the true wall-clock
+	// remainder. The current states ref keeps the expiry note honest when the final
+	// problem was answered just before time ran out.
 	useEffect(() => {
-		if (!timed || finished) return undefined;
-		const id = setInterval(() => {
-			setSecondsLeft(s => {
-				if (s <= 1) {
-					clearInterval(id);
-					setEndedOnClock(true);
-					setEndedEarly(true);
-					setFinished(true);
-					return 0;
-				}
-				return s - 1;
-			});
-		}, 1000);
+		if (!timed || finished || deadline == null) return undefined;
+		const tick = () => {
+			const remaining = examSecondsRemaining(deadline);
+			setSecondsLeft(remaining);
+			if (remaining > 0) return;
+			setEndedOnClock(true);
+			setEndedEarly(hasUnansweredProblems(statesRef.current, total));
+			setFinished(true);
+		};
+		tick();
+		const id = setInterval(tick, 1000);
 		return () => clearInterval(id);
-	}, [timed, finished]);
+	}, [timed, finished, deadline, total]);
 
 	// Persist the result the moment the run finishes (by finishing, by the clock,
 	// or by End exam). This is the whole point of the page: it records the exam's
@@ -693,7 +696,9 @@ const ExamSession = ({
 					}`}
 					onClick={requestExit}
 				>
-					{exitArmed ? 'Click again to end — unanswered score zero' : 'End exam'}
+					{exitArmed
+						? 'Click again to end — unanswered score zero'
+						: 'End exam'}
 				</button>
 			</div>
 
@@ -746,11 +751,9 @@ const ExamSession = ({
 };
 
 // ── The page ──────────────────────────────────────────────────────────────────
-// A fresh, well-distributed sitting seed. Each value seeds a new set of
-// instances, so two calls give two different (un-memorizable) exams of the same
-// shapes. Kept readable in the URL (a short positive integer).
-const freshSeed = () =>
-	(Date.now() ^ Math.floor(Math.random() * 0xffffffff)) >>> 0;
+// Fresh seeds are canonical strings before either generation or URL storage, so
+// an immediate run and a later URL reload feed the exact same value to toSeed().
+const freshSeed = createExamSeed;
 
 const ExamPage = () => {
 	const navigate = useNavigate();
@@ -759,8 +762,8 @@ const ExamPage = () => {
 	// The sitting seed lives in the URL (?seed=…), so a sitting is shareable and a
 	// "retake" is just a new seed. A missing/blank seed means the FIXED bank (the
 	// canonical landing experience); a seed swaps in fresh, derived instances.
-	const urlSeed = searchParams.get('seed');
-	const seed = urlSeed && urlSeed.length > 0 ? urlSeed : null;
+	const seed = normalizeExamSeed(searchParams.get('seed'));
+	const paperKey = readExamPaperIds(searchParams).join(',');
 
 	// The bank for this sitting: with no seed this is EXAM_SETS by reference (so the
 	// picker and the default run are the canonical fixed problems); with a seed every
@@ -771,15 +774,18 @@ const ExamPage = () => {
 	// Returns the seed used, so a caller can build that sitting's sets immediately.
 	const applySeed = useCallback(
 		nextSeed => {
+			const canonical = normalizeExamSeed(nextSeed) ?? freshSeed();
 			setSearchParams(
 				prev => {
 					const next = new URLSearchParams(prev);
-					next.set('seed', String(nextSeed));
+					next.set('seed', canonical);
+					// A new generation invalidates a previously copied explicit paper.
+					next.delete('paper');
 					return next;
 				},
 				{ replace: true }
 			);
-			return nextSeed;
+			return canonical;
 		},
 		[setSearchParams]
 	);
@@ -788,6 +794,26 @@ const ExamPage = () => {
 	const [runSets, setRunSets] = useState(null); // null = picker, [] used as guard
 	const [runId, setRunId] = useState(0);
 	const [timed, setTimed] = useState(false); // Untimed is the default.
+	const startedPaperRef = useRef(null);
+
+	// A copied `paper=` link is the strongest start instruction: resolve its
+	// ordered ids against this seed's generated bank and open the exact sitting.
+	useEffect(() => {
+		if (!paperKey) {
+			startedPaperRef.current = null;
+			return;
+		}
+		const identity = `${seed ?? 'fixed'}:${paperKey}`;
+		if (startedPaperRef.current === identity) return;
+		const resolved = resolveExamPaperSets(
+			buildExamSets(seed),
+			paperKey.split(',')
+		);
+		if (resolved.length === 0) return;
+		startedPaperRef.current = identity;
+		setRunSets(resolved);
+		setRunId(value => value + 1);
+	}, [paperKey, seed]);
 
 	// The same data the mastery dashboard reads, so "Sit your weak spots" ranks
 	// weakness identically to /progress (one ranking, no second opinion).
@@ -838,12 +864,17 @@ const ExamPage = () => {
 		[weak, seededSets]
 	);
 
-	// Start the full exam. If the sitting is not yet seeded, mint a fresh seed first
-	// (so even the first run is a fresh instance, and the URL captures it); then run
-	// the seeded bank for that seed.
+	// Start a compact, phase-balanced paper rather than attempting to sit the whole
+	// catalogue. The URL seed controls both fresh instances and the selection, so a
+	// copied link reproduces the same paper.
 	const startAll = useCallback(() => {
 		const s = seed ?? applySeed(freshSeed());
-		setRunSets(buildExamSets(s));
+		setRunSets(
+			buildBalancedExamSets(buildExamSets(s), {
+				topics: BUILT_TOPICS,
+				seed: s,
+			})
+		);
 		setRunId(r => r + 1);
 	}, [seed, applySeed]);
 
@@ -882,12 +913,13 @@ const ExamPage = () => {
 	const topicParam = searchParams.get('topic');
 	const startedTopicRef = useRef(null);
 	useEffect(() => {
+		if (paperKey) return;
 		if (!topicParam) return;
 		if (startedTopicRef.current === topicParam) return;
 		if (!EXAM_TOPIC_IDS.includes(topicParam)) return;
 		startedTopicRef.current = topicParam;
 		startTopic(topicParam);
-	}, [topicParam, startTopic]);
+	}, [paperKey, topicParam, startTopic]);
 
 	// A single set, picked from the picker. The picker lists the FIXED stems, so map
 	// the chosen set to this sitting's seeded instance by id (fresh seed if needed).
@@ -901,7 +933,20 @@ const ExamPage = () => {
 		[seed, applySeed]
 	);
 
-	const exit = useCallback(() => setRunSets(null), []);
+	const exit = useCallback(() => {
+		setRunSets(null);
+		startedPaperRef.current = null;
+		startedTopicRef.current = null;
+		setSearchParams(
+			prev => {
+				const next = new URLSearchParams(prev);
+				next.delete('paper');
+				next.delete('topic');
+				return next;
+			},
+			{ replace: true }
+		);
+	}, [setSearchParams]);
 
 	// Retake = a NEW SEED = fresh instances of the same shapes (the whole point: a
 	// retake is no longer the identical problem to memorize). We re-seed, rebuild the
@@ -916,6 +961,17 @@ const ExamPage = () => {
 		);
 		setRunId(r => r + 1);
 	}, [applySeed]);
+
+	// A by-topic retake is also a cold retest: always mint a fresh seed instead of
+	// reusing the paper that just exposed the weakness.
+	const retakeTopic = useCallback(
+		topicId => {
+			const s = applySeed(freshSeed());
+			setRunSets(buildExamSets(s).filter(set => set.topicId === topicId));
+			setRunId(value => value + 1);
+		},
+		[applySeed]
+	);
 
 	// Retry only the missed problems on a FRESH seed: regenerate the SAME shapes
 	// (same set ids), filtered to the misses, so it's a cold retest of exactly what
@@ -940,8 +996,13 @@ const ExamPage = () => {
 	);
 
 	const started = runSets !== null;
-	const problemCount = EXAM_SETS.length;
+	const problemCount = Math.min(
+		BALANCED_EXAM_PROBLEM_COUNT,
+		EXAM_SETS.length
+	);
+	const bankProblemCount = EXAM_SETS.length;
 	const topicCount = groups.length;
+	const phaseCount = new Set(BUILT_TOPICS.map(topic => topic.phase)).size;
 
 	return (
 		<div className={styles.page}>
@@ -956,114 +1017,123 @@ const ExamPage = () => {
 			</header>
 
 			{!started && (
-			<section className={styles.hero} aria-labelledby="exam-title">
-				<p className={styles.eyebrow}>Practice exam · Worked problems</p>
-				<h1 id="exam-title" className={styles.title}>
-					Sit a small exam, scored by topic.
-				</h1>
-				<p className={styles.lede}>
-					Each problem gives a concrete input, a graph, an array, a recurrence,
-					then asks you to run the algorithm by hand. Every answer key is
-					derived from the same generators the lessons use, so the marking is
-					exactly what the algorithm does. Wrong parts always reveal the
-					explanation.
-				</p>
+				<section className={styles.hero} aria-labelledby="exam-title">
+					<p className={styles.eyebrow}>Practice exam · Worked problems</p>
+					<h1 id="exam-title" className={styles.title}>
+						Sit a small exam, scored by topic.
+					</h1>
+					<p className={styles.lede}>
+						Each problem gives a concrete input, a graph, an array, a
+						recurrence, then asks you to run the algorithm by hand. Every answer
+						key is derived from the same generators the lessons use, so the
+						marking is exactly what the algorithm does. Wrong parts always
+						reveal the explanation.
+					</p>
 
-				<dl className={styles.stats}>
-					<div className={styles.stat}>
-						<dt className={styles.statLabel}>Problems</dt>
-						<dd className={styles.statValue}>{problemCount}</dd>
-					</div>
-					<div className={styles.stat}>
-						<dt className={styles.statLabel}>Topics</dt>
-						<dd className={styles.statValue}>{topicCount}</dd>
-					</div>
-				</dl>
+					<dl className={styles.stats}>
+						<div className={styles.stat}>
+							<dt className={styles.statLabel}>This sitting</dt>
+							<dd className={styles.statValue}>{problemCount}</dd>
+						</div>
+						<div className={styles.stat}>
+							<dt className={styles.statLabel}>Course phases</dt>
+							<dd className={styles.statValue}>{phaseCount}</dd>
+						</div>
+						<div className={styles.stat}>
+							<dt className={styles.statLabel}>Question bank</dt>
+							<dd className={styles.statValue}>{bankProblemCount}</dd>
+						</div>
+					</dl>
 
-				{!started && (
-					<div className={styles.launch}>
-						{/* Two-state toggle. A pair of aria-pressed buttons (not a
+					{!started && (
+						<div className={styles.launch}>
+							{/* Two-state toggle. A pair of aria-pressed buttons (not a
 						    radiogroup) so each is in the tab order with native button
 						    semantics, no roving-tabindex / arrow-key contract to honor. */}
-						<div
-							className={styles.modeToggle}
-							role="group"
-							aria-label="Exam timing"
-						>
-							<button
-								type="button"
-								aria-pressed={!timed}
-								className={`${styles.modeOption}${
-									!timed ? ` ${styles.modeOptionActive}` : ''
-								}`}
-								onClick={() => setTimed(false)}
+							<div
+								className={styles.modeToggle}
+								role="group"
+								aria-label="Exam timing"
 							>
-								Untimed
-							</button>
-							<button
-								type="button"
-								aria-pressed={timed}
-								className={`${styles.modeOption}${
-									timed ? ` ${styles.modeOptionActive}` : ''
-								}`}
-								onClick={() => setTimed(true)}
-							>
-								<Clock size={13} strokeWidth={2.2} aria-hidden="true" />
-								Timed, {formatBudgetLabel(budgetFor(problemCount))}
-							</button>
-						</div>
-						<button
-							type="button"
-							className={styles.primaryBtn}
-							onClick={startAll}
-						>
-							<span>Start the full exam</span>
-							<ArrowRight size={16} strokeWidth={2.2} aria-hidden="true" />
-						</button>
-						<p className={styles.launchMeta}>
-							{problemCount} problems across {topicCount} topics, or pick one
-							topic below.
-							{timed
-								? ` The clock matches the run, about two minutes per problem.`
-								: ''}
-						</p>
-
-						{/* "Sit your weak spots" — closes the /progress loop back onto a
-						    cold retest. Only shown when there is genuinely weak data to
-						    target; otherwise the full exam above is the honest first move. */}
-						{weakRun.sets.length > 0 && weakRun.weakTopicIds.length > 0 && (
-							<div className={styles.weakCard}>
-								<div className={styles.weakCardText}>
-									<p className={styles.weakCardEyebrow}>
-										<Target size={13} strokeWidth={2.4} aria-hidden="true" />
-										Built from your weakest topics
-									</p>
-									<p className={styles.weakCardLede}>
-										A {weakRun.sets.length}-problem set weighted toward{' '}
-										{listTopicNames(weakRun.weakTopicIds, weak)}, the topics
-										scoring lowest on /progress.{' '}
-										{weakRun.toppedUp
-											? `Weak-topic material runs ${weakRun.weakCount} problem${
-													weakRun.weakCount === 1 ? '' : 's'
-												} deep, so it tops up with ${
-													weakRun.sets.length - weakRun.weakCount
-												} more to fill the sitting.`
-											: 'Every problem comes from a topic you need to shore up.'}
-									</p>
-								</div>
 								<button
 									type="button"
-									className={styles.weakBtn}
-									onClick={startWeak}
+									aria-pressed={!timed}
+									className={`${styles.modeOption}${
+										!timed ? ` ${styles.modeOptionActive}` : ''
+									}`}
+									onClick={() => setTimed(false)}
 								>
-									<span>Sit your weak spots</span>
-									<ArrowRight size={15} strokeWidth={2.2} aria-hidden="true" />
+									Untimed
+								</button>
+								<button
+									type="button"
+									aria-pressed={timed}
+									className={`${styles.modeOption}${
+										timed ? ` ${styles.modeOptionActive}` : ''
+									}`}
+									onClick={() => setTimed(true)}
+								>
+									<Clock size={13} strokeWidth={2.2} aria-hidden="true" />
+									Timed · {SECONDS_PER_EXAM_PART} sec / part
 								</button>
 							</div>
-						)}
-					</div>
-				)}
-			</section>
+							<button
+								type="button"
+								className={styles.primaryBtn}
+								onClick={startAll}
+							>
+								<span>Start a balanced exam</span>
+								<ArrowRight size={16} strokeWidth={2.2} aria-hidden="true" />
+							</button>
+							<p className={styles.launchMeta}>
+								{problemCount} problems sampled across {phaseCount} phases from a{' '}
+								{bankProblemCount}-problem bank covering {topicCount} topics, or pick
+								one topic below.
+								{timed
+									? ` The clock scales with the number of graded parts in the paper.`
+									: ''}
+							</p>
+
+							{/* "Sit your weak spots" — closes the /progress loop back onto a
+						    cold retest. Only shown when there is genuinely weak data to
+						    target; otherwise the balanced paper above is the first move. */}
+							{weakRun.sets.length > 0 && weakRun.weakTopicIds.length > 0 && (
+								<div className={styles.weakCard}>
+									<div className={styles.weakCardText}>
+										<p className={styles.weakCardEyebrow}>
+											<Target size={13} strokeWidth={2.4} aria-hidden="true" />
+											Built from your weakest topics
+										</p>
+										<p className={styles.weakCardLede}>
+											A {weakRun.sets.length}-problem set weighted toward{' '}
+											{listTopicNames(weakRun.weakTopicIds, weak)}, the topics
+											scoring lowest on /progress.{' '}
+											{weakRun.toppedUp
+												? `Weak-topic material runs ${weakRun.weakCount} problem${
+														weakRun.weakCount === 1 ? '' : 's'
+													} deep, so it tops up with ${
+														weakRun.sets.length - weakRun.weakCount
+													} more to fill the sitting.`
+												: 'Every problem comes from a topic you need to shore up.'}
+										</p>
+									</div>
+									<button
+										type="button"
+										className={styles.weakBtn}
+										onClick={startWeak}
+									>
+										<span>Sit your weak spots</span>
+										<ArrowRight
+											size={15}
+											strokeWidth={2.2}
+											aria-hidden="true"
+										/>
+									</button>
+								</div>
+							)}
+						</div>
+					)}
+				</section>
 			)}
 
 			{!started && (
@@ -1157,7 +1227,7 @@ const ExamPage = () => {
 								onRetryMissed={retryMissed}
 								onBackToSets={exit}
 								onStudyTopic={studyTopic}
-								onRetakeTopic={startTopic}
+								onRetakeTopic={retakeTopic}
 								timed={timed}
 							/>
 						</div>

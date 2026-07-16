@@ -25,7 +25,32 @@
 // shuffler/sampler can be unit-tested (reviewBank.test.js).
 
 import { CURRICULUM, TOPIC_BY_ID } from '../../data/curriculum.js';
-import { DEFAULT_NEW_CAP, planSession } from './srsSchedule.js';
+import {
+	buildTopicQueue as buildQueueFromEntries,
+	buildTopicReviewEntries,
+	topicBankSlice as sliceTopicEntries,
+} from './topicReview.js';
+import {
+	SELF_GRADED_KINDS,
+	accentTokens,
+	isReviewSafe,
+	isSelfGraded,
+} from './reviewUtils.js';
+import {
+	mulberry32,
+	shuffleWithSeed,
+	toSeed,
+} from '../../lib/seededRandom.js';
+
+// Compatibility façade: full-bank consumers may keep importing these helpers
+// here, while dependency-sensitive consumers import their light source modules.
+export {
+	SELF_GRADED_KINDS,
+	accentTokens,
+	isReviewSafe,
+	isSelfGraded,
+};
+export { mulberry32, shuffleWithSeed, toSeed };
 
 // Each topic's scrolly scenes, imported read-only. The map key is the topic id
 // from curriculum.js so every entry resolves a real curriculum node (name,
@@ -76,57 +101,6 @@ const TOPIC_SCENES = CURRICULUM.map(topic => [
 	SCENES_BY_TOPIC[topic.id],
 ]).filter(([, scenes]) => Array.isArray(scenes));
 
-// The check kinds the pure checkAnswer core can grade with no topic stage. Every
-// other kind (currently only `pair`) is host-graded and excluded from the bank.
-export const SELF_GRADED_KINDS = new Set([
-	'choice',
-	'numeric',
-	'text',
-	'order',
-	'classify',
-	'predict',
-	'stepProbe',
-	'spotbug',
-]);
-
-/**
- * isSelfGraded — true when a check can be graded standalone (no topic stage).
- * @param {object} check a scene `check` object.
- */
-export const isSelfGraded = check =>
-	Boolean(check) && SELF_GRADED_KINDS.has(check.kind);
-
-/**
- * isReviewSafe — true when a check can be graded and understood without its
- * owning lesson stage. `reviewSafe: false` is an explicit authoring escape hatch
- * for prompts that point at a graph, table, matching, or other absent visual.
- */
-export const isReviewSafe = check =>
-	isSelfGraded(check) && check.reviewSafe !== false;
-
-/**
- * accentTokens — derive the AA-safe partner tokens for a topic accent.
- *
- * Mirrors TopicTemplate: a topic accent is "var(--topic-<suffix>)", so its
- * AA-safe small-text ink is "var(--topic-<suffix>-ink)" and the readable text
- * color to place ON the solid fill is "var(--topic-<suffix>-contrast)". These
- * flip correctly in light theme (the yellow-green band can't take white text).
- * A non-topic accent falls back to the theme-neutral page-root tokens.
- *
- * @param {string} accent a "var(--topic-<suffix>)" reference.
- * @returns {{ accent: string, ink: string, contrast: string }}
- */
-export const accentTokens = accent => {
-	const suffix = /^var\(--topic-([a-z0-9]+)\)$/.exec(accent || '')?.[1];
-	return {
-		accent: accent || 'var(--color-accent-blue)',
-		ink: suffix ? `var(--topic-${suffix}-ink)` : 'var(--topic-accent-ink)',
-		contrast: suffix
-			? `var(--topic-${suffix}-contrast)`
-			: 'var(--color-text-on-accent)',
-	};
-};
-
 /**
  * buildReviewBank — collect every standalone self-graded check across all topics
  * into a flat, topic-tagged list (teaching order). Pure: derived only from the imported
@@ -148,21 +122,7 @@ export const buildReviewBank = () => {
 	const bank = [];
 	for (const [topicId, scenes] of TOPIC_SCENES) {
 		const topic = TOPIC_BY_ID[topicId];
-		if (!topic || !Array.isArray(scenes)) continue;
-		for (const scene of scenes) {
-			if (!scene?.id || !isReviewSafe(scene.check)) continue;
-			bank.push({
-				id: `${topicId}:${scene.id}`,
-				topicId,
-				topicName: topic.name,
-				topicNumber: topic.number,
-				to: topic.to,
-				accent: topic.accent,
-				sceneId: scene.id,
-				sceneTitle: scene.title,
-				check: scene.check,
-			});
-		}
+		bank.push(...buildTopicReviewEntries({ topic, scenes }));
 	}
 	return bank;
 };
@@ -180,55 +140,6 @@ export const REVIEW_TOPIC_IDS = [
 // ── Deterministic PRNG + shuffle ──────────────────────────────────────────────
 // A seeded shuffle so a session is reproducible given a seed (testable + lets a
 // student re-take the exact same set, or get a fresh one by re-seeding).
-
-// mulberry32 — a tiny, fast, well-distributed 32-bit PRNG. Deterministic from a
-// numeric seed; returns a function producing floats in [0, 1). Exported so the
-// seeded exam-instance layer (data/examInstances.js) can build fresh, reproducible
-// problem inputs from the SAME PRNG the review shuffler uses — one seed mechanism
-// across the whole revision surface.
-export const mulberry32 = seed => {
-	let a = seed >>> 0;
-	return () => {
-		a |= 0;
-		a = (a + 0x6d2b79f5) | 0;
-		let t = Math.imul(a ^ (a >>> 15), 1 | a);
-		t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
-		return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-	};
-};
-
-// Normalize any seed (number or string) to a 32-bit unsigned int. Strings are
-// folded with a small FNV-style hash so a label like "exam-1" is a valid seed.
-// Exported alongside mulberry32 so callers can derive sub-seeds deterministically.
-export const toSeed = seed => {
-	if (typeof seed === 'number' && Number.isFinite(seed)) return seed >>> 0;
-	const str = String(seed ?? 0);
-	let h = 2166136261;
-	for (let i = 0; i < str.length; i += 1) {
-		h ^= str.charCodeAt(i);
-		h = Math.imul(h, 16777619);
-	}
-	return h >>> 0;
-};
-
-/**
- * shuffleWithSeed — a deterministic Fisher-Yates shuffle. Pure: returns a new
- * array, never mutates the input. The SAME seed always yields the SAME order;
- * different seeds yield (with overwhelming probability) different orders.
- *
- * @param {Array} list  items to shuffle.
- * @param {number|string} seed  any seed (number or string label).
- * @returns {Array} a new, shuffled array.
- */
-export const shuffleWithSeed = (list, seed = 1) => {
-	const out = [...list];
-	const rand = mulberry32(toSeed(seed));
-	for (let i = out.length - 1; i > 0; i -= 1) {
-		const j = Math.floor(rand() * (i + 1));
-		[out[i], out[j]] = [out[j], out[i]];
-	}
-	return out;
-};
 
 /**
  * sampleSession — pick a cross-topic, shuffled set of ~`count` questions.
@@ -295,7 +206,7 @@ export const sampleSession = ({
  * @returns {Array} the topic's bank entries (possibly empty).
  */
 export const topicBankSlice = (topicId, bank = REVIEW_BANK) =>
-	(Array.isArray(bank) ? bank : []).filter(e => e.topicId === topicId);
+	sliceTopicEntries(topicId, bank);
 
 /**
  * buildTopicQueue — the spaced-retrieval queue for ONE topic, for the revision
@@ -327,15 +238,10 @@ export const buildTopicQueue = ({
 	topicId,
 	cards,
 	now = 0,
-	newCap = DEFAULT_NEW_CAP,
+	newCap,
 	bank = REVIEW_BANK,
 } = {}) => {
-	const slice = topicBankSlice(topicId, bank);
-	// No isNewEligible: the click scopes intent to this topic, so all its fresh
-	// cards are fair game (planSession admits every new card when the gate is
-	// omitted). The plan is otherwise the standard due-first + capped-new queue.
-	const plan = planSession(cards || {}, slice, { now, newCap });
-	return { ...plan, available: slice.length };
+	return buildQueueFromEntries({ topicId, cards, now, newCap, bank });
 };
 
 export default REVIEW_BANK;

@@ -174,23 +174,26 @@
 	background: var(--review-brand);
 	color: var(--color-text-on-accent);
 	border: none;
-	border-radius: var(--radius-pill);
+	border-radius: 0;
 	font-family: var(--font-family-sans);
 	font-size: var(--font-size-body);
 	font-weight: var(--font-weight-semibold);
 	cursor: pointer;
-	transition: transform var(--transition), box-shadow var(--transition),
+	transition:
+		transform var(--transition),
+		box-shadow var(--transition),
 		filter var(--transition);
 }
 
 .dueBtn:hover {
 	filter: brightness(1.05);
-	box-shadow: 0 0 0 1px var(--review-brand-wash),
-		0 12px 40px color-mix(in srgb, var(--review-brand) 22%, transparent);
+	transform: translate(-1px, -1px);
+	box-shadow: var(--shadow-action-hover);
 }
 
 .dueBtn:active {
-	transform: translateY(1px);
+	transform: translate(2px, 2px);
+	box-shadow: var(--shadow-action-pressed);
 }
 
 .dueBtn:focus-visible {
@@ -206,12 +209,14 @@
 	background: var(--surface-1);
 	color: var(--color-text-primary);
 	border: 1px solid var(--color-border);
-	border-radius: var(--radius-pill);
+	border-radius: 0;
 	font-family: var(--font-family-sans);
 	font-size: var(--font-size-label);
 	font-weight: var(--font-weight-medium);
 	cursor: pointer;
-	transition: background-color var(--transition), border-color var(--transition);
+	transition:
+		background-color var(--transition),
+		border-color var(--transition);
 }
 
 .mixedBtn:hover {

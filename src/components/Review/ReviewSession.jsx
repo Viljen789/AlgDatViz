@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { ArrowRight, Check, RotateCcw } from 'lucide-react';
 import LessonCheck from '../../common/TopicTemplate/LessonCheck.jsx';
 import { checkAnswer } from '../../common/TopicTemplate/checkAnswer.js';
-import { accentTokens } from './reviewBank.js';
+import { accentTokens } from './reviewUtils.js';
 import ReviewSummary from './ReviewSummary.jsx';
 import styles from './ReviewSession.module.css';
 

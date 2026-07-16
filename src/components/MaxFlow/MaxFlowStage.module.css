@@ -59,7 +59,11 @@
 }
 
 .edgeFlowing {
-	stroke: color-mix(in srgb, var(--topic-accent) 60%, var(--color-border-strong));
+	stroke: color-mix(
+		in srgb,
+		var(--topic-accent) 60%,
+		var(--color-border-strong)
+	);
 	stroke-width: 1.3;
 }
 

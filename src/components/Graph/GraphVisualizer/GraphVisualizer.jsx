@@ -19,7 +19,9 @@ const makeEdgeKey = (from, to, isDirected = false) => {
 };
 
 const toKeySet = (edges, isDirected) =>
-	new Set((edges || []).map(edge => makeEdgeKey(edge.from, edge.to, isDirected)));
+	new Set(
+		(edges || []).map(edge => makeEdgeKey(edge.from, edge.to, isDirected))
+	);
 
 const GraphVisualizer = ({
 	graph,
@@ -107,7 +109,10 @@ const GraphVisualizer = ({
 	// leave it null and are unaffected.
 	const componentMap = algorithmState?.componentMap || null;
 	const pathEdgeKeys = toKeySet(algorithmState?.pathEdges, isDirected);
-	const candidateEdgeKeys = toKeySet(algorithmState?.candidateEdges, isDirected);
+	const candidateEdgeKeys = toKeySet(
+		algorithmState?.candidateEdges,
+		isDirected
+	);
 	const rejectedEdgeKeys = toKeySet(algorithmState?.rejectedEdges, isDirected);
 	const flowMap = algorithmState?.flowMap || null;
 
@@ -168,7 +173,8 @@ const GraphVisualizer = ({
 		const normalX = -uy;
 		const normalY = ux;
 		const hasReverse =
-			isDirected && graph.edges.some(item => item.from === edge.to && item.to === edge.from);
+			isDirected &&
+			graph.edges.some(item => item.from === edge.to && item.to === edge.from);
 		const curve =
 			edge.isOverlay || hasReverse
 				? edge.from.localeCompare(edge.to) > 0
@@ -197,7 +203,8 @@ const GraphVisualizer = ({
 		if (flowMap) {
 			const flow = flowMap[`${edge.from}->${edge.to}`] ?? 0;
 			const capacity = Number(edge.weight ?? 0);
-			if (Number.isFinite(capacity) && capacity > 0) return `${flow}/${capacity}`;
+			if (Number.isFinite(capacity) && capacity > 0)
+				return `${flow}/${capacity}`;
 		}
 		return isWeighted && edge.weight != null ? String(edge.weight) : '';
 	};
@@ -245,7 +252,9 @@ const GraphVisualizer = ({
 					const label = getEdgeLabel(edge);
 
 					return (
-						<g key={`${edge.from}-${edge.to}-${edge.isOverlay ? 'overlay' : 'base'}`}>
+						<g
+							key={`${edge.from}-${edge.to}-${edge.isOverlay ? 'overlay' : 'base'}`}
+						>
 							<path
 								d={geometry.path}
 								className={`${styles.edgePath} ${
@@ -260,7 +269,9 @@ const GraphVisualizer = ({
 								markerEnd={isDirected ? 'url(#graph-arrow)' : undefined}
 							/>
 							{label && (
-								<g transform={`translate(${geometry.labelX}, ${geometry.labelY})`}>
+								<g
+									transform={`translate(${geometry.labelX}, ${geometry.labelY})`}
+								>
 									<rect
 										className={styles.edgeLabelBg}
 										x={-Math.max(18, label.length * 4.8)}

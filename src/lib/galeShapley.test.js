@@ -22,7 +22,9 @@ import { galeShapley, blockingPairs, isStable } from './galeShapley.js';
 // Sort blocking-pair lists into a canonical order so deep-equals is order-free.
 const sortPairs = ps =>
 	[...ps].sort((a, b) =>
-		a.man === b.man ? a.woman.localeCompare(b.woman) : a.man.localeCompare(b.man)
+		a.man === b.man
+			? a.woman.localeCompare(b.woman)
+			: a.man.localeCompare(b.man)
 	);
 
 // ── Instance A: the classic textbook 3×3 (aligned first choices) ──────────────
@@ -141,7 +143,10 @@ test('a KNOWN unstable matching is flagged with the EXACT blocking pair', () => 
 	// m1 prefers w1,w2 over w3; m2 prefers w1,w3 over w2; m3 prefers w2,w3 over w1.
 	// A pair (m,w) blocks iff BOTH prefer each other to their current partner.
 	const found = sortPairs(blockingPairs(bad, C_MEN, C_WOMEN));
-	assert.ok(found.length > 0, 'a clearly bad matching must have blocking pairs');
+	assert.ok(
+		found.length > 0,
+		'a clearly bad matching must have blocking pairs'
+	);
 	// Independently flagged as unstable.
 	assert.equal(isStable(bad, C_MEN, C_WOMEN), false);
 	// Cross-check: every reported pair really does block under the definition.
@@ -184,7 +189,9 @@ test('a single-blocking-pair matching reports exactly that one pair', () => {
 
 test('accepts Map inputs as well as plain objects', () => {
 	const menMap = new Map(Object.entries(A_MEN).map(([k, v]) => [k, [...v]]));
-	const womenMap = new Map(Object.entries(A_WOMEN).map(([k, v]) => [k, [...v]]));
+	const womenMap = new Map(
+		Object.entries(A_WOMEN).map(([k, v]) => [k, [...v]])
+	);
 	const { matching } = galeShapley(menMap, womenMap);
 	assert.equal(matching.get('m1'), 'w1');
 	assert.ok(isStable(matching, menMap, womenMap));
@@ -198,8 +205,16 @@ test('accepts Map inputs as well as plain objects', () => {
 });
 
 test('inputs are not mutated', () => {
-	const men = { m1: ['w1', 'w2', 'w3'], m2: ['w2', 'w1', 'w3'], m3: ['w1', 'w2', 'w3'] };
-	const women = { w1: ['m1', 'm2', 'm3'], w2: ['m2', 'm1', 'm3'], w3: ['m1', 'm2', 'm3'] };
+	const men = {
+		m1: ['w1', 'w2', 'w3'],
+		m2: ['w2', 'w1', 'w3'],
+		m3: ['w1', 'w2', 'w3'],
+	};
+	const women = {
+		w1: ['m1', 'm2', 'm3'],
+		w2: ['m2', 'm1', 'm3'],
+		w3: ['m1', 'm2', 'm3'],
+	};
 	const menCopy = JSON.parse(JSON.stringify(men));
 	const womenCopy = JSON.parse(JSON.stringify(women));
 	galeShapley(men, women);

@@ -115,40 +115,38 @@ const FrameTrace = ({
 					{entries.map(entry => {
 						const didChange = changed?.has(entry.id);
 						return (
-						<li
-							key={
-								didChange
-									? `${entry.id}:${entry.value}:${entry.active ? 1 : 0}`
-									: entry.id
-							}
-							className={[
-								styles.entry,
-								entry.active ? styles.entryActive : '',
-								didChange ? styles.entryPulse : '',
-							]
-								.filter(Boolean)
-								.join(' ')}
-							style={
-								entry.depth
-									? { '--trace-depth': entry.depth }
-									: undefined
-							}
-							aria-current={entry.active ? 'step' : undefined}
-							data-changed={
-								reducedMotion && entry.active ? 'true' : undefined
-							}
-						>
-							{renderEntry ? (
-								renderEntry(entry)
-							) : (
-								<>
-									<span className={styles.entryLabel}>{entry.label}</span>
-									{entry.value != null && (
-										<span className={styles.entryValue}>{entry.value}</span>
-									)}
-								</>
-							)}
-						</li>
+							<li
+								key={
+									didChange
+										? `${entry.id}:${entry.value}:${entry.active ? 1 : 0}`
+										: entry.id
+								}
+								className={[
+									styles.entry,
+									entry.active ? styles.entryActive : '',
+									didChange ? styles.entryPulse : '',
+								]
+									.filter(Boolean)
+									.join(' ')}
+								style={
+									entry.depth ? { '--trace-depth': entry.depth } : undefined
+								}
+								aria-current={entry.active ? 'step' : undefined}
+								data-changed={
+									reducedMotion && entry.active ? 'true' : undefined
+								}
+							>
+								{renderEntry ? (
+									renderEntry(entry)
+								) : (
+									<>
+										<span className={styles.entryLabel}>{entry.label}</span>
+										{entry.value != null && (
+											<span className={styles.entryValue}>{entry.value}</span>
+										)}
+									</>
+								)}
+							</li>
 						);
 					})}
 				</ol>

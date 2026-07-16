@@ -52,4 +52,3 @@ export const compareSortingAlgorithms = (
 			rank: index + 1,
 		}));
 };
-

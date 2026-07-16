@@ -152,7 +152,9 @@ const minKeyFrontier = discipline => {
 		items: () =>
 			[...keyOf.entries()]
 				.map(([id, key]) => ({ id, key }))
-				.sort((a, b) => lt(a.key, b.key) ? -1 : lt(b.key, a.key) ? 1 : a.id < b.id ? -1 : 1),
+				.sort((a, b) =>
+					lt(a.key, b.key) ? -1 : lt(b.key, a.key) ? 1 : a.id < b.id ? -1 : 1
+				),
 	};
 };
 
@@ -226,14 +228,14 @@ export const DISCIPLINE_ORDER = ['fifo', 'lifo', 'min-dist', 'min-edge'];
 // Identical for all four disciplines — only `extract` (line 3) carries a
 // per-discipline annotation so the unity is felt while the difference is named.
 export const ONE_FRONTIER_PSEUDO = [
-	'Traverse(G, s, discipline):',     // 0
-	'  add s to the frontier',         // 1
-	'  while frontier not empty:',     // 2
-	'    u = frontier.extract()',      // 3  ← the only line that changes meaning
-	'    settle u',                    // 4
-	'    for each neighbour v of u:',  // 5
-	'      consider edge (u, v)',      // 6
-	'      frontier.add / update v',   // 7
+	'Traverse(G, s, discipline):', // 0
+	'  add s to the frontier', // 1
+	'  while frontier not empty:', // 2
+	'    u = frontier.extract()', // 3  ← the only line that changes meaning
+	'    settle u', // 4
+	'    for each neighbour v of u:', // 5
+	'      consider edge (u, v)', // 6
+	'      frontier.add / update v', // 7
 ];
 
 const LINE = {
@@ -285,7 +287,12 @@ const stateRows = ({ discipline, current, frontier, visited }) => {
 		: '∅';
 	const nextOut = items.length ? items[0].id : '—';
 	return [
-		{ id: 'current', label: 'current (u)', value: current ?? '—', active: true },
+		{
+			id: 'current',
+			label: 'current (u)',
+			value: current ?? '—',
+			active: true,
+		},
 		{
 			id: 'frontier',
 			label: `frontier (${meta.structure})`,

@@ -20,6 +20,7 @@ import {
 	rightChild,
 } from './heapTrace.js';
 import styles from './HeapPlayground.module.css';
+import { useTeachingStateSnapshot } from '../../lib/useTeachingStateSnapshot.js';
 
 const INITIAL_PRESET = HEAP_PRESETS[0];
 
@@ -108,6 +109,22 @@ const HeapPlayground = ({ onUserInteract }) => {
 
 	const op = HEAP_OPERATIONS[operationId];
 	const frame = currentFrame || frames[0];
+	useTeachingStateSnapshot(
+		'controls',
+		{ presetId, operationId, keyInput, liveHeap, frame },
+		snapshot => {
+			if (
+				!Array.isArray(snapshot?.liveHeap) ||
+				!(snapshot.operationId in HEAP_OPERATIONS)
+			)
+				return;
+			setPresetId(snapshot.presetId || INITIAL_PRESET.id);
+			setOperationId(snapshot.operationId);
+			setKeyInput(String(snapshot.keyInput ?? ''));
+			setLiveHeap(snapshot.liveHeap);
+			setFrames([snapshot.frame || idleFrame(snapshot.liveHeap)]);
+		}
+	);
 	const renderHeap = frame?.heap || liveHeap;
 	const renderSize = frame?.heapSize ?? renderHeap.length;
 

@@ -11,7 +11,8 @@ const computeHash = (key, capacity) => {
 
 const cloneBuckets = buckets => buckets.map(b => b.map(e => ({ ...e })));
 
-const flatEntries = buckets => buckets.flat().map(({ key, value }) => ({ key, value }));
+const flatEntries = buckets =>
+	buckets.flat().map(({ key, value }) => ({ key, value }));
 
 const isPrime = v => {
 	if (v < 2) return false;
@@ -267,9 +268,7 @@ export const buildDeleteTrace = ({ key, buckets, capacity }) => {
 			line: 5,
 			title: matchPos >= 0 ? `Delete ${key}` : 'No-op',
 			description:
-				matchPos >= 0
-					? 'Entry unlinked from the chain.'
-					: 'Nothing to remove.',
+				matchPos >= 0 ? 'Entry unlinked from the chain.' : 'Nothing to remove.',
 		})
 	);
 
@@ -417,7 +416,11 @@ export const buildOperationTrace = (operation, args) => {
 		case 'resize':
 			return buildResizeTrace(args);
 		default:
-			return { frames: [], finalBuckets: args.buckets, finalCapacity: args.capacity };
+			return {
+				frames: [],
+				finalBuckets: args.buckets,
+				finalCapacity: args.capacity,
+			};
 	}
 };
 

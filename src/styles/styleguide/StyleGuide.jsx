@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Search, Trash2, Check, Moon, Sun } from 'lucide-react';
+import { FixtureGallery } from '@viljen789/study-ui';
 import Button from '../../common/Button/Button.jsx';
 import Input from '../../common/Input/Input.jsx';
 import Card, { CardEmpty } from '../../common/Card/Card.jsx';
@@ -425,6 +426,15 @@ const StyleGuide = () => {
 						disabled
 						onChange={() => {}}
 					/>
+				</div>
+			</Section>
+
+			<Section
+				title="Shared learning contract"
+				subtitle="The annotated working paper, interaction roles, learning thread, and proof marks shared by Tutor and AlgDatViz. This fixture is the cross-product visual contract."
+			>
+				<div data-testid="study-ui-contract">
+					<FixtureGallery />
 				</div>
 			</Section>
 		</div>

@@ -21,7 +21,11 @@ const assertFrameShape = frame => {
 	assert.ok(frame.line >= 0, 'line is 0-based');
 	assert.ok(Array.isArray(frame.treeEdges), 'frame lists tree edges');
 	assert.ok(Array.isArray(frame.state), 'frame carries PseudoState rows');
-	assert.equal(typeof frame.totalWeight, 'number', 'frame has a running weight');
+	assert.equal(
+		typeof frame.totalWeight,
+		'number',
+		'frame has a running weight'
+	);
 };
 
 // ── Union-find (the data structure Kruskal needs) ──
@@ -58,8 +62,7 @@ test('union-find: path compression flattens without changing membership', () => 
 	assert.equal(uf.count(), 1);
 	// All five are mutually connected regardless of insertion order.
 	for (const x of ['A', 'B', 'C', 'D', 'E'])
-		for (const y of ['A', 'B', 'C', 'D', 'E'])
-			assert.ok(uf.connected(x, y));
+		for (const y of ['A', 'B', 'C', 'D', 'E']) assert.ok(uf.connected(x, y));
 });
 
 test('union-find: union by rank keeps trees shallow', () => {
@@ -88,10 +91,7 @@ test('normalizeEdges de-duplicates and canonicalises', () => {
 		{ u: 'A', v: 'C', w: 5 },
 	]);
 	assert.equal(norm.length, 2, 'the duplicate undirected edge is dropped');
-	assert.deepEqual(
-		norm.map(e => e.id).sort(),
-		['A|B', 'A|C']
-	);
+	assert.deepEqual(norm.map(e => e.id).sort(), ['A|B', 'A|C']);
 });
 
 // ── Cut + light-edge (the heart of MST correctness) ──
@@ -99,10 +99,7 @@ test('normalizeEdges de-duplicates and canonicalises', () => {
 test('crossingEdges: only edges with exactly one endpoint inside cross', () => {
 	const { crossing } = crossingEdges(MST_EDGES, ['A']);
 	// From A the only crossing edges are A–B and A–D.
-	assert.deepEqual(
-		crossing.map(e => e.id).sort(),
-		['A|B', 'A|D']
-	);
+	assert.deepEqual(crossing.map(e => e.id).sort(), ['A|B', 'A|D']);
 });
 
 test('lightEdge: the minimum-weight crossing edge is the safe choice', () => {
@@ -113,14 +110,22 @@ test('lightEdge: the minimum-weight crossing edge is the safe choice', () => {
 });
 
 test('lightEdge: a cut nothing crosses has no light edge', () => {
-	assert.equal(lightEdge(MST_EDGES, MST_VERTICES), null, 'whole graph: no crossing');
+	assert.equal(
+		lightEdge(MST_EDGES, MST_VERTICES),
+		null,
+		'whole graph: no crossing'
+	);
 	assert.equal(lightEdge(MST_EDGES, []), null, 'empty side: no crossing');
 });
 
 // ── Kruskal ──
 
 test('kruskalTrace builds a valid minimum spanning tree', () => {
-	const { frames, treeEdges, totalWeight: total } = kruskalTrace({
+	const {
+		frames,
+		treeEdges,
+		totalWeight: total,
+	} = kruskalTrace({
 		vertices: MST_VERTICES,
 		edges: MST_EDGES,
 	});
@@ -129,7 +134,11 @@ test('kruskalTrace builds a valid minimum spanning tree', () => {
 	assert.ok(report.spanning, 'Kruskal returns a spanning tree');
 	assert.equal(treeEdges.length, MST_VERTICES.length - 1, 'n − 1 edges');
 	assert.equal(total, 27, 'known minimum total weight for the shared graph');
-	assert.equal(total, totalWeight(MST_EDGES, treeEdges), 'weight matches the edges');
+	assert.equal(
+		total,
+		totalWeight(MST_EDGES, treeEdges),
+		'weight matches the edges'
+	);
 });
 
 test('kruskalTrace accepts edges in non-decreasing weight order', () => {
@@ -146,14 +155,26 @@ test('kruskalTrace rejects exactly the cycle-forming edges', () => {
 	const rejected = frames.filter(f => f.phase === 'reject').length;
 	const considered = normalizeEdges(MST_EDGES).length;
 	assert.equal(accepted, MST_VERTICES.length - 1, 'n − 1 edges accepted');
-	assert.equal(accepted + rejected, considered, 'every edge is considered once');
+	assert.equal(
+		accepted + rejected,
+		considered,
+		'every edge is considered once'
+	);
 });
 
 // ── Prim ──
 
 test('primTrace builds the same MST from any start vertex', () => {
-	const fromA = primTrace({ vertices: MST_VERTICES, edges: MST_EDGES, start: 'A' });
-	const fromF = primTrace({ vertices: MST_VERTICES, edges: MST_EDGES, start: 'F' });
+	const fromA = primTrace({
+		vertices: MST_VERTICES,
+		edges: MST_EDGES,
+		start: 'A',
+	});
+	const fromF = primTrace({
+		vertices: MST_VERTICES,
+		edges: MST_EDGES,
+		start: 'F',
+	});
 	fromA.frames.forEach(assertFrameShape);
 	fromF.frames.forEach(assertFrameShape);
 	assert.deepEqual(
@@ -178,7 +199,11 @@ test('Prim and Kruskal agree (same tree, same weight) on the shared graph', () =
 
 test('every Prim accepted edge is the light edge across the current cut', () => {
 	const inside = new Set(['A']);
-	const { frames } = primTrace({ vertices: MST_VERTICES, edges: MST_EDGES, start: 'A' });
+	const { frames } = primTrace({
+		vertices: MST_VERTICES,
+		edges: MST_EDGES,
+		start: 'A',
+	});
 	for (const f of frames.filter(fr => fr.phase === 'accept')) {
 		const expected = lightEdge(MST_EDGES, inside);
 		assert.equal(
@@ -199,24 +224,41 @@ test('isSpanningTree flags non-spanning / cyclic edge sets', () => {
 	const tooFew = isSpanningTree(MST_VERTICES, ['A|B', 'A|D']);
 	assert.ok(!tooFew.spanning && !tooFew.connected);
 	// A cycle within the chosen edges → not acyclic.
-	const cyclic = isSpanningTree(['A', 'B', 'C'], ['A|B', 'B|C', edgeId('A', 'C')]);
+	const cyclic = isSpanningTree(
+		['A', 'B', 'C'],
+		['A|B', 'B|C', edgeId('A', 'C')]
+	);
 	assert.ok(!cyclic.acyclic, 'detects the cycle');
 });
 
 // ── Idle frame + state rows ──
 
 test('idleMstFrame is a valid starting frame for each algorithm', () => {
-	const kruskalIdle = idleMstFrame({ vertices: MST_VERTICES, algorithm: 'kruskal' });
+	const kruskalIdle = idleMstFrame({
+		vertices: MST_VERTICES,
+		algorithm: 'kruskal',
+	});
 	const primIdle = idleMstFrame({ vertices: MST_VERTICES, algorithm: 'prim' });
 	assert.equal(kruskalIdle.treeEdges.length, 0);
-	assert.equal(kruskalIdle.components.length, MST_VERTICES.length, 'all singletons');
-	assert.deepEqual(primIdle.treeNodes, [MST_VERTICES[0]], 'Prim seeds the start vertex');
+	assert.equal(
+		kruskalIdle.components.length,
+		MST_VERTICES.length,
+		'all singletons'
+	);
+	assert.deepEqual(
+		primIdle.treeNodes,
+		[MST_VERTICES[0]],
+		'Prim seeds the start vertex'
+	);
 });
 
 test('every Kruskal/Prim frame exposes labelled live-state rows', () => {
 	const { frames } = kruskalTrace({ vertices: MST_VERTICES, edges: MST_EDGES });
 	const consider = frames.find(f => f.phase === 'consider');
 	const ids = consider.state.map(r => r.id);
-	assert.ok(ids.includes('comps'), 'Kruskal surfaces the union-find components');
+	assert.ok(
+		ids.includes('comps'),
+		'Kruskal surfaces the union-find components'
+	);
 	assert.ok(ids.includes('weight'), 'and the running total weight');
 });

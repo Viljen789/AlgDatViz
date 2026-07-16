@@ -11,10 +11,19 @@ import {
 	RECURSION_PSEUDOCODE,
 } from './masterMath.js';
 import styles from './MasterTheoremPlayground.module.css';
+import { useTeachingStateSnapshot } from '../../lib/useTeachingStateSnapshot.js';
 
 const TREE_DEPTH = 6;
 
-const NumberControl = ({ label, hint, value, min, max, step = 1, onChange }) => (
+const NumberControl = ({
+	label,
+	hint,
+	value,
+	min,
+	max,
+	step = 1,
+	onChange,
+}) => (
 	<label className={styles.control}>
 		<span className={styles.controlLabel}>
 			{label}
@@ -54,8 +63,22 @@ const NumberControl = ({ label, hint, value, min, max, step = 1, onChange }) => 
  * bar chart shows relative work per level, the dominant side is highlighted, and
  * the Master Theorem verdict updates live.
  */
-const MasterTheoremPlayground = ({ onUserInteract, params, onParamsChange }) => {
+const MasterTheoremPlayground = ({
+	onUserInteract,
+	params,
+	onParamsChange,
+}) => {
 	const playerRef = useRef(null);
+	useTeachingStateSnapshot('controls', params, snapshot => {
+		if (
+			snapshot &&
+			['a', 'b', 'd', 'k'].every(key => Number.isFinite(snapshot[key]))
+		)
+			onParamsChange({
+				...snapshot,
+				label: snapshot.label || 'Shared example',
+			});
+	});
 
 	const analysis = useMemo(() => analyseRecurrence(params), [params]);
 	const levels = useMemo(() => buildLevels(params, TREE_DEPTH), [params]);
@@ -123,8 +146,8 @@ const MasterTheoremPlayground = ({ onUserInteract, params, onParamsChange }) => 
 			{/* Recurrence + presets */}
 			<header className={styles.bar}>
 				<p className={styles.recurrence}>
-					T(n) = <b>{params.a}</b>·T(n/<b>{params.b}</b>) + f(n),{' '}
-					f(n) = n<sup>{formatNumber(params.d)}</sup>
+					T(n) = <b>{params.a}</b>·T(n/<b>{params.b}</b>) + f(n), f(n) = n
+					<sup>{formatNumber(params.d)}</sup>
 					{params.k > 0 && (
 						<>
 							{' '}
@@ -132,7 +155,11 @@ const MasterTheoremPlayground = ({ onUserInteract, params, onParamsChange }) => 
 						</>
 					)}
 				</p>
-				<div className={styles.presets} role="group" aria-label="Example recurrences">
+				<div
+					className={styles.presets}
+					role="group"
+					aria-label="Example recurrences"
+				>
 					{EXAMPLES.map(example => (
 						<button
 							key={example.label}
@@ -190,9 +217,7 @@ const MasterTheoremPlayground = ({ onUserInteract, params, onParamsChange }) => 
 
 					<div className={styles.chartCard}>
 						<div className={styles.chartHead}>
-							<span className={styles.chartTitle}>
-								Relative work per level
-							</span>
+							<span className={styles.chartTitle}>Relative work per level</span>
 							<span className={styles.chartHint}>
 								revealing level {revealed} / {TREE_DEPTH}
 							</span>

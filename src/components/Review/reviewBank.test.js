@@ -17,6 +17,7 @@ import {
 import { DAY_MS } from './srsSchedule.js';
 import { checkAnswer } from '../../common/TopicTemplate/checkAnswer.js';
 import { BUILT_TOPICS, TOPIC_BY_ID } from '../../data/curriculum.js';
+import { REVIEW_MANIFEST } from '../../data/reviewManifest.js';
 
 // ── The bank itself ──────────────────────────────────────────────────────────
 
@@ -156,6 +157,14 @@ test('the known pair scene (merge-sort "array") is excluded but its siblings are
 test('entry ids are unique', () => {
 	const ids = REVIEW_BANK.map(e => e.id);
 	assert.equal(new Set(ids).size, ids.length, 'no duplicate entry ids');
+});
+
+test('the lightweight home scheduling manifest matches the canonical bank', () => {
+	assert.deepEqual(
+		REVIEW_MANIFEST,
+		REVIEW_BANK.map(({ id, topicId }) => ({ id, topicId })),
+		'the home page can schedule cards without importing every lesson module'
+	);
 });
 
 test('buildReviewBank is pure — repeated calls match the cached bank by value', () => {

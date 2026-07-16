@@ -86,18 +86,14 @@ const RodCuttingCanvas = ({ frame }) => {
 						<span className={styles.equationFn}>max(</span>
 						<span className={styles.equationConst}>price[{winning.piece}]</span>
 						<span className={styles.equationOp}>+</span>
-						<span className={styles.equationTerm}>
-							dp[{winning.prevIndex}]
-						</span>
+						<span className={styles.equationTerm}>dp[{winning.prevIndex}]</span>
 						<span className={styles.equationFn}>)</span>
 						<span className={styles.equationOp}>=</span>
 						<span className={styles.equationConst}>{winning.price}</span>
 						<span className={styles.equationOp}>+</span>
 						<span className={styles.equationTerm}>{winning.prevValue}</span>
 						<span className={styles.equationOp}>=</span>
-						<span className={styles.equationResult}>
-							{dpTable[activeJ]}
-						</span>
+						<span className={styles.equationResult}>{dpTable[activeJ]}</span>
 					</>
 				) : (
 					<span className={styles.equationTemplate}>

@@ -1,4 +1,6 @@
 .appContainer {
+	position: relative;
+	isolation: isolate;
 	display: flex;
 	width: 100%;
 	height: 100vh;
@@ -7,6 +9,54 @@
 	color: var(--color-text-primary);
 	overflow: hidden;
 	font-family: var(--font-family-sans);
+}
+
+.presenterMode > nav[aria-label='Primary'] {
+	display: none;
+}
+
+.presenterMode::after {
+	left: 0;
+}
+
+.presenterMode .mainContent {
+	width: 100%;
+}
+
+/* A quiet printed substrate: large construction rules plus real fractal paper
+   grain. Both layers are fixed, non-interactive, and deliberately faint. */
+.appContainer::before,
+.appContainer::after {
+	content: '';
+	position: fixed;
+	z-index: 4;
+	inset: 0;
+	pointer-events: none;
+}
+
+.appContainer::before {
+	opacity: 0.026;
+	background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 180 180' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='paper'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.82' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23paper)' opacity='.55'/%3E%3C/svg%3E");
+	mix-blend-mode: multiply;
+}
+
+.appContainer::after {
+	left: 252px;
+	opacity: 0.055;
+	background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 1440 900' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' stroke='%235f7969' stroke-width='1'%3E%3Cpath d='M96 0v900M480 0v900M864 0v900M1248 0v900M0 112h1440M0 450h1440M0 788h1440'/%3E%3Cpath d='M1100-80 640 980M1420 90 950 900'/%3E%3C/g%3E%3Cg fill='%23a84f40'%3E%3Crect x='92' y='446' width='7' height='7'/%3E%3Crect x='860' y='108' width='7' height='7'/%3E%3C/g%3E%3C/svg%3E");
+	background-position: top center;
+	background-repeat: no-repeat;
+	background-size: max(80rem, 100vw) auto;
+}
+
+:global([data-theme='dark']) .appContainer::before {
+	opacity: 0.045;
+	mix-blend-mode: soft-light;
+}
+
+:global([data-theme='dark']) .appContainer::after {
+	opacity: 0.07;
+	mix-blend-mode: screen;
 }
 
 /* Keyboard users skip the 20+ link sidebar; visually hidden until focused. */
@@ -43,6 +93,8 @@
 }
 
 .mainContent {
+	position: relative;
+	z-index: 1;
 	flex: 1;
 	display: flex;
 	flex-direction: column;
@@ -86,15 +138,10 @@
 	align-items: end;
 	justify-content: center;
 	padding: 28px;
-	border-radius: 14px;
-	background:
-		linear-gradient(
-			180deg,
-			color-mix(in srgb, var(--surface-2) 86%, transparent),
-			color-mix(in srgb, var(--color-bg-app) 96%, transparent)
-		),
-		var(--color-bg-panel);
-	box-shadow: var(--shadow-canvas-lamp);
+	border: 1px solid var(--color-border);
+	border-radius: var(--radius-lg);
+	background: var(--color-bg-panel);
+	box-shadow: var(--shadow-3);
 	box-sizing: border-box;
 }
 
@@ -121,7 +168,7 @@
 
 .fallbackStage span {
 	width: 14%;
-	border-radius: 8px 8px 3px 3px;
+	border-radius: 0;
 	background: var(--color-accent-blue);
 	opacity: 0.3;
 	animation: fallbackPulse 1.1s var(--ease-step) infinite;
@@ -173,5 +220,10 @@
 @media (max-width: 720px) {
 	.appContainer {
 		flex-direction: column;
+	}
+
+	.appContainer::after {
+		left: 0;
+		top: 60px;
 	}
 }

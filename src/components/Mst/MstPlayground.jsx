@@ -23,6 +23,7 @@ import {
 	MST_VERTICES,
 } from './mstMeta.js';
 import styles from './MstPlayground.module.css';
+import { useTeachingStateSnapshot } from '../../lib/useTeachingStateSnapshot.js';
 
 const INITIAL_PRESET = MST_PRESETS[0];
 
@@ -37,8 +38,15 @@ const ALL_EDGES = normalizeEdges(MST_EDGES);
 
 // Both algorithms run on the SAME graph — precompute the final trees so the
 // "they build the same tree" comparison strip is a measured fact, not a claim.
-const KRUSKAL_FINAL = kruskalTrace({ vertices: MST_VERTICES, edges: MST_EDGES });
-const PRIM_FINAL = primTrace({ vertices: MST_VERTICES, edges: MST_EDGES, start: 'A' });
+const KRUSKAL_FINAL = kruskalTrace({
+	vertices: MST_VERTICES,
+	edges: MST_EDGES,
+});
+const PRIM_FINAL = primTrace({
+	vertices: MST_VERTICES,
+	edges: MST_EDGES,
+	start: 'A',
+});
 const SAME_TREE =
 	JSON.stringify(KRUSKAL_FINAL.treeEdges.slice().sort()) ===
 	JSON.stringify(PRIM_FINAL.treeEdges.slice().sort());
@@ -62,13 +70,28 @@ const MstPlayground = ({ onUserInteract }) => {
 	const algoMeta = MST_ALGORITHMS[algorithm];
 
 	const [frames, setFrames] = useState(() => [
-		idleMstFrame({ vertices: MST_VERTICES, algorithm: INITIAL_PRESET.algorithm }),
+		idleMstFrame({
+			vertices: MST_VERTICES,
+			algorithm: INITIAL_PRESET.algorithm,
+		}),
 	]);
 
 	const player = usePlayback(frames, { speed: 100 });
 	const { currentStep, currentFrame, totalSteps, seek, play } = player;
 
 	const frame = currentFrame || frames[0];
+	useTeachingStateSnapshot('controls', { presetId, frame }, snapshot => {
+		const sharedPreset = MST_PRESETS.find(p => p.id === snapshot?.presetId);
+		if (!sharedPreset) return;
+		setPresetId(sharedPreset.id);
+		setFrames([
+			snapshot.frame ||
+				idleMstFrame({
+					vertices: MST_VERTICES,
+					algorithm: sharedPreset.algorithm,
+				}),
+		]);
+	});
 	const lines = useMemo(() => MST_PSEUDO[algorithm], [algorithm]);
 	const canStep = totalSteps > 1;
 
@@ -146,8 +169,7 @@ const MstPlayground = ({ onUserInteract }) => {
 				considerId && (frame?.phase === 'consider' || isAccept)
 					? new Set([considerId])
 					: undefined,
-			consider:
-				considerId && isReject ? new Set([considerId]) : undefined,
+			consider: considerId && isReject ? new Set([considerId]) : undefined,
 		};
 	}, [frame]);
 
@@ -158,7 +180,9 @@ const MstPlayground = ({ onUserInteract }) => {
 
 	const narration = frame?.description || frame?.title;
 	const componentsLabel =
-		algorithm === 'kruskal' ? 'components (union-find)' : 'tree | rest (the cut)';
+		algorithm === 'kruskal'
+			? 'components (union-find)'
+			: 'tree | rest (the cut)';
 	const componentRows = frame?.components || [];
 
 	return (
@@ -215,7 +239,9 @@ const MstPlayground = ({ onUserInteract }) => {
 					<span className={styles.statLabel}>complexity</span>
 				</div>
 				<div className={styles.stat}>
-					<span className={styles.statValue}>{frame?.treeEdges?.length ?? 0}</span>
+					<span className={styles.statValue}>
+						{frame?.treeEdges?.length ?? 0}
+					</span>
 					<span className={styles.statLabel}>tree edges</span>
 				</div>
 				<div className={styles.stat}>
@@ -226,7 +252,10 @@ const MstPlayground = ({ onUserInteract }) => {
 
 			{/* ---------- Canvas + trace ---------- */}
 			<div className={styles.body}>
-				<section className={styles.canvas} aria-label="Weighted graph being spanned">
+				<section
+					className={styles.canvas}
+					aria-label="Weighted graph being spanned"
+				>
 					<div className={styles.canvasOverlay} aria-hidden="true">
 						<span className={styles.mono}>{algoMeta?.structure}</span>
 						{frame?.title && (
@@ -238,7 +267,11 @@ const MstPlayground = ({ onUserInteract }) => {
 					</div>
 
 					<div className={styles.graphBox}>
-						<MstGraph edges={ALL_EDGES} edgeSets={edgeSets} nodeSets={nodeSets} />
+						<MstGraph
+							edges={ALL_EDGES}
+							edgeSets={edgeSets}
+							nodeSets={nodeSets}
+						/>
 					</div>
 
 					{/* The data structure that IS the algorithm. */}
@@ -247,7 +280,10 @@ const MstPlayground = ({ onUserInteract }) => {
 						<div className={styles.componentChips}>
 							{componentRows.length ? (
 								componentRows.map((group, i) => (
-									<span key={group.join('') || i} className={styles.componentChip}>
+									<span
+										key={group.join('') || i}
+										className={styles.componentChip}
+									>
 										{`{${group.join(', ')}}`}
 									</span>
 								))
@@ -281,7 +317,9 @@ const MstPlayground = ({ onUserInteract }) => {
 
 			{/* ---------- Same-tree comparison strip ---------- */}
 			<div className={styles.sameStrip}>
-				<span className={styles.sameLead}>Whichever you run, one graph → one tree:</span>
+				<span className={styles.sameLead}>
+					Whichever you run, one graph → one tree:
+				</span>
 				<span className={styles.sameItem}>
 					Kruskal — weight {KRUSKAL_FINAL.totalWeight}
 				</span>

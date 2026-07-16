@@ -54,18 +54,8 @@
 
 .tabButtonActive {
 	color: var(--topic-accent, var(--color-primary));
+	background-color: var(--surface-hover);
 	font-weight: var(--font-weight-semibold);
-}
-
-.tabIndicator {
-	position: absolute;
-	bottom: -1px;
-	height: 2px;
-	border-radius: var(--radius-pill);
-	background-color: var(--topic-accent, var(--color-primary));
-	transition:
-		left var(--duration-step) var(--ease-step),
-		width var(--duration-step) var(--ease-step);
 }
 
 .tabContent {
@@ -91,7 +81,6 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-	.tabIndicator,
 	.tabViewWrapper {
 		transition: none;
 	}

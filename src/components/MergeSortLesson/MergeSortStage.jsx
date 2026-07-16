@@ -254,9 +254,7 @@ const MergeSortStage = ({
 	const stepMerge = useCallback(
 		delta => {
 			setMergePlaying(false);
-			setMergeStep(prev =>
-				Math.max(0, Math.min(prev + delta, lastMergeStep))
-			);
+			setMergeStep(prev => Math.max(0, Math.min(prev + delta, lastMergeStep)));
 		},
 		[lastMergeStep]
 	);
@@ -354,13 +352,21 @@ const MergeSortStage = ({
 			// 1 split: every bar is still default; only the tracked piece is marked.
 			case 1:
 				return [
-					{ swatch: SW_FOLLOW, label: 'tracked piece (outline)', aria: 'accent' },
+					{
+						swatch: SW_FOLLOW,
+						label: 'tracked piece (outline)',
+						aria: 'accent',
+					},
 				];
 			// 2 base case: single-element leaves are trivially sorted.
 			case 2:
 				return [
 					{ swatch: SW_DONE, label: 'sorted leaf', aria: 'green' },
-					{ swatch: SW_FOLLOW, label: 'tracked piece (outline)', aria: 'accent' },
+					{
+						swatch: SW_FOLLOW,
+						label: 'tracked piece (outline)',
+						aria: 'accent',
+					},
 				];
 			// 3 combine: the compare / just-copied / placed states of the merge demo.
 			case 3:
@@ -368,7 +374,11 @@ const MergeSortStage = ({
 					{ swatch: SW_COMPARE, label: 'comparing', aria: 'blue' },
 					{ swatch: SW_FLIGHT, label: 'just copied', aria: 'orange' },
 					{ swatch: SW_DONE, label: 'placed', aria: 'green' },
-					{ swatch: SW_FOLLOW, label: 'tracked piece (outline)', aria: 'accent' },
+					{
+						swatch: SW_FOLLOW,
+						label: 'tracked piece (outline)',
+						aria: 'accent',
+					},
 				];
 			// 4 n log n: the whole tree is sorted as the merges finish.
 			case 4:

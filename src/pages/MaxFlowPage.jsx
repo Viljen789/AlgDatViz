@@ -123,17 +123,15 @@ const MaxFlowPage = () => {
 		[]
 	);
 
-	const renderPlayground = useCallback(
-		() => <MaxFlowPlayground />,
-		[]
-	);
+	const renderPlayground = useCallback(() => <MaxFlowPlayground />, []);
 
 	const handleVisit = useCallback(() => {
 		markVisited(TOPIC_ID);
 	}, [markVisited]);
 
 	const eyebrow = useMemo(
-		() => `${topic?.number ?? '14'} · ${topic?.name ?? 'Maximum flow'} · Max-flow`,
+		() =>
+			`${topic?.number ?? '14'} · ${topic?.name ?? 'Maximum flow'} · Max-flow`,
 		[topic]
 	);
 

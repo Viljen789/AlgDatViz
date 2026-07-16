@@ -109,12 +109,18 @@ const KNOWN_DIST = { S: 0, A: 7, B: 8, C: 3, D: 5 };
 const assertDistEquals = (got, expected) => {
 	for (const id of Object.keys(expected)) {
 		const g = got[id] === INFINITY ? '∞' : got[id];
-		assert.equal(got[id], expected[id], `dist[${id}] = ${expected[id]} (got ${g})`);
+		assert.equal(
+			got[id],
+			expected[id],
+			`dist[${id}] = ${expected[id]} (got ${g})`
+		);
 	}
 };
 
 test('bellmanFordTrace computes correct distances on the known graph', () => {
-	const { frames, dist, negativeCycle } = bellmanFordTrace(KNOWN, { source: 'S' });
+	const { frames, dist, negativeCycle } = bellmanFordTrace(KNOWN, {
+		source: 'S',
+	});
 	frames.forEach(assertFrameShape);
 	assert.equal(negativeCycle, false);
 	assertDistEquals(dist, KNOWN_DIST);
@@ -189,7 +195,9 @@ const NEG_CYCLE = G(
 );
 
 test('bellmanFordTrace detects a reachable negative-weight cycle', () => {
-	const { frames, negativeCycle } = bellmanFordTrace(NEG_CYCLE, { source: 'S' });
+	const { frames, negativeCycle } = bellmanFordTrace(NEG_CYCLE, {
+		source: 'S',
+	});
 	assert.equal(negativeCycle, true, 'A→B→C→A (sum -1) is a negative cycle');
 	const cycleFrame = frames.find(f => f.negativeCycle);
 	assert.ok(cycleFrame, 'a frame flags the cycle');
@@ -239,10 +247,7 @@ test('reconstructPath rebuilds the shortest path from the pred map', () => {
 });
 
 test('reconstructPath returns null for an unreachable target', () => {
-	const lonely = G(
-		['S', 'A', 'Z'],
-		[{ from: 'S', to: 'A', weight: 1 }]
-	);
+	const lonely = G(['S', 'A', 'Z'], [{ from: 'S', to: 'A', weight: 1 }]);
 	const { pred } = bellmanFordTrace(lonely, { source: 'S' });
 	assert.equal(reconstructPath(pred, 'S', 'Z'), null);
 });
@@ -289,8 +294,14 @@ test('buildStateRows is pure and tolerates a null frame', () => {
 
 // ── Dispatch ──
 test('buildSsspTrace dispatches by algorithm id', () => {
-	assert.ok(buildSsspTrace('bellmanFord', KNOWN, { source: 'S' }).frames.length > 0);
-	assert.ok(buildSsspTrace('dagShortestPaths', KNOWN, { source: 'S' }).frames.length > 0);
-	assert.ok(buildSsspTrace('dijkstra', KNOWN, { source: 'S' }).frames.length > 0);
+	assert.ok(
+		buildSsspTrace('bellmanFord', KNOWN, { source: 'S' }).frames.length > 0
+	);
+	assert.ok(
+		buildSsspTrace('dagShortestPaths', KNOWN, { source: 'S' }).frames.length > 0
+	);
+	assert.ok(
+		buildSsspTrace('dijkstra', KNOWN, { source: 'S' }).frames.length > 0
+	);
 	assert.deepEqual(buildSsspTrace('nope', KNOWN, { source: 'S' }).frames, []);
 });

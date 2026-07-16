@@ -5,7 +5,11 @@ import TopicTemplate from '../common/TopicTemplate/index.js';
 import { checkAnswer } from '../common/TopicTemplate/checkAnswer.js';
 import MstStage from '../components/Mst/MstStage.jsx';
 import MstSandbox from '../components/Mst/MstSandbox.jsx';
-import { SCENES, MST_EDGE_COUNT, MST_WEIGHT } from '../components/Mst/scenes.js';
+import {
+	SCENES,
+	MST_EDGE_COUNT,
+	MST_WEIGHT,
+} from '../components/Mst/scenes.js';
 
 const TOPIC_ID = 'mst';
 
@@ -105,10 +109,7 @@ const MstPage = () => {
 		[]
 	);
 
-	const renderPlayground = useCallback(
-		() => <MstSandbox />,
-		[]
-	);
+	const renderPlayground = useCallback(() => <MstSandbox />, []);
 
 	const handleVisit = useCallback(() => {
 		markVisited(TOPIC_ID);

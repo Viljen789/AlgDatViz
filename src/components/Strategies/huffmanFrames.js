@@ -76,7 +76,8 @@ const tag = node =>
 
 export const buildHuffmanFrames = (symbols = []) => {
 	const valid = (symbols || []).filter(
-		s => s && typeof s.char === 'string' && Number.isFinite(s.freq) && s.freq > 0
+		s =>
+			s && typeof s.char === 'string' && Number.isFinite(s.freq) && s.freq > 0
 	);
 
 	if (valid.length === 0) {

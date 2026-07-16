@@ -41,8 +41,7 @@
 	stroke-width: 3.5;
 }
 
-/* Arrowhead for the directed (topological-sort) scene. Filled to match the edge
-   stroke so the arrow reads as the edge's tip rather than a separate mark. */
+/* Arrowhead for the directed topological-sort and SCC scenes. */
 .arrowHead {
 	fill: var(--color-border-strong);
 }
@@ -77,6 +76,28 @@
 	stroke-width: 2.5;
 }
 
+/* SCC membership uses three semantic hues already present in the study system.
+   A translucent surface keeps the node letters readable in both themes; the
+   matching outline and explicit SCC label mean colour is never the only cue. */
+.nodeComponent {
+	stroke-width: 3;
+}
+
+.nodeComponent0 {
+	fill: color-mix(in srgb, var(--topic-accent) 20%, var(--surface-3));
+	stroke: var(--topic-accent);
+}
+
+.nodeComponent1 {
+	fill: color-mix(in srgb, var(--state-active) 18%, var(--surface-3));
+	stroke: var(--state-active);
+}
+
+.nodeComponent2 {
+	fill: color-mix(in srgb, var(--state-special) 18%, var(--surface-3));
+	stroke: var(--state-special);
+}
+
 .nodeText {
 	fill: var(--color-text-primary);
 	font-family: var(--font-family-mono);
@@ -102,6 +123,16 @@
 	fill: var(--color-text-muted);
 	font-family: var(--font-family-mono);
 	font-size: 8.5px;
+	letter-spacing: var(--tracking-caps);
+	text-transform: uppercase;
+	pointer-events: none;
+}
+
+.componentTag {
+	fill: var(--color-text-secondary);
+	font-family: var(--font-family-mono);
+	font-size: 8px;
+	font-weight: var(--font-weight-semibold);
 	letter-spacing: var(--tracking-caps);
 	text-transform: uppercase;
 	pointer-events: none;

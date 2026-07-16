@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
+import { ComparisonRail } from '@viljen789/study-ui';
 import { ArrowRight, Check, ChevronRight, X } from 'lucide-react';
-import { accentTokens } from '../components/Review/reviewBank.js';
+import { accentTokens } from '../components/Review/reviewUtils.js';
 import {
 	complexitySheet,
 	sortComparison,
@@ -56,6 +57,64 @@ const SECTION_LINKS = [
 	{ id: 'decisions-heading', label: 'Which algorithm when' },
 	{ id: 'greedy-heading', label: 'Greedy or DP' },
 	{ id: 'glossary-heading', label: 'Norwegian terms' },
+];
+
+const sortItems = sortComparison.map(row => ({
+	id: row.id,
+	title: row.name,
+}));
+
+const sortRows = [
+	{
+		id: 'best',
+		label: 'Best',
+		values: Object.fromEntries(
+			sortComparison.map(row => [
+				row.id,
+				<code className={styles.cellCode}>{row.best}</code>,
+			])
+		),
+	},
+	{
+		id: 'average',
+		label: 'Average',
+		values: Object.fromEntries(
+			sortComparison.map(row => [
+				row.id,
+				<code className={styles.cellCode}>{row.average}</code>,
+			])
+		),
+	},
+	{
+		id: 'worst',
+		label: 'Worst',
+		values: Object.fromEntries(
+			sortComparison.map(row => [
+				row.id,
+				<code
+					className={`${styles.cellCode}${
+						slowWorst(row.worst) ? ` ${styles.cellCodeWarn}` : ''
+					}`}
+				>
+					{row.worst}
+				</code>,
+			])
+		),
+	},
+	{
+		id: 'stable',
+		label: 'Stable',
+		values: Object.fromEntries(
+			sortComparison.map(row => [row.id, <YesNo value={row.stable} />])
+		),
+	},
+	{
+		id: 'in-place',
+		label: 'In place',
+		values: Object.fromEntries(
+			sortComparison.map(row => [row.id, <YesNo value={row.inPlace} />])
+		),
+	},
 ];
 
 const ReferencePage = () => {
@@ -138,52 +197,12 @@ const ReferencePage = () => {
 					Best, average, and worst time, plus whether the sort is stable and in
 					place.
 				</p>
-				<div className={styles.tableScroll}>
-					<table className={styles.table}>
-						<thead>
-							<tr>
-								<th scope="col" className={styles.thName}>
-									Algorithm
-								</th>
-								<th scope="col">Best</th>
-								<th scope="col">Average</th>
-								<th scope="col">Worst</th>
-								<th scope="col">Stable</th>
-								<th scope="col">In place</th>
-							</tr>
-						</thead>
-						<tbody>
-							{sortComparison.map(row => (
-								<tr key={row.id}>
-									<th scope="row" className={styles.thName}>
-										{row.name}
-									</th>
-									<td>
-										<code className={styles.cellCode}>{row.best}</code>
-									</td>
-									<td>
-										<code className={styles.cellCode}>{row.average}</code>
-									</td>
-									<td>
-										<code
-											className={`${styles.cellCode}${
-												slowWorst(row.worst) ? ` ${styles.cellCodeWarn}` : ''
-											}`}
-										>
-											{row.worst}
-										</code>
-									</td>
-									<td>
-										<YesNo value={row.stable} />
-									</td>
-									<td>
-										<YesNo value={row.inPlace} />
-									</td>
-								</tr>
-							))}
-						</tbody>
-					</table>
-				</div>
+				<ComparisonRail
+					className={styles.comparisonRail}
+					ariaLabel="Sorting algorithms side by side"
+					items={sortItems}
+					rows={sortRows}
+				/>
 			</section>
 
 			{/* ---- Decision cards ---- */}

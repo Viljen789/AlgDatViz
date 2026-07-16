@@ -1899,8 +1899,7 @@ const problemG3 = {
 	parts: [
 		{
 			kind: 'numeric',
-			prompt:
-				'How many strongly connected components does the graph have?',
+			prompt: 'How many strongly connected components does the graph have?',
 			answer: G3_COUNT,
 			placeholder: 'a count',
 			explanation:
@@ -3869,8 +3868,7 @@ const problemP7 = {
 	parts: [
 		{
 			kind: 'numeric',
-			prompt:
-				`Using only the first two items (A and B), what is dp[2][${P7_W}]?`,
+			prompt: `Using only the first two items (A and B), what is dp[2][${P7_W}]?`,
 			answer: P7_DP_2_10,
 			placeholder: 'a value',
 			explanation:
@@ -4099,8 +4097,7 @@ const problemP9 = {
 	parts: [
 		{
 			kind: 'choice',
-			prompt:
-				'In which order does the greedy rank the items (densest first)?',
+			prompt: 'In which order does the greedy rank the items (densest first)?',
 			options: [
 				P9_ORDER_STR,
 				'C ≥ A ≥ B ≥ D',
@@ -6876,7 +6873,12 @@ const problemH4 = {
 				'Bubble the raised key up (swap with the parent while the key is ' +
 				'larger) until the heap property holds again. What is the array ' +
 				'afterwards?',
-			options: [H4_AFTER_STR, H4_NAIVE_STR, H4_ONE_SWAP_STR, H4_SORTED_DESC_STR],
+			options: [
+				H4_AFTER_STR,
+				H4_NAIVE_STR,
+				H4_ONE_SWAP_STR,
+				H4_SORTED_DESC_STR,
+			],
 			answer: H4_AFTER_STR,
 			misconceptions: {
 				[H4_NAIVE_STR]:

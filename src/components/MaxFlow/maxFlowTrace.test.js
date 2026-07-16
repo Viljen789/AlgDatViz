@@ -23,7 +23,10 @@ const assertFrameShape = frame => {
 	assert.ok(frame.line >= 0, 'line is 0-based');
 	assert.equal(typeof frame.flow, 'object', 'frame has a flow map');
 	assert.equal(typeof frame.value, 'number', 'frame has a numeric flow value');
-	assert.ok(Array.isArray(frame.residual), 'frame carries a residual edge list');
+	assert.ok(
+		Array.isArray(frame.residual),
+		'frame carries a residual edge list'
+	);
 };
 
 // A flow is FEASIBLE when 0 ≤ f(u,v) ≤ c(u,v) on every edge and flow is
@@ -127,8 +130,13 @@ test('buildResidual emits forward residual c−f and a back edge of size f', () 
 });
 
 test('a saturated edge has no forward residual edge', () => {
-	const residual = buildResidual([{ from: 'a', to: 'b', capacity: 5 }], { 'a->b': 5 });
-	assert.equal(residual.find(re => re.kind === 'forward'), undefined);
+	const residual = buildResidual([{ from: 'a', to: 'b', capacity: 5 }], {
+		'a->b': 5,
+	});
+	assert.equal(
+		residual.find(re => re.kind === 'forward'),
+		undefined
+	);
 	assert.equal(residual.find(re => re.kind === 'back')?.residual, 5);
 });
 
@@ -152,7 +160,9 @@ test('bipartite matching network has maximum matching of size 3', () => {
 	const matchEdges = MATCHING_NETWORK.edges.filter(
 		e => e.from.startsWith('L') && e.to.startsWith('R')
 	);
-	const matched = matchEdges.filter(e => (flow[`${e.from}->${e.to}`] || 0) === 1);
+	const matched = matchEdges.filter(
+		e => (flow[`${e.from}->${e.to}`] || 0) === 1
+	);
 	assert.equal(matched.length, 3, 'three Li→Rj edges carry one unit of flow');
 	const leftUsed = new Set(matched.map(e => e.from));
 	const rightUsed = new Set(matched.map(e => e.to));
@@ -194,7 +204,9 @@ test('buildStateRows surfaces flow value, path, bottleneck, and min cut', () => 
 	assert.ok('bottleneck' in byId, 'reports the bottleneck');
 	assert.ok('augmentations' in byId, 'reports the augmentation count');
 	const doneFrame = frames.find(f => f.phase === 'done');
-	const doneRows = Object.fromEntries(buildStateRows(doneFrame).map(r => [r.id, r.value]));
+	const doneRows = Object.fromEntries(
+		buildStateRows(doneFrame).map(r => [r.id, r.value])
+	);
 	assert.equal(doneRows.mincut, 23, 'final frame reports the min-cut capacity');
 });
 

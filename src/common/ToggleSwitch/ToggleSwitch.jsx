@@ -5,9 +5,7 @@ import styles from './ToggleSwitch.module.css';
  * States: hover / focus-visible (on the hidden checkbox) / active / disabled.
  */
 const ToggleSwitch = ({ label, checked, onChange, disabled = false }) => (
-	<label
-		className={`${styles.switchLabel} ${disabled ? styles.disabled : ''}`}
-	>
+	<label className={`${styles.switchLabel} ${disabled ? styles.disabled : ''}`}>
 		{label && <span>{label}</span>}
 		<div className={styles.switchContainer}>
 			<input

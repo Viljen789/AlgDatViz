@@ -125,14 +125,23 @@ export const buildKnapsack01Frames = ({ items, capacity }) => {
 				description,
 				line: !fits ? 4 : 6,
 				state: [
-					{ id: 'item', label: 'item', value: `${itemLabel} (w${weight(i)}/v${value(i)})` },
+					{
+						id: 'item',
+						label: 'item',
+						value: `${itemLabel} (w${weight(i)}/v${value(i)})`,
+					},
 					{ id: 'w', label: 'capacity w', value: w, active: true },
 					{
 						id: 'decision',
 						label: 'decision',
 						value: !fits ? 'too heavy' : took ? 'TAKE' : 'skip',
 					},
-					{ id: 'cell', label: `dp[${i}][${w}]`, value: dp[i][w], active: true },
+					{
+						id: 'cell',
+						label: `dp[${i}][${w}]`,
+						value: dp[i][w],
+						active: true,
+					},
 				],
 				verdict: null,
 			});

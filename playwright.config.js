@@ -1,5 +1,7 @@
 import { defineConfig, devices } from '@playwright/test';
 
+const localBrowser = process.env.PLAYWRIGHT_EXECUTABLE_PATH;
+
 export default defineConfig({
 	testDir: './tests/visual',
 	outputDir: './test-results/visual',
@@ -10,6 +12,7 @@ export default defineConfig({
 	use: {
 		baseURL: 'http://127.0.0.1:4173',
 		colorScheme: 'dark',
+		launchOptions: localBrowser ? { executablePath: localBrowser } : undefined,
 		reducedMotion: 'reduce',
 		screenshot: 'only-on-failure',
 		trace: 'retain-on-failure',

@@ -12,8 +12,16 @@
 			name="description"
 			content="Interactive, step-by-step visualizations of every algorithm and data structure in TDT4120 — sorting, trees, heaps, graphs, dynamic programming, and more, with synchronized pseudocode."
 		/>
-		<meta name="theme-color" content="hsl(36 12% 9%)" media="(prefers-color-scheme: dark)" />
-		<meta name="theme-color" content="hsl(40 30% 96%)" media="(prefers-color-scheme: light)" />
+		<meta
+			name="theme-color"
+			content="#121413"
+			media="(prefers-color-scheme: dark)"
+		/>
+		<meta
+			name="theme-color"
+			content="#f7f3e9"
+			media="(prefers-color-scheme: light)"
+		/>
 		<meta
 			property="og:title"
 			content="AlgDatViz — TDT4120 algorithms & data structures, visualized"
@@ -36,7 +44,10 @@
 			content="AlgDatViz brand card showing one sequence reinterpreted as an array, heap, and graph."
 		/>
 		<meta name="twitter:card" content="summary_large_image" />
-		<meta name="twitter:title" content="AlgDatViz — Algorithms &amp; Data Structures" />
+		<meta
+			name="twitter:title"
+			content="AlgDatViz — Algorithms &amp; Data Structures"
+		/>
 		<meta
 			name="twitter:description"
 			content="One dataset, every structure: a guided, interactive path through all of TDT4120."
@@ -49,29 +60,27 @@
 			name="twitter:image:alt"
 			content="AlgDatViz brand card showing one sequence reinterpreted as an array, heap, and graph."
 		/>
-		<!-- Anti-flash: set data-theme before first paint so the page never flashes
-		     the wrong theme. Mirrors the logic in src/hooks/useTheme.js. -->
+		<!-- Anti-flash: resolve mode and palette before first paint. Mirrors
+		     the logic in src/hooks/useTheme.js. -->
 		<script>
 			(function () {
 				try {
 					var stored = localStorage.getItem('algdatviz:theme');
-					var theme =
-						stored === 'light' || stored === 'dark'
-							? stored
-							: window.matchMedia &&
-								  window.matchMedia('(prefers-color-scheme: dark)').matches
-								? 'dark'
-								: 'light';
+					var theme = stored === 'dark' ? 'dark' : 'light';
 					document.documentElement.dataset.theme = theme;
+					var storedPalette = localStorage.getItem('algdatviz:palette');
+					document.documentElement.dataset.palette =
+						storedPalette === 'editorial' ? 'editorial' : 'neutral';
 				} catch (e) {
 					document.documentElement.dataset.theme = 'light';
+					document.documentElement.dataset.palette = 'neutral';
 				}
 			})();
 		</script>
 		<link rel="preconnect" href="https://fonts.googleapis.com" />
 		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 		<link
-			href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400..700;1,6..72,400..500&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap"
+			href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Newsreader:ital,opsz,wght@0,6..72,400..700;1,6..72,400..500&display=swap"
 			rel="stylesheet"
 		/>
 	</head>

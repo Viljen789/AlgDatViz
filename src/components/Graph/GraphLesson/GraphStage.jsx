@@ -7,6 +7,9 @@ import {
 	TOPO_ORDER,
 	TOPO_SOURCE,
 	TOPO_NEXT,
+	SCC_GRAPH,
+	SCC_COMPONENT_MAP,
+	SCC_GROUPS,
 } from './graphScenes.js';
 import StateLegend from '../../../common/StateLegend/StateLegend';
 import { SceneNarration } from '../../../common/PlaybackEngine';
@@ -17,7 +20,7 @@ import styles from './GraphStage.module.css';
 // index 4 once shifted every later scene by one). These MUST mirror the order of
 // SCENES in graphScenes.js:
 //   0 nodes-edges · 1 representations · 2 frontier · 3 bfs · 4 bfs-probe
-//   5 bfs-order · 6 dfs · 7 one-frontier · 8 topo-sort · 9 topo-next
+//   5 bfs-order · 6 dfs · 7 one-frontier · 8 topo-sort · 9 topo-next · 10 scc
 const SCENE = {
 	REPRESENTATIONS: 1,
 	FRONTIER: 2,
@@ -28,6 +31,7 @@ const SCENE = {
 	ONE_FRONTIER: 7,
 	TOPO_SORT: 8,
 	TOPO_NEXT: 9,
+	SCC: 10,
 };
 // The scenes that paint the full BFS picture (the BFS run, the frozen-frame probe,
 // the recall, and the one-frontier thesis all illustrate the SAME BFS spread).
@@ -47,6 +51,11 @@ const TOPO_SCENES = new Set([SCENE.TOPO_SORT, SCENE.TOPO_NEXT]);
 // coloured state, so they carry no legend.
 const VISITED_SWATCH = 'var(--topic-accent)';
 const FRONTIER_SWATCH = 'var(--topic-graphs-wash)';
+const SCC_SWATCHES = [
+	'var(--topic-accent)',
+	'var(--state-active)',
+	'var(--state-special)',
+];
 
 const sceneLegend = activeScene => {
 	if (activeScene === SCENE.FRONTIER)
@@ -70,6 +79,12 @@ const sceneLegend = activeScene => {
 				aria: 'filled',
 			},
 		];
+	if (activeScene === SCENE.SCC)
+		return SCC_GROUPS.map((group, index) => ({
+			label: `SCC {${group.join(', ')}}`,
+			swatch: SCC_SWATCHES[index % SCC_SWATCHES.length],
+			aria: `component ${index + 1}`,
+		}));
 	return [];
 };
 
@@ -117,9 +132,9 @@ const traversalFor = (activeScene, holdReveal = false) => {
 	return { order: [], count: 0 };
 };
 
-// The topo scenes swap the undirected LESSON_GRAPH for the directed DAG and draw
-// arrowheads. Every other scene keeps the undirected rendering.
+// Directed scenes swap the undirected LESSON_GRAPH for their own teaching graph.
 const TOPO_NODE_BY_ID = id => TOPO_GRAPH.nodes.find(n => n.id === id);
+const SCC_NODE_BY_ID = id => SCC_GRAPH.nodes.find(n => n.id === id);
 
 // holdReveal is the template's opt-in reveal gate: true while the topo-next
 // predict beat is still unanswered, so the stage withholds the to-be-predicted
@@ -145,11 +160,11 @@ const GraphStage = ({ activeScene = 0, holdReveal = false }) => {
 		return f;
 	}, [activeScene, adjacency]);
 
-	// The topo scenes render the directed DAG (with arrowheads) instead of the
-	// undirected LESSON_GRAPH. isTraversalScene stays true for the shared
-	// colour/order badges, but the frontier overlay never fires (gated to the
-	// frontier scene only).
+	// Directed-structure scenes swap the undirected LESSON_GRAPH for their own
+	// graph and arrowheads. Topological sort paints an order; SCC paints the final
+	// componentMap produced by the shared Kosaraju generator.
 	const isTopo = TOPO_SCENES.has(activeScene);
+	const isScc = activeScene === SCENE.SCC;
 	const isTraversalScene = activeScene >= SCENE.FRONTIER;
 	const traversalLabel =
 		activeScene === SCENE.BFS ||
@@ -162,7 +177,12 @@ const GraphStage = ({ activeScene = 0, holdReveal = false }) => {
 					? 'one loop · swap the frontier'
 					: isTopo
 						? 'topological order'
-						: null;
+						: isScc
+							? 'Kosaraju · two DFS passes'
+							: null;
+	const traversalDetail = isScc
+		? SCC_GROUPS.map(group => `{${group.join(', ')}}`).join(' → ')
+		: order.join(' → ');
 
 	const renderEdge = ({ from, to }) => {
 		const a = nodeById(from);
@@ -262,7 +282,7 @@ const GraphStage = ({ activeScene = 0, holdReveal = false }) => {
 				x2={x2}
 				y2={y2}
 				className={styles.edge}
-				markerEnd="url(#topoArrow)"
+				markerEnd="url(#directedArrow)"
 			/>
 		);
 	};
@@ -313,6 +333,79 @@ const GraphStage = ({ activeScene = 0, holdReveal = false }) => {
 		);
 	};
 
+	// SCC edges use the same directed-graph geometry as the sandbox, including a
+	// small opposing curve when both orientations exist. This keeps A↔B and C↔D
+	// legible as mutual reachability instead of drawing two lines on top of each
+	// other. The component membership itself still comes only from the algorithm.
+	const renderSccEdge = ({ from, to }) => {
+		const a = SCC_NODE_BY_ID(from);
+		const b = SCC_NODE_BY_ID(to);
+		if (!a || !b) return null;
+		const dx = b.x - a.x;
+		const dy = b.y - a.y;
+		const len = Math.hypot(dx, dy) || 1;
+		const ux = dx / len;
+		const uy = dy / len;
+		const x1 = a.x + ux * NODE_R;
+		const y1 = a.y + uy * NODE_R;
+		const x2 = b.x - ux * (NODE_R + 6);
+		const y2 = b.y - uy * (NODE_R + 6);
+		const hasReverse = SCC_GRAPH.edges.some(
+			edge => edge.from === to && edge.to === from
+		);
+		const curve = hasReverse ? (from.localeCompare(to) < 0 ? 18 : -18) : 0;
+		const midX = (x1 + x2) / 2;
+		const midY = (y1 + y2) / 2;
+		const controlX = midX - uy * curve;
+		const controlY = midY + ux * curve;
+		const path = curve
+			? `M ${x1} ${y1} Q ${controlX} ${controlY} ${x2} ${y2}`
+			: `M ${x1} ${y1} L ${x2} ${y2}`;
+
+		return (
+			<path
+				key={`${from}-${to}`}
+				d={path}
+				className={styles.edge}
+				markerEnd="url(#directedArrow)"
+			/>
+		);
+	};
+
+	const renderSccNode = node => {
+		const componentId = SCC_COMPONENT_MAP[node.id];
+		const componentIndex = Number.isInteger(componentId) ? componentId : 0;
+		const componentClass =
+			styles[`nodeComponent${componentIndex % SCC_SWATCHES.length}`] || '';
+		return (
+			<g key={node.id} className={styles.nodeGroup}>
+				<circle
+					cx={node.x}
+					cy={node.y}
+					r={NODE_R}
+					className={`${styles.node} ${styles.nodeComponent} ${componentClass}`}
+				/>
+				<text
+					x={node.x}
+					y={node.y}
+					className={styles.nodeText}
+					textAnchor="middle"
+					dy="0.34em"
+				>
+					{node.label}
+				</text>
+				<text
+					x={node.x}
+					y={node.y + NODE_R + 12}
+					className={styles.componentTag}
+					textAnchor="middle"
+				>
+					SCC {componentIndex + 1}
+				</text>
+			</g>
+		);
+	};
+
 	const matrixIds = LESSON_GRAPH.nodes.map(n => n.id);
 	const hasEdge = (a, b) => (adjacency.get(a) || []).includes(b);
 
@@ -340,6 +433,8 @@ const GraphStage = ({ activeScene = 0, holdReveal = false }) => {
 			return holdReveal
 				? `Kahn's algorithm has emitted the source ${TOPO_SOURCE}; predict which vertex it emits next.`
 				: `After ${TOPO_SOURCE}, Kahn's algorithm emits ${TOPO_NEXT} next; the full topological order is ${TOPO_ORDER.join(' → ')}.`;
+		if (activeScene === SCENE.SCC)
+			return `Kosaraju groups the directed graph into ${SCC_GROUPS.length} strongly connected components: ${SCC_GROUPS.map(group => `{${group.join(', ')}}`).join(', ')}. One-way bridge edges connect the components, and collapsing each group produces a DAG.`;
 		return 'Graph concept visualization.';
 	})();
 
@@ -359,11 +454,10 @@ const GraphStage = ({ activeScene = 0, holdReveal = false }) => {
 					className={styles.svg}
 					preserveAspectRatio="xMidYMid meet"
 				>
-					{/* Arrowhead for the directed (topo) scene only. Auto-orients along
-					    each edge and inherits the edge stroke colour via context-stroke. */}
+					{/* Shared arrowhead for the two directed-graph beats. */}
 					<defs>
 						<marker
-							id="topoArrow"
+							id="directedArrow"
 							viewBox="0 0 10 10"
 							refX="8"
 							refY="5"
@@ -374,7 +468,14 @@ const GraphStage = ({ activeScene = 0, holdReveal = false }) => {
 							<path d="M0,0 L10,5 L0,10 z" className={styles.arrowHead} />
 						</marker>
 					</defs>
-					{isTopo ? (
+					{isScc ? (
+						<>
+							<g className={styles.edges}>
+								{SCC_GRAPH.edges.map(renderSccEdge)}
+							</g>
+							<g>{SCC_GRAPH.nodes.map(renderSccNode)}</g>
+						</>
+					) : isTopo ? (
 						<>
 							<g className={styles.edges}>
 								{TOPO_GRAPH.edges.map(renderTopoEdge)}
@@ -444,7 +545,7 @@ const GraphStage = ({ activeScene = 0, holdReveal = false }) => {
 				{traversalLabel && (
 					<div className={styles.traversalTag} aria-hidden="true">
 						{traversalLabel}
-						<span className={styles.traversalOrder}>{order.join(' → ')}</span>
+						<span className={styles.traversalOrder}>{traversalDetail}</span>
 					</div>
 				)}
 
@@ -453,8 +554,16 @@ const GraphStage = ({ activeScene = 0, holdReveal = false }) => {
 				)}
 
 				<div className={styles.notation} aria-hidden="true">
-					V = {(isTopo ? TOPO_GRAPH : LESSON_GRAPH).nodes.length} · E ={' '}
-					{(isTopo ? TOPO_GRAPH : LESSON_GRAPH).edges.length}
+					V ={' '}
+					{
+						(isScc ? SCC_GRAPH : isTopo ? TOPO_GRAPH : LESSON_GRAPH).nodes
+							.length
+					}{' '}
+					· E ={' '}
+					{
+						(isScc ? SCC_GRAPH : isTopo ? TOPO_GRAPH : LESSON_GRAPH).edges
+							.length
+					}
 				</div>
 			</div>
 		</>

@@ -1,8 +1,9 @@
 import styles from './Tabs.module.css';
-import { useEffect, useId, useRef, useState } from 'react';
+import { useId, useRef, useState } from 'react';
+import { enabledBoundary } from './tabNavigation.js';
 
 /**
- * Tabs — token-wired primitive with an animated active indicator.
+ * Tabs — token-wired primitive with a background-only selected state.
  *
  * tabs: Array<{ label, content, disabled? }>
  *
@@ -12,18 +13,7 @@ import { useEffect, useId, useRef, useState } from 'react';
 const Tabs = ({ tabs, defaultActive = 0, onChange }) => {
 	const [activeIndex, setActiveIndex] = useState(defaultActive);
 	const buttonRefs = useRef([]);
-	const [indicatorStyle, setIndicatorStyle] = useState({});
 	const baseId = useId();
-
-	useEffect(() => {
-		const activeButton = buttonRefs.current[activeIndex];
-		if (activeButton) {
-			setIndicatorStyle({
-				left: activeButton.offsetLeft,
-				width: activeButton.offsetWidth,
-			});
-		}
-	}, [activeIndex, tabs]);
 
 	const select = index => {
 		if (tabs[index]?.disabled) return;
@@ -42,8 +32,8 @@ const Tabs = ({ tabs, defaultActive = 0, onChange }) => {
 		event.preventDefault();
 
 		let target = activeIndex;
-		if (next === 'home') target = 0;
-		else if (next === 'end') target = count - 1;
+		if (next === 'home') target = enabledBoundary(tabs, 'home', activeIndex);
+		else if (next === 'end') target = enabledBoundary(tabs, 'end', activeIndex);
 		else {
 			// step over disabled tabs
 			for (let i = 0; i < count; i++) {
@@ -57,7 +47,11 @@ const Tabs = ({ tabs, defaultActive = 0, onChange }) => {
 
 	return (
 		<div className={styles.tabsContainer}>
-			<div className={styles.tabHeaders} role="tablist" onKeyDown={handleKeyDown}>
+			<div
+				className={styles.tabHeaders}
+				role="tablist"
+				onKeyDown={handleKeyDown}
+			>
 				{tabs.map((tab, i) => {
 					const selected = i === activeIndex;
 					return (
@@ -78,7 +72,6 @@ const Tabs = ({ tabs, defaultActive = 0, onChange }) => {
 						</button>
 					);
 				})}
-				<div className={styles.tabIndicator} style={indicatorStyle} />
 			</div>
 			<div className={styles.tabContent}>
 				<div

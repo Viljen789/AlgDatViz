@@ -52,7 +52,8 @@
 
 .titleChevron {
 	color: var(--color-text-muted);
-	transition: color var(--duration-instant) var(--ease-quiet),
+	transition:
+		color var(--duration-instant) var(--ease-quiet),
 		transform var(--duration-step) var(--ease-quiet);
 	flex-shrink: 0;
 }

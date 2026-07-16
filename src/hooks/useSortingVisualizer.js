@@ -22,6 +22,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { usePlayback } from '../common/PlaybackEngine/usePlayback.js';
+import { useTeachingStateSnapshot } from '../lib/useTeachingStateSnapshot.js';
 import { SORTING_FUNCTIONS } from '../utils/sorting';
 import {
 	createValuesForProfile,
@@ -51,6 +52,7 @@ export const useSortingVisualizer = (
 	// produces a timeline of identical length; the ref dedupes within a render.
 	const [primeToken, setPrimeToken] = useState(0);
 	const handledPrimeRef = useRef(0);
+	const restoringSharedRef = useRef(false);
 
 	// Generic playback engine drives the cursor / play loop / speed / scrub.
 	const player = usePlayback(animationSteps, { speed: 100 });
@@ -137,6 +139,10 @@ export const useSortingVisualizer = (
 	}, [arraySize, dataProfile, resetAnimation, sortingAlgorithm]);
 
 	useEffect(() => {
+		if (restoringSharedRef.current) {
+			restoringSharedRef.current = false;
+			return;
+		}
 		shuffleArray();
 	}, [shuffleArray]);
 
@@ -246,6 +252,40 @@ export const useSortingVisualizer = (
 			setThrottledOperationStats(operationStats);
 		}
 	}, [isSorting, operationStats]);
+
+	const sharedControls = useMemo(
+		() => ({
+			values: array.map(item => item.value),
+			arraySize,
+			sortingAlgorithm,
+			dataProfile,
+			viewMode,
+		}),
+		[array, arraySize, sortingAlgorithm, dataProfile, viewMode]
+	);
+	useTeachingStateSnapshot('sorting-controls', sharedControls, snapshot => {
+		if (!Array.isArray(snapshot?.values) || snapshot.values.length === 0)
+			return;
+		restoringSharedRef.current = true;
+		resetAnimation();
+		setArraySizeState(
+			Number.isFinite(snapshot.arraySize)
+				? snapshot.arraySize
+				: snapshot.values.length
+		);
+		if (typeof snapshot.sortingAlgorithm === 'string')
+			setSortingAlgorithmState(snapshot.sortingAlgorithm);
+		if (typeof snapshot.dataProfile === 'string')
+			setDataProfileState(snapshot.dataProfile);
+		if (snapshot.viewMode === 'bars' || snapshot.viewMode === 'boxes')
+			setViewMode(snapshot.viewMode);
+		setArray(
+			snapshot.values.map((value, index) => ({
+				id: `shared-${index}-${value}`,
+				value,
+			}))
+		);
+	});
 
 	return {
 		array,

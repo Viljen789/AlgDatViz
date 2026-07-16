@@ -38,7 +38,8 @@ export const HEAP_PRESETS = [
 	{
 		id: 'classic',
 		label: 'Textbook heap',
-		intent: 'A valid 7-element max-heap — insert or extract to watch it re-settle.',
+		intent:
+			'A valid 7-element max-heap — insert or extract to watch it re-settle.',
 		heap: [16, 14, 10, 8, 7, 9, 3],
 		operationId: 'insert',
 		key: 15,
@@ -46,7 +47,8 @@ export const HEAP_PRESETS = [
 	{
 		id: 'build-from-scratch',
 		label: 'Unordered array',
-		intent: 'A scrambled array — run Build-heap to heapify it bottom-up in O(n).',
+		intent:
+			'A scrambled array — run Build-heap to heapify it bottom-up in O(n).',
 		heap: [4, 1, 3, 2, 16, 9, 10, 14, 8, 7],
 		operationId: 'build',
 		key: 12,
@@ -54,7 +56,8 @@ export const HEAP_PRESETS = [
 	{
 		id: 'extract-run',
 		label: 'Drain the max',
-		intent: 'A full heap — extract-max repeatedly to read elements in sorted order.',
+		intent:
+			'A full heap — extract-max repeatedly to read elements in sorted order.',
 		heap: [20, 18, 12, 15, 9, 10, 6, 11, 14],
 		operationId: 'extractMax',
 		key: 5,
@@ -62,7 +65,8 @@ export const HEAP_PRESETS = [
 	{
 		id: 'climb',
 		label: 'Big new key',
-		intent: 'Insert a value larger than everything — it bubbles all the way to the root.',
+		intent:
+			'Insert a value larger than everything — it bubbles all the way to the root.',
 		heap: [10, 8, 9, 4, 7, 2, 5],
 		operationId: 'insert',
 		key: 99,

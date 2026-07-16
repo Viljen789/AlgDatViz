@@ -51,7 +51,8 @@ import { createUnionFind } from './unionFind.js';
 
 // ── Edge helpers (canonical undirected ids) ─────────────────────────────────
 
-export const edgeId = (u, v) => (String(u) < String(v) ? `${u}|${v}` : `${v}|${u}`);
+export const edgeId = (u, v) =>
+	String(u) < String(v) ? `${u}|${v}` : `${v}|${u}`;
 
 export const edgeEndpoints = id => id.split('|');
 
@@ -184,8 +185,17 @@ export const kruskalTrace = ({ vertices, edges }) => {
 			title,
 			description,
 			state: [
-				{ id: 'edge', label: 'edge (u,v)', value: edgeLabel(considerEdge), active: true },
-				{ id: 'comps', label: 'components', value: componentsText(uf.components()) },
+				{
+					id: 'edge',
+					label: 'edge (u,v)',
+					value: edgeLabel(considerEdge),
+					active: true,
+				},
+				{
+					id: 'comps',
+					label: 'components',
+					value: componentsText(uf.components()),
+				},
 				{ id: 'tree', label: 'MST edges', value: treeEdges.length },
 				{ id: 'weight', label: 'total weight', value: total },
 				...stateExtra,
@@ -286,7 +296,12 @@ export const primTrace = ({ vertices, edges, start }) => {
 			title,
 			description,
 			state: [
-				{ id: 'tree', label: 'tree', value: `{${[...tree].sort().join(',')}}`, active: true },
+				{
+					id: 'tree',
+					label: 'tree',
+					value: `{${[...tree].sort().join(',')}}`,
+					active: true,
+				},
 				{ id: 'light', label: 'light edge', value: edgeLabel(considerEdge) },
 				{ id: 'frontier', label: 'frontier size', value: frontier.length },
 				{ id: 'weight', label: 'total weight', value: total },
@@ -365,7 +380,9 @@ export const idleMstFrame = ({ vertices, algorithm }) => ({
 	rejectedEdges: [],
 	treeNodes: algorithm === 'prim' ? [vertices[0]] : [],
 	components:
-		algorithm === 'prim' ? [[vertices[0]], vertices.slice(1)] : vertices.map(v => [v]),
+		algorithm === 'prim'
+			? [[vertices[0]], vertices.slice(1)]
+			: vertices.map(v => [v]),
 	frontier: [],
 	totalWeight: 0,
 	title: 'Ready',

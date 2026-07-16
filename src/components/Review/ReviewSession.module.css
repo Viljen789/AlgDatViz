@@ -110,7 +110,9 @@
 	border-radius: var(--radius-pill);
 	text-decoration: none;
 	color: var(--color-text-primary);
-	transition: background-color var(--transition), border-color var(--transition);
+	transition:
+		background-color var(--transition),
+		border-color var(--transition);
 }
 
 .topicTag:hover {
@@ -185,7 +187,9 @@
 	font-size: var(--font-size-label);
 	font-weight: var(--font-weight-semibold);
 	cursor: pointer;
-	transition: filter var(--transition), transform var(--transition);
+	transition:
+		filter var(--transition),
+		transform var(--transition);
 }
 
 .nextBtn:hover {
@@ -233,7 +237,9 @@
 	font-size: var(--font-size-label);
 	font-weight: var(--font-weight-medium);
 	cursor: pointer;
-	transition: color var(--transition), border-color var(--transition),
+	transition:
+		color var(--transition),
+		border-color var(--transition),
 		background-color var(--transition);
 }
 

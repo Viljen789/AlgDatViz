@@ -31,6 +31,7 @@ import {
 	createBucketsFromEntries,
 } from './hashMapTrace.js';
 import styles from './HashMapPlayground.module.css';
+import { useTeachingStateSnapshot } from '../../lib/useTeachingStateSnapshot.js';
 
 // Flip captures the old-table layout at the allocate boundary; MotionPath arcs
 // the one rehashed entry from its old bucket into its new one. Registration is
@@ -120,6 +121,36 @@ const HashMapPlayground = ({ onUserInteract }) => {
 
 	const op = HASH_OPERATIONS[operationId];
 	const frame = currentFrame || frames[0];
+	useTeachingStateSnapshot(
+		'controls',
+		{
+			presetId,
+			operationId,
+			keyInput,
+			valueInput,
+			liveBuckets,
+			liveCapacity,
+			frame,
+		},
+		snapshot => {
+			if (
+				!Array.isArray(snapshot?.liveBuckets) ||
+				!Number.isFinite(snapshot.liveCapacity) ||
+				!(snapshot.operationId in HASH_OPERATIONS)
+			)
+				return;
+			setPresetId(snapshot.presetId || INITIAL_PRESET.id);
+			setOperationId(snapshot.operationId);
+			setKeyInput(String(snapshot.keyInput ?? ''));
+			setValueInput(String(snapshot.valueInput ?? ''));
+			setLiveBuckets(snapshot.liveBuckets);
+			setLiveCapacity(snapshot.liveCapacity);
+			setFrames([
+				snapshot.frame ||
+					idleFrame(snapshot.liveBuckets, snapshot.liveCapacity),
+			]);
+		}
+	);
 	const renderBuckets = frame?.buckets || liveBuckets;
 	const renderCapacity = frame?.capacity || liveCapacity;
 

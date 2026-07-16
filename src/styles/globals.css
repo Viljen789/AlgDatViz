@@ -20,7 +20,7 @@ body,
 	-webkit-font-smoothing: antialiased;
 	-moz-osx-font-smoothing: grayscale;
 	text-rendering: optimizeLegibility;
-	/* Inter character variants: open 4/6/9, single-story a — the tutor's tuning. */
+	/* Geist character variants: open 4/6/9 and compact interface figures. */
 	font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
 }
 
@@ -46,7 +46,7 @@ body {
 }
 ::-webkit-scrollbar-thumb {
 	background: var(--color-border);
-	border-radius: var(--radius-pill);
+	border-radius: 0;
 	border: 2px solid var(--color-bg-sunken);
 }
 ::-webkit-scrollbar-thumb:hover {
@@ -62,7 +62,7 @@ body {
 input[type='range'] {
 	appearance: none;
 	height: 4px;
-	border-radius: var(--radius-pill);
+	border-radius: 0;
 	background: var(--color-border);
 	accent-color: var(--color-accent-blue);
 	cursor: pointer;
@@ -75,7 +75,9 @@ input[type='range']::-webkit-slider-thumb {
 	background: var(--color-accent-blue);
 	border: none;
 	cursor: pointer;
-	transition: transform var(--transition), box-shadow var(--transition);
+	transition:
+		transform var(--transition),
+		box-shadow var(--transition);
 }
 input[type='range']::-moz-range-thumb {
 	width: 14px;
@@ -120,7 +122,9 @@ input:not([type]) {
 	font-family: var(--font-family-mono);
 	font-size: var(--font-size-label);
 	outline: none;
-	transition: border-color var(--transition), box-shadow var(--transition);
+	transition:
+		border-color var(--transition),
+		box-shadow var(--transition);
 }
 
 input[type='text']:hover:not(:disabled),
@@ -163,8 +167,11 @@ summary:focus-visible {
    continue to take precedence and read as proper states. */
 button {
 	font-family: var(--font-family-sans);
-	transition: filter var(--transition), background-color var(--transition),
-		border-color var(--transition), color var(--transition),
+	transition:
+		filter var(--transition),
+		background-color var(--transition),
+		border-color var(--transition),
+		color var(--transition),
 		box-shadow var(--transition);
 }
 

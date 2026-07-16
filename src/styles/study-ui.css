@@ -1,20 +1,20 @@
 /* Bridge AlgDatViz's topic-aware system into the shared primitive roles. */
 :root {
-	--sui-bg-app: 36 12% 9%;
-	--sui-bg-sunken: 36 12% 7%;
-	--sui-bg-sidebar: 36 12% 11%;
-	--sui-surface-1: 36 11% 12%;
-	--sui-surface-2: 36 11% 14%;
-	--sui-surface-3: 36 11% 16%;
-	--sui-surface-input: 36 11% 13%;
-	--sui-surface-hover: 36 11% 15%;
-	--sui-border: 36 8% 22%;
-	--sui-border-strong: 36 8% 34%;
-	--sui-border-subtle: 36 8% 18%;
-	--sui-text-primary: 38 24% 92%;
-	--sui-text-secondary: 36 14% 74%;
-	--sui-text-muted: 36 10% 60%;
-	--sui-text-dim: 36 10% 48%;
+	--sui-bg-app: 158 27% 8%;
+	--sui-bg-sunken: 158 25% 6%;
+	--sui-bg-sidebar: 158 22% 9%;
+	--sui-surface-1: 158 22% 11%;
+	--sui-surface-2: 158 19% 14%;
+	--sui-surface-3: 158 17% 17%;
+	--sui-surface-input: 158 20% 12%;
+	--sui-surface-hover: 158 18% 15%;
+	--sui-border: 144 13% 28%;
+	--sui-border-strong: 102 18% 58%;
+	--sui-border-subtle: 151 13% 19%;
+	--sui-text-primary: 43 39% 91%;
+	--sui-text-secondary: 59 18% 74%;
+	--sui-text-muted: 79 12% 62%;
+	--sui-text-dim: 100 8% 46%;
 	--sui-brand: var(--brand-h) var(--brand-s) var(--brand-l);
 	--sui-review: var(--review-h) var(--review-s) var(--review-l);
 	--sui-color-bg-app: var(--color-bg-app);
@@ -45,22 +45,30 @@
 	--sui-font-mono: var(--font-family-mono);
 	--sui-shadow-focus: var(--shadow-focus);
 	--sui-shadow-lamp: var(--shadow-canvas-lamp);
+	--sui-shadow-action-rest: var(--shadow-action-rest);
+	--sui-shadow-action-selected: var(--shadow-action-selected);
+	--sui-shadow-action-hover: var(--shadow-action-hover);
+	--sui-shadow-action-pressed: var(--shadow-action-pressed);
+	--sui-radius-sm: 0.125rem;
+	--sui-radius-md: 0.2rem;
+	--sui-radius-lg: 0.25rem;
+	--sui-radius-xl: 0.35rem;
 }
 
 [data-theme='light'] {
-	--sui-bg-app: 40 30% 96%;
-	--sui-bg-sunken: 40 26% 92%;
-	--sui-bg-sidebar: 40 28% 98%;
-	--sui-surface-1: 40 40% 99%;
-	--sui-surface-2: 40 35% 99.5%;
-	--sui-surface-3: 40 40% 100%;
-	--sui-surface-input: 40 30% 98%;
-	--sui-surface-hover: 40 28% 93%;
-	--sui-border: 40 18% 82%;
-	--sui-border-strong: 38 16% 64%;
-	--sui-border-subtle: 40 20% 88%;
-	--sui-text-primary: 30 18% 14%;
-	--sui-text-secondary: 32 14% 30%;
-	--sui-text-muted: 34 13% 38%;
-	--sui-text-dim: 34 12% 50%;
+	--sui-bg-app: 42.86 46.67% 94.12%;
+	--sui-bg-sunken: 40.91 39.29% 89.02%;
+	--sui-bg-sidebar: 42.86 46.67% 94.12%;
+	--sui-surface-1: 42.86 100% 98.63%;
+	--sui-surface-2: 40.91 39.29% 89.02%;
+	--sui-surface-3: 115.38 20% 87.25%;
+	--sui-surface-input: 42.86 100% 98.63%;
+	--sui-surface-hover: 65.45 20.75% 89.61%;
+	--sui-border: 41.05 19.59% 80.98%;
+	--sui-border-strong: 158.18 41.51% 20.78%;
+	--sui-border-subtle: 41 22% 86%;
+	--sui-text-primary: 160 41.77% 15.49%;
+	--sui-text-secondary: 158.18 41.51% 20.78%;
+	--sui-text-muted: 154.74 8.92% 41.76%;
+	--sui-text-dim: 144 4.46% 56.08%;
 }

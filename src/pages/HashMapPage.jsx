@@ -102,10 +102,7 @@ const HashMapPage = () => {
 		[]
 	);
 
-	const renderPlayground = useCallback(
-		() => <HashMapPlayground />,
-		[]
-	);
+	const renderPlayground = useCallback(() => <HashMapPlayground />, []);
 
 	const handleVisit = useCallback(() => {
 		markVisited(TOPIC_ID);

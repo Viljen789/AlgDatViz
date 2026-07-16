@@ -1,7 +1,9 @@
 import { useCallback, useMemo, useState } from 'react';
 import { TOPIC_BY_ID } from '../../data/curriculum.js';
 import useProgress from '../../hooks/useProgress.js';
-import TopicTemplate, { checkAnswer } from '../../common/TopicTemplate/index.js';
+import TopicTemplate, {
+	checkAnswer,
+} from '../../common/TopicTemplate/index.js';
 import StacksQueuesStage from './StacksQueuesStage.jsx';
 import StacksQueuesPlayground from './StacksQueuesPlayground.jsx';
 import { SCENES } from './scenes.js';
@@ -47,10 +49,7 @@ const StacksQueuesLesson = () => {
 		[]
 	);
 
-	const renderPlayground = useCallback(
-		() => <StacksQueuesPlayground />,
-		[]
-	);
+	const renderPlayground = useCallback(() => <StacksQueuesPlayground />, []);
 
 	const handleVisit = useCallback(() => {
 		markVisited(TOPIC_ID);

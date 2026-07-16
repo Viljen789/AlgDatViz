@@ -111,10 +111,7 @@ const ShortestPathsPage = () => {
 		[]
 	);
 
-	const renderPlayground = useCallback(
-		() => <ShortestPathsPlayground />,
-		[]
-	);
+	const renderPlayground = useCallback(() => <ShortestPathsPlayground />, []);
 
 	const handleVisit = useCallback(() => {
 		markVisited(TOPIC_ID);

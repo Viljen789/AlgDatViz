@@ -2,7 +2,8 @@ import { useMemo } from 'react';
 import styles from './IntervalSchedulingCanvas.module.css';
 
 const IntervalSchedulingCanvas = ({ frame, intervals = [] }) => {
-	const ivs = frame?.intervals ?? intervals.map(iv => ({ ...iv, state: 'idle' }));
+	const ivs =
+		frame?.intervals ?? intervals.map(iv => ({ ...iv, state: 'idle' }));
 
 	const { maxEnd, ticks } = useMemo(() => {
 		const max = ivs.reduce((m, iv) => Math.max(m, iv.end), 0);

@@ -1,4 +1,10 @@
-import { Fragment, useCallback, useLayoutEffect, useMemo, useRef } from 'react';
+import {
+	Fragment,
+	useCallback,
+	useLayoutEffect,
+	useMemo,
+	useRef,
+} from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import {
 	ArrowRight,
@@ -23,14 +29,15 @@ import {
 	FIRST_TOPIC,
 	TOPIC_BY_ID,
 } from '../data/curriculum.js';
-import { REVIEW_BANK } from '../components/Review/reviewBank.js';
 import { forecastDue } from '../components/Review/srsSchedule.js';
+import { REVIEW_MANIFEST } from '../data/reviewManifest.js';
 import { dailyGoal, examNewCap } from '../lib/activityLog.js';
 import useProgress from '../hooks/useProgress.js';
 import useSrs from '../hooks/useSrs.js';
 import useActivity from '../hooks/useActivity.js';
 import HeroInstrument from './HeroInstrument.jsx';
 import TopicFinder from './TopicFinder.jsx';
+import Button from '../common/Button/Button.jsx';
 import styles from './HomePage.module.css';
 
 gsap.registerPlugin(ScrollTrigger, DrawSVGPlugin, MotionPathPlugin);
@@ -568,7 +575,7 @@ const GoalRing = ({ value, goal, done }) => {
 	);
 };
 
-const HomePage = () => {
+const HomePage = ({ mode = 'today' }) => {
 	const navigate = useNavigate();
 	const { lastVisited, markVisited, isCompleted, isVisited, overall } =
 		useProgress();
@@ -588,17 +595,23 @@ const HomePage = () => {
 	);
 	const duePlan = useMemo(
 		() =>
-			srsPlan(REVIEW_BANK, {
+			srsPlan(REVIEW_MANIFEST, {
 				newCap: examNewCap(daysUntilExam),
 				isNewEligible,
 			}),
 		[srsPlan, isNewEligible, daysUntilExam]
 	);
 	const dueTotal = duePlan.dueCount + duePlan.freshCount;
+	const reviewActionLabel =
+		duePlan.dueCount > 0 && duePlan.freshCount > 0
+			? `${duePlan.dueCount} due + ${duePlan.freshCount} new`
+			: duePlan.dueCount > 0
+				? `${duePlan.dueCount} due`
+				: `${duePlan.freshCount} new`;
 	// When nothing is due, the Today block must not go silent: the forecast says
 	// when the schedule next brings cards back, so there's a calm reason to return.
 	const forecast = useMemo(
-		() => forecastDue(srsCards, REVIEW_BANK, { now: Date.now() }),
+		() => forecastDue(srsCards, REVIEW_MANIFEST, { now: Date.now() }),
 		[srsCards]
 	);
 	const nextReview = forecast.byDay[0] ?? null;
@@ -649,12 +662,17 @@ const HomePage = () => {
 		if (allComplete) {
 			return {
 				titleLines: ['Reviewing?'],
-				subtitle: 'Every topic is complete. Start anywhere on the path.',
-				ctaLabel: 'Open the path',
-				ctaTopic: FIRST_TOPIC,
+				subtitle:
+					dueTotal > 0
+						? 'Every topic is complete. Keep the recall warm with the cards ready now.'
+						: 'Every topic is complete. Run a mixed session or revisit anything from the path.',
+				ctaLabel:
+					dueTotal > 0 ? `Review ${reviewActionLabel}` : 'Start a mixed review',
+				ctaTopic: null,
+				ctaRoute: '/review',
 			};
 		}
-		if (lastTopic) {
+		if (lastTopic && !isCompleted(lastTopic.id)) {
 			// Resume where you actually stopped — the CTA reopens the last topic and
 			// the scrolly drops you back at the furthest scene you reached. (Jumping
 			// ahead to the next topic stays one click away via the path map below.)
@@ -665,6 +683,14 @@ const HomePage = () => {
 				ctaTopic: lastTopic,
 			};
 		}
+		if (started && nextTopic) {
+			return {
+				titleLines: ['Ready for the next one?'],
+				subtitle: `${lastTopic?.name ?? 'The previous topic'} is complete. Continue with ${nextTopic.name.toLowerCase()}.`,
+				ctaLabel: `Begin ${nextTopic.name.toLowerCase()}`,
+				ctaTopic: nextTopic,
+			};
+		}
 		return {
 			titleLines: ['One dataset.', 'Every structure.'],
 			subtitle:
@@ -672,7 +698,15 @@ const HomePage = () => {
 			ctaLabel: `Begin with ${FIRST_TOPIC.name.toLowerCase()}`,
 			ctaTopic: FIRST_TOPIC,
 		};
-	}, [allComplete, lastTopic]);
+	}, [
+		allComplete,
+		dueTotal,
+		isCompleted,
+		lastTopic,
+		nextTopic,
+		reviewActionLabel,
+		started,
+	]);
 
 	const visit = topic => {
 		markVisited(topic.id);
@@ -691,6 +725,7 @@ const HomePage = () => {
 			const mm = gsap.matchMedia();
 			mm.add('(prefers-reduced-motion: no-preference)', () => {
 				const q = sel => pageEl.querySelector(sel);
+				const compactHero = window.matchMedia('(max-width: 959px)').matches;
 
 				// ---- Hero entrance: the instrument inks in first, then the headline
 				// sets. The lamp warms on underneath, an inked rule draws in under the
@@ -711,19 +746,38 @@ const HomePage = () => {
 				if (lampEl)
 					heroTl.from(
 						lampEl,
-						{ autoAlpha: 0, scale: 1.14, duration: 1.7, ease: 'sine.out' },
+						{
+							autoAlpha: 0,
+							scale: compactHero ? 1.04 : 1.14,
+							duration: compactHero ? 0.55 : 1.7,
+							ease: 'sine.out',
+						},
 						0
 					);
-				// The instrument leads — its plate settles in on the first beat, so the
-				// figure is present (already at the array) before the words land.
+				// The instrument leads on the split desktop composition. On compact
+				// screens it follows the already-visible reading column with a shorter
+				// settle, so a slow first frame can never look like an empty hero.
 				if (instrumentEl)
 					heroTl.from(
 						instrumentEl,
-						{ autoAlpha: 0, scale: 0.98, duration: 0.85, ease: 'power2.out' },
-						0
+						{
+							autoAlpha: 0,
+							scale: compactHero ? 0.995 : 0.98,
+							duration: compactHero ? 0.42 : 0.85,
+							ease: 'power2.out',
+						},
+						compactHero ? 0.08 : 0
 					);
 				if (eyebrowEl)
-					heroTl.from(eyebrowEl, { y: 14, opacity: 0, duration: 0.55 }, 0.12);
+					heroTl.from(
+						eyebrowEl,
+						{
+							y: compactHero ? 6 : 14,
+							opacity: 0,
+							duration: compactHero ? 0.28 : 0.55,
+						},
+						compactHero ? 0 : 0.12
+					);
 				// A hairline rule draws itself in under the eyebrow (scaleX from the
 				// left), echoing the inked spine so the hero speaks the same language.
 				if (ruleEl)
@@ -732,17 +786,20 @@ const HomePage = () => {
 						{
 							scaleX: 0,
 							transformOrigin: 'left center',
-							duration: 0.7,
+							duration: compactHero ? 0.32 : 0.7,
 							ease: 'power2.out',
 						},
-						0.24
+						compactHero ? 0.04 : 0.24
 					);
+				// Mobile stacks the figure under the copy, so there is no useful reason
+				// to hide the headline, explanation, or primary action while the figure
+				// arrives. Keep that content in its CSS rest state from first paint.
 				// The headline is the payoff beat, landing once the instrument has
 				// begun forming. Each clause sets UP out of its own clipping mask with
 				// no opacity (the mask already hides it below the line), so it reads as
 				// type being set, not a fade. power4.out plus a touch more travel give
 				// the decisive, confident landing.
-				if (titleLineEls.length)
+				if (!compactHero && titleLineEls.length)
 					heroTl.from(
 						titleLineEls,
 						{
@@ -753,15 +810,15 @@ const HomePage = () => {
 						},
 						0.3
 					);
-				if (subEl)
+				if (!compactHero && subEl)
 					heroTl.from(subEl, { y: 18, opacity: 0, duration: 0.7 }, 0.5);
-				if (actionEls.length)
+				if (!compactHero && actionEls.length)
 					heroTl.from(
 						actionEls,
 						{ y: 14, opacity: 0, duration: 0.6, stagger: 0.09 },
 						0.6
 					);
-				if (progressEl)
+				if (!compactHero && progressEl)
 					heroTl.from(progressEl, { y: 12, opacity: 0, duration: 0.6 }, 0.7);
 
 				// ---- Hero lamp drifts down a touch as you scroll past it ----
@@ -974,6 +1031,8 @@ const HomePage = () => {
 
 	return (
 		<div className={styles.page} ref={pageRef}>
+			{mode === 'today' && (
+				<>
 			<section
 				className={styles.hero}
 				aria-labelledby="home-hero-title"
@@ -1022,23 +1081,30 @@ const HomePage = () => {
 						</div>
 
 						<div className={styles.todayActions}>
-							<button
-								type="button"
+							<Button
+								variant="primary"
+								size="lg"
 								className={styles.primaryCta}
-								onClick={() => visit(heroState.ctaTopic)}
+							onClick={() => {
+								if (heroState.ctaRoute) {
+									navigate(heroState.ctaRoute);
+									return;
+								}
+								visit(heroState.ctaTopic);
+								}}
 							>
 								<span>{heroState.ctaLabel}</span>
 								<ArrowRight size={16} strokeWidth={2} />
-							</button>
+							</Button>
 							{started && dueTotal > 0 && (
 								<Link
 									to="/review"
 									className={styles.reviewCta}
-									aria-label={`Review ${dueTotal} due — spaced retrieval`}
+									aria-label={`Review ${reviewActionLabel} — spaced retrieval`}
 								>
 									<Clock size={14} strokeWidth={2.2} aria-hidden="true" />
 									<span>
-										Review <strong>{dueTotal}</strong> due
+										Review <strong>{reviewActionLabel}</strong>
 									</span>
 								</Link>
 							)}
@@ -1096,18 +1162,21 @@ const HomePage = () => {
 				<HeroInstrument />
 			</section>
 
-			<TopicFinder markVisited={markVisited} />
+			<TopicFinder markVisited={markVisited} returning={started} />
+				</>
+			)}
 
+			{mode === 'path' && (
 			<section className={styles.pathSection} aria-labelledby="path-heading">
 				<header className={styles.pathHeader}>
 					<p className={styles.label}>Your path</p>
-					<h2 id="path-heading" className={styles.pathHeading}>
+					<h1 id="path-heading" className={styles.pathHeading}>
 						{allComplete
 							? `All ${overall.total} topics behind you — revisit anything below.`
 							: overall.completed > 0
 								? `${overall.completed} of ${overall.total} done — next up, ${nextTopic.name.toLowerCase()}.`
 								: `Your route through all ${overall.total} topics of TDT4120.`}
-					</h2>
+					</h1>
 				</header>
 
 				<div className={styles.spineWrap} data-spine>
@@ -1287,10 +1356,6 @@ const HomePage = () => {
 									<li
 										data-idx={idx}
 										data-node
-										ref={node => {
-											nodeRefs.current[idx] = node;
-										}}
-										tabIndex={-1}
 										className={`${styles.node} ${
 											completed ? styles.nodeComplete : ''
 										} ${visited ? styles.nodeVisited : ''} ${
@@ -1328,7 +1393,10 @@ const HomePage = () => {
 
 										<button
 											type="button"
-											className={styles.nodeBody}
+										className={styles.nodeBody}
+										ref={node => {
+											nodeRefs.current[idx] = node;
+										}}
 											onClick={() => visit(topic)}
 											onKeyDown={event => onKeyNavigate(event, idx)}
 											aria-describedby={`node-quote-${topic.id}`}
@@ -1371,6 +1439,7 @@ const HomePage = () => {
 							);
 						})}
 						<li className={styles.examStop}>
+							<Link to="/exam" className={styles.examStopLink}>
 							<div className={styles.examMarker} aria-hidden="true">
 								<span className={styles.examDot} data-station>
 									<GraduationCap size={14} strokeWidth={2.2} />
@@ -1383,8 +1452,9 @@ const HomePage = () => {
 							<span className={styles.examMeta}>
 								{daysUntilExam != null && daysUntilExam >= 0
 									? `in ${daysUntilExam} days`
-									: 'when you’re ready'}
+									: 'take a practice exam'}
 							</span>
+							</Link>
 						</li>
 					</ol>
 				</div>
@@ -1410,6 +1480,7 @@ const HomePage = () => {
 					</Link>
 				</footer>
 			</section>
+			)}
 		</div>
 	);
 };

@@ -66,7 +66,11 @@ test('floydWarshall layer 0 is the direct-edge matrix (k = 0, no intermediates)'
 
 test('floydWarshall produces n+1 layers (k = 0 .. n), each a full V×V matrix', () => {
 	const { layers, n } = floydWarshall(KNOWN);
-	assert.equal(layers.length, n + 1, 'one layer per k-round plus the k=0 layer');
+	assert.equal(
+		layers.length,
+		n + 1,
+		'one layer per k-round plus the k=0 layer'
+	);
 	layers.forEach(layer => {
 		assert.equal(layer.length, n);
 		layer.forEach(row => assert.equal(row.length, n));
@@ -132,10 +136,7 @@ test('floydWarshall predecessor matrix reconstructs correct shortest paths', () 
 });
 
 test('reconstructPath returns null for an unreachable target', () => {
-	const lonely = G(
-		['1', '2', '3'],
-		[{ from: '1', to: '2', weight: 1 }]
-	);
+	const lonely = G(['1', '2', '3'], [{ from: '1', to: '2', weight: 1 }]);
 	const { pred, ids } = floydWarshall(lonely);
 	assert.equal(reconstructPath(pred, ids, '1', '3'), null);
 });
@@ -251,7 +252,10 @@ test('buildStateRows surfaces k, (i,j), the two reads, the candidate, and counts
 	const byId = Object.fromEntries(rows.map(r => [r.id, r.value]));
 	assert.ok('k' in byId, 'reports the intermediate vertex k');
 	assert.ok('ij' in byId, 'reports (i, j)');
-	assert.ok('readIK' in byId && 'readKJ' in byId, 'reports d[i][k] and d[k][j]');
+	assert.ok(
+		'readIK' in byId && 'readKJ' in byId,
+		'reports d[i][k] and d[k][j]'
+	);
 	assert.ok('candidate' in byId, 'reports d[i][k] + d[k][j]');
 	assert.ok('updates' in byId, 'reports the running update count');
 });

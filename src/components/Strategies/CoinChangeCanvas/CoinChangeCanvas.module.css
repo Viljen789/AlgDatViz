@@ -73,7 +73,8 @@
 .equationTermWinning {
 	color: var(--state-special);
 	font-weight: 700;
-	text-shadow: 0 0 10px color-mix(in srgb, var(--state-special) 40%, transparent);
+	text-shadow: 0 0 10px
+		color-mix(in srgb, var(--state-special) 40%, transparent);
 }
 
 .equationInfinity {
@@ -275,7 +276,8 @@
 .cell-winning {
 	border-color: var(--state-special);
 	background: color-mix(in srgb, var(--state-special) 12%, transparent);
-	box-shadow: 0 0 0 1px color-mix(in srgb, var(--state-special) 25%, transparent);
+	box-shadow: 0 0 0 1px
+		color-mix(in srgb, var(--state-special) 25%, transparent);
 }
 
 .cell-winning .cellValue {

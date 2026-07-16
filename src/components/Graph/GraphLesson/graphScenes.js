@@ -1,6 +1,8 @@
 // The scrolly scenes that build graph intuition before the playground takes
 // over. They walk from "what is a graph" → the two representations → how a
-// traversal's frontier decides visit order (BFS layers vs DFS depth).
+// traversal's frontier decides visit order (BFS layers vs DFS depth), then into
+// the directed structures students must distinguish: topological order for DAGs
+// and strongly connected components when cycles are present.
 //
 // Each scene carries a `check` — a small comprehension question answered before
 // scrolling on. Wrong answers are never punished: the explanation reveals
@@ -198,6 +200,64 @@ const TOPO_NEXT_MISCONCEPTIONS = Object.fromEntries(
 		return [String(id), line];
 	})
 );
+
+// ── Strongly connected components: cycles first, then a DAG ──────────────────
+//
+// Topological order deliberately came first: one directed cycle makes it fail.
+// SCCs are the repair. Collapse each maximal mutually-reachable group into one
+// super-node and the resulting condensation graph is always a DAG.
+//
+// This compact graph has three components connected in one direction:
+//   {A,B} → {C,D} → {E}
+// A↔B and C↔D make the first two groups mutually reachable; the bridge edges
+// B→C and D→E do NOT merge groups because there is no path back.
+export const SCC_GRAPH = {
+	nodes: [
+		{ id: 'A', label: 'A', x: 55, y: 75 },
+		{ id: 'B', label: 'B', x: 145, y: 145 },
+		{ id: 'C', label: 'C', x: 235, y: 75 },
+		{ id: 'D', label: 'D', x: 325, y: 145 },
+		{ id: 'E', label: 'E', x: 415, y: 75 },
+	],
+	edges: [
+		{ from: 'A', to: 'B' },
+		{ from: 'B', to: 'A' },
+		{ from: 'B', to: 'C' },
+		{ from: 'C', to: 'D' },
+		{ from: 'D', to: 'C' },
+		{ from: 'D', to: 'E' },
+	],
+};
+
+// Run the SAME Kosaraju generator the sandbox and exam use. The final frame's
+// componentMap is the lesson's single source of truth for colouring, labels, and
+// the check answer; no parallel reachability implementation lives in the lesson.
+const SCC_STEPS = createGraphAlgorithmSteps(SCC_GRAPH, 'scc', {
+	startNodeId: 'A',
+	isDirected: true,
+});
+const SCC_FINAL_STEP = [...SCC_STEPS]
+	.reverse()
+	.find(
+		step =>
+			Object.keys(step.componentMap || {}).length === SCC_GRAPH.nodes.length
+	);
+export const SCC_COMPONENT_MAP = SCC_FINAL_STEP?.componentMap || {};
+
+const groupsByComponent = new Map();
+Object.entries(SCC_COMPONENT_MAP).forEach(([nodeId, componentId]) => {
+	if (!groupsByComponent.has(componentId))
+		groupsByComponent.set(componentId, []);
+	groupsByComponent.get(componentId).push(nodeId);
+});
+export const SCC_GROUPS = [...groupsByComponent.values()].map(group =>
+	group.sort((a, b) => a.localeCompare(b))
+);
+
+export const SCC_TARGET = 'D';
+export const SCC_TARGET_GROUP =
+	SCC_GROUPS.find(group => group.includes(SCC_TARGET)) || [];
+export const SCC_TARGET_ANSWER = `{${SCC_TARGET_GROUP.join(', ')}}`;
 
 export const SCENES = [
 	{
@@ -436,12 +496,35 @@ export const SCENES = [
 			explanation: `Removing ${TOPO_SOURCE}'s out-edges drops B and C to in-degree 0 — both become free at once. Kahn's breaks the tie by smallest id, so ${TOPO_NEXT} is emitted next; D and E still have incoming edges (in-degree 2) and must wait. The full order this DAG produces is ${TOPO_ORDER.join(' → ')}.`,
 		},
 	},
+	{
+		id: 'scc',
+		eyebrow: 'Cycles, grouped',
+		title: 'SCCs collapse every directed cycle into one node of a DAG.',
+		body: 'A strongly connected component is a maximal group where every vertex can reach every other. Kosaraju finds the groups in linear time with two DFS passes: first record finish order, then reverse every edge and explore newest-finish first. Each second-pass DFS is trapped inside exactly one SCC; collapse the groups and the condensation graph is always acyclic.',
+		check: {
+			kind: 'choice',
+			reviewSafe: false,
+			prompt:
+				'In the directed graph shown, which set is the strongly connected component containing D?',
+			options: [SCC_TARGET_ANSWER, '{A, B, C, D}', '{D, E}', '{D}'],
+			answer: SCC_TARGET_ANSWER,
+			misconceptions: {
+				'{A, B, C, D}':
+					'B can reach C across the bridge B → C, but there is no path from C or D back to A or B. One-way reachability does not merge SCCs; every pair must reach each other.',
+				'{D, E}':
+					'D reaches E, but E has no path back to D. An SCC requires mutual reachability, so the one-way bridge D → E leaves E in its own component.',
+				'{D}':
+					'D and C have edges in both directions, so each reaches the other. They must belong to the same maximal mutually-reachable group.',
+			},
+			explanation: `The Kosaraju trace groups D with C: C → D and D → C make them mutually reachable, so ${SCC_TARGET_ANSWER} is one SCC. D can reach E, but E cannot get back, so E starts a different component. The three groups are ${SCC_GROUPS.map(group => `{${group.join(', ')}}`).join(' → ')}; collapsing them produces a DAG.`,
+		},
+	},
 ];
 
 // The collapsible cheat-sheet shown in the hero (TopicTemplate `cheatSheet`).
-// One key idea, then the two pairs students actually mix up: the storage choice
-// (list vs matrix) and the traversal choice (BFS vs DFS). Runtimes are the same
-// notation students must recall on the exam.
+// The storage and traversal choices, followed by the two directed structures
+// students mix up: topological order for DAGs and SCC decomposition for cycles.
+// Runtimes use the same notation students must recall on the exam.
 export const CHEAT_SHEET = {
 	keyIdea:
 		'A graph is just things and the links between them. The whole craft is choosing what to explore next. One generic loop with a swappable frontier discipline becomes four algorithms: FIFO queue → BFS, LIFO stack → DFS, min-distance PQ → Dijkstra, min-edge PQ → Prim. Only extract() — which vertex leaves the frontier next — ever changes.',
@@ -502,6 +585,23 @@ export const CHEAT_SHEET = {
 				{
 					term: 'min-edge PQ → Prim',
 					def: 'Extract the vertex across the lightest crossing edge (key = edge weight). Builds a minimum spanning tree.',
+				},
+			],
+		},
+		{
+			title: 'Directed graph structure',
+			items: [
+				{
+					term: 'Topological sort',
+					def: 'Orders a DAG so every edge points forward. Repeatedly emit an in-degree-0 vertex (Kahn), or use decreasing DFS finish time. A directed cycle makes an order impossible.',
+				},
+				{
+					term: 'Strongly connected component',
+					def: 'A maximal group in a directed graph where every vertex can reach every other. Collapsing every SCC yields the condensation graph, which is always a DAG.',
+				},
+				{
+					term: 'Kosaraju — O(V + E)',
+					def: 'DFS once to record finish order; transpose every edge; DFS again newest-finish first. Each second-pass DFS tree is one SCC.',
 				},
 			],
 		},

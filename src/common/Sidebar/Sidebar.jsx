@@ -1,4 +1,4 @@
-import { Fragment } from 'react';
+import { Fragment, useState } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import {
 	Activity,
@@ -16,15 +16,18 @@ import {
 	Layers,
 	List,
 	Lock,
+	Menu,
 	Network,
 	Puzzle,
 	Route,
+	Search,
 	Share2,
 	Sigma,
 	SplitSquareHorizontal,
 	Triangle,
 	Workflow,
 } from 'lucide-react';
+import { Sheet } from '@viljen789/study-ui';
 import {
 	BUILT_TOPICS,
 	CURRICULUM,
@@ -62,6 +65,8 @@ const ICONS = {
 const Sidebar = () => {
 	const { isVisited, isCompleted, overall } = useProgress();
 	const { pathname } = useLocation();
+	const [topicsOpen, setTopicsOpen] = useState(false);
+	const currentTopic = TOPIC_BY_ROUTE[pathname];
 
 	// The single forward affordance: the first built topic not yet completed.
 	// Mirrors the home page's "Next up" path ring so wayfinding survives once you
@@ -71,10 +76,30 @@ const Sidebar = () => {
 
 	return (
 		<nav className={styles.sidebar} aria-label="Primary">
-			<div className={styles.logo}>
+			<NavLink to="/" end className={styles.logo} aria-label="AlgDatViz home">
 				<BrandMark size={24} className={styles.brandMark} />
-				<span className={styles.logoText}>AlgDatViz</span>
-			</div>
+				<span className={styles.logoCopy}>
+					<span className={styles.logoText}>
+						AlgDat<span>Viz</span>
+					</span>
+					<span className={styles.logoMeta}>Algorithm desk</span>
+				</span>
+			</NavLink>
+			<button
+				type="button"
+				className={styles.mobileCurrent}
+				onClick={() => setTopicsOpen(true)}
+				aria-haspopup="dialog"
+				aria-expanded={topicsOpen}
+				aria-label={
+					currentTopic
+						? `Open navigation, current topic: ${currentTopic.name}`
+						: 'Open course navigation'
+				}
+			>
+				<span>{currentTopic ? currentTopic.name : 'Course topics'}</span>
+				<small>{currentTopic ? currentTopic.phase : 'Choose a lesson'}</small>
+			</button>
 
 			<ul className={styles.navList}>
 				<li className={styles.utilityItem}>
@@ -84,7 +109,7 @@ const Sidebar = () => {
 						className={({ isActive }) =>
 							`${styles.navLink} ${isActive ? styles.activeLink : ''}`
 						}
-						aria-label="Home"
+						aria-label="Today"
 					>
 						<span className={styles.navBar} aria-hidden="true" />
 						{/* Empty number gutter so utility icons share the curriculum
@@ -93,7 +118,23 @@ const Sidebar = () => {
 						<span className={styles.icon} aria-hidden="true">
 							<House size={16} strokeWidth={2.2} />
 						</span>
-						<span className={styles.label}>Home</span>
+						<span className={styles.label}>Today</span>
+					</NavLink>
+				</li>
+				<li className={`${styles.utilityItem} ${styles.mobileSecondary}`}>
+					<NavLink
+						to="/path"
+						className={({ isActive }) =>
+							`${styles.navLink} ${isActive ? styles.activeLink : ''}`
+						}
+						aria-label="Learning path"
+					>
+						<span className={styles.navBar} aria-hidden="true" />
+						<span className={styles.number} aria-hidden="true" />
+						<span className={styles.icon} aria-hidden="true">
+							<Route size={16} strokeWidth={2.2} />
+						</span>
+						<span className={styles.label}>Path</span>
 					</NavLink>
 				</li>
 				<li className={styles.utilityItem}>
@@ -128,7 +169,7 @@ const Sidebar = () => {
 						<span className={styles.label}>Exam</span>
 					</NavLink>
 				</li>
-				<li className={styles.utilityItem}>
+				<li className={`${styles.utilityItem} ${styles.mobileSecondary}`}>
 					<NavLink
 						to="/reference"
 						className={({ isActive }) =>
@@ -144,7 +185,7 @@ const Sidebar = () => {
 						<span className={styles.label}>Reference</span>
 					</NavLink>
 				</li>
-				<li className={styles.utilityItem}>
+				<li className={`${styles.utilityItem} ${styles.mobileSecondary}`}>
 					<NavLink
 						to="/progress"
 						className={({ isActive }) =>
@@ -159,6 +200,23 @@ const Sidebar = () => {
 						</span>
 						<span className={styles.label}>Progress</span>
 					</NavLink>
+				</li>
+				<li className={`${styles.utilityItem} ${styles.mobileTopics}`}>
+					<button
+						type="button"
+						className={styles.navLink}
+						onClick={() => setTopicsOpen(true)}
+						aria-haspopup="dialog"
+						aria-expanded={topicsOpen}
+						aria-label="Open navigation menu"
+					>
+						<span className={styles.navBar} aria-hidden="true" />
+						<span className={styles.number} aria-hidden="true" />
+						<span className={styles.icon} aria-hidden="true">
+							<Menu size={16} strokeWidth={2.2} />
+						</span>
+						<span className={styles.label}>More</span>
+					</button>
 				</li>
 
 				{CURRICULUM.map((topic, index) => {
@@ -297,6 +355,20 @@ const Sidebar = () => {
 				})}
 			</ul>
 
+			<Sheet
+				open={topicsOpen}
+				onClose={() => setTopicsOpen(false)}
+				title="Navigate"
+				description="Open a lesson, check your progress, or adjust the interface."
+				placement="bottom"
+			>
+				<MobileNavigation
+					isCompleted={isCompleted}
+					isVisited={isVisited}
+					onClose={() => setTopicsOpen(false)}
+				/>
+			</Sheet>
+
 			<div className={styles.footer}>
 				<ThemeToggle />
 				<div
@@ -326,6 +398,112 @@ const Sidebar = () => {
 				</div>
 			</div>
 		</nav>
+	);
+};
+
+const MobileNavigation = ({ isCompleted, isVisited, onClose }) => {
+	const [query, setQuery] = useState('');
+	const needle = query.trim().toLowerCase();
+	const topics = BUILT_TOPICS.filter(topic =>
+		needle
+			? `${topic.name} ${topic.navLabel} ${topic.keywords}`
+					.toLowerCase()
+					.includes(needle)
+			: true
+	);
+
+	return (
+		<div className={styles.topicSheet}>
+			<section aria-labelledby="mobile-study-tools">
+				<Eyebrow as="h3" id="mobile-study-tools">
+					Study tools
+				</Eyebrow>
+				<div className={styles.mobileUtilityGrid}>
+					<NavLink
+						to="/path"
+						onClick={onClose}
+						className={styles.mobileUtilityLink}
+					>
+						<Route size={17} aria-hidden="true" />
+						<span>
+							<strong>Learning path</strong>
+							<small>All topics in teaching order</small>
+						</span>
+					</NavLink>
+					<NavLink
+						to="/reference"
+						onClick={onClose}
+						className={styles.mobileUtilityLink}
+					>
+						<BookOpen size={17} aria-hidden="true" />
+						<span>
+							<strong>Reference</strong>
+							<small>Complexities and definitions</small>
+						</span>
+					</NavLink>
+					<NavLink
+						to="/progress"
+						onClick={onClose}
+						className={styles.mobileUtilityLink}
+					>
+						<Activity size={17} aria-hidden="true" />
+						<span>
+							<strong>Progress</strong>
+							<small>Coverage and weak topics</small>
+						</span>
+					</NavLink>
+				</div>
+				<div className={styles.mobileAppearanceControl}>
+					<ThemeToggle inline />
+				</div>
+			</section>
+
+			<section className={styles.mobileTopicSection} aria-labelledby="mobile-topics">
+				<Eyebrow as="h3" id="mobile-topics">
+					Course topics
+				</Eyebrow>
+				<label className={styles.topicSearch}>
+					<Search size={15} aria-hidden="true" />
+					<input
+						value={query}
+						onChange={event => setQuery(event.target.value)}
+						placeholder="Search topics or algorithms"
+						aria-label="Search curriculum topics"
+					/>
+				</label>
+				<div className={styles.topicResults}>
+					{topics.map(topic => {
+						const Icon = ICONS[topic.icon] ?? List;
+						const completed = isCompleted(topic.id);
+						const visited = !completed && isVisited(topic.id);
+						return (
+							<NavLink
+								key={topic.id}
+								to={topic.to}
+								onClick={onClose}
+								className={styles.topicResult}
+								style={{ '--accent': topic.accent }}
+							>
+								<span className={styles.topicResultNumber}>
+									{topic.number}
+								</span>
+								<Icon size={16} aria-hidden="true" />
+								<span className={styles.topicResultCopy}>
+									<strong>{topic.name}</strong>
+									<small>{topic.phase}</small>
+								</span>
+								<span className={styles.topicResultStatus}>
+									{completed ? 'Done' : visited ? 'In progress' : 'Open'}
+								</span>
+							</NavLink>
+						);
+					})}
+					{topics.length === 0 && (
+						<p className={styles.topicEmpty}>No topics match that search.</p>
+					)}
+				</div>
+			</section>
+		</div>
 	);
 };
 

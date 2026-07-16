@@ -52,7 +52,12 @@ export const PSEUDO_BY_ALGORITHM = {
 	bucket: BUCKET_PSEUDO,
 };
 
-const row = (id, label, value, active = false) => ({ id, label, value, active });
+const row = (id, label, value, active = false) => ({
+	id,
+	label,
+	value,
+	active,
+});
 
 // ── Per-algorithm metadata → {line, state} ──────────────────────────────────
 
@@ -92,19 +97,16 @@ const countingFrame = meta => {
 	}
 	return {
 		line: 1, // let count[0..k] = 0
-		state: [row('phase', 'phase', 'allocate count[0..k]'), row('k', 'k (range)', k)],
+		state: [
+			row('phase', 'phase', 'allocate count[0..k]'),
+			row('k', 'k (range)', k),
+		],
 	};
 };
 
 const radixFrame = meta => {
-	const {
-		phase,
-		pass,
-		totalPasses,
-		placeLabel,
-		currentDigit,
-		activeValue,
-	} = meta;
+	const { phase, pass, totalPasses, placeLabel, currentDigit, activeValue } =
+		meta;
 	const passRow = row('pass', 'pass', `${pass} / ${totalPasses}`);
 	const placeRow = row('place', 'digit place', placeLabel);
 	if (phase === 'distributing') {
@@ -133,13 +135,20 @@ const radixFrame = meta => {
 	if (phase === 'pass-complete') {
 		return {
 			line: 1, // for place = …
-			state: [row('phase', 'phase', `${placeLabel} pass done`), passRow, placeRow],
+			state: [
+				row('phase', 'phase', `${placeLabel} pass done`),
+				passRow,
+				placeRow,
+			],
 		};
 	}
 	if (phase === 'completed') {
 		return {
 			line: null,
-			state: [row('phase', 'phase', 'done'), row('passes', 'passes', totalPasses)],
+			state: [
+				row('phase', 'phase', 'done'),
+				row('passes', 'passes', totalPasses),
+			],
 		};
 	}
 	return {

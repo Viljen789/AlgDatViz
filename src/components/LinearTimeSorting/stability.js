@@ -92,7 +92,9 @@ const digitAt = (value, place) => Math.floor(value / 10 ** place) % 10;
 const stableCountingByDigit = (values, place) => {
 	const indexed = values.map((value, i) => ({ value, i }));
 	return indexed
-		.sort((a, b) => digitAt(a.value, place) - digitAt(b.value, place) || a.i - b.i)
+		.sort(
+			(a, b) => digitAt(a.value, place) - digitAt(b.value, place) || a.i - b.i
+		)
 		.map(({ value }) => value);
 };
 
@@ -100,7 +102,9 @@ const stableCountingByDigit = (values, place) => {
 const unstableCountingByDigit = (values, place) => {
 	const indexed = values.map((value, i) => ({ value, i }));
 	return indexed
-		.sort((a, b) => digitAt(a.value, place) - digitAt(b.value, place) || b.i - a.i)
+		.sort(
+			(a, b) => digitAt(a.value, place) - digitAt(b.value, place) || b.i - a.i
+		)
 		.map(({ value }) => value);
 };
 
@@ -117,10 +121,7 @@ const unstableCountingByDigit = (values, place) => {
  * }}
  */
 export const radixWithSubroutine = (values, stableSubroutine) => {
-	const maxDigits = Math.max(
-		1,
-		...values.map(v => String(Math.abs(v)).length)
-	);
+	const maxDigits = Math.max(1, ...values.map(v => String(Math.abs(v)).length));
 	const passSort = stableSubroutine
 		? stableCountingByDigit
 		: unstableCountingByDigit;
@@ -136,9 +137,7 @@ export const radixWithSubroutine = (values, stableSubroutine) => {
 			after: current.slice(),
 		});
 	}
-	const sorted = current.every(
-		(v, i) => i === 0 || current[i - 1] <= v
-	);
+	const sorted = current.every((v, i) => i === 0 || current[i - 1] <= v);
 	return { passes, result: current, sorted };
 };
 

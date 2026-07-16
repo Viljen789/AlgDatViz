@@ -5,7 +5,10 @@ import AdjacencyMatrix from './AdjacencyMatrix/AdjacencyMatrix';
 import AdjacencyList from './AdjacencyList/AdjacencyList';
 import GraphHero from './GraphHero/GraphHero';
 import styles from './GraphDashboard.module.css';
-import { parseAndUpdateGraph } from '../../utils/graphUtils.js';
+import {
+	parseAndUpdateGraph,
+	updateGraphEdge,
+} from '../../utils/graphUtils.js';
 import {
 	createGraphAlgorithmSteps,
 	GRAPH_ALGORITHMS,
@@ -17,6 +20,7 @@ import StepControlBar from '../../common/StepControlBar/StepControlBar';
 import StateLegend from '../../common/StateLegend/StateLegend';
 import { usePlayback, PseudoState } from '../../common/PlaybackEngine';
 import { graphLineState } from '../../utils/graphAlgorithms.js';
+import { useTeachingStateSnapshot } from '../../lib/useTeachingStateSnapshot.js';
 
 const cloneGraph = graph => JSON.parse(JSON.stringify(graph));
 
@@ -103,6 +107,36 @@ const GraphDashboard = ({ onUserInteract }) => {
 	const [startNodeId, setStartNodeId] = useState(initialPreset.startNodeId);
 	const [targetNodeId, setTargetNodeId] = useState('');
 	const [viewMode, setViewMode] = useState('graph');
+	useTeachingStateSnapshot(
+		'controls',
+		{
+			graph,
+			selectedNodeId,
+			isDirected,
+			isWeighted,
+			presetId,
+			algorithmId,
+			startNodeId,
+			targetNodeId,
+			viewMode,
+		},
+		snapshot => {
+			if (!snapshot?.graph || !(snapshot.algorithmId in GRAPH_ALGORITHMS))
+				return;
+			setGraph(cloneGraph(snapshot.graph));
+			setSelectedNodeId(snapshot.selectedNodeId ?? null);
+			setIsDirected(Boolean(snapshot.isDirected));
+			setIsWeighted(Boolean(snapshot.isWeighted));
+			setPresetId(snapshot.presetId || 'traversal');
+			setAlgorithmId(snapshot.algorithmId);
+			setStartNodeId(
+				snapshot.startNodeId || snapshot.graph.nodes?.[0]?.id || ''
+			);
+			setTargetNodeId(snapshot.targetNodeId || '');
+			if (VIEW_OPTIONS.some(option => option.value === snapshot.viewMode))
+				setViewMode(snapshot.viewMode);
+		}
+	);
 
 	// Scopes playback keyboard control (space / ← / →) to this playground so a
 	// second mounted player on the page can't react to the same keypress.
@@ -129,7 +163,15 @@ const GraphDashboard = ({ onUserInteract }) => {
 	// A fresh timeline (new algorithm, endpoints, graph) should start at step 0.
 	useEffect(() => {
 		reset();
-	}, [algorithmId, startNodeId, targetNodeId, isDirected, isWeighted, graph, reset]);
+	}, [
+		algorithmId,
+		startNodeId,
+		targetNodeId,
+		isDirected,
+		isWeighted,
+		graph,
+		reset,
+	]);
 
 	useEffect(() => {
 		if (!graph.nodes.some(node => node.id === startNodeId)) {
@@ -139,30 +181,6 @@ const GraphDashboard = ({ onUserInteract }) => {
 			setTargetNodeId('');
 		}
 	}, [graph.nodes, startNodeId, targetNodeId]);
-
-	useEffect(() => {
-		if (isDirected) return;
-		setGraph(currentGraph => {
-			let hasChanged = false;
-			const newEdges = [...currentGraph.edges];
-			const edgeSet = new Set(
-				currentGraph.edges.map(e => `${e.from}->${e.to}`)
-			);
-			currentGraph.edges.forEach(edge => {
-				const reverseKey = `${edge.to}->${edge.from}`;
-				if (!edgeSet.has(reverseKey)) {
-					newEdges.push({
-						from: edge.to,
-						to: edge.from,
-						weight: edge.weight,
-					});
-					hasChanged = true;
-				}
-			});
-			if (hasChanged) return { ...currentGraph, edges: newEdges };
-			return currentGraph;
-		});
-	}, [isDirected, graph]);
 
 	const handlePresetChange = useCallback(id => {
 		const preset = GRAPH_PRESETS[id];
@@ -224,16 +242,17 @@ const GraphDashboard = ({ onUserInteract }) => {
 
 	const handleListUpdate = useCallback(
 		(inputValue, sourceNodeId) => {
-			const newGraph = parseAndUpdateGraph(
-				inputValue,
-				sourceNodeId,
-				graph,
-				isWeighted,
-				isDirected
+			setGraph(currentGraph =>
+				parseAndUpdateGraph(
+					inputValue,
+					sourceNodeId,
+					currentGraph,
+					isWeighted,
+					isDirected
+				)
 			);
-			setGraph(newGraph);
 		},
-		[graph, isWeighted, isDirected]
+		[isWeighted, isDirected]
 	);
 
 	const handleMatrixUpdate = useCallback(
@@ -242,23 +261,13 @@ const GraphDashboard = ({ onUserInteract }) => {
 				const fromNode = currentGraph.nodes[fromIndex];
 				const toNode = currentGraph.nodes[toIndex];
 				if (!fromNode || !toNode) return currentGraph;
-				const newEdges = currentGraph.edges.filter(
-					edge =>
-						!(edge.from === fromNode.id && edge.to === toNode.id) &&
-						!(edge.from === toNode.id && edge.to === fromNode.id)
-				);
-				if (newValue > 0) {
-					const weight = isWeighted ? newValue : 1;
-					newEdges.push({ from: fromNode.id, to: toNode.id, weight });
-					if (!isDirected) {
-						newEdges.push({
-							from: toNode.id,
-							to: fromNode.id,
-							weight,
-						});
-					}
-				}
-				return { ...currentGraph, edges: newEdges };
+				return updateGraphEdge(currentGraph, {
+					fromNodeId: fromNode.id,
+					toNodeId: toNode.id,
+					value: newValue,
+					isWeighted,
+					isDirected,
+				});
 			});
 		},
 		[isDirected, isWeighted]
@@ -292,17 +301,10 @@ const GraphDashboard = ({ onUserInteract }) => {
 					to: randomEdgeNodeId,
 					weight: 1,
 				});
-				if (!isDirected) {
-					newEdges.push({
-						from: randomEdgeNodeId,
-						to: newNodeId,
-						weight: 1,
-					});
-				}
 			}
 			return { ...currentGraph, nodes: newNodes, edges: newEdges };
 		});
-	}, [isDirected]);
+	}, []);
 
 	const handleDeleteNode = useCallback(
 		nodeId => {
@@ -497,10 +499,7 @@ const GraphDashboard = ({ onUserInteract }) => {
 					)}
 					<div className={styles.canvasStage}>{canvasContent}</div>
 					{viewMode === 'graph' && (
-						<StateLegend
-							className={styles.canvasLegend}
-							items={canvasLegend}
-						/>
+						<StateLegend className={styles.canvasLegend} items={canvasLegend} />
 					)}
 					{currentStep?.description && (
 						<div className={styles.frameNote} aria-live="polite">

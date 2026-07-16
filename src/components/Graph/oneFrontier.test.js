@@ -155,7 +155,10 @@ const isValidTraversalOrder = (order, tree, start, reachable) => {
 // graph view + PseudoState rail read, so they stay in lockstep.
 const assertFrameShape = frame => {
 	assert.equal(typeof frame.line, 'number', 'frame has a numeric line');
-	assert.ok(frame.line >= 0 && frame.line < ONE_FRONTIER_PSEUDO.length, 'line indexes the pseudocode');
+	assert.ok(
+		frame.line >= 0 && frame.line < ONE_FRONTIER_PSEUDO.length,
+		'line indexes the pseudocode'
+	);
 	assert.ok(Array.isArray(frame.state), 'frame carries PseudoState rows');
 	assert.ok(Array.isArray(frame.frontier), 'frame lists the frontier');
 	assert.ok(Array.isArray(frame.visited), 'frame lists settled vertices');
@@ -205,7 +208,11 @@ test('min-dist discipline yields Dijkstra distances', () => {
 	const expected = refDijkstra(WEIGHTED, 'A');
 	for (const id of WEIGHTED.nodes.map(n => n.id)) {
 		const got = dist[id] === INFINITY ? Infinity : dist[id];
-		assert.equal(got, expected[id], `dist[${id}] matches Dijkstra (${expected[id]})`);
+		assert.equal(
+			got,
+			expected[id],
+			`dist[${id}] matches Dijkstra (${expected[id]})`
+		);
 	}
 	// Sanity: hand-computed shortest distances from A on WEIGHTED.
 	assert.equal(dist.A, 0);
@@ -222,15 +229,33 @@ test('min-edge discipline yields a minimum spanning tree (same weight as Kruskal
 	const { weight: mstWeight, edges: mstEdges } = refMstWeight(WEIGHTED);
 	// The known MST of WEIGHTED has total weight 27 over 6 edges (7 vertices).
 	assert.equal(mstWeight, 27, 'reference Kruskal MST weight is 27');
-	assert.equal(totalWeight, mstWeight, 'Prim discipline reaches the same MST weight');
+	assert.equal(
+		totalWeight,
+		mstWeight,
+		'Prim discipline reaches the same MST weight'
+	);
 	assert.equal(tree.length, mstEdges, 'spanning tree has |V|-1 edges');
-	assert.equal(visitOrder.length, WEIGHTED.nodes.length, 'every vertex is in the tree');
+	assert.equal(
+		visitOrder.length,
+		WEIGHTED.nodes.length,
+		'every vertex is in the tree'
+	);
 });
 
 test('min-edge MST weight is start-independent (same tree from any start)', () => {
-	const fromA = genericTraverse(WEIGHTED, { discipline: 'min-edge', start: 'A' });
-	const fromF = genericTraverse(WEIGHTED, { discipline: 'min-edge', start: 'F' });
-	assert.equal(fromA.totalWeight, fromF.totalWeight, 'same MST weight regardless of start');
+	const fromA = genericTraverse(WEIGHTED, {
+		discipline: 'min-edge',
+		start: 'A',
+	});
+	const fromF = genericTraverse(WEIGHTED, {
+		discipline: 'min-edge',
+		start: 'F',
+	});
+	assert.equal(
+		fromA.totalWeight,
+		fromF.totalWeight,
+		'same MST weight regardless of start'
+	);
 	assert.equal(fromA.totalWeight, 27);
 });
 
@@ -239,9 +264,14 @@ test('min-edge MST weight is start-independent (same tree from any start)', () =
 test('all four disciplines run the same loop and settle every reachable vertex', () => {
 	const all = new Set(UNWEIGHTED.nodes.map(n => n.id));
 	for (const discipline of DISCIPLINE_ORDER) {
-		const graph = discipline === 'fifo' || discipline === 'lifo' ? UNWEIGHTED : UNWEIGHTED;
+		const graph =
+			discipline === 'fifo' || discipline === 'lifo' ? UNWEIGHTED : UNWEIGHTED;
 		const { visitOrder } = genericTraverse(graph, { discipline, start: 'A' });
-		assert.equal(new Set(visitOrder).size, all.size, `${discipline} reaches all vertices`);
+		assert.equal(
+			new Set(visitOrder).size,
+			all.size,
+			`${discipline} reaches all vertices`
+		);
 		assert.equal(visitOrder[0], 'A', `${discipline} starts at the source`);
 	}
 });
@@ -259,7 +289,10 @@ test('every discipline is registered with its algorithm name', () => {
 test('frontier snapshots are in extract order (next-out first)', () => {
 	// FIFO: oldest first. After seeding A and extracting it, B then C are queued;
 	// the frontier snapshot must list B before C (B leaves next).
-	const { frames } = genericTraverse(UNWEIGHTED, { discipline: 'fifo', start: 'A' });
+	const { frames } = genericTraverse(UNWEIGHTED, {
+		discipline: 'fifo',
+		start: 'A',
+	});
 	const afterAddingC = frames.find(
 		f => f.phase === 'consider-add' && f.edge?.to === 'C'
 	);
@@ -269,12 +302,17 @@ test('frontier snapshots are in extract order (next-out first)', () => {
 });
 
 test('min-dist frame keys are the tentative distances', () => {
-	const { frames } = genericTraverse(WEIGHTED, { discipline: 'min-dist', start: 'A' });
+	const { frames } = genericTraverse(WEIGHTED, {
+		discipline: 'min-dist',
+		start: 'A',
+	});
 	// After settling A, the frontier holds B:2 and D:3 (A's edges).
 	const afterA = frames.find(f => f.phase === 'extract' && f.current === 'A');
 	assert.ok(afterA);
 	// The very next add frames key B by 2 and D by 3.
-	const addB = frames.find(f => f.phase === 'consider-add' && f.edge?.to === 'B');
+	const addB = frames.find(
+		f => f.phase === 'consider-add' && f.edge?.to === 'B'
+	);
 	const keyB = addB.frontier.find(x => x.id === 'B')?.key;
 	assert.equal(keyB, 2, 'B is keyed by its tentative distance 2');
 });
@@ -291,7 +329,9 @@ test('idleFrame is a conformant frame with the start seeded', () => {
 
 test('buildOneFrontierTrace dispatches by discipline id', () => {
 	for (const discipline of DISCIPLINE_ORDER) {
-		const { frames } = buildOneFrontierTrace(discipline, WEIGHTED, { start: 'A' });
+		const { frames } = buildOneFrontierTrace(discipline, WEIGHTED, {
+			start: 'A',
+		});
 		assert.ok(frames.length > 1, `${discipline} produces frames`);
 	}
 });

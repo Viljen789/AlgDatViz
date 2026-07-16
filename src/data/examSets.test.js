@@ -1389,8 +1389,7 @@ RECIPES['np-5'] = () => {
 	const comp = [];
 	for (let i = 0; i < vertices.length; i++) {
 		for (let j = i + 1; j < vertices.length; j++) {
-			if (!has(vertices[i], vertices[j]))
-				comp.push([vertices[i], vertices[j]]);
+			if (!has(vertices[i], vertices[j])) comp.push([vertices[i], vertices[j]]);
 		}
 	}
 	const cover = vertices.filter(v => !clique.includes(v));
@@ -1478,8 +1477,7 @@ const STATIC = {
 		'concept: Gale-Shapley always terminates with a stable matching and is man-optimal (each man gets his best partner in any stable matching)',
 	'strategies-5#3':
 		'concept: exchange argument; merging the two rarest symbols first is safe',
-	'strategies-6#3':
-		'concept: match → diagonal + 1, mismatch → max of up/left',
+	'strategies-6#3': 'concept: match → diagonal + 1, mismatch → max of up/left',
 	'strategies-7#3':
 		'concept: why greedy-by-ratio fails when items are indivisible',
 	'strategies-8#3':

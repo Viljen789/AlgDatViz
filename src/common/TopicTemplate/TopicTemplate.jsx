@@ -1,31 +1,84 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Link } from 'react-router-dom';
+import {
+	lazy,
+	Suspense,
+	useCallback,
+	useEffect,
+	useMemo,
+	useRef,
+	useState,
+} from 'react';
+import { Link, useSearchParams } from 'react-router-dom';
+import { LearningThread, MarginNote, ProofMark } from '@viljen789/study-ui';
 import {
 	ArrowDown,
 	ArrowRight,
+	Check,
 	ChevronDown,
 	ChevronRight,
+	Copy,
+	GitFork,
 	ListChecks,
+	Maximize2,
+	Minimize2,
 	NotebookPen,
 	X,
 } from 'lucide-react';
 import { CURRICULUM } from '../../data/curriculum.js';
 import { logActivity } from '../../lib/activityLog.js';
 import {
+	nextTeachingSearch,
+	teachingStateUrl,
+} from '../../lib/teachingState.js';
+import { TeachingStateProvider } from '../../lib/TeachingStateContext.jsx';
+import {
 	buildTopicQueue,
-	isSelfGraded,
-} from '../../components/Review/reviewBank.js';
-import ReviewSession from '../../components/Review/ReviewSession.jsx';
+	buildTopicReviewEntries,
+} from '../../components/Review/topicReview.js';
+import { isSelfGraded } from '../../components/Review/reviewUtils.js';
 import useProgress from '../../hooks/useProgress.js';
 import useSrs from '../../hooks/useSrs.js';
 import useReducedMotion from '../../hooks/useReducedMotion.js';
+import LessonSequence from './LessonSequence.jsx';
 import TopicScrolly from './TopicScrolly.jsx';
+import { TransportButton } from '../Button/Button.jsx';
 import styles from './TopicTemplate.module.css';
 
 // How many never-seen cards the lesson-end drill introduces at once. Matches the
 // /review + /progress one-click drill cap so a topic's first drill from the lesson
 // end isn't a wall of new questions (kept in lockstep with ProgressPage).
 const TOPIC_NEW_CAP = 8;
+
+// Lesson routes should not download the review runner until the learner opens
+// the closing recall drill. ReviewSession itself is dependency-light; the full
+// all-topic bank remains exclusive to cumulative review/progress surfaces.
+const LazyReviewSession = lazy(
+	() => import('../../components/Review/ReviewSession.jsx')
+);
+
+// Clipboard permissions vary between browsers, embedded previews, and local HTTP
+// development. Keep sharing useful when the modern API is denied by falling back
+// to the older selection-based copy path instead of failing without feedback.
+const copyText = async value => {
+	try {
+		if (navigator.clipboard?.writeText) {
+			await navigator.clipboard.writeText(value);
+			return true;
+		}
+	} catch {
+		// Continue to the deterministic DOM fallback below.
+	}
+
+	const field = document.createElement('textarea');
+	field.value = value;
+	field.setAttribute('readonly', '');
+	field.style.position = 'fixed';
+	field.style.opacity = '0';
+	document.body.appendChild(field);
+	field.select();
+	const copied = document.execCommand('copy');
+	field.remove();
+	return copied;
+};
 
 // ── Collapsible cheat-sheet (prop-driven disclosure) ──
 // cheatSheet shape:
@@ -214,6 +267,10 @@ const TopicTemplate = ({
 	children,
 }) => {
 	const reducedMotion = useReducedMotion();
+	const [searchParams, setSearchParams] = useSearchParams();
+	const [shareComplete, setShareComplete] = useState(false);
+	const [forkComplete, setForkComplete] = useState(false);
+	const teachingStateRef = useRef(null);
 	const {
 		markVisited,
 		markCompleted,
@@ -225,12 +282,19 @@ const TopicTemplate = ({
 	const { seed: seedCard, cards, grade } = useSrs();
 	const playgroundRef = useRef(null);
 	const [activeScene, setActiveScene] = useState(0);
+	const sharedSceneIndex = Math.max(
+		-1,
+		scenes.findIndex(scene => scene.id === searchParams.get('scene'))
+	);
 	// The scene to resume at — read once on mount so a later persist (recordScene
 	// fires as the reader scrolls) can't change where this render started.
-	const resumeSceneRef = useRef(furthestScene(topicId));
+	const resumeSceneRef = useRef(
+		sharedSceneIndex >= 0 ? sharedSceneIndex : furthestScene(topicId)
+	);
 
 	const topic = CURRICULUM.find(t => t.id === topicId) || null;
 	const topicIdx = CURRICULUM.findIndex(t => t.id === topicId);
+	const previousTopic = topicIdx > 0 ? CURRICULUM[topicIdx - 1] : null;
 	const nextTopic = topicIdx >= 0 ? CURRICULUM[topicIdx + 1] : null;
 	const resolvedAccent = accent || `var(--topic-${topicId})`;
 	// Derive the AA partner tokens from whichever topic hue the page actually
@@ -268,9 +332,55 @@ const TopicTemplate = ({
 		idx => {
 			setActiveScene(idx);
 			if (topicId) recordScene(topicId, idx);
+			const sceneId = scenes[idx]?.id;
+			if (sceneId && searchParams.get('scene') !== sceneId) {
+				const next = nextTeachingSearch(searchParams, { sceneId });
+				setSearchParams(next, { replace: true });
+			}
 		},
-		[topicId, recordScene]
+		[topicId, recordScene, scenes, searchParams, setSearchParams]
 	);
+
+	const copyCurrentExample = useCallback(async () => {
+		const sceneId = scenes[activeScene]?.id;
+		const playgroundState = teachingStateRef.current?.getSnapshot() ?? {};
+		const url = teachingStateUrl(window.location.href, searchParams, {
+			sceneId,
+			playgroundState,
+		});
+		try {
+			const copied = await copyText(url);
+			if (!copied) throw new Error('Clipboard copy was not available');
+			setShareComplete(true);
+			window.setTimeout(() => setShareComplete(false), 1800);
+		} catch {
+			setShareComplete(false);
+		}
+	}, [activeScene, scenes, searchParams]);
+
+	const forkCurrentExample = useCallback(() => {
+		const sceneId = scenes[activeScene]?.id;
+		const playgroundState = teachingStateRef.current?.getSnapshot() ?? {};
+		const next = nextTeachingSearch(searchParams, {
+			sceneId,
+			present: false,
+			playgroundState,
+			fork: true,
+		});
+		setSearchParams(next, { replace: false });
+		setForkComplete(true);
+		window.setTimeout(() => setForkComplete(false), 1800);
+		playgroundRef.current?.scrollIntoView({
+			behavior: reducedMotion ? 'auto' : 'smooth',
+			block: 'start',
+		});
+	}, [activeScene, reducedMotion, scenes, searchParams, setSearchParams]);
+
+	const presenting = searchParams.get('present') === '1';
+	const togglePresenter = useCallback(() => {
+		const next = nextTeachingSearch(searchParams, { present: !presenting });
+		setSearchParams(next, { replace: true });
+	}, [presenting, searchParams, setSearchParams]);
 
 	// How many correct checks complete this topic. Default = scenes carrying a
 	// check, so completion derives from correct retrieval (Deliverable D).
@@ -291,6 +401,10 @@ const TopicTemplate = ({
 		}
 		return set;
 	}, [scenes]);
+	const topicReviewEntries = useMemo(
+		() => buildTopicReviewEntries({ topic, scenes }),
+		[topic, scenes]
+	);
 
 	// Completion signal (same derivation as the persist effect below): enough
 	// required checks answered correctly. Drives the "Lock it in" section's tone —
@@ -315,8 +429,9 @@ const TopicTemplate = ({
 				cards,
 				now: Date.now(),
 				newCap: TOPIC_NEW_CAP,
+				bank: topicReviewEntries,
 			}),
-		[topicId, cards]
+		[topicId, cards, topicReviewEntries]
 	);
 	// The topic has bank-backed cards seeded from the in-lesson checks (a skimmer
 	// who answered nothing seeds none → available 0). Distinguish two empty cases:
@@ -333,6 +448,7 @@ const TopicTemplate = ({
 			cards,
 			now: Date.now(),
 			newCap: TOPIC_NEW_CAP,
+			bank: topicReviewEntries,
 		});
 		if (plan.queue.length === 0) return; // nothing due/fresh right now
 		setDrill(prev => ({
@@ -340,7 +456,7 @@ const TopicTemplate = ({
 			// Bump a run id so re-launching remounts ReviewSession from the top.
 			runId: (prev?.runId ?? 0) + 1,
 		}));
-	}, [topicId, cards]);
+	}, [topicId, cards, topicReviewEntries]);
 
 	const closeDrill = useCallback(() => setDrill(null), []);
 
@@ -441,7 +557,7 @@ const TopicTemplate = ({
 
 	return (
 		<div
-			className={styles.page}
+			className={`${styles.page} ${presenting ? styles.presenterPage : ''}`}
 			style={{
 				'--topic-accent': resolvedAccent,
 				'--topic-accent-contrast': resolvedContrast,
@@ -457,39 +573,148 @@ const TopicTemplate = ({
 						<ChevronRight size={12} strokeWidth={2} aria-hidden="true" />
 						<span className={styles.crumbCurrent}>{topic?.name}</span>
 					</nav>
-					{renderPlayground && (
-						<button
-							type="button"
-							className={styles.skipBtn}
-							onClick={handleSkipToPlayground}
+					<div className={styles.topicHeaderActions}>
+						<TransportButton
+							onClick={copyCurrentExample}
+							aria-label={
+								shareComplete
+									? 'Example link copied'
+									: 'Copy exact example link'
+							}
 						>
-							<span>{playgroundLabel}</span>
-							<ArrowDown size={13} strokeWidth={2} aria-hidden="true" />
-						</button>
-					)}
+							{shareComplete ? <Check size={14} /> : <Copy size={14} />}
+							<span className={styles.actionLabel}>
+								{shareComplete ? 'Copied' : 'Copy example'}
+							</span>
+						</TransportButton>
+						{renderPlayground && (
+							<TransportButton
+								onClick={forkCurrentExample}
+								aria-label="Fork this exact example"
+							>
+								{forkComplete ? <Check size={14} /> : <GitFork size={14} />}
+								<span className={styles.actionLabel}>
+									{forkComplete ? 'Fork ready' : 'Fork example'}
+								</span>
+							</TransportButton>
+						)}
+						<TransportButton
+							onClick={togglePresenter}
+							aria-pressed={presenting}
+							aria-label={
+								presenting ? 'Exit presenter mode' : 'Enter presenter mode'
+							}
+						>
+							{presenting ? <Minimize2 size={14} /> : <Maximize2 size={14} />}
+							<span className={styles.actionLabel}>
+								{presenting ? 'Exit presenter' : 'Present'}
+							</span>
+						</TransportButton>
+						{renderPlayground && (
+							<TransportButton
+								onClick={handleSkipToPlayground}
+								aria-label={playgroundLabel}
+							>
+								<span className={styles.actionLabel}>{playgroundLabel}</span>
+								<ArrowDown size={13} strokeWidth={2} aria-hidden="true" />
+							</TransportButton>
+						)}
+					</div>
 				</div>
 			</header>
 
 			<section className={styles.hero} aria-labelledby="topic-title">
-				{eyebrow && <p className={styles.eyebrow}>{eyebrow}</p>}
-				<h1 id="topic-title" className={styles.heroTitle}>
-					{title}
-				</h1>
-				{lede && <p className={styles.heroLede}>{lede}</p>}
+				<div className={styles.heroMain}>
+					{eyebrow && <p className={styles.eyebrow}>{eyebrow}</p>}
+					<h1 id="topic-title" className={styles.heroTitle}>
+						{title}
+					</h1>
+					{lede && <p className={styles.heroLede}>{lede}</p>}
+					<LessonSequence
+						topicId={topicId}
+						sceneCount={scenes.length}
+						hasPlayground={Boolean(renderPlayground)}
+						traceMode={topic?.lessonTrace}
+					/>
 
-				{(cheatSheet || navEnabled) && (
-					<div className={styles.heroAside}>
-						<CheatSheet cheatSheet={cheatSheet} />
-						{navEnabled && (
-							<SceneNavigator
-								scenes={scenes}
-								activeScene={activeScene}
-								hasPlayground={Boolean(renderPlayground)}
-								onJump={scrollToId}
-							/>
-						)}
+					{(cheatSheet || navEnabled) && (
+						<div className={styles.heroAside}>
+							<CheatSheet cheatSheet={cheatSheet} />
+							{navEnabled && (
+								<SceneNavigator
+									scenes={scenes}
+									activeScene={activeScene}
+									hasPlayground={Boolean(renderPlayground)}
+									onJump={scrollToId}
+								/>
+							)}
+						</div>
+					)}
+				</div>
+				<aside className={styles.topicMargin} aria-label="Topic margin">
+					<div className={styles.topicMarginHead}>
+						<ProofMark letter="A" label="Algorithm working note" />
+						<span>
+							{topic?.number ?? '--'} /{' '}
+							{String(CURRICULUM.length).padStart(2, '0')}
+						</span>
 					</div>
-				)}
+					<MarginNote
+						label="Why now"
+						value={
+							previousTopic
+								? `Carries ${previousTopic.navLabel.toLowerCase()} into ${topic?.phase.toLowerCase()}.`
+								: 'The cost model every later algorithm will use.'
+						}
+						tone="brand"
+					/>
+					<LearningThread
+						items={[
+							...(previousTopic
+								? [
+										{
+											id: previousTopic.id,
+											label: previousTopic.navLabel,
+											detail: 'Previous',
+											state: 'complete',
+											href: previousTopic.to,
+										},
+									]
+								: [
+										{
+											id: 'course-source',
+											label: 'Course path',
+											detail: 'Starting point',
+											state: 'source',
+										},
+									]),
+							{
+								id: topicId,
+								label: topic?.navLabel || topicId,
+								detail: 'Current topic',
+								state: 'current',
+							},
+							...(nextTopic
+								? [
+										{
+											id: nextTopic.id,
+											label: nextTopic.navLabel,
+											detail: 'Next connection',
+											state: 'prerequisite',
+											href: nextTopic.to,
+										},
+									]
+								: []),
+							{
+								id: `${topicId}-recall`,
+								label: 'Retrieval drill',
+								detail: 'After the lesson',
+								state: 'recall',
+								href: '/review',
+							},
+						]}
+					/>
+				</aside>
 			</section>
 
 			{scenes.length > 0 && renderStage && (
@@ -511,6 +736,15 @@ const TopicTemplate = ({
 					className={styles.playgroundSection}
 					aria-labelledby="playground-heading"
 				>
+					{searchParams.get('fork') === '1' && (
+						<div className={styles.forkNotice} role="status">
+							<GitFork size={14} aria-hidden="true" />
+							<span>
+								<strong>Forked working copy.</strong> Change any control, then
+								copy a fresh exact example link.
+							</span>
+						</div>
+					)}
 					<header className={styles.playgroundHeader}>
 						{playgroundEyebrow && (
 							<p className={styles.eyebrow}>{playgroundEyebrow}</p>
@@ -524,7 +758,12 @@ const TopicTemplate = ({
 							<p className={styles.playgroundLede}>{playgroundLede}</p>
 						)}
 					</header>
-					{renderPlayground()}
+					<TeachingStateProvider
+						ref={teachingStateRef}
+						encodedState={searchParams.get('state')}
+					>
+						{renderPlayground()}
+					</TeachingStateProvider>
 				</section>
 			)}
 
@@ -538,6 +777,7 @@ const TopicTemplate = ({
 			    skimmer who answered nothing) it degrades to a gentle line + the exam
 			    link, never a broken drill. */}
 			<section
+				id="lesson-checkpoint"
 				className={`${styles.lockIn} ${
 					isComplete ? styles.lockInDone : styles.lockInOpen
 				}`}
@@ -574,12 +814,20 @@ const TopicTemplate = ({
 								<span>Done</span>
 							</button>
 						</div>
-						<ReviewSession
-							key={drill.runId}
-							questions={drill.questions}
-							onRestart={restartDrill}
-							onGraded={handleDrillGraded}
-						/>
+						<Suspense
+							fallback={
+								<p className={styles.lockInDrillTitle} role="status">
+									Opening recall drill…
+								</p>
+							}
+						>
+							<LazyReviewSession
+								key={drill.runId}
+								questions={drill.questions}
+								onRestart={restartDrill}
+								onGraded={handleDrillGraded}
+							/>
+						</Suspense>
 					</div>
 				) : (
 					<div className={styles.lockInActions}>
@@ -607,7 +855,7 @@ const TopicTemplate = ({
 							className={styles.lockInSecondary}
 						>
 							<ListChecks size={15} strokeWidth={2.2} aria-hidden="true" />
-							<span>Practice exam questions</span>
+							<span>Try exam-shaped questions</span>
 							<ArrowRight size={14} strokeWidth={2} aria-hidden="true" />
 						</Link>
 					</div>

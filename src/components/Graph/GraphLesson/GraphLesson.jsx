@@ -54,10 +54,7 @@ const GraphLesson = () => {
 		[]
 	);
 
-	const renderPlayground = useCallback(
-		() => <GraphDashboard />,
-		[]
-	);
+	const renderPlayground = useCallback(() => <GraphDashboard />, []);
 
 	const handleVisit = useCallback(() => {
 		markVisited(TOPIC_ID);
@@ -72,8 +69,8 @@ const GraphLesson = () => {
 		<TopicTemplate
 			topicId={TOPIC_ID}
 			eyebrow={eyebrow}
-			title="Nodes, edges, and the order you explore them."
-			lede="A graph is just things and the links between them. The whole craft is choosing what to explore next — a single decision that separates BFS from DFS. Each scene ends with a quick check; answer it, then keep scrolling."
+			title="Nodes, edges, and what direction reveals."
+			lede="Start with storage and traversal: one frontier choice separates BFS from DFS. Then turn the edges into arrows — topological sort orders a DAG, while strongly connected components collapse directed cycles into a DAG. Each scene ends with a quick check; answer it, then keep scrolling."
 			scenes={SCENES}
 			renderStage={renderStage}
 			checkStates={checkStates}
@@ -81,7 +78,7 @@ const GraphLesson = () => {
 			cheatSheet={CHEAT_SHEET}
 			playgroundEyebrow="Sandbox"
 			playgroundTitle="Now your turn. Step, scrub, replay."
-			playgroundLede="Run BFS, DFS, Dijkstra, MST, topological sort, or max flow on real graphs. Drag nodes, switch between graph / list / matrix views, and step through the algorithm with space and the arrow keys."
+			playgroundLede="Run BFS, DFS, topological sort, and SCC on real graphs, or preview the later Dijkstra, MST, and max-flow topics. Drag nodes, switch between graph / list / matrix views, and step through each algorithm with space and the arrow keys."
 			onVisit={handleVisit}
 			renderPlayground={renderPlayground}
 		>

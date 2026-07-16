@@ -196,9 +196,7 @@ test('reduce3SatToIndependentSet — structure: one vertex per literal, k = m', 
 test('reduce3SatToIndependentSet — clause-clique edges connect each clause', () => {
 	const { graph } = reduce3SatToIndependentSet(FORMULA);
 	const has = (a, b) =>
-		graph.edges.some(
-			([x, y]) => (x === a && y === b) || (x === b && y === a)
-		);
+		graph.edges.some(([x, y]) => (x === a && y === b) || (x === b && y === a));
 	// Clause 0 literals c0_0,c0_1,c0_2 form a triangle.
 	assert.ok(has('c0_0', 'c0_1'));
 	assert.ok(has('c0_0', 'c0_2'));
@@ -208,9 +206,7 @@ test('reduce3SatToIndependentSet — clause-clique edges connect each clause', (
 test('reduce3SatToIndependentSet — conflict edges link x with ¬x across clauses', () => {
 	const { graph } = reduce3SatToIndependentSet(FORMULA);
 	const has = (a, b) =>
-		graph.edges.some(
-			([x, y]) => (x === a && y === b) || (x === b && y === a)
-		);
+		graph.edges.some(([x, y]) => (x === a && y === b) || (x === b && y === a));
 	// clause0 literal0 is x1 (positive); clause1 literal0 is ¬x1 -> conflict edge.
 	assert.ok(has('c0_0', 'c1_0'), 'x1 (c0_0) conflicts with ¬x1 (c1_0)');
 });
@@ -241,7 +237,8 @@ test('reduce3SatToIndependentSet — preserves YES/NO (correctness of the reduct
 		});
 		const sat = verify3SAT(FORMULA, assignment).ok;
 		const picks = satisfyingAssignmentToIndependentSet(FORMULA, assignment);
-		const mapped = picks.length === k && verifyIndependentSet(graph, picks, k).ok;
+		const mapped =
+			picks.length === k && verifyIndependentSet(graph, picks, k).ok;
 		if (sat) {
 			assert.equal(mapped, true, 'SAT ⇒ size-k independent set exists');
 		}

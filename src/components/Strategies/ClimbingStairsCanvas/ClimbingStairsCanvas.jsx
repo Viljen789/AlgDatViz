@@ -82,10 +82,7 @@ const ClimbingStairsCanvas = ({ frame, n = 6 }) => {
 			</div>
 
 			<div className={styles.tableScroll}>
-				<div
-					className={styles.tableInner}
-					style={{ width: `${tableWidth}px` }}
-				>
+				<div className={styles.tableInner} style={{ width: `${tableWidth}px` }}>
 					<svg
 						className={styles.arrowLayer}
 						width={tableWidth}

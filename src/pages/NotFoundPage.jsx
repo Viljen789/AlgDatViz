@@ -25,10 +25,39 @@ const NotFoundPage = () => (
 						strokeWidth="1.5"
 						strokeDasharray="4 5"
 					/>
-					<circle cx="24" cy="96" r="7" fill="var(--surface-2)" stroke="var(--color-border-strong)" strokeWidth="1.5" />
-					<circle cx="84" cy="60" r="7" fill="var(--surface-2)" stroke="var(--color-border-strong)" strokeWidth="1.5" />
-					<circle cx="150" cy="78" r="7" fill="var(--surface-2)" stroke="var(--color-border-strong)" strokeWidth="1.5" />
-					<circle cx="138" cy="28" r="7" fill="none" stroke="var(--color-border)" strokeWidth="1.5" strokeDasharray="3 3" />
+					<circle
+						cx="24"
+						cy="96"
+						r="7"
+						fill="var(--surface-2)"
+						stroke="var(--color-border-strong)"
+						strokeWidth="1.5"
+					/>
+					<circle
+						cx="84"
+						cy="60"
+						r="7"
+						fill="var(--surface-2)"
+						stroke="var(--color-border-strong)"
+						strokeWidth="1.5"
+					/>
+					<circle
+						cx="150"
+						cy="78"
+						r="7"
+						fill="var(--surface-2)"
+						stroke="var(--color-border-strong)"
+						strokeWidth="1.5"
+					/>
+					<circle
+						cx="138"
+						cy="28"
+						r="7"
+						fill="none"
+						stroke="var(--color-border)"
+						strokeWidth="1.5"
+						strokeDasharray="3 3"
+					/>
 					<text x="206" y="33" className={styles.nodeLabel}>
 						?
 					</text>

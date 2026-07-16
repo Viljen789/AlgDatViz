@@ -4,8 +4,8 @@
 // answer from a pure generator, but on a FIXED input. So an exam "retake" re-runs
 // the IDENTICAL problem, and a 1am crammer can memorize "the MST is 11" instead of
 // learning to run Kruskal. The substrate to fix this already exists: the *Trace
-// generators are pure over ARBITRARY input, and mulberry32 (a seeded PRNG) ships
-// in components/Review/reviewBank.js.
+// generators are pure over ARBITRARY input, and mulberry32 gives the app one
+// shared deterministic seed mechanism without loading the full review bank.
 //
 // THE MECHANISM. Given a seed, we deterministically generate a FRESH, well-formed
 // input for a problem — a different graph / array / recurrence of the SAME SHAPE
@@ -41,7 +41,7 @@
 // A set with no builder here simply falls back to its fixed examSets.js problem, so
 // coverage can grow incrementally and back-compat is automatic.
 
-import { mulberry32, toSeed } from '../components/Review/reviewBank.js';
+import { mulberry32, toSeed } from '../lib/seededRandom.js';
 
 import {
 	kruskalTrace,

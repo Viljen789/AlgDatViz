@@ -467,7 +467,8 @@ const ROD_FINAL = ROD_RUN.frames[ROD_RUN.frames.length - 1];
 // LCS: held on the cell just before the corner (dp[5][2] active, corner still
 // unwritten); revealed with the traceback and the recovered "AC".
 const LCS_HELD = LCS_RUN.frames.find(
-	f => f.active && f.active.i === LCS_X.length && f.active.j === LCS_Y.length - 1
+	f =>
+		f.active && f.active.i === LCS_X.length && f.active.j === LCS_Y.length - 1
 );
 const LCS_FINAL = LCS_RUN.frames[LCS_RUN.frames.length - 1];
 
@@ -814,9 +815,7 @@ const StrategiesStage = ({ activeScene = 0, holdReveal = false }) => {
 				{board === 'rod' && <RodBoard holdReveal={holdReveal} />}
 				{board === 'lcs' && <LcsBoard holdReveal={holdReveal} />}
 				{board === 'knapsack01' && <KnapsackBoard holdReveal={holdReveal} />}
-				{board === 'fractional' && (
-					<FractionalBoard holdReveal={holdReveal} />
-				)}
+				{board === 'fractional' && <FractionalBoard holdReveal={holdReveal} />}
 				{board === 'huffman' && <HuffmanBoard holdReveal={holdReveal} />}
 
 				<StateLegend items={legend} />

@@ -105,10 +105,7 @@ const MasterTheoremLesson = () => {
 
 	const renderPlayground = useCallback(
 		() => (
-			<MasterTheoremPlayground
-				params={params}
-				onParamsChange={setParams}
-			/>
+			<MasterTheoremPlayground params={params} onParamsChange={setParams} />
 		),
 		[params]
 	);

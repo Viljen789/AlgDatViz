@@ -4,8 +4,7 @@ import { getMergeSortStepsWithStats } from './algorithms/mergeSort.js';
 import { PSEUDO_CODE } from './algorithmInfo.js';
 import { mergeStepToPseudoFrame } from './mergeFrames.js';
 
-const rowsById = frame =>
-	Object.fromEntries(frame.state.map(r => [r.id, r]));
+const rowsById = frame => Object.fromEntries(frame.state.map(r => [r.id, r]));
 
 test('mergeStepToPseudoFrame returns a conformant empty frame for junk input', () => {
 	const frame = mergeStepToPseudoFrame(null);

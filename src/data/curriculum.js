@@ -36,6 +36,9 @@
 //                     treatment. They have no `to` route and no per-topic hue
 //                     token yet (a real `--topic-*` hue is assigned when each is
 //                     actually built); they use a neutral locked treatment.
+//   lessonTrace optional 'model' for lessons whose interactive teaches by
+//                     changing inputs rather than synchronized pseudocode.
+//                     All other canonical lessons default to 'pseudocode'.
 
 const topicAccent = tokenId => `var(--topic-${tokenId})`;
 
@@ -69,6 +72,7 @@ export const CURRICULUM = [
 		to: '/foundations',
 		status: 'ready',
 		countsToProgress: true,
+		lessonTrace: 'model',
 	},
 	{
 		id: 'stacks-queues',
@@ -79,8 +83,7 @@ export const CURRICULUM = [
 		pullQuote: 'The two simplest disciplines for "what to do next."',
 		complexity: 'O(1)',
 		// Searchable algorithm/concept names for the topic finder.
-		keywords:
-			'stack, queue, LIFO, FIFO, push, pop, enqueue, dequeue',
+		keywords: 'stack, queue, LIFO, FIFO, push, pop, enqueue, dequeue',
 		tokenId: 'stacks',
 		accent: topicAccent('stacks'),
 		icon: 'List',
@@ -98,8 +101,7 @@ export const CURRICULUM = [
 			'Why a problem solved by solving smaller versions of itself ever terminates.',
 		complexity: 'T(n) = aT(n/b) + f(n)',
 		// Searchable algorithm/concept names for the topic finder.
-		keywords:
-			'recurrences, divide and conquer, recursion tree, aT(n/b) + f(n)',
+		keywords: 'recurrences, divide and conquer, recursion tree, aT(n/b) + f(n)',
 		tokenId: 'master',
 		accent: topicAccent('master'),
 		icon: 'Sigma',
@@ -138,8 +140,7 @@ export const CURRICULUM = [
 			'Partition around a pivot, then recurse. The split is the whole trick.',
 		complexity: 'O(n log n) avg',
 		// Searchable algorithm/concept names for the topic finder.
-		keywords:
-			'partition, pivot, quickselect, randomized, average case',
+		keywords: 'partition, pivot, quickselect, randomized, average case',
 		tokenId: 'quicksort',
 		accent: topicAccent('quicksort'),
 		icon: 'SplitSquareHorizontal',
@@ -160,8 +161,7 @@ export const CURRICULUM = [
 			'Beat n log n by not comparing at all — when the keys cooperate.',
 		complexity: 'O(n + k)',
 		// Searchable algorithm/concept names for the topic finder.
-		keywords:
-			'counting sort, radix sort, bucket sort, non-comparison sorting',
+		keywords: 'counting sort, radix sort, bucket sort, non-comparison sorting',
 		tokenId: 'linsort',
 		accent: topicAccent('linsort'),
 		icon: 'ArrowDownNarrowWide',
@@ -357,6 +357,7 @@ export const CURRICULUM = [
 		to: '/np-completeness',
 		status: 'ready',
 		countsToProgress: true,
+		lessonTrace: 'model',
 	},
 ];
 

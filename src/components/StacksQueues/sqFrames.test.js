@@ -27,22 +27,22 @@ test('sqFrames — first frame is the untouched initial structure', () => {
 });
 
 test('sqFrames — every stack frame conforms to the contract', () => {
-	const frames = sqFrames('stack', ['a'], [
-		{ type: 'add', value: 'b' },
-		{ type: 'peek' },
-		{ type: 'remove' },
-	]);
+	const frames = sqFrames(
+		'stack',
+		['a'],
+		[{ type: 'add', value: 'b' }, { type: 'peek' }, { type: 'remove' }]
+	);
 	for (const frame of frames) {
 		assertConformant(frame, SQ_PSEUDO.stack.length);
 	}
 });
 
 test('sqFrames — every queue frame conforms to the contract', () => {
-	const frames = sqFrames('queue', ['a'], [
-		{ type: 'add', value: 'b' },
-		{ type: 'peek' },
-		{ type: 'remove' },
-	]);
+	const frames = sqFrames(
+		'queue',
+		['a'],
+		[{ type: 'add', value: 'b' }, { type: 'peek' }, { type: 'remove' }]
+	);
 	for (const frame of frames) {
 		assertConformant(frame, SQ_PSEUDO.queue.length);
 	}
@@ -97,10 +97,14 @@ test('stack live state tracks the top pointer and size', () => {
 });
 
 test('queue live state tracks front + rear pointers', () => {
-	const frames = sqFrames('queue', [], [
-		{ type: 'add', value: 'A' },
-		{ type: 'add', value: 'B' },
-	]);
+	const frames = sqFrames(
+		'queue',
+		[],
+		[
+			{ type: 'add', value: 'A' },
+			{ type: 'add', value: 'B' },
+		]
+	);
 	const last = frames.at(-1);
 	assert.equal(last.state.find(r => r.id === 'front').value, 0);
 	assert.equal(last.state.find(r => r.id === 'rear').value, 1);

@@ -157,90 +157,94 @@ const ReviewPage = () => {
 			</header>
 
 			{!started && (
-			<section className={styles.hero} aria-labelledby="review-title">
-				<p className={styles.eyebrow}>Test yourself · Spaced retrieval</p>
-				<h1 id="review-title" className={styles.title}>
-					Pull it from memory, right before you’d forget.
-				</h1>
-				<p className={styles.lede}>
-					Re-reading feels like learning; retrieving is learning. The schedule
-					brings each idea back at widening intervals, so the things you almost
-					forgot come around again. Wrong answers always reveal the explanation.
-				</p>
+				<section className={styles.hero} aria-labelledby="review-title">
+					<p className={styles.eyebrow}>Test yourself · Spaced retrieval</p>
+					<h1 id="review-title" className={styles.title}>
+						Pull it from memory, right before you’d forget.
+					</h1>
+					<p className={styles.lede}>
+						Re-reading feels like learning; retrieving is learning. The schedule
+						brings each idea back at widening intervals, so the things you
+						almost forgot come around again. Wrong answers always reveal the
+						explanation.
+					</p>
 
-				<dl className={styles.stats}>
-					{/* The amber accent only fires when there's something to act on; a
+					<dl className={styles.stats}>
+						{/* The amber accent only fires when there's something to act on; a
 					    zero should not be the loudest thing on the screen. */}
-					<div
-						className={`${styles.stat} ${dueTotal > 0 ? styles.statDue : ''}`}
-					>
-						<dt className={styles.statLabel}>Due now</dt>
-						<dd className={styles.statValue}>{dueTotal}</dd>
-					</div>
-					<div className={styles.stat}>
-						<dt className={styles.statLabel}>Scheduled</dt>
-						<dd className={styles.statValue}>{scheduledCount}</dd>
-					</div>
-				</dl>
+						<div
+							className={`${styles.stat} ${dueTotal > 0 ? styles.statDue : ''}`}
+						>
+							<dt className={styles.statLabel}>Due now</dt>
+							<dd className={styles.statValue}>{dueTotal}</dd>
+						</div>
+						<div className={styles.stat}>
+							<dt className={styles.statLabel}>Scheduled</dt>
+							<dd className={styles.statValue}>{scheduledCount}</dd>
+						</div>
+					</dl>
 
-				{!started && (
-					<div className={styles.launch}>
-						<div className={styles.actions}>
-							{dueTotal > 0 ? (
+					{!started && (
+						<div className={styles.launch}>
+							<div className={styles.actions}>
+								{dueTotal > 0 ? (
+									<button
+										type="button"
+										className={styles.dueBtn}
+										onClick={startDue}
+									>
+										<Clock size={16} strokeWidth={2.2} aria-hidden="true" />
+										<span>Review {dueTotal} due</span>
+									</button>
+								) : (
+									<p className={styles.caughtUp}>
+										<CalendarClock
+											size={15}
+											strokeWidth={2.2}
+											aria-hidden="true"
+											className={styles.caughtUpIcon}
+										/>
+										{forecast.nextDueMs === null ? (
+											<span>
+												You’re caught up. Answer a lesson check to start your
+												review schedule, or practice a mixed set below.
+											</span>
+										) : (
+											<span>
+												You’re caught up.
+												{forecast.byDay.length > 0 ? (
+													<> {forecastSentence(forecast.byDay[0])} </>
+												) : (
+													<> Your next review returns soon. </>
+												)}
+												<Link
+													to={studyTopic.to}
+													className={styles.caughtUpLink}
+												>
+													Study {lowerName(studyTopic.name)}
+												</Link>{' '}
+												or practice a mixed set below.
+											</span>
+										)}
+									</p>
+								)}
 								<button
 									type="button"
-									className={styles.dueBtn}
-									onClick={startDue}
+									className={styles.mixedBtn}
+									onClick={startMixed}
 								>
-									<Clock size={16} strokeWidth={2.2} aria-hidden="true" />
-									<span>Review {dueTotal} due</span>
+									<Shuffle size={15} strokeWidth={2.2} aria-hidden="true" />
+									<span>Mixed session</span>
 								</button>
-							) : (
-								<p className={styles.caughtUp}>
-									<CalendarClock
-										size={15}
-										strokeWidth={2.2}
-										aria-hidden="true"
-										className={styles.caughtUpIcon}
-									/>
-									{forecast.nextDueMs === null ? (
-										<span>
-											You’re caught up. Answer a lesson check to start your
-											review schedule, or practice a mixed set below.
-										</span>
-									) : (
-										<span>
-											You’re caught up.
-											{forecast.byDay.length > 0 ? (
-												<> {forecastSentence(forecast.byDay[0])} </>
-											) : (
-												<> Your next review returns soon. </>
-											)}
-											<Link to={studyTopic.to} className={styles.caughtUpLink}>
-												Study {lowerName(studyTopic.name)}
-											</Link>{' '}
-											or practice a mixed set below.
-										</span>
-									)}
-								</p>
-							)}
-							<button
-								type="button"
-								className={styles.mixedBtn}
-								onClick={startMixed}
-							>
-								<Shuffle size={15} strokeWidth={2.2} aria-hidden="true" />
-								<span>Mixed session</span>
-							</button>
+							</div>
+							<p className={styles.dueMeta}>
+								{dueTotal > 0 &&
+									`${duePlan.dueCount} scheduled · ${duePlan.freshCount} new today · `}
+								{bankSize} questions across {topicCount} topics
+							</p>
 						</div>
-						<p className={styles.dueMeta}>
-							{dueTotal > 0 &&
-								`${duePlan.dueCount} scheduled · ${duePlan.freshCount} new today · `}
-							{bankSize} questions across {topicCount} topics
-						</p>
-					</div>
-				)}
-			</section>
+					)}
+				</section>
 			)}
 
 			{started && (

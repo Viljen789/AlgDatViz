@@ -49,10 +49,9 @@ export const mergeStepToPseudoFrame = step => {
 				{
 					id: 'mid',
 					label: 'mid',
-					value:
-						Array.isArray(meta.range)
-							? Math.floor((meta.range[0] + meta.range[1]) / 2)
-							: NIL,
+					value: Array.isArray(meta.range)
+						? Math.floor((meta.range[0] + meta.range[1]) / 2)
+						: NIL,
 					active: true,
 				},
 				rangeRow('left', meta.left),

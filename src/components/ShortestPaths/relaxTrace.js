@@ -435,7 +435,9 @@ export const dagShortestPathsTrace = (graph, { source } = {}) => {
 				improvements: counter.improvements,
 			})
 		);
-		for (const edge of adj[u].slice().sort((a, b) => a.to.localeCompare(b.to))) {
+		for (const edge of adj[u]
+			.slice()
+			.sort((a, b) => a.to.localeCompare(b.to))) {
 			relax(edge, {
 				dist,
 				pred,
@@ -527,7 +529,9 @@ export const dijkstraTrace = (graph, { source } = {}) => {
 			})
 		);
 
-		for (const edge of adj[u].slice().sort((a, b) => a.to.localeCompare(b.to))) {
+		for (const edge of adj[u]
+			.slice()
+			.sort((a, b) => a.to.localeCompare(b.to))) {
 			if (settled.has(edge.to)) continue;
 			relax(edge, {
 				dist,

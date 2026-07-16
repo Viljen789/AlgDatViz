@@ -91,9 +91,7 @@ export const buildOverlapCensus = n => {
  */
 export const buildRecursionTree = n => {
 	const census = buildOverlapCensus(n);
-	const repeatsByK = Object.fromEntries(
-		census.rows.map(r => [r.k, r.naive])
-	);
+	const repeatsByK = Object.fromEntries(census.rows.map(r => [r.k, r.naive]));
 
 	let nodeCount = 0;
 	const make = (k, depth, path) => {

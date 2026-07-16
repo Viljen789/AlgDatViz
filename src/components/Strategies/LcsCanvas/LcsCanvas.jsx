@@ -46,7 +46,8 @@ const LcsCanvas = ({ frame }) => {
 	}, [tracePath, X, Y]);
 
 	const cellState = (i, j) => {
-		if (active && i === active.i && j === active.j) return match ? 'match' : 'active';
+		if (active && i === active.i && j === active.j)
+			return match ? 'match' : 'active';
 		if (sources[key(i, j)]) {
 			const role = sources[key(i, j)];
 			if (role === chosenSource) return match ? 'matchsrc' : 'chosen';
@@ -112,14 +113,16 @@ const LcsCanvas = ({ frame }) => {
 
 			<div className={styles.legendRow} aria-hidden="true">
 				<span className={styles.legendItem}>
-					<span className={`${styles.swatch} ${styles.swatchMatch}`} /> match → ↖+1
+					<span className={`${styles.swatch} ${styles.swatchMatch}`} /> match →
+					↖+1
 				</span>
 				<span className={styles.legendItem}>
-					<span className={`${styles.swatch} ${styles.swatchChosen}`} /> carry max(↑,
-					←)
+					<span className={`${styles.swatch} ${styles.swatchChosen}`} /> carry
+					max(↑, ←)
 				</span>
 				<span className={styles.legendItem}>
-					<span className={`${styles.swatch} ${styles.swatchTrace}`} /> traceback
+					<span className={`${styles.swatch} ${styles.swatchTrace}`} />{' '}
+					traceback
 				</span>
 			</div>
 

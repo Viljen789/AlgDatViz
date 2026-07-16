@@ -103,14 +103,16 @@ const FractionalKnapsackCanvas = ({ frame }) => {
 
 			<div className={styles.legendRow} aria-hidden="true">
 				<span className={styles.legendItem}>
-					<span className={`${styles.swatch} ${styles.swatchWhole}`} /> taken whole
+					<span className={`${styles.swatch} ${styles.swatchWhole}`} /> taken
+					whole
 				</span>
 				<span className={styles.legendItem}>
-					<span className={`${styles.swatch} ${styles.swatchFraction}`} /> fraction
+					<span className={`${styles.swatch} ${styles.swatchFraction}`} />{' '}
+					fraction
 				</span>
 				<span className={styles.legendItem}>
-					<span className={`${styles.swatch} ${styles.swatchSkip}`} /> skipped (bag
-					full)
+					<span className={`${styles.swatch} ${styles.swatchSkip}`} /> skipped
+					(bag full)
 				</span>
 			</div>
 		</div>

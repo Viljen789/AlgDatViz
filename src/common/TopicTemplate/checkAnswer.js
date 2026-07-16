@@ -240,6 +240,12 @@ const GRADERS = {
 	problem: checkProblem,
 };
 
+// Public contract for consumers that need to count gradeable work without
+// fabricating a payload and grading it. Keep this derived from GRADERS so timer,
+// scoring, and future check kinds cannot drift from checkAnswer itself.
+export const isAutoGradedCheck = check =>
+	Boolean(check) && typeof GRADERS[check.kind] === 'function';
+
 /**
  * checkAnswer — grade a payload against a check definition.
  *

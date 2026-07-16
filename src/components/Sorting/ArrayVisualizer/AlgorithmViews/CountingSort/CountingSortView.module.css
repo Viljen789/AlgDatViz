@@ -83,8 +83,16 @@
 }
 
 .costWarn {
-	border-color: color-mix(in srgb, var(--state-flight) 34%, transparent) !important;
-	background: color-mix(in srgb, var(--state-flight) 8%, transparent) !important;
+	border-color: color-mix(
+		in srgb,
+		var(--state-flight) 34%,
+		transparent
+	) !important;
+	background: color-mix(
+		in srgb,
+		var(--state-flight) 8%,
+		transparent
+	) !important;
 }
 
 .costWarn strong {

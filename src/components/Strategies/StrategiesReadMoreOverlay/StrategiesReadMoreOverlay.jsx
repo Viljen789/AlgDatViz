@@ -5,11 +5,11 @@ import styles from './StrategiesReadMoreOverlay.module.css';
 const NOTES = {
 	coinChange: {
 		thinks:
-			'Define dp[i] = the fewest coins that sum to i. The recurrence considers every coin c that fits, then picks the smallest of dp[i-c] + 1. Greedy bypasses the recurrence and just takes the largest coin every time. The cost of greedy\'s simplicity is correctness — it only works when the coin set is canonical.',
+			"Define dp[i] = the fewest coins that sum to i. The recurrence considers every coin c that fits, then picks the smallest of dp[i-c] + 1. Greedy bypasses the recurrence and just takes the largest coin every time. The cost of greedy's simplicity is correctness — it only works when the coin set is canonical.",
 		watchOuts: [
 			'Greedy is correct when each large coin is at least double the next smaller one — that is the canonicity condition.',
 			'Real currency is canonical by design. Made-up coin sets often are not.',
-			'DP\'s O(n · |coins|) cost is small in practice, but it does require remembering every subproblem.',
+			"DP's O(n · |coins|) cost is small in practice, but it does require remembering every subproblem.",
 		],
 		complexity: [
 			{ label: 'DP TIME', value: 'O(target · |coins|)' },

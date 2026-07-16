@@ -31,7 +31,8 @@ export const HASH_OPERATIONS = {
 		name: 'Resize',
 		needsKey: false,
 		needsValue: false,
-		oneLine: 'Allocate a larger table and rehash every entry into its new bucket.',
+		oneLine:
+			'Allocate a larger table and rehash every entry into its new bucket.',
 		motionPhrase: 'allocate, rehash, redistribute',
 		complexity: 'O(n) — amortized into inserts',
 	},
@@ -89,7 +90,8 @@ export const HASH_MAP_PRESETS = [
 	{
 		id: 'clean-miss',
 		label: 'Clean miss',
-		intent: 'A missing key still hashes to one bucket; no full-table scan is needed.',
+		intent:
+			'A missing key still hashes to one bucket; no full-table scan is needed.',
 		entries: [
 			{ key: 'elm', value: '3' },
 			{ key: 'ash', value: '6' },

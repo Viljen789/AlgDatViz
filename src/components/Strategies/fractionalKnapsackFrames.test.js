@@ -26,20 +26,29 @@ const CLRS = [
 ];
 
 test('buildFractionalKnapsackFrames — every frame conforms to the contract', () => {
-	const { frames } = buildFractionalKnapsackFrames({ items: CLRS, capacity: 50 });
+	const { frames } = buildFractionalKnapsackFrames({
+		items: CLRS,
+		capacity: 50,
+	});
 	assert.ok(frames.length > 0);
 	for (const frame of frames) assertConformant(frame);
 });
 
 test('buildFractionalKnapsackFrames — CLRS optimum is 240', () => {
 	// Take item1 (60) + item2 (100) + 2/3 of item3 (80) = 240.
-	const { summary } = buildFractionalKnapsackFrames({ items: CLRS, capacity: 50 });
+	const { summary } = buildFractionalKnapsackFrames({
+		items: CLRS,
+		capacity: 50,
+	});
 	assert.equal(summary.total, 240, 'optimal fractional value 240');
 	assert.equal(summary.usedWeight, 50, 'bag is exactly full');
 });
 
 test('buildFractionalKnapsackFrames — exactly one fractional item, rest whole', () => {
-	const { summary } = buildFractionalKnapsackFrames({ items: CLRS, capacity: 50 });
+	const { summary } = buildFractionalKnapsackFrames({
+		items: CLRS,
+		capacity: 50,
+	});
 	const fracs = summary.states.filter(s => s.status === 'fraction');
 	assert.equal(fracs.length, 1, 'one split item');
 	assert.ok(fracs[0].fraction > 0 && fracs[0].fraction < 1, 'a real fraction');
@@ -62,7 +71,8 @@ test('fractional ≥ 0/1 on the same instance (greedy gains from splitting)', ()
 		{ name: 'P', weight: 1, value: 2 },
 		{ name: 'Q', weight: 4, value: 7 },
 	];
-	const frac = buildFractionalKnapsackFrames({ items, capacity: 4 }).summary.total;
+	const frac = buildFractionalKnapsackFrames({ items, capacity: 4 }).summary
+		.total;
 	const binary = buildKnapsack01Frames({ items, capacity: 4 }).summary.best;
 	assert.ok(frac >= binary, `fractional ${frac} ≥ 0/1 ${binary}`);
 });

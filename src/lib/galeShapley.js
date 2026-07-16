@@ -56,7 +56,8 @@ const toPrefMap = prefs => {
 		return m;
 	}
 	const m = new Map();
-	for (const k of Object.keys(prefs)) m.set(String(k), [...prefs[k]].map(String));
+	for (const k of Object.keys(prefs))
+		m.set(String(k), [...prefs[k]].map(String));
 	return m;
 };
 

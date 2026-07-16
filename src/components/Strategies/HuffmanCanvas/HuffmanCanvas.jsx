@@ -87,10 +87,7 @@ const layoutForest = forest => {
 const HuffmanCanvas = ({ frame }) => {
 	const forest = useMemo(() => frame?.forest ?? [], [frame]);
 	const layout = useMemo(() => layoutForest(forest), [forest]);
-	const selected = useMemo(
-		() => new Set(frame?.selectedIds ?? []),
-		[frame]
-	);
+	const selected = useMemo(() => new Set(frame?.selectedIds ?? []), [frame]);
 	const mergedId = frame?.mergedId ?? null;
 	const codes = frame?.codes ?? null;
 
@@ -191,7 +188,9 @@ const HuffmanCanvas = ({ frame }) => {
 					<span className={styles.codeTag}>CODEWORDS</span>
 					<div className={styles.codeRows}>
 						{Object.entries(codes)
-							.sort((a, b) => a[1].length - b[1].length || a[0].localeCompare(b[0]))
+							.sort(
+								(a, b) => a[1].length - b[1].length || a[0].localeCompare(b[0])
+							)
 							.map(([char, code]) => (
 								<div key={char} className={styles.codeRow}>
 									<span className={styles.codeChar}>{char}</span>

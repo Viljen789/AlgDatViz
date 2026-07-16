@@ -45,7 +45,10 @@ export const linearSearchFrames = (array = [], target) => {
 			// Frame: found — return i.
 			frames.push({
 				line: 3,
-				state: [...base(i), { id: 'found', label: 'found at', value: i, active: true }],
+				state: [
+					...base(i),
+					{ id: 'found', label: 'found at', value: i, active: true },
+				],
 				highlight: [i],
 			});
 			return frames;

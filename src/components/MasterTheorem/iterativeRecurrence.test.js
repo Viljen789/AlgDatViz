@@ -6,11 +6,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
-import {
-	unrollRecurrence,
-	gPow2,
-	gLinear,
-} from './iterativeRecurrence.js';
+import { unrollRecurrence, gPow2, gLinear } from './iterativeRecurrence.js';
 
 // T(1) = 1, T(n) = T(n-1) + 2^(n-1)  ⇒  T(n) = 2^n − 1.
 test('unrollRecurrence — 2^(k-1) sum matches the closed form 2^n − 1', () => {

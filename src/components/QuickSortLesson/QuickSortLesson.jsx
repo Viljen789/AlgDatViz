@@ -67,10 +67,7 @@ const QuickSortLesson = () => {
 		[]
 	);
 
-	const renderPlayground = useCallback(
-		() => <QuickSortPlayground />,
-		[]
-	);
+	const renderPlayground = useCallback(() => <QuickSortPlayground />, []);
 
 	const eyebrow = useMemo(
 		() => `${topic?.number ?? '05'} · ${topic?.name ?? 'Sorting'} · Quicksort`,

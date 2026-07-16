@@ -10,7 +10,11 @@ import {
 	getTreeStats,
 	insertValue,
 } from './treeUtils.js';
-import { TREE_OPERATIONS, TREE_OP_ORDER, TREE_PSEUDO } from './treeAlgorithmMeta.js';
+import {
+	TREE_OPERATIONS,
+	TREE_OP_ORDER,
+	TREE_PSEUDO,
+} from './treeAlgorithmMeta.js';
 import {
 	usePlayback,
 	FrameTrace,
@@ -20,6 +24,7 @@ import StepControlBar from '../../common/StepControlBar/StepControlBar.jsx';
 import Button from '../../common/Button/Button.jsx';
 import Input from '../../common/Input/Input.jsx';
 import styles from './TreePlayground.module.css';
+import { useTeachingStateSnapshot } from '../../lib/useTeachingStateSnapshot.js';
 
 const INITIAL_VALUES = [42, 23, 61, 12, 31, 54, 72, 28, 36];
 
@@ -98,6 +103,21 @@ const TreePlayground = ({ onUserInteract }) => {
 	const layout = useMemo(() => getTreeLayout(root), [root]);
 	const stats = useMemo(() => getTreeStats(root), [root]);
 	const currentFrame = steps[currentStep] ?? steps[0];
+	useTeachingStateSnapshot(
+		'controls',
+		{ root, inputValue, operationId, frame: currentFrame },
+		snapshot => {
+			if (!snapshot?.root || !(snapshot.operationId in TREE_OPERATIONS)) return;
+			setRoot(snapshot.root);
+			setInputValue(String(snapshot.inputValue ?? ''));
+			setOperationId(snapshot.operationId);
+			setSteps(
+				snapshot.frame
+					? [snapshot.frame]
+					: getTraversalSteps(snapshot.root, snapshot.operationId)
+			);
+		}
+	);
 	const activeNodes = useMemo(
 		() => new Set(currentFrame?.activeNodes || []),
 		[currentFrame]
@@ -314,9 +334,7 @@ const TreePlayground = ({ onUserInteract }) => {
 						<span>height {stats?.height ?? 0}</span>
 						<span className={styles.notationDot}>·</span>
 						<span
-							className={
-								stats?.balanced ? styles.balanced : styles.unbalanced
-							}
+							className={stats?.balanced ? styles.balanced : styles.unbalanced}
 						>
 							{stats?.balanced ? 'balanced' : 'unbalanced'}
 						</span>
@@ -338,8 +356,7 @@ const TreePlayground = ({ onUserInteract }) => {
 									x2={edge.to.x}
 									y2={edge.to.y}
 									className={
-										pathNodes.has(edge.from.id) &&
-										pathNodes.has(edge.to.id)
+										pathNodes.has(edge.from.id) && pathNodes.has(edge.to.id)
 											? styles.edgeActive
 											: styles.edge
 									}
@@ -377,10 +394,7 @@ const TreePlayground = ({ onUserInteract }) => {
 							<span className={styles.outputLabel}>Output</span>
 							<div className={styles.outputItems}>
 								{outputItems.map((item, idx) => (
-									<span
-										key={`${item}-${idx}`}
-										className={styles.outputItem}
-									>
+									<span key={`${item}-${idx}`} className={styles.outputItem}>
 										{item}
 									</span>
 								))}

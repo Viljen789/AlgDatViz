@@ -1,6 +1,12 @@
-import { BrowserRouter, Route, Routes, useLocation } from 'react-router-dom';
+import {
+	BrowserRouter,
+	Route,
+	Routes,
+	useLocation,
+	useSearchParams,
+} from 'react-router-dom';
 import { AnimatePresence, MotionConfig, motion as Motion } from 'framer-motion';
-import { lazy, Suspense, useEffect } from 'react';
+import { lazy, Suspense, useEffect, useRef } from 'react';
 import Sidebar from './common/Sidebar/Sidebar.jsx';
 import { TOPIC_BY_ROUTE } from './data/curriculum.js';
 import styles from './App.module.css';
@@ -59,6 +65,7 @@ const RouteFallback = () => (
 // the rest come from this map.
 const UTILITY_TITLES = {
 	'/': null, // home keeps the product title
+	'/path': 'Learning path',
 	'/review': 'Review',
 	'/exam': 'Exam',
 	'/reference': 'Reference',
@@ -70,6 +77,10 @@ const UTILITY_TITLES = {
 
 const AppLayout = () => {
 	const location = useLocation();
+	const [searchParams] = useSearchParams();
+	const presenting = searchParams.get('present') === '1';
+	const mainRef = useRef(null);
+	const previousPath = useRef(location.pathname);
 
 	useEffect(() => {
 		const topic = TOPIC_BY_ROUTE[location.pathname];
@@ -79,13 +90,24 @@ const AppLayout = () => {
 			: 'AlgDatViz — Algorithm Visualizer';
 	}, [location.pathname]);
 
+	useEffect(() => {
+		if (previousPath.current === location.pathname) return;
+		previousPath.current = location.pathname;
+		const frame = requestAnimationFrame(() =>
+			mainRef.current?.focus({ preventScroll: true })
+		);
+		return () => cancelAnimationFrame(frame);
+	}, [location.pathname]);
+
 	return (
-		<div className={styles.appContainer}>
+		<div
+			className={`${styles.appContainer} ${presenting ? styles.presenterMode : ''}`}
+		>
 			<a href="#main" className={styles.skipLink}>
 				Skip to content
 			</a>
 			<Sidebar />
-			<main id="main" tabIndex={-1} className={styles.mainContent}>
+			<main ref={mainRef} id="main" tabIndex={-1} className={styles.mainContent}>
 				<div className={styles.content}>
 					<AnimatePresence mode="wait">
 						<Motion.div
@@ -103,6 +125,7 @@ const AppLayout = () => {
 							<Suspense fallback={<RouteFallback />}>
 								<Routes location={location}>
 									<Route path="/" element={<HomePage />} />
+									<Route path="/path" element={<HomePage mode="path" />} />
 									<Route path="/foundations" element={<FoundationsPage />} />
 									<Route path="/graph" element={<GraphPage />} />
 									<Route path="/hashmap" element={<HashMapPage />} />
@@ -152,7 +175,6 @@ const AppLayout = () => {
 					</AnimatePresence>
 				</div>
 			</main>
-
 		</div>
 	);
 };

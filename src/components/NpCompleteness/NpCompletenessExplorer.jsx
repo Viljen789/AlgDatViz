@@ -6,6 +6,7 @@ import {
 	verifyIndependentSet,
 } from './certificates.js';
 import styles from './NpCompletenessExplorer.module.css';
+import { useTeachingStateSnapshot } from '../../lib/useTeachingStateSnapshot.js';
 
 // NpCompletenessExplorer — the interactive playground. Two signature tools:
 //
@@ -71,6 +72,10 @@ const clauseText = clause => clause.map(litText).join(' ∨ ');
 
 const SatVerifier = ({ onInteract }) => {
 	const [assign, setAssign] = useState({ x1: false, x2: false, x3: false });
+	useTeachingStateSnapshot('np-sat', { assign }, snapshot => {
+		if (snapshot?.assign && typeof snapshot.assign === 'object')
+			setAssign(snapshot.assign);
+	});
 	const result = useMemo(() => verify3SAT(SAT_FORMULA, assign), [assign]);
 
 	const toggle = v => {
@@ -139,7 +144,8 @@ const SatVerifier = ({ onInteract }) => {
 			/>
 			<p className={styles.aside}>
 				Verifying is instant. There is no “solve” button on purpose — finding a
-				satisfying assignment is the NP-complete part; only checking one is easy.
+				satisfying assignment is the NP-complete part; only checking one is
+				easy.
 			</p>
 		</div>
 	);
@@ -150,6 +156,16 @@ const SatVerifier = ({ onInteract }) => {
 const GraphVerifier = ({ onInteract }) => {
 	const [mode, setMode] = useState('vc'); // 'vc' | 'is'
 	const [selected, setSelected] = useState(new Set());
+	useTeachingStateSnapshot(
+		'np-graph',
+		{ mode, selected: [...selected] },
+		snapshot => {
+			if (snapshot?.mode === 'vc' || snapshot?.mode === 'is')
+				setMode(snapshot.mode);
+			if (Array.isArray(snapshot?.selected))
+				setSelected(new Set(snapshot.selected));
+		}
+	);
 	const k = 2;
 
 	const set = [...selected];
@@ -185,7 +201,11 @@ const GraphVerifier = ({ onInteract }) => {
 
 	return (
 		<div className={styles.panel}>
-			<div className={styles.segmented} role="tablist" aria-label="Graph problem">
+			<div
+				className={styles.segmented}
+				role="tablist"
+				aria-label="Graph problem"
+			>
 				<button
 					type="button"
 					role="tab"
@@ -294,7 +314,9 @@ const GraphVerifier = ({ onInteract }) => {
 };
 
 const Verdict = ({ ok, detail, okText, badText }) => (
-	<div className={`${styles.verdict} ${ok ? styles.verdictOk : styles.verdictBad}`}>
+	<div
+		className={`${styles.verdict} ${ok ? styles.verdictOk : styles.verdictBad}`}
+	>
 		<Search size={14} strokeWidth={2} aria-hidden="true" />
 		<span className={styles.verdictText}>{ok ? okText : badText}</span>
 		<span className={styles.verdictDetail}>{detail}</span>
@@ -309,6 +331,16 @@ const GOAL_PROVE = 'prove';
 const ReductionDirectionDemo = ({ onInteract }) => {
 	const [goal, setGoal] = useState(GOAL_PROVE);
 	const [picked, setPicked] = useState(null); // 'AtoB' | 'BtoA'
+	useTeachingStateSnapshot('np-direction', { goal, picked }, snapshot => {
+		if (snapshot?.goal === GOAL_PROVE || snapshot?.goal === GOAL_SOLVE)
+			setGoal(snapshot.goal);
+		if (
+			snapshot?.picked === null ||
+			snapshot?.picked === 'AtoB' ||
+			snapshot?.picked === 'BtoA'
+		)
+			setPicked(snapshot.picked);
+	});
 
 	// For the PROVE goal: B is the new problem; A = 3-SAT (known hard). Correct =
 	// reduce A→B (3-SAT ≤p B). For the SOLVE goal: you have a solver for B and
@@ -341,8 +373,7 @@ const ReductionDirectionDemo = ({ onInteract }) => {
 						'Wrong direction. B ≤p 3-SAT only shows B is no harder than 3-SAT (it does not even establish B is hard). A wrong-direction reduction proves nothing about B’s hardness.',
 				}
 			: {
-					title:
-						'Goal: SOLVE problem A using a solver you already have for B.',
+					title: 'Goal: SOLVE problem A using a solver you already have for B.',
 					AtoB: 'Reduce A to B  (A ≤p B), run B’s solver',
 					BtoA: 'Reduce B to A  (B ≤p A)',
 					rightWhy:
@@ -353,7 +384,11 @@ const ReductionDirectionDemo = ({ onInteract }) => {
 
 	return (
 		<div className={styles.panel}>
-			<div className={styles.segmented} role="tablist" aria-label="Reduction goal">
+			<div
+				className={styles.segmented}
+				role="tablist"
+				aria-label="Reduction goal"
+			>
 				<button
 					type="button"
 					role="tab"
@@ -440,6 +475,10 @@ const TABS = [
 
 const NpCompletenessExplorer = ({ onUserInteract }) => {
 	const [tab, setTab] = useState('sat');
+	useTeachingStateSnapshot('np-shell', { tab }, snapshot => {
+		if (TABS.some(candidate => candidate.id === snapshot?.tab))
+			setTab(snapshot.tab);
+	});
 
 	const select = id => {
 		onUserInteract?.();

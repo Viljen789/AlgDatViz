@@ -1,7 +1,12 @@
 import { useEffect, useRef } from 'react';
 import styles from './PseudocodeRail.module.css';
 
-const PseudocodeRail = ({ lines = [], activeLine, isRunning, label = 'PSEUDOCODE' }) => {
+const PseudocodeRail = ({
+	lines = [],
+	activeLine,
+	isRunning,
+	label = 'PSEUDOCODE',
+}) => {
 	const railRef = useRef(null);
 	const activeRef = useRef(null);
 

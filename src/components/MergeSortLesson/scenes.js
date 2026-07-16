@@ -41,7 +41,8 @@ export const SCENES = [
 	{
 		id: 'split',
 		eyebrow: 'Divide',
-		title: 'Merge sort splits it in half. Then splits the halves. All the way down.',
+		title:
+			'Merge sort splits it in half. Then splits the halves. All the way down.',
 		body: 'Three levels of splitting, until every piece is one element. Nothing is sorted yet — the algorithm is just shrinking the problem.',
 		check: {
 			kind: 'choice',
@@ -105,7 +106,8 @@ export const SCENES = [
 	{
 		id: 'recurrence',
 		eyebrow: 'Cost',
-		title: 'The same merge runs at every level. That is why the cost is O(n log n).',
+		title:
+			'The same merge runs at every level. That is why the cost is O(n log n).',
 		body: 'log n levels of merges, each doing n work to scan and copy every element. The recursion tree is the proof.',
 		check: {
 			kind: 'numeric',

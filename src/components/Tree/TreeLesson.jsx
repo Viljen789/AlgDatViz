@@ -48,10 +48,7 @@ const TreeLesson = () => {
 		[]
 	);
 
-	const renderPlayground = useCallback(
-		() => <TreePlayground />,
-		[]
-	);
+	const renderPlayground = useCallback(() => <TreePlayground />, []);
 
 	const handleVisit = useCallback(() => {
 		markVisited(TOPIC_ID);

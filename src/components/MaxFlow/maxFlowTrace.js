@@ -84,7 +84,14 @@ export const MAXFLOW_PSEUDO = {
 
 // Pseudocode line offsets reused by the drivers, so each beat highlights the
 // right line in whichever listing is showing.
-const LINE = { init: 1, whileTest: 2, choosePath: 3, bottleneck: 4, augment: 5, done: 6 };
+const LINE = {
+	init: 1,
+	whileTest: 2,
+	choosePath: 3,
+	bottleneck: 4,
+	augment: 5,
+	done: 6,
+};
 
 // ── Residual network construction (pure) ──────────────────────────────────────
 //
@@ -150,7 +157,10 @@ const dfsAugmentingPath = (ids, residual, source, sink) => {
 			stack.push(re.to);
 		}
 	}
-	return { path: tracePath(parent, source, sink), reachable: [...visited].sort() };
+	return {
+		path: tracePath(parent, source, sink),
+		reachable: [...visited].sort(),
+	};
 };
 
 // Breadth-first search for the SHORTEST augmenting s→t path (fewest edges).
@@ -169,7 +179,10 @@ const bfsAugmentingPath = (ids, residual, source, sink) => {
 			queue.push(re.to);
 		}
 	}
-	return { path: tracePath(parent, source, sink), reachable: [...visited].sort() };
+	return {
+		path: tracePath(parent, source, sink),
+		reachable: [...visited].sort(),
+	};
 };
 
 // Rebuild the residual-edge path from the parent map, or null if t unreached.
@@ -259,7 +272,11 @@ const baseFrame = ({
 	bottleneck,
 	reachable: [...reachable],
 	minCut: minCut
-		? { S: [...minCut.S], edges: minCut.edges.map(e => ({ ...e })), capacity: minCut.capacity }
+		? {
+				S: [...minCut.S],
+				edges: minCut.edges.map(e => ({ ...e })),
+				capacity: minCut.capacity,
+			}
 		: null,
 	phase,
 	line,
@@ -342,7 +359,9 @@ const runMaxFlow = (network, findPath, algorithmId) => {
 					title: `Maximum flow = ${value}`,
 					description: `The min cut crosses ${minCut.edges
 						.map(e => `${e.from}→${e.to}`)
-						.join(', ')} with total capacity ${minCut.capacity} — equal to the max-flow value ${value} (max-flow = min-cut).`,
+						.join(
+							', '
+						)} with total capacity ${minCut.capacity} — equal to the max-flow value ${value} (max-flow = min-cut).`,
 					augmentations,
 				})
 			);
@@ -455,7 +474,9 @@ export const buildStateRows = frame => {
 			id: 'path',
 			label: 'augmenting path',
 			value: hasPath
-				? frame.path.map(re => re.to).reduce((acc, to) => `${acc} → ${to}`, frame.path[0].from)
+				? frame.path
+						.map(re => re.to)
+						.reduce((acc, to) => `${acc} → ${to}`, frame.path[0].from)
 				: '—',
 			active: phase === 'search',
 		},

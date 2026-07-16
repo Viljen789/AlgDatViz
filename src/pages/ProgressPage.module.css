@@ -179,7 +179,9 @@
 	padding: 2px var(--space-xs);
 	cursor: pointer;
 	color-scheme: light dark;
-	transition: border-color var(--transition), color var(--transition);
+	transition:
+		border-color var(--transition),
+		color var(--transition);
 }
 
 .examInput input:hover {

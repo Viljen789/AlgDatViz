@@ -15,13 +15,10 @@ import {
 	reconstructPath,
 	transitiveClosure,
 } from './fwTrace.js';
-import {
-	APSP_MODES,
-	APSP_MODE_ORDER,
-	APSP_PRESETS,
-} from './apspMeta.js';
+import { APSP_MODES, APSP_MODE_ORDER, APSP_PRESETS } from './apspMeta.js';
 import { buildEdges, projectNodes, VIEW_H, VIEW_W } from './graphLayout.js';
 import styles from './AllPairsShortestPathsPlayground.module.css';
+import { useTeachingStateSnapshot } from '../../lib/useTeachingStateSnapshot.js';
 
 const INITIAL_PRESET = APSP_PRESETS[0];
 
@@ -88,6 +85,17 @@ const AllPairsShortestPathsPlayground = ({ onUserInteract }) => {
 	const mode = APSP_MODES[modeId];
 	const isClosure = modeId === 'transitiveClosure';
 	const frame = currentFrame || frames[0];
+	useTeachingStateSnapshot(
+		'controls',
+		{ presetId, graph, modeId, frame },
+		snapshot => {
+			if (!snapshot?.graph || !(snapshot.modeId in APSP_MODES)) return;
+			setPresetId(snapshot.presetId || INITIAL_PRESET.id);
+			setGraph(snapshot.graph);
+			setModeId(snapshot.modeId);
+			setFrames([snapshot.frame || idleFrame(snapshot.modeId, snapshot.graph)]);
+		}
+	);
 
 	// Node ids + geometry recomputed when the graph changes.
 	const ids = useMemo(() => graph.nodes.map(n => n.id), [graph]);
@@ -101,7 +109,8 @@ const AllPairsShortestPathsPlayground = ({ onUserInteract }) => {
 	const lines = useMemo(() => FW_PSEUDO[modeId] || [], [modeId]);
 	const activeLine = frame?.line ?? null;
 	const stateRows = useMemo(
-		() => (isClosure ? closureStateRows(frame, ids) : buildStateRows(frame, ids)),
+		() =>
+			isClosure ? closureStateRows(frame, ids) : buildStateRows(frame, ids),
 		[frame, ids, isClosure]
 	);
 
@@ -209,8 +218,21 @@ const AllPairsShortestPathsPlayground = ({ onUserInteract }) => {
 		const target = ids[ids.length - 1];
 		const path = reconstructPath(finalResult.pred, ids, i, target);
 		if (!path || path.length < 2) return null;
-		return { from: i, to: target, path, dist: finalResult.dist[idIdx[i]][idIdx[target]] };
-	}, [isClosure, negativeCycle, currentStep, totalSteps, finalResult, ids, idIdx]);
+		return {
+			from: i,
+			to: target,
+			path,
+			dist: finalResult.dist[idIdx[i]][idIdx[target]],
+		};
+	}, [
+		isClosure,
+		negativeCycle,
+		currentStep,
+		totalSteps,
+		finalResult,
+		ids,
+		idIdx,
+	]);
 
 	return (
 		<div className={styles.shell} ref={playerRef}>
@@ -293,7 +315,7 @@ const AllPairsShortestPathsPlayground = ({ onUserInteract }) => {
 				</div>
 				<div className={styles.stat}>
 					<span className={styles.statValue}>
-						{isClosure ? frame?.added ?? 0 : frame?.updates ?? 0}
+						{isClosure ? (frame?.added ?? 0) : (frame?.updates ?? 0)}
 					</span>
 					<span className={styles.statLabel}>
 						{isClosure ? 'new links' : 'updates'}
@@ -303,7 +325,9 @@ const AllPairsShortestPathsPlayground = ({ onUserInteract }) => {
 					<span className={styles.statValue}>{frame?.compares ?? 0}</span>
 					<span className={styles.statLabel}>compares</span>
 				</div>
-				<div className={`${styles.stat} ${negativeCycle ? styles.statWarn : ''}`}>
+				<div
+					className={`${styles.stat} ${negativeCycle ? styles.statWarn : ''}`}
+				>
 					<span className={styles.statValue}>
 						{isClosure
 							? 'reachability'
@@ -317,7 +341,10 @@ const AllPairsShortestPathsPlayground = ({ onUserInteract }) => {
 
 			{/* ---------- Canvas + trace ---------- */}
 			<div className={styles.body}>
-				<section className={styles.canvas} aria-label="All-pairs graph + matrix">
+				<section
+					className={styles.canvas}
+					aria-label="All-pairs graph + matrix"
+				>
 					<div className={styles.canvasOverlay} aria-hidden="true">
 						<span className={styles.mono}>{mode?.name}</span>
 						{frame?.title && (
@@ -355,7 +382,10 @@ const AllPairsShortestPathsPlayground = ({ onUserInteract }) => {
 									markerHeight="5"
 									orient="auto-start-reverse"
 								>
-									<path d="M 0 1 L 9 5 L 0 9 z" className={styles.arrowHeadHot} />
+									<path
+										d="M 0 1 L 9 5 L 0 9 z"
+										className={styles.arrowHeadHot}
+									/>
 								</marker>
 							</defs>
 
@@ -468,9 +498,12 @@ const AllPairsShortestPathsPlayground = ({ onUserInteract }) => {
 							</table>
 							{pathSummary && (
 								<div className={styles.pathRow} aria-live="polite">
-									<span className={styles.pathLabel}>path {pathSummary.from}→{pathSummary.to}</span>
+									<span className={styles.pathLabel}>
+										path {pathSummary.from}→{pathSummary.to}
+									</span>
 									<span className={styles.pathSeq}>
-										{pathSummary.path.join(' → ')} ({formatDist(pathSummary.dist)})
+										{pathSummary.path.join(' → ')} (
+										{formatDist(pathSummary.dist)})
 									</span>
 								</div>
 							)}
@@ -525,12 +558,16 @@ const AllPairsShortestPathsPlayground = ({ onUserInteract }) => {
 // Live-state rows for the transitive-closure mode (booleans instead of sums).
 const closureStateRows = (frame, ids = []) => {
 	if (!frame) return [];
-	const label = idx => (idx == null ? '—' : ids[idx] ?? idx + 1);
+	const label = idx => (idx == null ? '—' : (ids[idx] ?? idx + 1));
 	const cell = c => (c ? `${ids[c[0]] ?? c[0]}→${ids[c[1]] ?? c[1]}` : '—');
 	const active = frame.phase === 'improve' || frame.phase === 'keep';
 	const bool = v => (v === true ? 'true' : v === false ? 'false' : '—');
-	const readIK = frame.readIK ? frame.reach[frame.readIK[0]][frame.readIK[1]] : null;
-	const readKJ = frame.readKJ ? frame.reach[frame.readKJ[0]][frame.readKJ[1]] : null;
+	const readIK = frame.readIK
+		? frame.reach[frame.readIK[0]][frame.readIK[1]]
+		: null;
+	const readKJ = frame.readKJ
+		? frame.reach[frame.readKJ[0]][frame.readKJ[1]]
+		: null;
 	return [
 		{
 			id: 'k',
@@ -561,7 +598,12 @@ const closureStateRows = (frame, ids = []) => {
 			value: cell(frame.improved ? frame.write : null),
 			active: frame.phase === 'improve',
 		},
-		{ id: 'added', label: 'new links', value: frame.added ?? 0, active: frame.phase === 'improve' },
+		{
+			id: 'added',
+			label: 'new links',
+			value: frame.added ?? 0,
+			active: frame.phase === 'improve',
+		},
 	];
 };
 

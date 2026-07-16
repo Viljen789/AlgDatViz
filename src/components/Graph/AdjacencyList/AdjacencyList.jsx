@@ -4,9 +4,11 @@ import {
 	AddNodeButton,
 	DeleteNodeButton,
 } from '../../../common/NodeButtons/NodeButtons.jsx';
+import { buildGraphAdjacency } from '../../../utils/graphUtils.js';
 
 const AdjacencyList = ({
 	graph,
+	isDirected,
 	isWeighted,
 	onUpdate,
 	selectedNodeId,
@@ -22,11 +24,7 @@ const AdjacencyList = ({
 	);
 
 	const displayStrings = useMemo(() => {
-		const adjList = new Map();
-		graph.nodes.forEach(node => adjList.set(node.id, []));
-		graph.edges.forEach(edge => {
-			adjList.get(edge.from)?.push({ to: edge.to, weight: edge.weight });
-		});
+		const adjList = buildGraphAdjacency(graph, isDirected);
 
 		const displayMap = new Map();
 		adjList.forEach((neighbors, nodeId) => {
@@ -37,7 +35,7 @@ const AdjacencyList = ({
 			displayMap.set(nodeId, displayString);
 		});
 		return displayMap;
-	}, [graph, isWeighted]);
+	}, [graph, isDirected, isWeighted]);
 
 	useEffect(() => {
 		setInputValues(displayStrings);
@@ -64,6 +62,10 @@ const AdjacencyList = ({
 	const processFinalInput = nodeId => {
 		const finalValue = inputValues.get(nodeId) || '';
 		if (validateInput(finalValue)) {
+			// Focusing and leaving a mirrored undirected row is not an edit. Avoid
+			// collapsing an underlying antiparallel pair merely because clicking the
+			// direction toggle blurred this input.
+			if (finalValue === (displayStrings.get(nodeId) || '')) return;
 			onUpdate(finalValue, nodeId);
 		} else {
 			setInputValues(

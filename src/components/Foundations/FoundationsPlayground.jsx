@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { useTeachingStateSnapshot } from '../../lib/useTeachingStateSnapshot.js';
 import styles from './FoundationsPlayground.module.css';
 
 // A growth calculator: slide n and watch the classes diverge. Bars are
@@ -6,9 +7,17 @@ import styles from './FoundationsPlayground.module.css';
 
 const CLASSES = [
 	{ label: 'O(1)', f: () => 1, color: 'var(--color-text-muted)' },
-	{ label: 'O(log n)', f: n => Math.max(Math.log2(n), 0), color: 'var(--topic-graphs)' },
+	{
+		label: 'O(log n)',
+		f: n => Math.max(Math.log2(n), 0),
+		color: 'var(--topic-graphs)',
+	},
 	{ label: 'O(n)', f: n => n, color: 'var(--topic-sorting)' },
-	{ label: 'O(n log n)', f: n => n * Math.max(Math.log2(n), 0), color: 'var(--brand)' },
+	{
+		label: 'O(n log n)',
+		f: n => n * Math.max(Math.log2(n), 0),
+		color: 'var(--brand)',
+	},
 	{ label: 'O(n²)', f: n => n * n, color: 'var(--topic-hashing)' },
 	{ label: 'O(2ⁿ)', f: n => 2 ** n, color: 'var(--color-error)' },
 ];
@@ -20,6 +29,10 @@ const fmt = v => {
 
 const FoundationsPlayground = ({ onUserInteract }) => {
 	const [n, setN] = useState(16);
+	useTeachingStateSnapshot('controls', { n }, snapshot => {
+		if (Number.isFinite(snapshot?.n))
+			setN(Math.max(1, Math.min(32, snapshot.n)));
+	});
 
 	const rows = useMemo(() => {
 		const vals = CLASSES.map(c => ({ ...c, v: c.f(n) }));

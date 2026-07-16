@@ -51,10 +51,7 @@ const FoundationsLesson = () => {
 		[]
 	);
 
-	const renderPlayground = useCallback(
-		() => <FoundationsPlayground />,
-		[]
-	);
+	const renderPlayground = useCallback(() => <FoundationsPlayground />, []);
 
 	const handleVisit = useCallback(() => {
 		markVisited(TOPIC_ID);

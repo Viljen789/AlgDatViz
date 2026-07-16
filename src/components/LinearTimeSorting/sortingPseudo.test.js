@@ -41,7 +41,11 @@ test('counting frame exposes k and the active value/slot as live state', () => {
 	const frame = stepToPseudoFrame('counting', counting);
 	const byId = Object.fromEntries(frame.state.map(r => [r.id, r.value]));
 	assert.equal(byId.x, counting.metadata.activeValue, 'reading x row matches');
-	assert.equal(byId.slot, counting.metadata.activeSlot, 'count[x] slot matches');
+	assert.equal(
+		byId.slot,
+		counting.metadata.activeSlot,
+		'count[x] slot matches'
+	);
 	// At least one row is flagged active (the thing that just changed).
 	assert.ok(frame.state.some(r => r.active));
 });
@@ -54,7 +58,11 @@ test('every radix-sort step maps to a valid line and tracks pass + digit', () =>
 	const distributing = steps.find(s => s.metadata.phase === 'distributing');
 	const frame = stepToPseudoFrame('radix', distributing);
 	const byId = Object.fromEntries(frame.state.map(r => [r.id, r.value]));
-	assert.equal(byId.digit, distributing.metadata.currentDigit, 'digit row matches');
+	assert.equal(
+		byId.digit,
+		distributing.metadata.currentDigit,
+		'digit row matches'
+	);
 	assert.match(String(byId.pass), /\/\s*\d/, 'pass shows current / total');
 });
 
@@ -64,11 +72,17 @@ test('every bucket-sort step maps to a valid line and tracks bucket m', () => {
 		assertConformant(stepToPseudoFrame('bucket', step), BUCKET_PSEUDO)
 	);
 	const distributing = steps.find(
-		s => s.metadata.phase === 'distributing' && typeof s.metadata.targetBucket === 'number'
+		s =>
+			s.metadata.phase === 'distributing' &&
+			typeof s.metadata.targetBucket === 'number'
 	);
 	const frame = stepToPseudoFrame('bucket', distributing);
 	const byId = Object.fromEntries(frame.state.map(r => [r.id, r.value]));
-	assert.equal(byId.to, distributing.metadata.targetBucket, '→ bucket row matches');
+	assert.equal(
+		byId.to,
+		distributing.metadata.targetBucket,
+		'→ bucket row matches'
+	);
 });
 
 test('PSEUDO_BY_ALGORITHM exposes the three listings', () => {

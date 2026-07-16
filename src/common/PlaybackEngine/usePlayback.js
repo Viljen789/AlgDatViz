@@ -51,6 +51,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useReducedMotion } from '../../hooks/useReducedMotion.js';
+import { useTeachingStateSnapshot } from '../../lib/useTeachingStateSnapshot.js';
 
 const DEFAULT_SPEED = 100;
 const REDUCED_MOTION_DELAY = 900;
@@ -63,6 +64,7 @@ export const usePlayback = (frames = [], options = {}) => {
 		speed: initialSpeed = DEFAULT_SPEED,
 		autoPlay = false,
 		speedToDelay = defaultSpeedToDelay,
+		shareKey = 'playback',
 	} = options;
 
 	const reducedMotion = useReducedMotion();
@@ -166,6 +168,21 @@ export const usePlayback = (frames = [], options = {}) => {
 		setIsPlaying(frames.length > 1);
 	}, [frames.length]);
 
+	const sharedSnapshot = useMemo(
+		() => ({ currentStep, speed }),
+		[currentStep, speed]
+	);
+	const restoreSharedSnapshot = useCallback(
+		snapshot => {
+			if (frames.length === 0) return false;
+			if (Number.isFinite(snapshot?.speed)) setSpeed(snapshot.speed);
+			if (Number.isFinite(snapshot?.currentStep)) seek(snapshot.currentStep);
+			return true;
+		},
+		[frames.length, seek, setSpeed]
+	);
+	useTeachingStateSnapshot(shareKey, sharedSnapshot, restoreSharedSnapshot);
+
 	// Auto-advance loop. Re-armed on each cursor move while playing.
 	useEffect(() => {
 		if (!isPlaying || totalSteps === 0) {
@@ -179,7 +196,9 @@ export const usePlayback = (frames = [], options = {}) => {
 		}
 
 		const baseDelay = speedToDelayRef.current(speed);
-		const delay = reducedMotion ? Math.max(baseDelay, REDUCED_MOTION_DELAY) : baseDelay;
+		const delay = reducedMotion
+			? Math.max(baseDelay, REDUCED_MOTION_DELAY)
+			: baseDelay;
 
 		timerRef.current = setTimeout(() => {
 			setCurrentStep(prev => {

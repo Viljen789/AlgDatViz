@@ -21,6 +21,7 @@ import {
 } from './maxFlowMeta.js';
 import { buildEdges, projectNodes, VIEW_H, VIEW_W } from './graphLayout.js';
 import styles from './MaxFlowPlayground.module.css';
+import { useTeachingStateSnapshot } from '../../lib/useTeachingStateSnapshot.js';
 
 const INITIAL_PRESET = MAXFLOW_PRESETS[0];
 
@@ -101,13 +102,27 @@ const MaxFlowPlayground = ({ onUserInteract }) => {
 	const [network, setNetwork] = useState(INITIAL_PRESET.network);
 	const [algorithmId, setAlgorithmId] = useState(INITIAL_PRESET.algorithmId);
 
-	const [frames, setFrames] = useState(() => [idleFrame(INITIAL_PRESET.network)]);
+	const [frames, setFrames] = useState(() => [
+		idleFrame(INITIAL_PRESET.network),
+	]);
 
 	const player = usePlayback(frames, { speed: 100 });
 	const { currentStep, currentFrame, totalSteps, seek, play } = player;
 
 	const algo = MAXFLOW_ALGORITHMS[algorithmId];
 	const frame = currentFrame || frames[0];
+	useTeachingStateSnapshot(
+		'controls',
+		{ presetId, network, algorithmId, frame },
+		snapshot => {
+			if (!snapshot?.network || !(snapshot.algorithmId in MAXFLOW_ALGORITHMS))
+				return;
+			setPresetId(snapshot.presetId || INITIAL_PRESET.id);
+			setNetwork(snapshot.network);
+			setAlgorithmId(snapshot.algorithmId);
+			setFrames([snapshot.frame || idleFrame(snapshot.network)]);
+		}
+	);
 
 	const projected = useMemo(() => projectNodes(network.nodes), [network]);
 	const drawEdges = useMemo(
@@ -160,7 +175,8 @@ const MaxFlowPlayground = ({ onUserInteract }) => {
 
 	const handleReset = useCallback(() => {
 		notify();
-		const preset = MAXFLOW_PRESETS.find(p => p.id === presetId) || INITIAL_PRESET;
+		const preset =
+			MAXFLOW_PRESETS.find(p => p.id === presetId) || INITIAL_PRESET;
 		const idle = [idleFrame(preset.network)];
 		framesKeyRef.current = idle;
 		setNetwork(preset.network);

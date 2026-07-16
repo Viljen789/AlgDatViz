@@ -78,7 +78,9 @@ const initMatrices = graph => {
 	const dist = Array.from({ length: n }, (_, i) =>
 		Array.from({ length: n }, (_, j) => (i === j ? 0 : INF))
 	);
-	const pred = Array.from({ length: n }, () => Array.from({ length: n }, () => null));
+	const pred = Array.from({ length: n }, () =>
+		Array.from({ length: n }, () => null)
+	);
 	graph.edges.forEach(e => {
 		const i = idx[e.from];
 		const j = idx[e.to];
@@ -193,7 +195,9 @@ export const floydWarshall = graph => {
 			title: `Allow paths through ${ids[k]} (k = ${k + 1})`,
 			description: `Now every shortest path may route through any of {${ids
 				.slice(0, k + 1)
-				.join(', ')}}. For each pair (i, j) ask: is going i → ${ids[k]} → j shorter than the best i → j found so far?`,
+				.join(
+					', '
+				)}}. For each pair (i, j) ask: is going i → ${ids[k]} → j shorter than the best i → j found so far?`,
 			updates,
 			compares,
 		});
@@ -370,7 +374,9 @@ export const transitiveClosure = graph => {
 			title: `Allow hops through ${ids[k]} (k = ${k + 1})`,
 			description: `i can now reach j through {${ids
 				.slice(0, k + 1)
-				.join(', ')}} if it already could, OR it can reach ${ids[k]} and ${ids[k]} can reach j.`,
+				.join(
+					', '
+				)}} if it already could, OR it can reach ${ids[k]} and ${ids[k]} can reach j.`,
 			added,
 			compares,
 		});
@@ -465,7 +471,7 @@ export const reconstructPath = (pred, ids, from, to) => {
 // cells being read, their sum (the candidate), and the running update count.
 export const buildStateRows = (frame, ids = []) => {
 	if (!frame) return [];
-	const label = idx => (idx == null ? '—' : ids[idx] ?? idx + 1);
+	const label = idx => (idx == null ? '—' : (ids[idx] ?? idx + 1));
 	const cellLabel = cell =>
 		cell ? `${ids[cell[0]] ?? cell[0]}→${ids[cell[1]] ?? cell[1]}` : '—';
 	const active = frame.phase === 'improve' || frame.phase === 'keep';
@@ -488,13 +494,17 @@ export const buildStateRows = (frame, ids = []) => {
 		{
 			id: 'readIK',
 			label: 'd[i][k]',
-			value: frame.readIK ? fmt(frame.dist[frame.readIK[0]][frame.readIK[1]]) : '—',
+			value: frame.readIK
+				? fmt(frame.dist[frame.readIK[0]][frame.readIK[1]])
+				: '—',
 			active,
 		},
 		{
 			id: 'readKJ',
 			label: 'd[k][j]',
-			value: frame.readKJ ? fmt(frame.dist[frame.readKJ[0]][frame.readKJ[1]]) : '—',
+			value: frame.readKJ
+				? fmt(frame.dist[frame.readKJ[0]][frame.readKJ[1]])
+				: '—',
 			active,
 		},
 		{
@@ -506,7 +516,9 @@ export const buildStateRows = (frame, ids = []) => {
 		{
 			id: 'distij',
 			label: 'd[i][j]',
-			value: frame.write ? fmt(frame.dist[frame.write[0]][frame.write[1]]) : '—',
+			value: frame.write
+				? fmt(frame.dist[frame.write[0]][frame.write[1]])
+				: '—',
 			active: frame.phase === 'improve',
 		},
 		{

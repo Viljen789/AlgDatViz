@@ -262,6 +262,9 @@ export const getTreeLayout = root => {
 		nodes,
 		edges,
 		width: Math.max(720, order * 86 + 140),
-		height: Math.max(420, (Math.max(...nodes.map(node => node.depth), 0) + 1) * 108),
+		height: Math.max(
+			420,
+			(Math.max(...nodes.map(node => node.depth), 0) + 1) * 108
+		),
 	};
 };

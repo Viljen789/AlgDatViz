@@ -90,7 +90,9 @@
 	font-size: var(--font-size-label);
 	font-weight: var(--font-weight-medium);
 	cursor: pointer;
-	transition: color var(--transition), border-color var(--transition),
+	transition:
+		color var(--transition),
+		border-color var(--transition),
 		background-color var(--transition);
 }
 
