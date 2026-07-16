@@ -14,7 +14,6 @@
 		"format": "prettier --write \"src/**/*.{js,jsx,ts,tsx,json,css,md}\""
 	},
 	"dependencies": {
-		"@viljen789/study-ui": "file:../study-ui",
 		"framer-motion": "^12.23.12",
 		"gsap": "^3.13.0",
 		"lucide-react": "^0.544.0",
