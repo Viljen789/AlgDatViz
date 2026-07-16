@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowRight, CalendarClock, Check, RotateCcw, X } from 'lucide-react';
+import { StudyOutcome } from '@viljen789/study-ui';
 import { accentTokens } from './reviewUtils.js';
 import styles from './ReviewSummary.module.css';
 
@@ -35,7 +36,6 @@ const ReviewSummary = ({ questions, answers, schedule, onRestart }) => {
 		[questions, answers]
 	);
 	const ratio = total ? score / total : 0;
-	const percent = Math.round(ratio * 100);
 
 	// One honest line on what the run did to the schedule. A correct answer below
 	// the top box pushes the card further out; a card already at the longest
@@ -97,29 +97,16 @@ const ReviewSummary = ({ questions, answers, schedule, onRestart }) => {
 	const nextFocus = revisit[0] ?? null;
 
 	return (
-		<section
+		<StudyOutcome
 			className={styles.summary}
-			aria-labelledby="review-summary-heading"
-		>
-			<header className={styles.head}>
-				<p className={styles.eyebrow}>Session complete</p>
-				<h2 id="review-summary-heading" className={styles.scoreLine}>
-					<span className={styles.scoreNum}>{score}</span>
-					<span className={styles.scoreOf}> / {total}</span>
-				</h2>
-				<div
-					className={styles.scoreTrack}
-					role="progressbar"
-					aria-valuenow={score}
-					aria-valuemin={0}
-					aria-valuemax={total}
-					aria-label={`Scored ${score} of ${total}`}
-				>
-					<span className={styles.scoreFill} style={{ width: `${percent}%` }} />
-				</div>
-				<p className={styles.verdict}>{verdictFor(ratio)}</p>
-				{scheduleLine && (
-					<p className={styles.scheduleLine}>
+			eyebrow="Session complete"
+			tone="review"
+			score={{ value: score, max: total, label: `Scored ${score} of ${total}` }}
+			heading="Review result"
+			summary={verdictFor(ratio)}
+			note={
+				scheduleLine && (
+					<span className={styles.scheduleLine}>
 						<CalendarClock
 							size={14}
 							strokeWidth={2.2}
@@ -127,99 +114,109 @@ const ReviewSummary = ({ questions, answers, schedule, onRestart }) => {
 							className={styles.scheduleIcon}
 						/>
 						{scheduleLine}
-					</p>
-				)}
-			</header>
+					</span>
+				)
+			}
+			details={
+				<>
+					{revisit.length > 0 && (
+						<div className={styles.block}>
+							<h3 className={styles.blockTitle}>Revisit these topics</h3>
+							<ul className={styles.topicList}>
+								{revisit.map(t => {
+									const tones = accentTokens(t.accent);
+									return (
+										<li
+											key={t.topicId}
+											className={styles.topicRow}
+											style={{
+												'--q-accent': tones.accent,
+												'--q-accent-ink': tones.ink,
+												'--q-accent-contrast': tones.contrast,
+											}}
+										>
+											<Link to={t.to} className={styles.topicLink}>
+												<span className={styles.topicNum}>{t.topicNumber}</span>
+												<span className={styles.topicMeta}>
+													<span className={styles.topicName}>
+														{t.topicName}
+													</span>
+													<span className={styles.topicScore}>
+														{t.correct} / {t.total} correct
+													</span>
+												</span>
+												<span className={styles.missBadge}>
+													<X size={12} strokeWidth={2.6} aria-hidden="true" />
+													{t.missed} to review
+												</span>
+												<ArrowRight
+													size={15}
+													strokeWidth={2}
+													aria-hidden="true"
+													className={styles.topicArrow}
+												/>
+											</Link>
+										</li>
+									);
+								})}
+							</ul>
+						</div>
+					)}
 
-			{revisit.length > 0 && (
-				<div className={styles.block}>
-					<h3 className={styles.blockTitle}>Revisit these topics</h3>
-					<ul className={styles.topicList}>
-						{revisit.map(t => {
-							const tones = accentTokens(t.accent);
-							return (
-								<li
-									key={t.topicId}
-									className={styles.topicRow}
-									style={{
-										'--q-accent': tones.accent,
-										'--q-accent-ink': tones.ink,
-										'--q-accent-contrast': tones.contrast,
-									}}
-								>
-									<Link to={t.to} className={styles.topicLink}>
-										<span className={styles.topicNum}>{t.topicNumber}</span>
-										<span className={styles.topicMeta}>
-											<span className={styles.topicName}>{t.topicName}</span>
-											<span className={styles.topicScore}>
-												{t.correct} / {t.total} correct
-											</span>
-										</span>
-										<span className={styles.missBadge}>
-											<X size={12} strokeWidth={2.6} aria-hidden="true" />
-											{t.missed} to review
-										</span>
-										<ArrowRight
-											size={15}
-											strokeWidth={2}
-											aria-hidden="true"
-											className={styles.topicArrow}
-										/>
-									</Link>
-								</li>
-							);
-						})}
-					</ul>
+					{mastered.length > 0 && (
+						<div className={styles.block}>
+							<h3 className={styles.blockTitle}>Clean sweep</h3>
+							<ul className={styles.masteredList}>
+								{mastered.map(t => {
+									const tones = accentTokens(t.accent);
+									return (
+										<li
+											key={t.topicId}
+											className={styles.masteredChip}
+											style={{
+												'--q-accent': tones.accent,
+												'--q-accent-ink': tones.ink,
+											}}
+										>
+											<Check size={12} strokeWidth={2.8} aria-hidden="true" />
+											{t.topicName}
+										</li>
+									);
+								})}
+							</ul>
+						</div>
+					)}
+				</>
+			}
+			actions={
+				<div className={styles.actions}>
+					{nextFocus ? (
+						<Link to={nextFocus.to} className={styles.nextAction}>
+							Continue with {nextFocus.topicName.toLowerCase()}
+							<ArrowRight size={15} strokeWidth={2.2} aria-hidden="true" />
+						</Link>
+					) : (
+						<Link to="/" className={styles.nextAction}>
+							Return to today
+							<ArrowRight size={15} strokeWidth={2.2} aria-hidden="true" />
+						</Link>
+					)}
+					<button
+						type="button"
+						className={styles.restartBtn}
+						onClick={onRestart}
+					>
+						<RotateCcw size={15} strokeWidth={2.2} aria-hidden="true" />
+						<span>New session</span>
+					</button>
+					{nextFocus && (
+						<Link to="/" className={styles.homeLink}>
+							Back to today
+						</Link>
+					)}
 				</div>
-			)}
-
-			{mastered.length > 0 && (
-				<div className={styles.block}>
-					<h3 className={styles.blockTitle}>Clean sweep</h3>
-					<ul className={styles.masteredList}>
-						{mastered.map(t => {
-							const tones = accentTokens(t.accent);
-							return (
-								<li
-									key={t.topicId}
-									className={styles.masteredChip}
-									style={{
-										'--q-accent': tones.accent,
-										'--q-accent-ink': tones.ink,
-									}}
-								>
-									<Check size={12} strokeWidth={2.8} aria-hidden="true" />
-									{t.topicName}
-								</li>
-							);
-						})}
-					</ul>
-				</div>
-			)}
-
-			<div className={styles.actions}>
-				{nextFocus ? (
-					<Link to={nextFocus.to} className={styles.nextAction}>
-						Continue with {nextFocus.topicName.toLowerCase()}
-						<ArrowRight size={15} strokeWidth={2.2} aria-hidden="true" />
-					</Link>
-				) : (
-					<Link to="/" className={styles.nextAction}>
-						Return to today
-						<ArrowRight size={15} strokeWidth={2.2} aria-hidden="true" />
-					</Link>
-				)}
-				<button type="button" className={styles.restartBtn} onClick={onRestart}>
-					<RotateCcw size={15} strokeWidth={2.2} aria-hidden="true" />
-					<span>New session</span>
-				</button>
-				{nextFocus && (
-					<Link to="/" className={styles.homeLink}>
-						Back to today
-					</Link>
-				)}
-			</div>
-		</section>
+			}
+		/>
 	);
 };
 

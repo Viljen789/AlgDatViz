@@ -14,7 +14,7 @@
 		"format": "prettier --write \"src/**/*.{js,jsx,ts,tsx,json,css,md}\""
 	},
 	"dependencies": {
-		"@viljen789/study-ui": "git+https://github.com/Viljen789/study-ui.git#0129d77bbc76f27a5a3d1d0ef7e6cb0fdc2e92f7",
+		"@viljen789/study-ui": "github:Viljen789/study-ui#v0.5.0",
 		"framer-motion": "^12.23.12",
 		"gsap": "^3.13.0",
 		"lucide-react": "^0.544.0",
@@ -34,5 +34,8 @@
 		"globals": "^16.3.0",
 		"prettier": "^3.6.2",
 		"vite": "^7.0.4"
+	},
+	"allowScripts": {
+		"github:Viljen789/study-ui#e2c777d8d0fbcb3cddde8393f1370c512a3d382d": true
 	}
 }

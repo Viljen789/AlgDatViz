@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Metric, MetricGroup } from '@viljen789/study-ui';
+import { ActivityHeatmap, Metric, MetricGroup } from '@viljen789/study-ui';
 import {
 	ArrowRight,
 	ChevronRight,
@@ -36,22 +36,6 @@ const pct = s => Math.round(s * 100);
 
 // A revision-plan day's short label: "Today" for the first day, "+1"/"+2"… after.
 const dayOffsetLabel = index => (index === 0 ? 'Today' : `+${index}`);
-
-// The heatmap colour ramp, brightest at the right: empty, then three brand-tinted
-// steps. The legend and every day-cell read from this one array so "Less → More"
-// always matches the squares above it. Both themes inherit the brand hue.
-const HEAT_RAMP = [
-	'var(--color-border-subtle)',
-	'hsl(var(--brand-h) var(--brand-s) var(--brand-l) / 0.3)',
-	'hsl(var(--brand-h) var(--brand-s) var(--brand-l) / 0.6)',
-	'hsl(var(--brand-h) var(--brand-s) var(--brand-l) / 0.95)',
-];
-
-// One day's count → its ramp bucket 0..3 (0 answered → empty; thresholds at 3
-// and 6). The bucket drives BOTH the fill colour and a redundant inset ring, so
-// the heatmap never encodes intensity by hue alone (colour-blind safe).
-const heatLevel = c => (c <= 0 ? 0 : c < 3 ? 1 : c < 6 ? 2 : 3);
-const heat = c => HEAT_RAMP[heatLevel(c)];
 
 // Month labels keyed to the first week-column that begins in each month, so the
 // strip above the heatmap reads like a calendar without one label per week.
@@ -303,24 +287,6 @@ const ProgressPage = () => {
 
 	const daysStudied = Object.keys(days).length;
 
-	// A label for each week-column that opens a new month (blank otherwise), so the
-	// strip above the heatmap reads as a calendar without crowding every week.
-	const monthLabels = useMemo(
-		() =>
-			weeks.map((col, w) => {
-				const first = col.find(cell => !cell.future) ?? col[0];
-				const month = new Date(`${first.k}T00:00:00`).getMonth();
-				const prev =
-					w === 0
-						? null
-						: new Date(
-								`${(weeks[w - 1].find(c => !c.future) ?? weeks[w - 1][0]).k}T00:00:00`
-							).getMonth();
-				return month !== prev ? MONTHS[month] : '';
-			}),
-		[weeks]
-	);
-
 	// First-run: nothing answered and nothing finished. Drives the guidance card,
 	// the "Start here" tag, and the empty heatmap caption.
 	const hasNoActivity = daysStudied === 0 && overall.completed === 0;
@@ -442,82 +408,35 @@ const ProgressPage = () => {
 				<h2 id="heatmap-title" className={styles.blockTitle}>
 					Activity
 				</h2>
-				<div className={styles.heatScroll}>
-					<div className={styles.heatMonths} aria-hidden="true">
-						{monthLabels.map((label, w) => (
-							<span key={w} className={styles.heatMonth}>
-								{label}
-							</span>
-						))}
-					</div>
-					<div
-						className={styles.heatmap}
-						role="group"
-						aria-labelledby="heatmap-title"
-					>
-						{/* A spoken summary up front; the grid below carries per-day labels
-						    for screen-reader users who navigate into it. */}
-						<span className={styles.srOnly}>
-							{daysStudied === 0
-								? `No study days logged in the last ${HEAT_WEEKS} weeks.`
-								: `${daysStudied} day${
-										daysStudied === 1 ? '' : 's'
-									} studied in the last ${HEAT_WEEKS} weeks. Each cell is one day.`}
-						</span>
-						{weeks.map((col, w) => (
-							<div key={w} className={styles.heatCol}>
-								{col.map(cell => {
-									// Intensity rides on TWO channels: the fill colour and a
-									// data-level the CSS turns into an inset ring (for count > 0).
-									// So a colour-blind reader still distinguishes the busier days.
-									const level = cell.future ? 0 : heatLevel(cell.count);
-									// A human-readable day, never the raw ISO key: "Mon 16 Jun ·
-									// 4 answered", or "no study" for an empty day.
-									const dayLabel = cell.future
-										? undefined
-										: `${formatPlanDate(cell.k)} · ${
-												cell.count > 0 ? `${cell.count} answered` : 'no study'
-											}`;
-									return (
-										<span
-											key={cell.k}
-											className={styles.heatCell}
-											data-level={level}
-											data-future={cell.future ? '' : undefined}
-											role={cell.future ? undefined : 'img'}
-											aria-hidden={cell.future ? 'true' : undefined}
-											aria-label={dayLabel}
-											title={dayLabel}
-											style={{
-												background: cell.future
-													? 'transparent'
-													: heat(cell.count),
-											}}
-										/>
-									);
-								})}
-							</div>
-						))}
-					</div>
-				</div>
-				<div className={styles.heatLegend} aria-hidden="true">
-					<span className={styles.heatLegendLabel}>Less</span>
-					{HEAT_RAMP.map((swatch, i) => (
-						<span
-							key={i}
-							className={styles.heatLegendSwatch}
-							data-level={i}
-							style={{ background: swatch }}
-						/>
-					))}
-					<span className={styles.heatLegendLabel}>More</span>
-				</div>
-				{hasNoActivity && (
-					<p className={styles.heatCaption}>
-						No study days logged yet. Each square is a day; answer a review or a
-						topic check to light one up.
-					</p>
-				)}
+				<ActivityHeatmap
+					data={weeks.flat().map(cell => ({
+						date: cell.k,
+						value: cell.count,
+						future: cell.future,
+					}))}
+					ariaLabel={
+						daysStudied === 0
+							? `No study days logged in the last ${HEAT_WEEKS} weeks.`
+							: `${daysStudied} study day${
+									daysStudied === 1 ? '' : 's'
+								} in the last ${HEAT_WEEKS} weeks.`
+					}
+					getDayLabel={day =>
+						`${formatPlanDate(day.date)} · ${
+							day.value > 0 ? `${day.value} answered` : 'no study'
+						}`
+					}
+					getLevel={value =>
+						value <= 0 ? 0 : value < 3 ? 1 : value < 6 ? 2 : 4
+					}
+					tone="brand"
+					caption={
+						hasNoActivity
+							? 'No study days logged yet. Answer a review or topic check to light one up.'
+							: undefined
+					}
+					className={styles.activityHeatmap}
+				/>
 			</section>
 
 			{revisionPlan && revisionPlan.topicCount > 0 && (

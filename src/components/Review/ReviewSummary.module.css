@@ -5,78 +5,12 @@
    ============================================================================ */
 
 .summary {
-	display: flex;
-	flex-direction: column;
+	display: grid;
 	gap: var(--space-xl);
 }
 
-/* ---------- Score header ---------- */
-
-.head {
-	display: flex;
-	flex-direction: column;
-	gap: var(--space-md);
-	padding: clamp(var(--space-lg), 4vw, var(--space-2xl));
-	background: var(--surface-1);
-	border: 1px solid var(--color-border);
+.summary :global(.sui-outcome__header) {
 	border-radius: var(--radius-xl);
-	box-shadow: var(--shadow-2);
-}
-
-.eyebrow {
-	margin: 0;
-	font-family: var(--font-family-mono);
-	font-size: var(--font-size-caption);
-	font-weight: var(--font-weight-bold);
-	letter-spacing: var(--tracking-caps);
-	text-transform: uppercase;
-	color: var(--color-text-muted);
-}
-
-.scoreLine {
-	margin: 0;
-	display: flex;
-	align-items: baseline;
-	gap: var(--space-2xs);
-	font-family: var(--font-family-display);
-	line-height: 1;
-	color: var(--color-text-primary);
-}
-
-.scoreNum {
-	font-size: var(--font-size-display-2xl);
-	font-weight: var(--font-weight-display);
-	font-variant-numeric: lining-nums tabular-nums;
-	letter-spacing: var(--tracking-display);
-}
-
-.scoreOf {
-	font-size: var(--font-size-display-lg);
-	font-weight: var(--font-weight-semibold);
-	font-variant-numeric: lining-nums tabular-nums;
-	color: var(--color-text-muted);
-}
-
-.scoreTrack {
-	height: 8px;
-	background: var(--color-bg-sunken);
-	border-radius: var(--radius-pill);
-	overflow: hidden;
-}
-
-.scoreFill {
-	display: block;
-	height: 100%;
-	border-radius: var(--radius-pill);
-	background: var(--review-brand);
-	transition: width var(--duration-merge) var(--ease-quiet);
-}
-
-.verdict {
-	margin: 0;
-	font-size: var(--font-size-body-lg);
-	line-height: var(--line-height-snug);
-	color: var(--color-text-secondary);
 }
 
 /* The one honest line on how the run moved the schedule ("N cards pushed further
